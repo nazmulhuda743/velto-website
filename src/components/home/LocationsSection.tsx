@@ -5,7 +5,7 @@ import { IMAGES } from "@/content/mock";
 import { LOCATIONS, type Location } from "@/content/site";
 import { SectionIntro } from "./SectionIntro";
 
-function LocationBlock({ loc }: { loc: Location }) {
+export function LocationBlock({ loc }: { loc: Location }) {
   return (
     <article>
       <ResponsiveImage

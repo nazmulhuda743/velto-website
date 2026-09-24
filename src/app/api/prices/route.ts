@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { searchPriceItems } from "@/lib/pricing";
+import { PRICE_SOURCE, searchPriceItems } from "@/lib/pricing";
 
 export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams.get("q") ?? "";
@@ -16,8 +16,11 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // INTEGRATION POINT (Codex): replace with
+    //   const items = await getPricingSource().search({ query: q, limit: 5 });
+    // and set source to "live". The response shape stays the same.
     const items = await searchPriceItems(q.slice(0, 64));
-    return NextResponse.json({ items }, { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ items, source: PRICE_SOURCE }, { headers: { "Cache-Control": "no-store" } });
   } catch {
     // Never expose raw API/database errors to the browser.
     return NextResponse.json({ error: "unavailable" }, { status: 503 });

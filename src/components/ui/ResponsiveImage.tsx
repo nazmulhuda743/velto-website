@@ -69,18 +69,22 @@ export function ResponsiveImage({
           />
         ))}
       </span>
-      <span
-        aria-hidden="true"
-        className="absolute left-6 top-6 t-label uppercase md:left-8 md:top-8"
-      >
-        Photo · to be supplied
-      </span>
-      <span
-        aria-hidden="true"
-        className="absolute inset-x-6 bottom-6 max-w-[34ch] t-caption md:inset-x-8 md:bottom-8"
-      >
-        {image.alt}
-      </span>
+      {decorative ? null : (
+        <>
+          <span
+            aria-hidden="true"
+            className="absolute left-6 top-6 t-label uppercase md:left-8 md:top-8"
+          >
+            Photo · to be supplied
+          </span>
+          <span
+            aria-hidden="true"
+            className="absolute inset-x-6 bottom-6 max-w-[34ch] t-caption md:inset-x-8 md:bottom-8"
+          >
+            {image.alt}
+          </span>
+        </>
+      )}
     </div>
   );
 }

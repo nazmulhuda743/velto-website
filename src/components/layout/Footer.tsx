@@ -19,7 +19,7 @@ export function Footer() {
           <nav aria-label="Footer" className="col-span-2 md:col-span-2 xl:col-span-2">
             <h2 className="t-label uppercase text-white/60">Explore</h2>
             <ul className="mt-4 space-y-1">
-              {NAV.mobile.map((item) => (
+              {[...NAV.mobile, { label: "About", href: "/about" }].map((item) => (
                 <li key={item.href}>
                   <Link href={item.href} className="inline-block py-1.5 t-small text-white hover:text-cyan">
                     {item.label}

@@ -4,7 +4,8 @@
  * TODO_VERIFY. Do not add facts here that are not in the specification.
  */
 
-export const SERVICE_AREA = "Uttara Sectors 1–18";
+/** Word joiners keep "1–18" on one line. */
+export const SERVICE_AREA = "Uttara Sectors 1\u2060–\u206018";
 
 /** Free pickup & delivery threshold (§4). */
 export const FREE_DELIVERY_THRESHOLD = "৳499";

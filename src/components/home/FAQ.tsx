@@ -1,6 +1,9 @@
 import type { ReactNode } from "react";
 
-const FAQS: { q: string; a: ReactNode }[] = [
+export type FAQItem = { q: string; a: ReactNode };
+
+/** Approved FAQ answers (spec §20 section 09). Reused on internal pages by index. */
+export const FAQS: FAQItem[] = [
   {
     q: "How long does an order usually take?",
     a: (
@@ -76,18 +79,38 @@ const FAQS: { q: string; a: ReactNode }[] = [
 ];
 
 /** Native <details> accordion — keyboard accessible with no client JS. */
-export function FAQ() {
+export const FAQ_KEYS = {
+  turnaround: 0,
+  area: 1,
+  freeDelivery: 2,
+  stains: 3,
+  unsure: 4,
+  express: 5,
+  household: 6,
+} as const;
+
+export const faqItems = (...keys: (keyof typeof FAQ_KEYS)[]) => keys.map((k) => FAQS[FAQ_KEYS[k]]);
+
+export function FAQ({
+  title = "A few things worth knowing before you book.",
+  items = FAQS,
+  className = "",
+}: {
+  title?: string;
+  items?: FAQItem[];
+  className?: string;
+}) {
   return (
-    <section id="faq" aria-labelledby="faq-title" className="py-(--space-section)">
+    <section id="faq" aria-labelledby="faq-title" className={`py-(--space-section) ${className}`}>
       <div className="container-page grid-page gap-y-(--space-intro-content)">
         <div className="col-span-4 md:col-span-8 xl:col-span-4">
           <h2 id="faq-title" className="t-h2 max-w-[16ch] text-navy xl:sticky xl:top-[100px]">
-            A few things worth knowing before you book.
+            {title}
           </h2>
         </div>
         <div className="col-span-4 md:col-span-8 xl:col-span-7 xl:col-start-6">
           <div className="border-t border-navy">
-            {FAQS.map((item) => (
+            {items.map((item) => (
               <details key={item.q} className="faq-item group border-b border-line">
                 <summary className="flex min-h-16 cursor-pointer items-center justify-between gap-6 py-5 text-navy">
                   <span className="text-[18px] font-semibold leading-snug tracking-[-0.01em] md:text-[20px]">

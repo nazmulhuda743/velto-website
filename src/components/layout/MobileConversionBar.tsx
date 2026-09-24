@@ -11,7 +11,18 @@ const TEXT_ENTRY = "input:not([type=checkbox]):not([type=radio]):not([type=butto
  * Persistent mobile conversion bar (spec §18). Hidden while typing and while
  * the final booking section fills ~60%+ of the viewport.
  */
-export function MobileConversionBar({ finalSectionId }: { finalSectionId: string }) {
+export function MobileConversionBar({
+  finalSectionId,
+  source = "mobile_sticky",
+  service,
+  primary,
+}: {
+  finalSectionId: string;
+  source?: string;
+  service?: string;
+  /** Overrides the primary action (quote-first service pages). */
+  primary?: { href: string; label: string };
+}) {
   const [typing, setTyping] = useState(false);
   const [finalInView, setFinalInView] = useState(false);
 
@@ -54,12 +65,12 @@ export function MobileConversionBar({ finalSectionId }: { finalSectionId: string
     >
       <div className="flex h-16 items-center gap-2 px-4 min-[375px]:px-5">
         <Link
-          href={bookHref("mobile_sticky")}
+          href={primary?.href ?? bookHref(source, service)}
           className="inline-flex h-11 flex-[7] items-center justify-center rounded-md bg-action text-[15px] font-semibold tracking-[-0.005em] text-white active:bg-action-active"
-          data-analytics="book_pickup_click"
+          data-analytics={primary ? undefined : "book_pickup_click"}
           data-placement="mobile_sticky"
         >
-          Book a Pickup
+          {primary?.label ?? "Book a Pickup"}
         </Link>
         <a
           href={WHATSAPP_URL}

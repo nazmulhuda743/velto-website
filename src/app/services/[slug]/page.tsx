@@ -1,29 +1,27 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { PlaceholderPage, placeholderMetadata } from "@/components/layout/PlaceholderPage";
-
-const SERVICE_TITLES: Record<string, string> = {
-  "dry-cleaning": "Dry Cleaning",
-  "wash-and-iron": "Wash & Iron",
-  ironing: "Ironing",
-  "curtain-cleaning": "Curtain Cleaning",
-  "carpet-cleaning": "Carpet Cleaning",
-  "blanket-comforter-cleaning": "Blankets & Comforters",
-};
+import { ServicePageView } from "@/components/pages/ServicePageView";
+import { SERVICE_PAGES, getServicePage } from "@/content/services";
 
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return Object.keys(SERVICE_TITLES).map((slug) => ({ slug }));
+  return SERVICE_PAGES.map((s) => ({ slug: s.slug }));
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  return placeholderMetadata(SERVICE_TITLES[slug] ?? "Service");
+  const service = getServicePage(slug);
+  if (!service) return {};
+  return {
+    title: `${service.name} in Uttara — Velto`,
+    description: service.metaDescription,
+  };
 }
 
 export default async function ServicePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const title = SERVICE_TITLES[slug];
-  if (!title) notFound();
-  return <PlaceholderPage title={title} />;
+  const service = getServicePage(slug);
+  if (!service) notFound();
+  return <ServicePageView service={service} />;
 }
