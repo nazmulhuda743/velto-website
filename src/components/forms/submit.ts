@@ -31,7 +31,8 @@ export type QuoteFormData = {
 };
 
 export type SubmitResult =
-  | { ok: true; reference: string }
+  /** `reference` is issued by Velto Ops; the UI never invents one. */
+  | { ok: true; reference?: string }
   | { ok: false; code: "not_connected" | "invalid_request" | "unavailable" | "duplicate_submission" };
 
 export async function submitBooking(data: BookingFormData): Promise<SubmitResult> {

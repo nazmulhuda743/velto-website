@@ -1,234 +1,660 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode, type Ref } from "react";
 import { track } from "@/components/layout/Analytics";
-import { ButtonLink, WhatsAppButton } from "@/components/ui/Button";
-import { WHATSAPP_URL } from "@/content/site";
-import { AREA_OPTIONS, OUTSIDE_AREA, SelectField, TextAreaField, TextField } from "./fields";
+import { ButtonLink } from "@/components/ui/Button";
+import { WhatsAppIcon } from "@/components/ui/icons";
+import { FREE_DELIVERY_THRESHOLD, WHATSAPP_URL } from "@/content/site";
 import { submitBooking, type BookingFormData, type SubmitResult } from "./submit";
 
-/** Booking service options, matching the Ops contract service slugs. */
+/**
+ * Book a Pickup — one compact form, grouped as what / where / when / who.
+ * Values map onto the Ops `BookingSubmission` shape via BookingFormData;
+ * submission stays behind the isolated adapter in ./submit (Codex wires it).
+ */
+
 export const BOOKING_SERVICES = [
   { value: "dry-cleaning", label: "Dry Cleaning" },
   { value: "wash-and-iron", label: "Wash & Iron" },
   { value: "ironing", label: "Ironing" },
-  { value: "curtain-cleaning", label: "Curtain Cleaning" },
-  { value: "carpet-cleaning", label: "Carpet Cleaning" },
+  { value: "curtain-cleaning", label: "Curtains" },
+  { value: "carpet-cleaning", label: "Carpets" },
   { value: "blanket-comforter-cleaning", label: "Blankets & Comforters" },
-];
+  { value: "", label: "A mix, or not sure" },
+] as const;
 
-type Errors = Partial<Record<keyof BookingFormData, string>>;
-type Status = { state: "idle" } | { state: "submitting" } | { state: "done"; result: SubmitResult };
+const SECTORS = Array.from({ length: 18 }, (_, i) => i + 1);
+const OUTSIDE = "outside";
 
-const PHONE = /^\+?[\d\s-]{10,16}$/;
+const DAYS = [
+  { value: "today", label: "Today" },
+  { value: "tomorrow", label: "Tomorrow" },
+  { value: "other", label: "Another day" },
+] as const;
 
-function validate(d: BookingFormData): Errors {
+/** Broad windows only: no specific slots are promised (none are verified). */
+const TIMES = [
+  { value: "Morning", label: "Morning" },
+  { value: "Afternoon", label: "Afternoon" },
+  { value: "Evening", label: "Evening" },
+  { value: "Any time", label: "Any time" },
+] as const;
+
+type Day = (typeof DAYS)[number]["value"] | "";
+
+type FormState = {
+  service: string | null; // null = not answered, "" = a mix / not sure
+  sector: string;
+  address: string;
+  day: Day;
+  date: string;
+  time: string;
+  name: string;
+  phone: string;
+  notes: string;
+};
+
+type ErrorKey = "sector" | "address" | "date" | "name" | "phone";
+type Errors = Partial<Record<ErrorKey, string>>;
+type Status =
+  | { state: "idle" }
+  | { state: "submitting" }
+  | { state: "failed"; code: Extract<SubmitResult, { ok: false }>["code"] }
+  | { state: "success"; reference?: string };
+
+/** Bangladeshi mobile numbers, with or without +880, spaces or dashes. */
+const normalisePhone = (v: string) => v.replace(/[\s-]/g, "");
+const phoneOk = (v: string) => /^(\+?880|0)1\d{9}$/.test(normalisePhone(v));
+const displayPhone = (v: string) => {
+  const n = normalisePhone(v);
+  return /^01\d{9}$/.test(n) ? `${n.slice(0, 5)} ${n.slice(5)}` : n;
+};
+
+const isoDate = (offsetDays = 0) => {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const niceDate = (iso: string) => {
+  const d = new Date(`${iso}T00:00:00`);
+  return `${WEEKDAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+};
+
+const areaLabel = (sector: string) => (sector === OUTSIDE ? "Outside Uttara Sectors 1–18" : `Uttara Sector ${sector}`);
+
+const serviceLabel = (value: string | null) =>
+  value === null ? "" : (BOOKING_SERVICES.find((s) => s.value === value)?.label ?? "");
+
+/** Human-readable preference, e.g. "Tomorrow Fri 25 Sep, evening". Sent as the contract's single preferredPickup string. */
+function pickupLabel(s: FormState) {
+  const iso = s.day === "today" ? isoDate(0) : s.day === "tomorrow" ? isoDate(1) : s.day === "other" ? s.date : "";
+  const prefix = s.day === "today" ? "Today" : s.day === "tomorrow" ? "Tomorrow" : "";
+  const day = iso ? `${prefix} ${niceDate(iso)}`.trim() : "";
+  const time = s.time && s.time !== "Any time" ? s.time.toLowerCase() : s.time === "Any time" && day ? "any time" : "";
+  return [day, time].filter(Boolean).join(", ");
+}
+
+function toBookingData(s: FormState): BookingFormData {
+  return {
+    name: s.name.trim(),
+    phone: normalisePhone(s.phone),
+    area: areaLabel(s.sector),
+    address: s.address.trim(),
+    preferredPickup: pickupLabel(s) || undefined,
+    service: s.service || undefined,
+    notes: s.notes.trim() || undefined,
+  };
+}
+
+/** WhatsApp fallback carries what the customer already typed, so nothing is lost. */
+function whatsappHref(s: FormState) {
+  const lines = [
+    "Hi Velto, I'd like to book a pickup.",
+    s.service !== null ? `Service: ${serviceLabel(s.service)}` : "",
+    s.sector ? `Area: ${areaLabel(s.sector)}` : "",
+    s.address.trim() ? `Address: ${s.address.trim()}` : "",
+    pickupLabel(s) ? `Preferred pickup: ${pickupLabel(s)}` : "",
+    s.name.trim() ? `Name: ${s.name.trim()}` : "",
+    s.notes.trim() ? `Note: ${s.notes.trim()}` : "",
+  ].filter(Boolean);
+  return `${WHATSAPP_URL}?text=${encodeURIComponent(lines.join("\n"))}`;
+}
+
+function validate(s: FormState): Errors {
   const e: Errors = {};
-  if (!d.name.trim()) e.name = "Enter your name.";
-  if (!d.phone.trim()) e.phone = "Enter a phone or WhatsApp number.";
-  else if (!PHONE.test(d.phone.trim())) e.phone = "Enter a valid phone number, for example 01XXXXXXXXX.";
-  if (!d.area) e.area = "Choose your area.";
-  if (!d.address.trim()) e.address = "Enter the pickup address.";
+  if (!s.sector) e.sector = "Choose your sector.";
+  if (!s.address.trim()) e.address = "Add your house and road so we can find you.";
+  if (s.day === "other" && !s.date) e.date = "Pick a date, or choose Today or Tomorrow.";
+  if (!s.name.trim()) e.name = "Add your name.";
+  if (!s.phone.trim()) e.phone = "Add a number we can call or WhatsApp.";
+  else if (!phoneOk(s.phone)) e.phone = "Check the number. It should look like 01XXX XXXXXX.";
   return e;
 }
 
-const LABELS: Record<string, string> = { name: "Name", phone: "Phone", area: "Area", address: "Address" };
+const FIELD_ORDER: ErrorKey[] = ["sector", "address", "date", "name", "phone"];
+
+/* ---------- presentational pieces (booking page only) ---------- */
+
+const inputBase =
+  "block w-full rounded-md border border-line-strong bg-white px-4 text-base text-navy placeholder:text-secondary/80 hover:border-navy/50 focus:border-blue focus:outline-1 focus:outline-offset-0 focus:outline-blue aria-[invalid=true]:border-error";
+const inputHeight = "h-[54px] md:h-[52px]";
+
+function Group({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
+  return (
+    <fieldset className="min-w-0 border-t border-line pt-5 first:border-t-0 first:pt-0">
+      <legend className="contents">
+        <span className="block t-h4 text-navy">{title}</span>
+      </legend>
+      {hint ? <p className="mt-1 t-small text-secondary">{hint}</p> : null}
+      <div className="mt-3.5 space-y-4">{children}</div>
+    </fieldset>
+  );
+}
+
+function FieldLabel({ htmlFor, children }: { htmlFor: string; children: ReactNode }) {
+  return (
+    <label htmlFor={htmlFor} className="block text-[15px] font-semibold text-navy">
+      {children}
+    </label>
+  );
+}
+
+function ErrorText({ id, children }: { id: string; children?: string }) {
+  if (!children) return null;
+  return (
+    <p id={id} className="mt-2 flex items-start gap-2 t-small font-medium text-error">
+      <span aria-hidden="true">!</span>
+      {children}
+    </p>
+  );
+}
+
+function ChoiceTiles<T extends string>({
+  name,
+  label,
+  options,
+  value,
+  onChange,
+  columns,
+  segmented = false,
+}: {
+  name: string;
+  label: string;
+  options: readonly { value: T; label: string }[];
+  value: T | null;
+  onChange: (v: T) => void;
+  columns: string;
+  /** Compact single-row choices: centred text, radio kept for accessibility but visually hidden. */
+  segmented?: boolean;
+}) {
+  return (
+    <div role="radiogroup" aria-label={label} className={`grid gap-2 ${columns}`}>
+      {options.map((o) => {
+        const checked = value === o.value;
+        return (
+          <label
+            key={`${name}-${o.value || "none"}`}
+            className={`flex min-h-11 cursor-pointer items-center rounded-md border py-2 leading-tight text-navy transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-blue ${
+              segmented ? "justify-center px-1 text-center text-[14px] md:text-[15px]" : "gap-3 px-3.5 text-[15px]"
+            } ${checked ? "border-blue bg-[#f0f7fc] font-semibold" : "border-line-strong hover:border-navy/50"}`}
+          >
+            <input
+              type="radio"
+              name={name}
+              value={o.value}
+              checked={checked}
+              onChange={() => onChange(o.value)}
+              className={segmented ? "sr-only" : "size-4 shrink-0 accent-[#0078bc]"}
+            />
+            {o.label}
+          </label>
+        );
+      })}
+    </div>
+  );
+}
+
+function WhatsAppFallback({ href, placement, label, className = "" }: { href: string; placement: string; label: string; className?: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      data-analytics="whatsapp_click"
+      data-placement={placement}
+      className={`inline-flex h-12 items-center justify-center gap-2.5 whitespace-nowrap rounded-md border border-line-strong bg-white px-5 font-semibold text-navy hover:border-navy ${className}`}
+    >
+      <WhatsAppIcon className="size-5 text-whatsapp" />
+      {label}
+      <span className="sr-only"> (opens WhatsApp)</span>
+    </a>
+  );
+}
+
+/* ---------- form ---------- */
 
 export function BookingForm({
+  intro,
   initialService,
   regular = false,
-  preview,
+  previewOutcome,
 }: {
+  /** Page heading copy. The form owns the h1 so the success state can replace it. */
+  intro: ReactNode;
   initialService?: string;
-  /** Came from "Set Up Regular Pickup": prefill the note (no separate contract field). */
+  /** Came from "Set Up Regular Pickup": prefill and open the note (no separate contract field). */
   regular?: boolean;
-  /** Development-only state preview (?preview=success|error). */
-  preview?: "success" | "error";
+  /** Development-only: simulates the adapter result to QA success/error UI. Never set in production. */
+  previewOutcome?: "success" | "error";
 }) {
-  const [data, setData] = useState<BookingFormData>({
+  const [s, setS] = useState<FormState>({
+    service: BOOKING_SERVICES.some((o) => o.value !== "" && o.value === initialService) ? initialService! : null,
+    sector: "",
+    address: "",
+    day: "",
+    date: "",
+    time: "",
     name: "",
     phone: "",
-    area: "",
-    address: "",
-    preferredPickup: "",
-    service: BOOKING_SERVICES.some((s) => s.value === initialService) ? initialService : "",
     notes: regular ? "I'd like to set up a regular pickup." : "",
   });
   const [errors, setErrors] = useState<Errors>({});
-  const [status, setStatus] = useState<Status>(
-    preview === "success"
-      ? { state: "done", result: { ok: true, reference: "PREVIEW-0000" } }
-      : preview === "error"
-        ? { state: "done", result: { ok: false, code: "unavailable" } }
-        : { state: "idle" },
-  );
+  const [status, setStatus] = useState<Status>({ state: "idle" });
+  const [notesOpen, setNotesOpen] = useState(regular);
+  // Arriving from a service page: show the choice as one line, with the option to change it.
+  const [serviceOpen, setServiceOpen] = useState(s.service === null);
   const started = useRef(false);
-  const summaryRef = useRef<HTMLDivElement>(null);
+  const statusRef = useRef<HTMLDivElement>(null);
+  const successRef = useRef<HTMLHeadingElement>(null);
 
-  const set = (key: keyof BookingFormData) => (e: { target: { value: string } }) => {
+  useEffect(() => {
+    if (status.state === "failed") statusRef.current?.focus();
+    if (status.state === "success") {
+      successRef.current?.scrollIntoView({ block: "start" });
+      successRef.current?.focus({ preventScroll: true });
+    }
+  }, [status.state]);
+
+  const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     if (!started.current) {
       started.current = true;
       track("booking_start", { section: "booking-form" });
     }
-    setData((d) => ({ ...d, [key]: e.target.value }));
-    if (errors[key]) setErrors((x) => ({ ...x, [key]: undefined }));
+    setS((prev) => ({ ...prev, [key]: value }));
+    if (key in errors) setErrors((prev) => ({ ...prev, [key]: undefined }));
+    if (status.state === "failed") setStatus({ state: "idle" });
+  };
+
+  const checkPhoneOnBlur = () => {
+    // Only nag once something has been typed.
+    if (s.phone.trim() && !phoneOk(s.phone)) setErrors((prev) => ({ ...prev, phone: validate(s).phone }));
   };
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const found = validate(data);
+    if (status.state === "submitting") return;
+    const found = validate(s);
     setErrors(found);
-    if (Object.keys(found).length) {
-      requestAnimationFrame(() => summaryRef.current?.focus());
+    const first = FIELD_ORDER.find((k) => found[k]);
+    if (first) {
+      const el = document.getElementById(`booking-${first}`);
+      el?.scrollIntoView({ block: "center" });
+      el?.focus({ preventScroll: true });
       return;
     }
     setStatus({ state: "submitting" });
-    const result = await submitBooking(data);
-    if (result.ok) track("booking_success", { service: data.service || undefined });
-    setStatus({ state: "done", result });
+
+    let result: SubmitResult;
+    if (previewOutcome) {
+      await new Promise((r) => setTimeout(r, 700));
+      result = previewOutcome === "success" ? { ok: true } : { ok: false, code: "unavailable" };
+    } else {
+      result = await submitBooking(toBookingData(s));
+    }
+
+    if (result.ok) {
+      if (!previewOutcome) track("booking_success", { service: s.service || undefined });
+      setStatus({ state: "success", reference: result.reference });
+    } else {
+      setStatus({ state: "failed", code: result.code });
+    }
   };
 
-  if (status.state === "done" && status.result.ok) {
-    return (
-      <div role="status" className="border-t-2 border-success pt-6">
-        <p className="t-label uppercase text-success">Booking received</p>
-        <h2 className="mt-3 t-h3 text-navy">Thanks. Your pickup request is in.</h2>
-        <p className="mt-3 max-w-[48ch] text-body">
-          The Velto team will contact you to confirm the pickup. Your reference is{" "}
-          <strong className="font-semibold text-navy">{status.result.reference}</strong>.
-        </p>
-        <div className="mt-6">
-          <ButtonLink href="/" variant="secondary">
-            Back to the homepage
-          </ButtonLink>
-        </div>
-      </div>
-    );
+  if (status.state === "success") {
+    return <BookingSuccess headingRef={successRef} state={s} reference={status.reference} />;
   }
 
-  const errorList = Object.entries(errors).filter(([, v]) => v);
-  const failed = status.state === "done" && !status.result.ok ? status.result : null;
+  const submitting = status.state === "submitting";
+  const errorCount = Object.values(errors).filter(Boolean).length;
 
   return (
-    <form noValidate onSubmit={onSubmit} aria-labelledby="page-title" className="space-y-6">
-      {errorList.length ? (
-        <div ref={summaryRef} tabIndex={-1} role="alert" className="scroll-mt-28 rounded-md border border-error bg-error-soft p-4 focus:outline-2 focus:outline-error">
-          <p className="font-semibold text-error">Please check {errorList.length === 1 ? "one field" : `${errorList.length} fields`}:</p>
-          <ul className="mt-2 space-y-1 t-small">
-            {errorList.map(([k, v]) => (
-              <li key={k}>
-                <a href={`#${k}`} className="text-error underline underline-offset-2">
-                  {LABELS[k]}: {v}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-
-      {failed ? (
-        <div role="alert" className="rounded-md border border-line-strong bg-soft p-5">
-          <p className="t-h4 text-navy">
-            {failed.code === "not_connected" ? "Online booking isn't connected yet." : "Your booking couldn't be sent right now."}
-          </p>
-          <p className="mt-2 max-w-[52ch] text-body">
-            {failed.code === "not_connected"
-              ? "Your details have not been sent. Message Velto on WhatsApp to book your pickup now."
-              : "Please try again, or message Velto on WhatsApp and we will book it for you."}
-          </p>
-          <WhatsAppButton href={WHATSAPP_URL} placement="booking_error" className="mt-4" />
-        </div>
-      ) : null}
-
-      <div className="grid gap-6 md:grid-cols-2 md:gap-5">
-        <TextField id="name" label="Name" autoComplete="name" value={data.name} onChange={set("name")} error={errors.name} required />
-        <TextField
-          id="phone"
-          label="Phone or WhatsApp number"
-          type="tel"
-          inputMode="tel"
-          autoComplete="tel"
-          value={data.phone}
-          onChange={set("phone")}
-          error={errors.phone}
-          required
-        />
-      </div>
-
-      <SelectField
-        id="area"
-        label="Area"
-        value={data.area}
-        onChange={set("area")}
-        error={errors.area}
-        required
-        helper={
-          data.area === OUTSIDE_AREA ? (
-            <span className="text-navy">
-              Pickup outside Uttara Sectors 1–18 isn&apos;t automatically available. Ask us on WhatsApp before booking.
-            </span>
-          ) : undefined
-        }
-      >
-        <option value="" disabled>
-          Choose your sector
-        </option>
-        {AREA_OPTIONS.map((a) => (
-          <option key={a} value={a}>
-            {a}
-          </option>
-        ))}
-      </SelectField>
-
-      <TextField
-        id="address"
-        label="Pickup address"
-        helper="House, road and sector."
-        autoComplete="street-address"
-        value={data.address}
-        onChange={set("address")}
-        error={errors.address}
-        required
-      />
-
-      <div className="grid gap-6 md:grid-cols-2 md:gap-5">
-        <SelectField id="service" label="What do you need cleaned?" optional value={data.service} onChange={set("service")}>
-          <option value="">Not sure, or a mix</option>
-          {BOOKING_SERVICES.map((s) => (
-            <option key={s.value} value={s.value}>
-              {s.label}
-            </option>
-          ))}
-        </SelectField>
-        <TextField
-          id="preferredPickup"
-          label="Preferred pickup time"
-          optional
-          placeholder="For example: tomorrow after 5 PM"
-          value={data.preferredPickup}
-          onChange={set("preferredPickup")}
-        />
-      </div>
-
-      <TextAreaField
-        id="notes"
-        label="Notes"
-        optional
-        helper="Anything we should know, such as a garment that needs a closer look."
-        value={data.notes}
-        onChange={set("notes")}
-      />
-
-      <div className="flex flex-col gap-3 border-t border-line pt-6 md:flex-row md:items-center md:gap-5">
-        <button
-          type="submit"
-          disabled={status.state === "submitting"}
-          className="inline-flex h-[52px] shrink-0 items-center justify-center whitespace-nowrap rounded-md bg-action px-7 text-base font-semibold text-white hover:bg-action-hover disabled:bg-disabled-bg disabled:text-disabled-text lg:h-12"
+    <>
+      <h1 id="page-title" className="t-h1 text-navy">
+        Book a pickup
+      </h1>
+      <p className="mt-3 t-body text-body md:mt-4 md:t-body-lg">{intro}</p>
+      <div className="mt-8 md:mt-10">
+        <form
+          noValidate
+          onSubmit={onSubmit}
+          aria-labelledby="page-title"
+          className="space-y-6 [&_input]:scroll-mt-32 [&_select]:scroll-mt-32 [&_textarea]:scroll-mt-32"
         >
-          {status.state === "submitting" ? "Sending…" : "Book a Pickup"}
-        </button>
-        <p className="t-small text-secondary">Orders of ৳499+ qualify for free pickup and delivery.</p>
+          <Group title="What needs cleaning?">
+            {serviceOpen ? (
+              <ChoiceTiles
+                name="service"
+                label="What needs cleaning?"
+                options={BOOKING_SERVICES}
+                value={s.service}
+                onChange={(v) => update("service", v)}
+                columns="grid-cols-3 [&>label:last-child]:col-span-3"
+                segmented
+              />
+            ) : (
+              <div className="flex min-h-11 items-center justify-between gap-4 rounded-md border border-blue bg-[#f0f7fc] px-3.5 py-2">
+                <span className="font-semibold text-navy">{serviceLabel(s.service)}</span>
+                <button
+                  type="button"
+                  onClick={() => setServiceOpen(true)}
+                  className="min-h-11 rounded-sm px-1 t-small font-semibold text-navy underline decoration-blue/60 underline-offset-4 hover:decoration-blue"
+                >
+                  Change<span className="sr-only"> service</span>
+                </button>
+              </div>
+            )}
+          </Group>
+
+          <Group title="Where should we collect from?">
+            <div>
+              <FieldLabel htmlFor="booking-sector">Sector</FieldLabel>
+              <div className="relative mt-2">
+                <select
+                  id="booking-sector"
+                  name="sector"
+                  value={s.sector}
+                  onChange={(e) => update("sector", e.target.value)}
+                  aria-invalid={errors.sector ? true : undefined}
+                  aria-describedby={errors.sector ? "booking-sector-error" : s.sector === OUTSIDE ? "booking-outside" : undefined}
+                  className={`${inputBase} ${inputHeight} appearance-none pr-11`}
+                >
+                  <option value="" disabled>
+                    Choose your sector in Uttara
+                  </option>
+                  {SECTORS.map((n) => (
+                    <option key={n} value={String(n)}>
+                      Sector {n}
+                    </option>
+                  ))}
+                  <option value={OUTSIDE}>Outside Sectors 1–18</option>
+                </select>
+                <svg viewBox="0 0 16 16" aria-hidden="true" className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-navy">
+                  <path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              <ErrorText id="booking-sector-error">{errors.sector}</ErrorText>
+              {s.sector === OUTSIDE ? (
+                <p id="booking-outside" className="mt-2 t-small text-navy">
+                  We collect across Uttara Sectors 1–18. Outside that area we need to check first, so we&apos;ll
+                  confirm before promising a pickup.
+                </p>
+              ) : null}
+            </div>
+
+            <div>
+              <FieldLabel htmlFor="booking-address">House and road</FieldLabel>
+              <input
+                id="booking-address"
+                name="address"
+                type="text"
+                autoComplete="address-line1"
+                enterKeyHint="next"
+                placeholder="e.g. House 12, Road 7"
+                value={s.address}
+                onChange={(e) => update("address", e.target.value)}
+                aria-invalid={errors.address ? true : undefined}
+                aria-describedby={errors.address ? "booking-address-error" : undefined}
+                className={`${inputBase} ${inputHeight} mt-2`}
+              />
+              <ErrorText id="booking-address-error">{errors.address}</ErrorText>
+            </div>
+          </Group>
+
+          <Group title="When suits you?" hint="Optional. We'll confirm the exact time with you.">
+            <div>
+              <ChoiceTiles
+                name="day"
+                label="Pickup day"
+                options={DAYS}
+                value={s.day || null}
+                onChange={(v) => update("day", v)}
+                columns="grid-cols-3"
+                segmented
+              />
+              {s.day === "other" ? (
+                <div className="mt-3">
+                  <FieldLabel htmlFor="booking-date">Date</FieldLabel>
+                  <input
+                    id="booking-date"
+                    name="date"
+                    type="date"
+                    min={isoDate(0)}
+                    value={s.date}
+                    onChange={(e) => update("date", e.target.value)}
+                    aria-invalid={errors.date ? true : undefined}
+                    aria-describedby={errors.date ? "booking-date-error" : undefined}
+                    className={`${inputBase} ${inputHeight} mt-2`}
+                  />
+                  <ErrorText id="booking-date-error">{errors.date}</ErrorText>
+                </div>
+              ) : null}
+            </div>
+            <ChoiceTiles
+              name="time"
+              label="Pickup time"
+              options={TIMES}
+              value={s.time || null}
+              onChange={(v) => update("time", v)}
+              columns="grid-cols-4"
+              segmented
+            />
+          </Group>
+
+          <Group title="Your details">
+            <div>
+              <FieldLabel htmlFor="booking-name">Name</FieldLabel>
+              <input
+                id="booking-name"
+                name="name"
+                type="text"
+                autoComplete="name"
+                autoCapitalize="words"
+                enterKeyHint="next"
+                value={s.name}
+                onChange={(e) => update("name", e.target.value)}
+                aria-invalid={errors.name ? true : undefined}
+                aria-describedby={errors.name ? "booking-name-error" : undefined}
+                className={`${inputBase} ${inputHeight} mt-2`}
+              />
+              <ErrorText id="booking-name-error">{errors.name}</ErrorText>
+            </div>
+
+            <div>
+              <FieldLabel htmlFor="booking-phone">Phone or WhatsApp</FieldLabel>
+              <p id="booking-phone-help" className="mt-1 t-small text-secondary">
+                We&apos;ll use this to confirm your pickup.
+              </p>
+              <input
+                id="booking-phone"
+                name="phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                enterKeyHint="done"
+                placeholder="01XXX XXXXXX"
+                value={s.phone}
+                onChange={(e) => update("phone", e.target.value)}
+                onBlur={checkPhoneOnBlur}
+                aria-invalid={errors.phone ? true : undefined}
+                aria-describedby={errors.phone ? "booking-phone-help booking-phone-error" : "booking-phone-help"}
+                className={`${inputBase} ${inputHeight} mt-2`}
+              />
+              <ErrorText id="booking-phone-error">{errors.phone}</ErrorText>
+            </div>
+
+            {notesOpen ? (
+              <div>
+                <FieldLabel htmlFor="booking-notes">
+                  Note for Velto<span className="font-normal text-secondary">, optional</span>
+                </FieldLabel>
+                <textarea
+                  id="booking-notes"
+                  name="notes"
+                  rows={3}
+                  placeholder="e.g. a saree with a stain, or call when you arrive"
+                  value={s.notes}
+                  onChange={(e) => update("notes", e.target.value)}
+                  className={`${inputBase} mt-2 min-h-[96px] py-3 leading-[1.4]`}
+                />
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setNotesOpen(true)}
+                aria-expanded={false}
+                className="inline-flex min-h-11 items-center gap-2 rounded-sm font-semibold text-navy underline decoration-blue/60 underline-offset-[6px] hover:decoration-blue"
+              >
+                <span aria-hidden="true" className="text-blue no-underline">
+                  +
+                </span>
+                Add a note
+              </button>
+            )}
+          </Group>
+
+          {/* Submit — status lives right where the thumb already is */}
+          <div className="border-t border-line pt-6">
+            {status.state === "failed" ? (
+              <div ref={statusRef} tabIndex={-1} role="alert" className="mb-5 rounded-md border border-line-strong bg-soft p-4 focus:outline-2 focus:outline-blue">
+                <p className="font-semibold text-navy">
+                  {status.code === "not_connected" ? "Online booking isn't switched on yet." : "We couldn't send your booking just now."}
+                </p>
+                <p className="mt-1 t-small text-body">
+                  {status.code === "not_connected"
+                    ? "Nothing was sent. Send the same details on WhatsApp instead. They're already filled in."
+                    : "Nothing is lost. Try again, or send the same details on WhatsApp."}
+                </p>
+                <WhatsAppFallback href={whatsappHref(s)} placement="booking_error" label="Send on WhatsApp" className="mt-3 w-full md:w-auto" />
+              </div>
+            ) : null}
+
+            {errorCount > 0 ? (
+              <p role="status" className="mb-4 t-small font-medium text-error">
+                {errorCount === 1 ? "One thing needs checking above." : `${errorCount} things need checking above.`}
+              </p>
+            ) : null}
+
+            <button
+              type="submit"
+              disabled={submitting}
+              aria-busy={submitting || undefined}
+              className="inline-flex h-[54px] w-full items-center justify-center gap-2.5 whitespace-nowrap rounded-md bg-action px-7 text-base font-semibold text-white hover:bg-action-hover active:bg-action-active disabled:cursor-wait disabled:opacity-85 md:h-12 md:w-auto"
+            >
+              {submitting ? (
+                <>
+                  <span aria-hidden="true" className="size-4 animate-spin rounded-full border-2 border-white/40 border-t-white motion-reduce:animate-none" />
+                  Sending…
+                </>
+              ) : (
+                "Book a Pickup"
+              )}
+            </button>
+
+            <ul className="mt-4 space-y-1.5 t-small text-secondary">
+              <li>Nothing to pay now. We confirm the pickup time with you first.</li>
+              <li>Free pickup &amp; delivery on orders of {FREE_DELIVERY_THRESHOLD}+.</li>
+            </ul>
+          </div>
+        </form>
       </div>
-    </form>
+    </>
+  );
+}
+
+/* ---------- success: integration-ready, never shows an invented reference ---------- */
+
+function BookingSuccess({
+  headingRef,
+  state,
+  reference,
+}: {
+  headingRef: Ref<HTMLHeadingElement>;
+  state: FormState;
+  reference?: string;
+}) {
+  const when = pickupLabel(state);
+  const firstName = state.name.trim().split(/\s+/)[0];
+  const rows = [
+    { label: "Service", value: state.service === null ? "Not specified" : serviceLabel(state.service) },
+    { label: "Pickup from", value: `${state.address.trim()}, ${areaLabel(state.sector)}` },
+    { label: "Preferred time", value: when ? when.charAt(0).toUpperCase() + when.slice(1) : "No preference" },
+    { label: "We'll contact", value: displayPhone(state.phone) },
+  ];
+
+  return (
+    <div data-booking-success>
+      <h1 id="page-title" ref={headingRef} tabIndex={-1} className="scroll-mt-32 t-h1 text-navy focus:outline-none">
+        Pickup request received
+      </h1>
+      <p className="mt-3 t-body text-body md:mt-4 md:t-body-lg">
+        Thanks, {firstName}. We&apos;ll call or WhatsApp you to confirm the pickup time.
+      </p>
+
+      <dl className="mt-7 border-t border-navy">
+        {rows.map((r) => (
+          <div key={r.label} className="grid grid-cols-[7.5rem_1fr] gap-4 border-b border-line py-3.5 md:grid-cols-[10rem_1fr]">
+            <dt className="t-small font-semibold text-navy">{r.label}</dt>
+            <dd className="min-w-0 break-words t-small text-body">{r.value}</dd>
+          </div>
+        ))}
+        <div className="grid grid-cols-[7.5rem_1fr] gap-4 border-b border-line py-3.5 md:grid-cols-[10rem_1fr]">
+          <dt className="t-small font-semibold text-navy">Reference</dt>
+          <dd className="t-small text-body">
+            {reference ? (
+              <strong className="font-semibold text-navy">{reference}</strong>
+            ) : (
+              // INTEGRATION PLACEHOLDER: the reference is issued by Velto Ops once booking is connected.
+              <span data-placeholder="booking-reference" className="text-secondary">
+                Shared when we confirm
+              </span>
+            )}
+          </dd>
+        </div>
+      </dl>
+
+      <h3 className="mt-8 t-label uppercase text-navy">What happens next</h3>
+      <ol className="mt-3 space-y-2.5 text-body">
+        {[
+          "We call or WhatsApp you to confirm the pickup time.",
+          "We collect from your door.",
+          "Your order comes back checked, cleaned, finished and packed.",
+        ].map((step, i) => (
+          <li key={step} className="flex gap-3">
+            <span className="t-label pt-[4px] text-blue">{String(i + 1).padStart(2, "0")}</span>
+            {step}
+          </li>
+        ))}
+      </ol>
+
+      <div className="mt-8 flex flex-col gap-3 border-t border-line pt-6 md:flex-row md:flex-wrap md:items-center">
+        <WhatsAppFallback href={whatsappHref(state)} placement="booking_success" label="Change something on WhatsApp" />
+        <ButtonLink href="/" variant="secondary">
+          Back to the homepage
+        </ButtonLink>
+      </div>
+    </div>
   );
 }
