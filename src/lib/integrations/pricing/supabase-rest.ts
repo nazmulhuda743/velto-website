@@ -75,6 +75,7 @@ export function createSupabasePricingSource(
         response = await request(url, {
           headers: {
             apikey: config.secretKey,
+            Authorization: `Bearer ${config.secretKey}`,
             Accept: "application/json",
           },
           cache: "no-store",
