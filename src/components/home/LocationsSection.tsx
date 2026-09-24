@@ -58,7 +58,7 @@ export async function LocationsSection() {
   return (
     <section id="locations" aria-labelledby="locations-title" className="py-(--space-section)">
       <div className="container-page">
-        <SectionIntro id="locations-title" title="Built around Uttara.">
+        <SectionIntro id="locations-title" eyebrow="Locations" title="Built around Uttara.">
           <p>
             Velto serves Uttara Sectors 1–18, with locations in Sector 11 and Sector 18.
           </p>

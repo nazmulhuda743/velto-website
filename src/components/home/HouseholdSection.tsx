@@ -34,6 +34,7 @@ export function HouseholdSection() {
         <div className="col-span-4 md:col-span-4 xl:col-span-5 xl:col-start-8">
           <SectionIntro
             id="household-title"
+            eyebrow="Household care"
             title="For curtains, carpets and bedding, start with a few details."
           >
             <p>

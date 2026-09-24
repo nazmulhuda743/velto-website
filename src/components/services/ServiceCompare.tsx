@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowRight } from "@/components/ui/icons";
+import { SERVICE_SUMMARY } from "@/content/service-summaries";
 import { formatAmount } from "@/lib/format-price";
 import { getServicePrices } from "@/lib/service-prices";
 
@@ -10,21 +11,21 @@ const OPTIONS: { slug: CompareSlug; name: string; does: string; time: string; fo
   {
     slug: "wash-and-iron",
     name: "Wash & Iron",
-    does: "Washed, dried, ironed and packed.",
+    does: SERVICE_SUMMARY["wash-and-iron"],
     time: "Usually around 72 hours",
     forWhat: "Everyday clothes and linen that need washing.",
   },
   {
     slug: "ironing",
     name: "Ironing",
-    does: "Ironed, finished and packed. You wash them at home.",
+    does: SERVICE_SUMMARY.ironing,
     time: "General orders usually around 48 hours",
     forWhat: "Clothes already washed that just need pressing.",
   },
   {
     slug: "dry-cleaning",
     name: "Dry Cleaning",
-    does: "Assessed, dry cleaned, pressed and packed.",
+    does: SERVICE_SUMMARY["dry-cleaning"],
     time: "Usually around 72 hours",
     forWhat: "Suits, saris, sherwanis and garments that need a closer look.",
   },

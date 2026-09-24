@@ -49,17 +49,19 @@ const DEFAULT_INTRO = (
 
 export function ProcessStory({
   title = "What happens to your clothes after pickup?",
+  eyebrow = "After pickup",
   intro = DEFAULT_INTRO,
   showInsert = true,
 }: {
   title?: string;
+  eyebrow?: string;
   intro?: React.ReactNode;
   showInsert?: boolean;
 } = {}) {
   return (
     <section id="process" aria-labelledby="process-title" className="py-(--space-section)">
       <div className="container-page">
-        <SectionIntro id="process-title" title={title} titleClassName="max-w-[18ch]">
+        <SectionIntro id="process-title" eyebrow={eyebrow} title={title} titleClassName="max-w-[18ch]">
           {intro}
         </SectionIntro>
 

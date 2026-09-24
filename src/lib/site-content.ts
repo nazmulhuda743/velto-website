@@ -154,11 +154,20 @@ export async function getLocations(): Promise<Location[]> {
   return LOCATIONS.map((l) => ({ ...l, ...settings.outlets[l.id] }));
 }
 
+/**
+ * Google proof for the primary (Sector 11) profile only, never blended across
+ * outlets (§21). Counts of 100+ are floored to the hundred ("100+").
+ */
+export async function getGoogleProof() {
+  const [primary] = await getLocations();
+  const reviews = primary.reviewCount >= 100 ? `${Math.floor(primary.reviewCount / 100) * 100}+` : String(primary.reviewCount);
+  return { live: Boolean(primary.rating && primary.reviewCount), rating: primary.rating, reviews, location: primary };
+}
+
 /** "5.0 on Google · 100+ reviews" for the primary (Sector 11) profile. */
 export async function getGoogleProofLabel() {
-  const [primary] = await getLocations();
-  const rounded = primary.reviewCount >= 100 ? `${Math.floor(primary.reviewCount / 100) * 100}+` : String(primary.reviewCount);
-  return primary.rating && primary.reviewCount ? `${primary.rating} on Google · ${rounded} reviews` : GOOGLE_PROOF.fallback;
+  const proof = await getGoogleProof();
+  return proof.live ? `${proof.rating} on Google · ${proof.reviews} reviews` : GOOGLE_PROOF.fallback;
 }
 
 export async function resolveImage(image: ImageSlot): Promise<ImageSlot> {

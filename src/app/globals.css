@@ -319,44 +319,6 @@ body {
 
 /* ---------- Interaction details ---------- */
 
-/* Auto-scrolling strips (hero proof, reviews): two identical groups, the track moves by one group. */
-@keyframes marquee-scroll {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-.marquee {
-  mask-image: linear-gradient(to right, transparent, #000 5%, #000 95%, transparent);
-}
-.marquee-track {
-  display: flex;
-  width: max-content;
-  animation: marquee-scroll var(--marquee-duration, 40s) linear infinite;
-}
-.marquee:hover .marquee-track,
-.marquee:focus-within .marquee-track,
-.marquee[data-paused="true"] .marquee-track {
-  animation-play-state: paused;
-}
-@media (prefers-reduced-motion: reduce) {
-  .marquee {
-    overflow-x: auto;
-    mask-image: none;
-  }
-  .marquee-track {
-    animation: none;
-  }
-  .marquee-copy {
-    display: none;
-  }
-  .marquee-toggle {
-    display: none;
-  }
-}
-
 /* FAQ accordion (native <details>) */
 .faq-item summary::-webkit-details-marker {
   display: none;

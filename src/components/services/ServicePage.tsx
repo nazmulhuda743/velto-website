@@ -1,11 +1,11 @@
 import { FAQ, FAQS, FAQ_KEYS, type FAQItem } from "@/components/home/FAQ";
 import { FinalBookingCTA } from "@/components/home/FinalBookingCTA";
-import { GoogleProof, ProofList } from "@/components/home/ProofLine";
+import { GoogleProof } from "@/components/home/ProofLine";
 import { MobileConversionBar } from "@/components/layout/MobileConversionBar";
 import { PageHero } from "@/components/pages/PageHero";
 import { ButtonLink, WhatsAppButton } from "@/components/ui/Button";
 import type { FAQRef, ServiceContent } from "@/content/services";
-import { WHATSAPP_URL, bookHref, quoteHref } from "@/content/site";
+import { FREE_DELIVERY_THRESHOLD, SERVICE_AREA, WHATSAPP_URL, bookHref, quoteHref } from "@/content/site";
 import { ServiceBlockView } from "./ServiceBlocks";
 import { ServiceSchema } from "./ServiceSchema";
 
@@ -25,6 +25,40 @@ const toFAQ = (ref: FAQRef): FAQItem =>
           </>
         ),
       };
+
+const noStop = (v: string) => v.replace(/\.$/, "");
+
+/** S1: the four answers a customer scans for, straight under the hero. Facts only from the service content. */
+function AtAGlance({ service }: { service: ServiceContent }) {
+  const rows = [
+    { label: "Pricing", value: service.glance.pricing },
+    { label: "Turnaround", value: service.glance.turnaround },
+    { label: "Pickup", value: `${SERVICE_AREA}. Free on orders of ${FREE_DELIVERY_THRESHOLD}+` },
+    { label: "Best for", value: service.glance.bestFor },
+  ];
+  return (
+    <section aria-labelledby="glance-title" className="pb-14 md:pb-20 xl:pb-24">
+      <div className="container-page">
+        <h2 id="glance-title" className="t-label uppercase text-action">
+          At a glance
+        </h2>
+        <dl className="mt-3 grid border-t border-navy md:grid-cols-2 xl:grid-cols-4">
+          {rows.map((r, i) => (
+            <div
+              key={r.label}
+              className={`grid grid-cols-[6.5rem_1fr] gap-4 border-b border-line py-4 md:block md:py-5 md:pr-6 xl:border-b-0 ${
+                i % 2 === 1 ? "md:border-l md:pl-6" : ""
+              } ${i === 2 ? "xl:border-l xl:pl-6" : ""}`}
+            >
+              <dt className="t-label uppercase text-secondary">{r.label}</dt>
+              <dd className="text-[16px] font-semibold leading-snug text-navy md:mt-2 md:text-[17px]">{noStop(r.value)}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </section>
+  );
+}
 
 /**
  * Service page: shared hero, typed content blocks in the order each service
@@ -71,7 +105,7 @@ export function ServicePage({ service }: { service: ServiceContent }) {
           );
 
   const primaryOverride = isQuote
-    ? { href: quoteHref(quoteService, `${source}-final`), label: "Request a Quote" }
+    ? { href: quoteHref(quoteService, `${source}-final`), label: "Request a Quote", helper: "Share the details. We\u2019ll confirm the price with you before pickup." }
     : undefined;
 
   return (
@@ -97,21 +131,14 @@ export function ServicePage({ service }: { service: ServiceContent }) {
             {secondary}
           </>
         }
-        aside={
-          <>
-            {service.heroGoogleProof ? (
-              <div className="mb-3">
-                <GoogleProof placement="service_hero" />
-              </div>
-            ) : null}
-            <ProofList items={service.heroFacts} />
-          </>
-        }
+        aside={service.heroGoogleProof ? <GoogleProof placement="service_hero" /> : undefined}
       >
         {service.intro.map((p) => (
           <p key={p}>{p}</p>
         ))}
       </PageHero>
+
+      <AtAGlance service={service} />
 
       {service.blocks.map((block, i) => (
         <ServiceBlockView

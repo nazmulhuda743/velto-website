@@ -57,7 +57,8 @@ function Result({ order }: { order: Order }) {
     { label: "Items", value: order.items ? String(order.items) : null },
     { label: "Service", value: order.services?.length ? order.services.map((x) => x.replace("Wash + Iron", "Wash & Iron")).join(", ") + (order.express ? " · Express" : "") : null },
     { label: "Collected", value: date(order.pickupDate) },
-    { label: order.deliveredAt ? "Delivered" : "Expected back", value: date(order.deliveredAt) ?? expected },
+    // "Expected back" leads the result instead; only the delivered date stays in the facts.
+    { label: "Delivered", value: date(order.deliveredAt) },
     { label: "Order total", value: taka(order.total) },
     {
       label: "Payment",
@@ -66,15 +67,25 @@ function Result({ order }: { order: Order }) {
   ].filter((f) => f.value);
 
   return (
-    <div className="rounded-lg border border-line bg-white p-5 md:p-8">
-      <p className="t-label uppercase text-secondary">Order {order.orderNumber}</p>
-      <h2 className="mt-2 t-h3 text-navy">
-        {cancelled ? "This order was cancelled." : STAGES[Math.max(current, 0)].title}
+    <div className="rounded-md border border-line bg-white p-5 md:p-8">
+      <p className="t-label uppercase text-secondary">
+        Order {order.orderNumber} · <span className="text-action">Current status</span>
+      </p>
+      <h2 className="mt-3 t-h1 text-navy">
+        {cancelled ? "Cancelled" : STAGES[Math.max(current, 0)].title}
       </h2>
       {cancelled ? (
-        <p className="mt-2 text-secondary">If this doesn&apos;t look right, message Velto on WhatsApp.</p>
+        <p className="mt-3 t-body-lg text-body">This order was cancelled. If this doesn&apos;t look right, message Velto on WhatsApp.</p>
       ) : (
-        <ol className="mt-6 grid gap-0 md:grid-cols-5 md:gap-3">
+        <>
+          <p className="mt-3 t-body-lg text-body">{STAGES[Math.max(current, 0)].copy}</p>
+          {expected && !order.deliveredAt ? (
+            <p className="mt-2 font-semibold text-navy">Expected back {expected}</p>
+          ) : null}
+        </>
+      )}
+      {cancelled ? null : (
+        <ol aria-label="Order progress" className="mt-8 grid gap-0 border-t border-line pt-6 md:grid-cols-5 md:gap-3">
           {STAGES.map((stage, i) => {
             const done = i <= current;
             return (

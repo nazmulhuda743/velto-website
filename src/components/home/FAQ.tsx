@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Eyebrow } from "./SectionIntro";
 
 export type FAQItem = { q: string; a: ReactNode };
 
@@ -95,9 +96,11 @@ export const faqItems = (...keys: (keyof typeof FAQ_KEYS)[]) => keys.map((k) => 
 export function FAQ({
   title = "A few things worth knowing before you book.",
   items = FAQS,
+  eyebrow = "Questions",
   className = "",
 }: {
   title?: string;
+  eyebrow?: string;
   items?: FAQItem[];
   className?: string;
 }) {
@@ -105,9 +108,12 @@ export function FAQ({
     <section id="faq" aria-labelledby="faq-title" className={`py-(--space-section) ${className}`}>
       <div className="container-page grid-page gap-y-(--space-intro-content)">
         <div className="col-span-4 md:col-span-8 xl:col-span-4">
-          <h2 id="faq-title" className="t-h2 max-w-[16ch] text-navy xl:sticky xl:top-[100px]">
-            {title}
-          </h2>
+          <div className="xl:sticky xl:top-[100px]">
+            <Eyebrow>{eyebrow}</Eyebrow>
+            <h2 id="faq-title" className="t-h2 max-w-[16ch] text-navy">
+              {title}
+            </h2>
+          </div>
         </div>
         <div className="col-span-4 md:col-span-8 xl:col-span-7 xl:col-start-6">
           <div className="border-t border-navy">

@@ -1,9 +1,9 @@
-import { ButtonLink, WhatsAppButton } from "@/components/ui/Button";
+import { ButtonLink } from "@/components/ui/Button";
+import { WhatsAppIcon } from "@/components/ui/icons";
 import { ResponsiveImage } from "@/components/ui/ResponsiveImage";
 import { IMAGES, type ImageSlot } from "@/content/mock";
-import { FREE_DELIVERY_THRESHOLD, SERVICE_AREA, WHATSAPP_URL, bookHref } from "@/content/site";
+import { FREE_DELIVERY_THRESHOLD, WHATSAPP_URL, bookHref } from "@/content/site";
 import { getGoogleProofLabel } from "@/lib/site-content";
-import { ProofList } from "./ProofLine";
 import { SectionIntro } from "./SectionIntro";
 
 type FinalBookingCTAProps = {
@@ -15,7 +15,7 @@ type FinalBookingCTAProps = {
   service?: string;
   image?: ImageSlot;
   /** Overrides the primary action (e.g. Request a Quote on quote-first pages). */
-  primary?: { href: string; label: string };
+  primary?: { href: string; label: string; helper?: string };
 };
 
 const DEFAULT_BODY = (
@@ -41,27 +41,35 @@ export async function FinalBookingCTA({
           <SectionIntro id="final-title" title={title} inverse>
             {body}
           </SectionIntro>
-          <div className="mt-8 flex flex-col gap-3 md:flex-row md:flex-wrap xl:mt-10">
-            {primary ? (
-              <ButtonLink href={primary.href} placement="final">
-                {primary.label}
-              </ButtonLink>
-            ) : (
-              <ButtonLink href={bookHref(source, service)} event="book_pickup_click" placement="final">
-                Book a Pickup
-              </ButtonLink>
-            )}
-            <WhatsAppButton href={WHATSAPP_URL} placement="final" inverse />
+          {/* One decisive action; WhatsApp stays available but visibly secondary. */}
+          <div className="mt-8 xl:mt-10">
+            <ButtonLink
+              href={primary ? primary.href : bookHref(source, service)}
+              event={primary ? undefined : "book_pickup_click"}
+              placement="final"
+              className="w-full !h-14 !px-8 !text-[17px] md:w-auto"
+            >
+              {primary ? primary.label : "Book a Pickup"}
+            </ButtonLink>
+            <p className="mt-3 t-small text-white/80">
+              {primary?.helper ?? "Send the request. We’ll confirm the pickup time with you."}
+            </p>
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-6 inline-flex min-h-11 items-center gap-2.5 font-semibold text-white underline decoration-white/40 underline-offset-[6px] hover:decoration-white"
+              data-analytics="whatsapp_click"
+              data-placement="final"
+            >
+              <WhatsAppIcon className="size-5 text-white" />
+              Or message Velto on WhatsApp
+              <span className="sr-only"> (opens in a new tab)</span>
+            </a>
           </div>
-          <ProofList
-            inverse
-            className="mt-10"
-            items={[
-              await getGoogleProofLabel(),
-              `Serving ${SERVICE_AREA}`,
-              `Free pickup & delivery on orders of ${FREE_DELIVERY_THRESHOLD}+`,
-            ]}
-          />
+          <p className="mt-10 border-t border-white/20 pt-4 t-small text-white/75">
+            {await getGoogleProofLabel()} · Free pickup &amp; delivery on orders of {FREE_DELIVERY_THRESHOLD}+
+          </p>
         </div>
         <div className="col-span-4 md:col-span-4 md:col-start-1 md:row-start-1 xl:col-span-7">
           <ResponsiveImage

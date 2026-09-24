@@ -14,7 +14,7 @@ export function FindAPrice() {
     <section id="find-a-price" aria-labelledby="price-title" className="bg-soft py-(--space-section)">
       <div className="container-page grid-page gap-y-12">
         <div className="col-span-4 md:col-span-8 xl:col-span-7">
-          <SectionIntro id="price-title" title="Check the price before you send it.">
+          <SectionIntro id="price-title" eyebrow="Pricing" title="Check the price before you send it.">
             <p>
               Search for an item such as a shirt, blazer or saree to see the services available and
               the current Velto price.

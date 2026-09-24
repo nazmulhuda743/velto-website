@@ -4,8 +4,12 @@
  * TODO_VERIFY. Do not add facts here that are not in the specification.
  */
 
-/** Word joiners keep "1–18" on one line. */
-export const SERVICE_AREA = "Uttara Sectors 1\u2060–\u206018";
+/** Confirmed core pickup sectors (§4). Word joiners keep "1–18" on one line. */
+export const SERVICE_SECTORS = "1\u2060–\u206018";
+export const SERVICE_AREA = `Uttara Sectors ${SERVICE_SECTORS}`;
+
+/** Dry Cleaning and Wash & Iron are usually around 72 hours (§4). A planning figure, never a promise. */
+export const USUAL_TURNAROUND_HOURS = 72;
 
 /** Free pickup & delivery threshold (§4). */
 export const FREE_DELIVERY_THRESHOLD = "৳499";

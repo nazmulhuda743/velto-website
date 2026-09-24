@@ -1,7 +1,7 @@
 import { Stars } from "@/components/ui/icons";
-import { Marquee } from "@/components/ui/Marquee";
 import { LOCATIONS } from "@/content/site";
 import { GoogleProof } from "./ProofLine";
+import { Eyebrow } from "./SectionIntro";
 import type { Review } from "@/content/mock";
 import { getSiteContent } from "@/lib/site-content";
 
@@ -20,8 +20,9 @@ const Paragraph = ({ text }: { text: string }) => (
 const COLLAPSE_OVER_CHARS = 600;
 const PREVIEW_CHARS = 300;
 
-function ReviewText({ text }: { text: string }) {
+function ReviewText({ text, plain = false }: { text: string; plain?: boolean }) {
   const paragraphs = text.split("\n\n");
+  if (plain) return paragraphs.map((p, i) => <Paragraph key={i} text={p} />);
   const limit = text.length > COLLAPSE_OVER_CHARS ? PREVIEW_CHARS : Infinity;
   let shown = 0;
   let used = 0;
@@ -53,25 +54,66 @@ function ReviewText({ text }: { text: string }) {
   );
 }
 
-export function ReviewBlock({ review }: { review: Review }) {
-  const pending = review.text === null;
-  const platformLabel = review.platform === "Google" ? "Google review" : "Facebook recommendation";
+/** Where the review came from, stated before the words: platform · outlet, then rating. */
+function ReviewSource({ review }: { review: Review }) {
+  const outlet = LOCATIONS.find((l) => l.id === review.branch)?.name;
   return (
-    <figure className="flex h-full flex-col border-t border-line pt-6" data-mock={pending ? "review" : undefined}>
-      <span aria-hidden="true" className="font-serif text-[44px] leading-[0.6] text-purple">
-        &ldquo;
+    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+      <span className="t-label uppercase text-navy">
+        {review.platform}
+        {outlet ? <span className="font-medium text-secondary"> · {outlet}</span> : null}
       </span>
-      <blockquote className={`mt-4 t-quote ${pending ? "text-secondary" : "text-navy"}`}>
-        {review.text === null ? <p>Verified review will appear here</p> : <ReviewText text={review.text} />}
+      {typeof review.rating === "number" ? (
+        <span className="inline-flex items-center">
+          <Stars />
+          <span className="sr-only">{review.rating} out of 5</span>
+        </span>
+      ) : review.rating === "recommends" ? (
+        <span className="t-small text-secondary">Recommends Velto</span>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Editorial review: source first, then the customer's own words. With a
+ * verified pull line, that line leads and the full text is one tap away.
+ */
+export function ReviewBlock({ review, size = "default" }: { review: Review; size?: "default" | "compact" }) {
+  const pending = review.text === null;
+  const highlight = review.text && review.highlight && review.text.includes(review.highlight) ? review.highlight : null;
+  const platformLabel = review.platform === "Google" ? "See it on Google" : "See it on Facebook";
+  return (
+    <figure className="flex h-full flex-col border-t border-navy pt-5" data-mock={pending ? "review" : undefined}>
+      <ReviewSource review={review} />
+      <blockquote className={`mt-5 ${pending ? "t-quote text-secondary" : "text-navy"}`}>
+        {review.text === null ? (
+          <p>Verified review will appear here</p>
+        ) : highlight ? (
+          <>
+            <p className={size === "compact" ? "t-quote" : "font-serif text-[22px] leading-[1.35] md:text-[26px]"}>
+              &ldquo;{highlight}&rdquo;
+            </p>
+            <details className="group/review mt-4">
+              <summary className="inline-flex min-h-11 cursor-pointer items-center t-small font-semibold text-navy underline decoration-blue/60 underline-offset-[6px] group-open/review:hidden">
+                Read the full review
+              </summary>
+              <div className="space-y-3 t-body text-body">
+                <ReviewText text={review.text} plain />
+              </div>
+            </details>
+          </>
+        ) : review.text.length <= COLLAPSE_OVER_CHARS && !review.text.includes("\n") ? (
+          // Short single-paragraph review: quoted whole, like a pull line.
+          <p className="t-quote">&ldquo;{review.text}&rdquo;</p>
+        ) : (
+          <div className="t-quote">
+            <ReviewText text={review.text} />
+          </div>
+        )}
       </blockquote>
       <figcaption className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 pt-6 t-small">
         {review.name ? <span className="font-semibold text-navy">{review.name}</span> : null}
-        {typeof review.rating === "number" ? (
-          <span className="inline-flex items-center gap-1.5">
-            <Stars />
-            <span className="sr-only">{review.rating} out of 5</span>
-          </span>
-        ) : null}
         <ReviewSourceLink review={review} label={platformLabel} className="inline-block py-1 text-secondary underline decoration-blue/50 underline-offset-4 hover:text-navy" />
       </figcaption>
     </figure>
@@ -84,7 +126,7 @@ const reviewHref = (review: Review) =>
 
 function ReviewSourceLink({ review, label, className }: { review: Review; label: string; className: string }) {
   const href = reviewHref(review);
-  if (!href) return <span className="text-secondary">{label}</span>;
+  if (!href) return <span className="text-secondary">{review.platform}</span>;
   return (
     <a
       href={href}
@@ -101,72 +143,27 @@ function ReviewSourceLink({ review, label, className }: { review: Review; label:
   );
 }
 
-/** Reviews longer than this are clamped in the carousel and read in full on Google. */
-const CARD_FULL_CHARS = 320;
-
-function ReviewCard({ review }: { review: Review }) {
-  if (!review.text || !review.name) return null;
-  const long = review.text.length > CARD_FULL_CHARS;
-  return (
-    <figure className="flex w-[300px] shrink-0 flex-col rounded-lg border border-line bg-white p-6 md:w-[380px] md:p-7">
-      <div className="flex items-center justify-between">
-        {typeof review.rating === "number" ? (
-          <span className="inline-flex items-center">
-            <Stars />
-            <span className="sr-only">{review.rating} out of 5</span>
-          </span>
-        ) : (
-          <span />
-        )}
-        <span className="t-caption font-medium text-secondary">{review.platform}</span>
-      </div>
-      <blockquote className="mt-5 font-serif text-[18px] leading-[1.5] text-navy md:text-[19px]">
-        <p className={`whitespace-pre-line ${long ? "line-clamp-7" : ""}`}>{review.text}</p>
-      </blockquote>
-      <figcaption className="mt-auto flex items-center gap-3 border-t border-line pt-5">
-        <span
-          aria-hidden="true"
-          className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-navy text-[15px] font-semibold text-white"
-        >
-          {review.name.charAt(0)}
-        </span>
-        <span className="min-w-0">
-          <span className="block font-semibold leading-snug text-navy">{review.name}</span>
-          <ReviewSourceLink
-            review={review}
-            label={long ? "Read the full review" : "Google review"}
-            className="inline-block py-1 t-small text-secondary underline decoration-blue/50 underline-offset-4 hover:text-navy"
-          />
-        </span>
-      </figcaption>
-    </figure>
-  );
-}
-
+/** Spec §20/§21: three or four reviews, editorial, no carousel. */
 export async function ReviewsSection() {
-  const reviews = (await getSiteContent()).reviews.filter((r) => r.showOnHome && r.text && r.name);
+  const reviews = (await getSiteContent()).reviews.filter((r) => r.showOnHome && r.text && r.name).slice(0, 4);
   if (!reviews.length) return null;
   return (
     <section id="reviews" aria-labelledby="reviews-title" className="bg-warm py-(--space-section)">
-      <div className="container-page flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <h2 id="reviews-title" className="t-h2 text-navy">
-          What customers noticed
-        </h2>
-        <GoogleProof placement="reviews" />
-      </div>
-      <div className="mt-(--space-intro-content)">
-        <Marquee
-          label="customer reviews"
-          seconds={reviews.length * 14}
-          repeat={Math.max(1, Math.ceil(4 / Math.max(reviews.length, 1)))}
-          gapClass="gap-4 md:gap-6"
-          seamClass="pr-4 md:pr-6"
-          className="container-page"
-        >
+      <div className="container-page">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <Eyebrow>Customer proof</Eyebrow>
+            <h2 id="reviews-title" className="t-h2 text-navy">
+              What customers noticed
+            </h2>
+          </div>
+          <GoogleProof placement="reviews" />
+        </div>
+        <div className="mt-(--space-intro-content) grid gap-x-6 gap-y-12 md:grid-cols-2 xl:grid-cols-3">
           {reviews.map((review) => (
-            <ReviewCard key={review.id} review={review} />
+            <ReviewBlock key={review.id} review={review} />
           ))}
-        </Marquee>
+        </div>
       </div>
     </section>
   );
