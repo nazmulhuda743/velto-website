@@ -39,7 +39,8 @@ jobs:
 
           const match = store.match(/function sniffImageType\(head: Buffer\): string \| null \{([\s\S]*?)\n\}/);
           assert(match, 'sniffImageType source not found');
-          const source = `function sniffImageType(head) {${match[1]}\n}; return sniffImageType;`;
+          const body = match[1].replace(/: number/g, '');
+          const source = `function sniffImageType(head) {${body}\n}; return sniffImageType;`;
           const sniff = new Function('Buffer', source)(Buffer);
 
           const jpg = Buffer.from([0xff,0xd8,0xff,0x00,0x10]);
