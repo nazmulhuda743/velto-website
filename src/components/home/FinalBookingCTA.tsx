@@ -1,7 +1,8 @@
 import { ButtonLink, WhatsAppButton } from "@/components/ui/Button";
 import { ResponsiveImage } from "@/components/ui/ResponsiveImage";
 import { IMAGES, type ImageSlot } from "@/content/mock";
-import { FREE_DELIVERY_THRESHOLD, GOOGLE_PROOF, SERVICE_AREA, WHATSAPP_URL, bookHref } from "@/content/site";
+import { FREE_DELIVERY_THRESHOLD, SERVICE_AREA, WHATSAPP_URL, bookHref } from "@/content/site";
+import { getGoogleProofLabel } from "@/lib/site-content";
 import { ProofList } from "./ProofLine";
 import { SectionIntro } from "./SectionIntro";
 
@@ -24,7 +25,7 @@ const DEFAULT_BODY = (
   </>
 );
 
-export function FinalBookingCTA({
+export async function FinalBookingCTA({
   id,
   title = "Ready to send it?",
   body = DEFAULT_BODY,
@@ -56,7 +57,7 @@ export function FinalBookingCTA({
             inverse
             className="mt-10"
             items={[
-              GOOGLE_PROOF.label,
+              await getGoogleProofLabel(),
               `Serving ${SERVICE_AREA}`,
               `Free pickup & delivery on orders of ${FREE_DELIVERY_THRESHOLD}+`,
             ]}

@@ -1,18 +1,19 @@
 import { Stars } from "@/components/ui/icons";
-import { GOOGLE_PROOF, LOCATIONS } from "@/content/site";
+import { getGoogleProofLabel, getLocations } from "@/lib/site-content";
 
 /**
  * Durable Google proof (spec §21). The 5.0 rating refers only to the primary
  * Sector 11 profile, so the link goes to that profile's reviews.
  */
-export function GoogleProof({
+export async function GoogleProof({
   placement,
   inverse = false,
 }: {
   placement: string;
   inverse?: boolean;
 }) {
-  const primary = LOCATIONS[0];
+  const [primary] = await getLocations();
+  const label = await getGoogleProofLabel();
   return (
     <a
       href={primary.reviewsUrl}
@@ -27,7 +28,7 @@ export function GoogleProof({
     >
       <Stars className={inverse ? "!text-cyan" : ""} />
       <span className="underline decoration-transparent underline-offset-4 transition-colors group-hover:decoration-current">
-        {GOOGLE_PROOF.label}
+        {label}
       </span>
       <span className="sr-only"> (opens Google reviews in a new tab)</span>
     </a>

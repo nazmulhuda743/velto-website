@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { ImageSlot } from "@/content/mock";
+import { resolveImage } from "@/lib/site-content";
 
 type ResponsiveImageProps = {
   image: ImageSlot;
@@ -19,8 +20,8 @@ type ResponsiveImageProps = {
  * otherwise a clearly-marked MOCK frame that carries the shot brief so the
  * layout, crop and space reservation can be reviewed without stock imagery.
  */
-export function ResponsiveImage({
-  image,
+export async function ResponsiveImage({
+  image: slot,
   sizes,
   aspect,
   priority = false,
@@ -28,6 +29,8 @@ export function ResponsiveImage({
   tone = "light",
   decorative = false,
 }: ResponsiveImageProps) {
+  // Photos replaced from the admin dashboard override the built-in slot.
+  const image = await resolveImage(slot);
   if (image.src) {
     return (
       <div className={`relative overflow-hidden rounded-md bg-soft ${aspect} ${className}`}>

@@ -7,6 +7,8 @@
  */
 
 export type ImageSlot = {
+  /** Stable slot id ("hero", "process.3") used by the admin dashboard to replace the photo. */
+  id?: string;
   /** Path under /public once production photography is supplied. null = MOCK placeholder. */
   src: string | null;
   /**
@@ -123,6 +125,21 @@ export const IMAGES = {
     2400, 1600, 4440572, "Polina Tankilevitch", "center",
   ),
 } as const;
+
+/** Every image slot with its id, for the admin dashboard. Ids are assigned in place. */
+export const IMAGE_SLOTS: { id: string; slot: ImageSlot }[] = [];
+(function assignIds(node: unknown, path: string) {
+  if (Array.isArray(node)) {
+    node.forEach((child, i) => assignIds(child, `${path}.${i}`));
+  } else if (node && typeof node === "object") {
+    if ("alt" in node && "width" in node) {
+      (node as ImageSlot).id = path;
+      IMAGE_SLOTS.push({ id: path, slot: node as ImageSlot });
+      return;
+    }
+    for (const [k, v] of Object.entries(node)) assignIds(v, path ? `${path}.${k}` : k);
+  }
+})(IMAGES, "");
 
 export type Review = {
   /** TODO_VERIFY: exact reviewer name. */
