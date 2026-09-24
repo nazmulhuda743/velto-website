@@ -6,11 +6,25 @@ import { SearchIcon } from "@/components/ui/icons";
 import { track } from "@/components/layout/Analytics";
 import { WHATSAPP_URL } from "@/content/site";
 
+/** Mirrors the Codex pricing adapter's PublicPriceItem (via /api/prices). */
+type PriceService = {
+  slug: string;
+  name: string;
+  amountMinor: number | null;
+  currency: "BDT";
+  unitLabel: string | null;
+};
+
 type PriceItem = {
   slug: string;
   name: string;
-  services: { service: string; price: number | null }[];
+  services: PriceService[];
 };
+
+type Source = "mock" | "live";
+
+/** Services that can be booked straight from a result (match /book service slugs). */
+const BOOKABLE = new Set(["dry-cleaning", "wash-and-iron", "ironing", "curtain-cleaning", "carpet-cleaning", "blanket-comforter-cleaning"]);
 
 type Status = "idle" | "loading" | "ready" | "empty" | "error";
 
@@ -22,18 +36,30 @@ function mockParam() {
   return new URLSearchParams(window.location.search).get("mockPricing");
 }
 
-export function PriceFinder() {
+export function PriceFinder({
+  initialQuery = "",
+  syncUrl = false,
+  bookFromResult,
+}: {
+  /** Pre-fill and search on load (e.g. /pricing?q=blazer). */
+  initialQuery?: string;
+  /** Keep ?q= in the address bar in step with the selected item. */
+  syncUrl?: boolean;
+  /** Show a per-service "Book" action in results. Omitted on the homepage. */
+  bookFromResult?: { source: string };
+} = {}) {
   const uid = useId();
   const inputId = `${uid}-input`;
   const listId = `${uid}-list`;
   const helpId = `${uid}-help`;
 
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialQuery.slice(0, 64));
   const [status, setStatus] = useState<Status>("idle");
   const [items, setItems] = useState<PriceItem[]>([]);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [selected, setSelected] = useState<PriceItem | null>(null);
+  const [source, setSource] = useState<Source>("mock");
   const abortRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -63,7 +89,8 @@ export function PriceFinder() {
         if (mock) params.set("mock", mock);
         const res = await fetch(`/api/prices?${params}`, { signal: controller.signal });
         if (!res.ok) throw new Error("unavailable");
-        const data = (await res.json()) as { items: PriceItem[] };
+        const data = (await res.json()) as { items: PriceItem[]; source?: Source };
+        setSource(data.source === "live" ? "live" : "mock");
         if (data.items.length === 0) {
           setItems([]);
           setOpen(false);
@@ -99,6 +126,15 @@ export function PriceFinder() {
   useEffect(() => {
     if (selected) track("pricing_view", { section: "find-a-price", item: selected.slug });
   }, [selected]);
+
+  useEffect(() => {
+    if (!syncUrl) return;
+    const url = new URL(window.location.href);
+    if (selected) url.searchParams.set("q", selected.slug);
+    else if (!query.trim()) url.searchParams.delete("q");
+    else return;
+    window.history.replaceState(window.history.state, "", url);
+  }, [selected, query, syncUrl]);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "ArrowDown" && items.length) {
@@ -210,7 +246,7 @@ export function PriceFinder() {
           </div>
         ) : null}
 
-        {showResult ? <PriceResult item={selected} /> : null}
+        {showResult ? <PriceResult item={selected} source={source} bookFromResult={bookFromResult} /> : null}
 
         {status === "empty" ? (
           <div className="border-t border-line pt-6">
@@ -245,29 +281,69 @@ export function PriceFinder() {
   );
 }
 
-function PriceResult({ item }: { item: PriceItem }) {
+const formatAmount = (minor: number) =>
+  `৳${(minor / 100).toLocaleString("en-US", { maximumFractionDigits: minor % 100 ? 2 : 0 })}`;
+
+function PriceResult({
+  item,
+  source,
+  bookFromResult,
+}: {
+  item: PriceItem;
+  source: Source;
+  bookFromResult?: { source: string };
+}) {
   return (
     <div className="rounded-md border border-line bg-white">
       <h3 className="px-5 pb-4 pt-5 t-h4 text-navy md:px-6">{item.name}</h3>
       <dl>
-        {item.services.map((s) => (
-          <div
-            key={s.service}
-            className="flex items-baseline justify-between gap-4 border-t border-line px-5 py-4 md:px-6"
-          >
-            <dt className="text-body">{s.service}</dt>
-            <dd className="font-semibold tabular-nums text-navy">
-              {s.price === null ? (
-                // MOCK: live price comes from the Velto Ops pricing view.
-                <span data-mock="price" className="t-small font-medium text-secondary">
-                  [Live price]
+        {item.services.map((s) => {
+          const canBook = bookFromResult && BOOKABLE.has(s.slug);
+          return (
+            <div
+              key={s.slug}
+              className={`flex items-baseline justify-between gap-4 border-t border-line px-5 md:px-6 ${canBook ? "py-3" : "py-4"}`}
+            >
+              <dt className="text-body">{s.name}</dt>
+              <dd className="flex items-baseline gap-4 text-right">
+                <span className="font-semibold tabular-nums text-navy">
+                  {s.amountMinor !== null ? (
+                    <>
+                      {formatAmount(s.amountMinor)}
+                      {s.unitLabel ? <span className="ml-1 t-small font-normal text-secondary">{s.unitLabel}</span> : null}
+                    </>
+                  ) : source === "mock" ? (
+                    // MOCK: live price comes from the Velto Ops pricing view.
+                    <span data-mock="price" className="t-small font-medium text-secondary">
+                      [Live price]
+                    </span>
+                  ) : (
+                    // Adapter contract: null amount = price needs confirmation.
+                    <span className="t-small font-medium text-secondary">Confirmed before pickup</span>
+                  )}
                 </span>
-              ) : (
-                `৳${s.price.toLocaleString("en-BD")}`
-              )}
-            </dd>
-          </div>
-        ))}
+                {canBook ? (
+                  <a
+                    href={`/book?${new URLSearchParams({ service: s.slug, source: bookFromResult.source }).toString()}`}
+                    data-analytics="book_pickup_click"
+                    data-placement="pricing_result"
+                    data-service={s.slug}
+                    className="inline-flex min-h-11 items-center gap-1.5 rounded-sm t-small font-semibold text-navy underline decoration-blue/60 underline-offset-4 hover:decoration-blue"
+                  >
+                    Book
+                    <span className="sr-only">
+                      {" "}
+                      {s.name} for {item.name}
+                    </span>
+                    <span aria-hidden="true" className="text-blue no-underline">
+                      →
+                    </span>
+                  </a>
+                ) : null}
+              </dd>
+            </div>
+          );
+        })}
       </dl>
     </div>
   );

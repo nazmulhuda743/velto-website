@@ -5,7 +5,6 @@ import { PriceFinder } from "@/components/home/PriceFinder";
 import { SectionIntro } from "@/components/home/SectionIntro";
 import { Breadcrumbs } from "@/components/pages/Breadcrumbs";
 import { FactRows } from "@/components/pages/FactRows";
-import { ButtonLink } from "@/components/ui/Button";
 import { TextLink } from "@/components/ui/TextLink";
 import { FREE_DELIVERY_THRESHOLD } from "@/content/site";
 
@@ -19,7 +18,32 @@ export const metadata: Metadata = {
  * Pricing page. The only price data shown comes through PriceFinder → /api/prices,
  * which the Codex pricing adapter replaces. No prices are hardcoded here.
  */
-export default function PricingPage() {
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+const HOUSEHOLD = [
+  {
+    label: "Curtains",
+    copy: "Quantity and approximate size. We confirm the final amount when measurement or condition needs checking.",
+    service: "curtain-cleaning",
+    action: "Get a curtain quote",
+  },
+  {
+    label: "Carpets",
+    copy: "Approximate length and width. Material and condition can change the final price.",
+    service: "carpet-cleaning",
+    action: "Get a carpet quote",
+  },
+  {
+    label: "Blankets & comforters",
+    copy: "Mainly the item, type and size.",
+    service: "blanket-comforter-cleaning",
+    action: "Get a bedding quote",
+  },
+];
+
+export default async function PricingPage({ searchParams }: { searchParams: SearchParams }) {
+  const q = (await searchParams).q;
+  const initialQuery = (Array.isArray(q) ? q[0] : q) ?? "";
   return (
     <>
       <section aria-labelledby="page-title" className="bg-soft pb-(--space-section) pt-6 md:pt-10 xl:pt-12">
@@ -37,7 +61,7 @@ export default function PricingPage() {
                 </p>
               </div>
               <div className="mt-(--space-intro-content)">
-                <PriceFinder />
+                <PriceFinder initialQuery={initialQuery} syncUrl bookFromResult={{ source: "pricing-result" }} />
               </div>
             </div>
             <aside aria-label="Delivery and turnaround" className="col-span-4 md:col-span-8 xl:col-span-4 xl:col-start-9 xl:pt-2">
@@ -73,23 +97,20 @@ export default function PricingPage() {
             </SectionIntro>
           </div>
           <div className="col-span-4 md:col-span-8 xl:col-span-6 xl:col-start-7">
-            <FactRows
-              rows={[
-                {
-                  label: "Curtains",
-                  value: "Quantity and approximate size. We confirm the final amount when measurement or condition needs checking.",
-                },
-                {
-                  label: "Carpets",
-                  value: "Approximate length and width. Material and condition can change the final price.",
-                },
-                { label: "Blankets & comforters", value: "Mainly the item, type and size." },
-              ]}
-            />
-            <div className="mt-8 flex flex-col gap-3 md:flex-row md:items-center md:gap-6">
-              <ButtonLink href="/quote?source=pricing-page" variant="secondary">
-                Request a Quote
-              </ButtonLink>
+            <ul className="border-t border-navy">
+              {HOUSEHOLD.map((row) => (
+                <li key={row.service} className="border-b border-line py-4">
+                  <h3 className="t-label uppercase text-navy">{row.label}</h3>
+                  <p className="mt-1 text-body">{row.copy}</p>
+                  <div className="mt-1">
+                    <TextLink href={`/quote?service=${row.service}&source=pricing-page`} placement="pricing_household">
+                      {row.action}
+                    </TextLink>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-6">
               <TextLink href="/services" placement="pricing_services">
                 See all services
               </TextLink>
