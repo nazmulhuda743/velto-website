@@ -1,3 +1,4 @@
+import { ImageFileInput } from "@/components/admin/ImageFileInput";
 import { AdminHeader, Badge, Notice, one, type SearchParams } from "@/components/admin/ui";
 import { IMAGE_SLOTS } from "@/content/mock";
 import { getSiteContent } from "@/lib/site-content";
@@ -34,7 +35,7 @@ export default async function ImagesPage({ searchParams }: { searchParams: Searc
     <>
       <AdminHeader
         title="Images"
-        intro="Replace any photo on the website. Uploads are JPG, PNG, WebP or AVIF up to 8 MB; the site resizes them for every screen. Describe what the photo shows in the alt text."
+        intro="Replace any photo on the website. Uploads are JPG, PNG, WebP or AVIF up to 4 MB; the site resizes them for every screen. Describe what the photo shows in the alt text."
       />
       <Notice saved={one(params.saved) ? true : undefined} error={errorSlot ? undefined : one(params.error)} />
       <ul className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -65,7 +66,7 @@ export default async function ImagesPage({ searchParams }: { searchParams: Searc
                 {errorSlot === id ? <p className="mt-2 t-small font-medium text-error">{one(params.error)}</p> : null}
                 <form action={saveImageAction} className="mt-3 space-y-3">
                   <input type="hidden" name="id" value={id} />
-                  <input type="file" name="image" accept="image/jpeg,image/png,image/webp,image/avif" className="block w-full t-small" aria-label={`New photo for ${label(id)}`} />
+                  <ImageFileInput name="image" accept="image/jpeg,image/png,image/webp,image/avif" className="block w-full t-small" aria-label={`New photo for ${label(id)}`} />
                   <input
                     name="alt"
                     defaultValue={override?.alt ?? slot.alt}

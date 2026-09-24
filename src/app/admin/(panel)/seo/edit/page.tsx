@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ImageFileInput } from "@/components/admin/ImageFileInput";
 import { SeoFields } from "@/components/admin/SeoFields";
 import { AdminHeader, Notice, one, type SearchParams } from "@/components/admin/ui";
 import { getSeoRoute } from "@/content/seo-routes";
@@ -55,7 +56,7 @@ export default async function SeoEditPage({ searchParams }: { searchParams: Sear
               </label>
             </div>
           ) : null}
-          <input type="file" name="ogImage" accept="image/jpeg,image/png,image/webp" className="mt-3 block t-small" />
+          <ImageFileInput name="ogImage" accept="image/jpeg,image/png,image/webp" className="mt-3 block t-small" />
         </div>
         <label className="flex items-start gap-3">
           <input type="checkbox" name="noindex" defaultChecked={entry.noindex} className="mt-1 size-4" />
