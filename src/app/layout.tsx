@@ -3,7 +3,16 @@ import { Instrument_Sans, Source_Serif_4 } from "next/font/google";
 import { Analytics } from "@/components/layout/Analytics";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
+import { TrackingScripts } from "@/components/layout/TrackingScripts";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { Logo } from "@/components/ui/Logo";
+import {
+  DEFAULT_DESCRIPTION,
+  DEFAULT_TITLE,
+  SITE_NAME,
+  SITE_URL,
+} from "@/lib/seo/site";
+import { ORGANIZATION_SCHEMA, WEBSITE_SCHEMA } from "@/lib/seo/schema";
 import "./globals.css";
 
 const instrumentSans = Instrument_Sans({
@@ -21,9 +30,26 @@ const sourceSerif = Source_Serif_4({
 });
 
 export const metadata: Metadata = {
-  title: "Velto Premium Laundry — Laundry & dry cleaning in Uttara",
-  description:
-    "Laundry and dry cleaning in Uttara, with pickup from your door. We collect across Uttara Sectors 1–18.",
+  metadataBase: new URL(SITE_URL),
+  applicationName: SITE_NAME,
+  title: {
+    default: DEFAULT_TITLE,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: DEFAULT_DESCRIPTION,
+  openGraph: {
+    type: "website",
+    locale: "en_BD",
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary",
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+  },
 };
 
 export const viewport: Viewport = {
@@ -35,6 +61,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${instrumentSans.variable} ${sourceSerif.variable}`}>
       <body>
+        <TrackingScripts />
+        <JsonLd data={[WEBSITE_SCHEMA, ORGANIZATION_SCHEMA]} />
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-md focus:bg-navy focus:px-4 focus:py-3 focus:text-white"
