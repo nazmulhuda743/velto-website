@@ -10,6 +10,8 @@ export const ATTRIBUTION_KEYS = [
   "utm_content",
   "utm_term",
   "fbclid",
+  "fbc",
+  "fbp",
   "gclid",
 ] as const;
 
@@ -18,6 +20,10 @@ export type AttributionKey = (typeof ATTRIBUTION_KEYS)[number];
 export type Attribution = Partial<Record<AttributionKey, string>> & {
   landing_page?: string;
   source?: string;
+  medium?: string;
+  campaign?: string;
+  content?: string;
+  ad?: string;
   service?: string;
 };
 
@@ -26,7 +32,8 @@ const MAX_PATH_LENGTH = 1024;
 
 function clean(value: string | null | undefined, maxLength = MAX_VALUE_LENGTH) {
   const normalized = value?.trim();
-  return normalized ? normalized.slice(0, maxLength) : undefined;
+  if (!normalized || /[\u0000-\u001f\u007f]/.test(normalized)) return undefined;
+  return normalized.slice(0, maxLength);
 }
 
 /** Accept only an on-site pathname as the recorded landing page. */
@@ -46,12 +53,20 @@ export function readAttribution(
     if (value) attribution[key] = value;
   }
 
-  const source = clean(params.get("source"));
-  const service = clean(params.get("service"));
+  const directKeys = [
+    "source",
+    "medium",
+    "campaign",
+    "content",
+    "ad",
+    "service",
+  ] as const;
+  for (const key of directKeys) {
+    const value = clean(params.get(key));
+    if (value) attribution[key] = value;
+  }
   const landing = cleanPath(landingPage ?? params.get("landing_page"));
 
-  if (source) attribution.source = source;
-  if (service) attribution.service = service;
   if (landing) attribution.landing_page = landing;
 
   return attribution;
@@ -68,7 +83,15 @@ export function appendAttribution(href: string, attribution: Attribution) {
     return href;
   }
 
-  for (const [key, value] of Object.entries(attribution)) {
+  const sanitized = readAttribution(
+    new URLSearchParams(
+      Object.entries(attribution).filter((entry): entry is [string, string] =>
+        typeof entry[1] === "string",
+      ),
+    ),
+  );
+
+  for (const [key, value] of Object.entries(sanitized)) {
     if (value && !url.searchParams.has(key)) url.searchParams.set(key, value);
   }
 

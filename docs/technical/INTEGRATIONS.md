@@ -34,7 +34,9 @@ eventual routes do not establish a second data model.
 | `unit_label` | text/null | Optional customer-facing unit |
 
 The adapter rejects malformed rows instead of forwarding unexpected operational
-fields. Results are grouped by item and capped before reaching UI code.
+fields. It also rejects rows containing any additional column, including a
+column newly added to the view by mistake. Results are grouped by item and
+capped before reaching UI code.
 
 The view and grants must be created with the Ops/database owner after its source
 tables and role model are confirmed. Do not infer that schema in this website
@@ -79,6 +81,13 @@ destination parameters.
 `src/lib/analytics/events.ts` provides the locked event names from the build
 specification. It does not configure a production analytics vendor or ID.
 
+Both booking and quote validators accept the sanitized attribution object and
+discard unknown properties. Direct campaign fields (`source`, `medium`,
+`campaign`, `content`, `ad`), UTM fields, selected service, landing page and
+supported click identifiers (`fbclid`, `fbc`, `fbp`, `gclid`) can travel with
+the submission. This is acquisition context only; reporting and revenue
+attribution remain outside the current phase.
+
 ## Booking and quote writes
 
 `src/lib/integrations/ops/contracts.ts` defines the website-facing gateway only.
@@ -93,8 +102,60 @@ Before implementing a live gateway, confirm:
 
 Do not create a parallel leads table from this repository.
 
+Server-side validators in `src/lib/integrations/ops/validation.ts` produce only
+allowlisted booking and quote fields. Household quotes are provisional
+enquiries: no exact price is required or represented. `photoReferences` holds
+at most five opaque references produced by a future controlled upload flow; it
+does not accept URLs, file bodies or arbitrary storage paths.
+
+The gateway receives `idempotencyKey` and `requestId` in a separate submission
+context rather than as customer data. The website can generate and reuse the
+same idempotency key while a submission is retried. True duplicate prevention
+still requires Velto Ops to atomically recognize that key. Whether the existing
+Ops API/function can do this—and its retention window—is an Ops/database
+decision. No schema change is proposed here.
+
+## Safe failures
+
+`src/lib/integrations/errors.ts` exposes controlled error codes only:
+`invalid_request`, `pricing_unavailable`, `booking_unavailable`,
+`quote_unavailable`, `request_timeout`, `duplicate_submission` and
+`internal_error`. Customer responses contain a request ID and retryability flag,
+but no upstream message, SQL detail, stack trace, payload or secret.
+
+Server logs should use `integrationLogContext` as their base and attach only
+reviewed operational metadata. Never log credentials, complete submissions,
+raw upstream response bodies or customer photo data.
+
+## Foundation tests
+
+The focused tests use Node's built-in test runner. In the complete Next.js
+checkout, compile the runtime-neutral modules with the project's TypeScript
+compiler and run:
+
+```sh
+npx tsc --ignoreConfig --outDir .foundation-test-build --module node16 --moduleResolution node16 --target ES2022 --esModuleInterop --skipLibCheck src/lib/attribution.ts src/lib/integrations/errors.ts src/lib/integrations/ops/validation.ts src/lib/integrations/pricing/validation.ts
+node --test tests/*.test.cjs
+```
+
+Remove `.foundation-test-build` after the run. The separate
+`tests/analytics.type-test.ts` is checked by the normal project TypeScript run.
+
 ## Merge notes
 
 All additions are outside Claude's current visual component paths. The only
 expected follow-up edits on the homepage branch are narrow imports in the
 existing analytics component and pricing route after this foundation is merged.
+
+## Post-Phase-3 Integration Order
+
+1. Claude's approved homepage branch is merged into main.
+2. Rebase `codex/velto-technical-foundation` onto the updated main.
+3. Resolve integration conflicts without altering approved visual behavior.
+4. Run TypeScript, lint, tests and production build.
+5. Wire Find a Price UI to the pricing adapter.
+6. Wire Book Pickup UI to the booking gateway.
+7. Wire Request Quote UI to the quote gateway.
+8. Wire analytics/attribution to the approved UI.
+9. Verify mobile and desktop behavior.
+10. Only then open the technical integration PR.

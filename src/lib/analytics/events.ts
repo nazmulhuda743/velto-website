@@ -2,15 +2,15 @@ export const ANALYTICS_EVENTS = [
   "book_pickup_click",
   "booking_start",
   "booking_success",
+  "booking_error",
   "whatsapp_click",
-  "pricing_search",
+  "phone_click",
   "pricing_view",
-  "service_view",
   "quote_start",
   "quote_success",
-  "directions_click",
-  "google_reviews_click",
   "regular_laundry_interest",
+  "regular_laundry_submit",
+  "directions_click",
 ] as const;
 
 export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[number];

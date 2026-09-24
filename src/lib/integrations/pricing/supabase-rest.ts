@@ -7,24 +7,13 @@ import {
 import type {
   PriceSearch,
   PricingSource,
-  PublicPriceItem,
-  PublicPriceService,
 } from "./types";
+import { parsePublicPricingRows } from "./validation";
 
 const DEFAULT_LIMIT = 5;
 const MAX_LIMIT = 10;
 const REQUEST_TIMEOUT_MS = 4_000;
 const SAFE_IDENTIFIER = /^[a-z_][a-z0-9_]*$/;
-
-type PricingRow = {
-  item_slug: string;
-  item_name: string;
-  service_slug: string;
-  service_name: string;
-  price_amount_minor: number | null;
-  currency: "BDT";
-  unit_label: string | null;
-};
 
 export type SupabasePricingConfig = {
   url: string;
@@ -32,47 +21,6 @@ export type SupabasePricingConfig = {
   view?: string;
   fetch?: typeof globalThis.fetch;
 };
-
-function isPricingRow(value: unknown): value is PricingRow {
-  if (!value || typeof value !== "object") return false;
-  const row = value as Record<string, unknown>;
-
-  return (
-    typeof row.item_slug === "string" &&
-    typeof row.item_name === "string" &&
-    typeof row.service_slug === "string" &&
-    typeof row.service_name === "string" &&
-    (row.price_amount_minor === null ||
-      (typeof row.price_amount_minor === "number" &&
-        Number.isSafeInteger(row.price_amount_minor) &&
-        row.price_amount_minor >= 0)) &&
-    row.currency === "BDT" &&
-    (row.unit_label === null || typeof row.unit_label === "string")
-  );
-}
-
-function groupRows(rows: PricingRow[]): PublicPriceItem[] {
-  const items = new Map<string, PublicPriceItem>();
-
-  for (const row of rows) {
-    let item = items.get(row.item_slug);
-    if (!item) {
-      item = { slug: row.item_slug, name: row.item_name, services: [] };
-      items.set(row.item_slug, item);
-    }
-
-    const service: PublicPriceService = {
-      slug: row.service_slug,
-      name: row.service_name,
-      amountMinor: row.price_amount_minor,
-      currency: row.currency,
-      unitLabel: row.unit_label,
-    };
-    item.services.push(service);
-  }
-
-  return [...items.values()];
-}
 
 function normalizeProjectUrl(value: string) {
   let url: URL;
@@ -153,11 +101,7 @@ export function createSupabasePricingSource(
         });
       }
 
-      if (!Array.isArray(payload) || !payload.every(isPricingRow)) {
-        throw new PricingUpstreamError("Pricing source contract mismatch");
-      }
-
-      return groupRows(payload).slice(0, resultLimit);
+      return parsePublicPricingRows(payload).slice(0, resultLimit);
     },
   };
 }

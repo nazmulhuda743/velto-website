@@ -36,13 +36,25 @@ export type QuoteSubmission = {
   approximateDetails?: string;
   notes?: string;
   /** References to uploads accepted by a separate controlled upload flow. */
-  photoKeys: string[];
+  photoReferences: string[];
   attribution: Attribution;
 };
 
+export type SubmissionContext = {
+  /** Opaque request token used by the eventual Ops endpoint for deduplication. */
+  idempotencyKey: string;
+  requestId: string;
+};
+
 export interface VeltoOpsGateway {
-  createBooking(input: BookingSubmission): Promise<{ reference: string }>;
-  createQuote(input: QuoteSubmission): Promise<{ reference: string }>;
+  createBooking(
+    input: BookingSubmission,
+    context: SubmissionContext,
+  ): Promise<{ reference: string }>;
+  createQuote(
+    input: QuoteSubmission,
+    context: SubmissionContext,
+  ): Promise<{ reference: string }>;
 }
 
 export function isServiceSlug(value: string): value is ServiceSlug {
