@@ -128,6 +128,8 @@ export type Review = {
   /** TODO_VERIFY: exact reviewer name. */
   name: string | null;
   platform: "Google" | "Facebook";
+  /** Outlet profile the review was left on (never merged across branches). */
+  branch?: "sector-11" | "sector-18";
   /** Rating out of 5, or "recommends" for Facebook recommendations. */
   rating: number | "recommends" | null;
   /** TODO_VERIFY: exact, unedited customer text. null = placeholder. */
@@ -136,13 +138,14 @@ export type Review = {
 };
 
 /**
- * Verified Google reviews supplied by the owner from Velto's Google profiles.
- * Text is transcribed exactly; paragraphs are separated by a blank line.
- * TODO_VERIFY: direct review links (sourceUrl) if they should be linked.
+ * Verified Google reviews supplied by the owner, with the outlet profile each
+ * was left on. Text is transcribed exactly; paragraphs are separated by a blank
+ * line. Without a direct review link, the outlet's Google reviews are linked.
  */
 export const REVIEW_FAHIM: Review = {
   name: "Mahmudur Rahman Fahim",
   platform: "Google",
+  branch: "sector-18",
   rating: 5,
   text: "I’ve been living in RUAP in my own residence for the past three years, and during this time, I’ve tried at least 8–10 different laundry services. Honestly, the experience was always horrible.\n\nThen I connected with Velto, and since then, the experience has been absolutely top-notch. I’ve never experienced this level of professionalism from any laundry service before.\n\nPlease keep up the good work and continue providing us with such amazing service.\n\nThank you! ❤️",
   sourceUrl: null,
@@ -151,6 +154,7 @@ export const REVIEW_FAHIM: Review = {
 export const REVIEW_ANGELA: Review = {
   name: "Angela Sung",
   platform: "Google",
+  branch: "sector-11",
   rating: 5,
   text: "Near midnight,  after discovering to my horror all beddings and comforter were soiled by my kittens, I decided to try my luck and made a frantic whatsapp sos to Velto for help.  To my surprise, I received an immediate response from Mr. Nazmul, CEO of Velto, at such late hour (sorry).\nHe was extremely professional and provided sound advice to the services required for my many concerns.\n\nPrompt collection was done at my door next early morning and was delivered right at the scheduled time.\n\nAll my cleaned laundry were carefully packed, properly labeled for traceability and validated with quality check. My soiled beddings and comforter from nightmare were returned to me looking pristine, smelling fresh and clean, exactly as what Mr. Nazmul@Velto had assured and committed.\n\nVelto has indeed lived up to their claim of being \"Premium Laundry at your Doorstep\".  I am happy to have found a jewel in Uttara and have Velto a door step away.\n\nFor all folks like me who cares about your cherishables, Velto is the indubitable choice for assurance in professionalism to take care of all your necessities.\n\nI found Velto noteworthy to be:\n1) prompt & accurate in status update;\n2) attentive to quality assurance;\n3) service oriented and reliable.\n\nLastly, a note of appreciation to rider Moniruzzaman for always keeping a pleasant smile and doing the rounds.\n\nKittens Soiling - No panic - Call Velto ~\nHappy New Year Everybody ~",
   sourceUrl: null,
@@ -159,6 +163,7 @@ export const REVIEW_ANGELA: Review = {
 export const REVIEW_ETR: Review = {
   name: "ETR I SAI",
   platform: "Google",
+  branch: "sector-11",
   rating: 5,
   text: "Very satisfied after received my laundry, items smells very nice. Excellent service. Friendly Pro staff. Reasonable price. Will comeback for this laundry service.",
   sourceUrl: null,
