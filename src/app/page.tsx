@@ -19,10 +19,10 @@ export default function HomePage() {
       <Hero />
       <ServiceChooser />
       <ProcessStory />
-      <FindAPrice />
-      <HouseholdSection />
       <ReviewsSection />
       <LocationsSection />
+      <FindAPrice />
+      <HouseholdSection />
       <RegularLaundrySection />
       <FAQ />
       <FinalBookingCTA id={FINAL_ID} />
