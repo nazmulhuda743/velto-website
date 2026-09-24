@@ -45,8 +45,10 @@ for (const route of routes) {
   for (const match of body.matchAll(/<img\b[^>]*>/gi)) {
     const image = match[0];
     assert.match(image, /\balt="[^"]*"/i, `${route} rendered an image without alt text`);
-    assert.match(image, /\bwidth="\d+"/i, `${route} rendered an image without width`);
-    assert.match(image, /\bheight="\d+"/i, `${route} rendered an image without height`);
+
+    const hasIntrinsicSize = /\bwidth="\d+"/i.test(image) && /\bheight="\d+"/i.test(image);
+    const isNextFill = /\bdata-nimg="fill"/i.test(image) && /style="[^"]*height:100%;width:100%/i.test(image);
+    assert.ok(hasIntrinsicSize || isNextFill, `${route} rendered an image without intrinsic dimensions or a valid Next/Image fill box`);
   }
 }
 
@@ -119,5 +121,5 @@ const oversized = await request("/api/bookings", {
 assert.equal(oversized.status, 413, `booking endpoint should reject oversized JSON with 413, got ${oversized.status}`);
 
 console.log(
-  `Launch smoke audit passed for ${routes.length} public routes plus accessibility structure, image dimensions, canonicals, noindex rules, sitemap, headers, 404 and API guards.`,
+  `Launch smoke audit passed for ${routes.length} public routes plus accessibility structure, image stability, canonicals, noindex rules, sitemap, headers, 404 and API guards.`,
 );
