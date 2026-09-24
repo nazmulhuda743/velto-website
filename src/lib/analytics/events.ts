@@ -11,6 +11,11 @@ export const ANALYTICS_EVENTS = [
   "regular_laundry_interest",
   "regular_laundry_submit",
   "directions_click",
+  // Spec §23 events missing from the original foundation list; the union is
+  // kept exhaustive by tests/analytics.type-test.ts.
+  "pricing_search",
+  "google_reviews_click",
+  "service_view",
 ] as const;
 
 export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[number];
