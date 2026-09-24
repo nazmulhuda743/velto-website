@@ -35,6 +35,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Static security audit
+        run: npm run test:security
+
       - name: Typecheck
         run: npm run typecheck
 
