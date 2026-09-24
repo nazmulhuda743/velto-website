@@ -1,0 +1,138 @@
+[
+  {
+    "slot": "hero",
+    "download": "https://images.pexels.com/photos/6969972/pexels-photo-6969972.jpeg?auto=compress&cs=tinysrgb&w=2400",
+    "page": "https://www.pexels.com/photo/6969972/",
+    "platform": "Pexels",
+    "photographer": "Mikhail Nilov",
+    "credit": "confirmed-series"
+  },
+  {
+    "slot": "dry-cleaning",
+    "download": "https://images.pexels.com/photos/6764952/pexels-photo-6764952.jpeg?auto=compress&cs=tinysrgb&w=2400",
+    "page": "https://www.pexels.com/photo/6764952/",
+    "platform": "Pexels",
+    "photographer": "Tima Miroshnichenko",
+    "credit": "confirmed-series"
+  },
+  {
+    "slot": "wash-and-iron",
+    "download": "https://images.pexels.com/photos/4440574/pexels-photo-4440574.jpeg?auto=compress&cs=tinysrgb&w=2400",
+    "page": "https://www.pexels.com/photo/4440574/",
+    "platform": "Pexels",
+    "photographer": "Polina Tankilevitch",
+    "credit": "confirmed"
+  },
+  {
+    "slot": "ironing",
+    "download": "https://images.pexels.com/photos/5901624/pexels-photo-5901624.jpeg?auto=compress&cs=tinysrgb&w=2400",
+    "page": "https://www.pexels.com/photo/5901624/",
+    "platform": "Pexels",
+    "photographer": "cottonbro studio",
+    "credit": "series"
+  },
+  {
+    "slot": "household-curtains",
+    "download": "https://images.pexels.com/photos/6619046/pexels-photo-6619046.jpeg?auto=compress&cs=tinysrgb&w=2400",
+    "page": "https://www.pexels.com/photo/6619046/",
+    "platform": "Pexels",
+    "photographer": "Thirdman",
+    "credit": "confirmed"
+  },
+  {
+    "slot": "household-section",
+    "download": "https://images.pexels.com/photos/7217758/pexels-photo-7217758.jpeg?auto=compress&cs=tinysrgb&w=2400",
+    "page": "https://www.pexels.com/photo/7217758/",
+    "platform": "Pexels",
+    "photographer": "Blue Bird",
+    "credit": "confirmed-series"
+  },
+  {
+    "slot": "process-01-collected",
+    "download": "https://images.pexels.com/photos/6969971/pexels-photo-6969971.jpeg?auto=compress&cs=tinysrgb&w=2400",
+    "page": "https://www.pexels.com/photo/6969971/",
+    "platform": "Pexels",
+    "photographer": "Mikhail Nilov",
+    "credit": "confirmed-series"
+  },
+  {
+    "slot": "process-02-received",
+    "download": "https://images.pexels.com/photos/6764934/pexels-photo-6764934.jpeg?auto=compress&cs=tinysrgb&w=2400",
+    "page": "https://www.pexels.com/photo/6764934/",
+    "platform": "Pexels",
+    "photographer": "Tima Miroshnichenko",
+    "credit": "confirmed-series"
+  },
+  {
+    "slot": "process-03-tagged",
+    "download": "https://images.pexels.com/photos/11485130/pexels-photo-11485130.jpeg?auto=compress&cs=tinysrgb&w=2400",
+    "page": "https://www.pexels.com/photo/11485130/",
+    "platform": "Pexels",
+    "photographer": "Andrzej Gdula",
+    "credit": "confirmed"
+  },
+  {
+    "slot": "process-04-checked",
+    "download": "https://images.pexels.com/photos/6764947/pexels-photo-6764947.jpeg?auto=compress&cs=tinysrgb&w=2400",
+    "page": "https://www.pexels.com/photo/6764947/",
+    "platform": "Pexels",
+    "photographer": "Tima Miroshnichenko",
+    "credit": "confirmed-series"
+  },
+  {
+    "slot": "process-05-finished",
+    "download": "https://images.pexels.com/photos/5901623/pexels-photo-5901623.jpeg?auto=compress&cs=tinysrgb&w=2400",
+    "page": "https://www.pexels.com/photo/5901623/",
+    "platform": "Pexels",
+    "photographer": "cottonbro studio",
+    "credit": "series"
+  },
+  {
+    "slot": "process-06-qc",
+    "download": "https://images.pexels.com/photos/3965552/pexels-photo-3965552.jpeg?auto=compress&cs=tinysrgb&w=2400",
+    "page": "https://www.pexels.com/photo/3965552/",
+    "platform": "Pexels",
+    "photographer": "Ksenia Chernaya",
+    "credit": "confirmed-series"
+  },
+  {
+    "slot": "process-07-packed",
+    "download": "https://images.pexels.com/photos/4440571/pexels-photo-4440571.jpeg?auto=compress&cs=tinysrgb&w=2400",
+    "page": "https://www.pexels.com/photo/4440571/",
+    "platform": "Pexels",
+    "photographer": "Polina Tankilevitch",
+    "credit": "confirmed-series"
+  },
+  {
+    "slot": "process-08-returned",
+    "download": "https://images.pexels.com/photos/6969968/pexels-photo-6969968.jpeg?auto=compress&cs=tinysrgb&w=2400",
+    "page": "https://www.pexels.com/photo/6969968/",
+    "platform": "Pexels",
+    "photographer": "Mikhail Nilov",
+    "credit": "confirmed-series"
+  },
+  {
+    "slot": "delicate",
+    "download": "https://images.pexels.com/photos/6764932/pexels-photo-6764932.jpeg?auto=compress&cs=tinysrgb&w=2400",
+    "page": "https://www.pexels.com/photo/6764932/",
+    "platform": "Pexels",
+    "photographer": "Tima Miroshnichenko",
+    "credit": "confirmed-series"
+  },
+  {
+    "slot": "regular",
+    "download": "https://images.pexels.com/photos/4440566/pexels-photo-4440566.jpeg?auto=compress&cs=tinysrgb&w=2400",
+    "page": "https://www.pexels.com/photo/4440566/",
+    "platform": "Pexels",
+    "photographer": "Polina Tankilevitch",
+    "credit": "confirmed-series"
+  },
+  {
+    "slot": "final",
+    "download": "https://images.pexels.com/photos/4440572/pexels-photo-4440572.jpeg?auto=compress&cs=tinysrgb&w=2400",
+    "page": "https://www.pexels.com/photo/4440572/",
+    "platform": "Pexels",
+    "photographer": "Polina Tankilevitch",
+    "credit": "confirmed-series"
+  }
+]

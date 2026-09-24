@@ -1,0 +1,397 @@
+@import "tailwindcss";
+
+/*
+ * Velto production tokens — spec §12 (LOCKED ROLES).
+ * Values sampled from the supplied logo; official brand-manual values override
+ * the hex values without changing the roles.
+ */
+:root {
+  --velto-navy: #002b4e;
+  --velto-blue: #027cc3;
+  --velto-cyan: #00a6e5;
+  --velto-purple: #7c5aaa;
+
+  --color-brand: var(--velto-blue);
+  --color-brand-deep: var(--velto-navy);
+  --color-brand-bright: var(--velto-cyan);
+  --color-brand-accent: var(--velto-purple);
+
+  /*
+   * Filled primary actions. #027CC3 with white 16px text is 4.49:1 (just under
+   * AA), so filled buttons use a slightly deeper Velto blue (approved in review).
+   */
+  --color-brand-action: #0078bc;
+  --color-brand-action-hover: #00659e;
+  --color-brand-action-active: #005688;
+
+  --color-text-primary: var(--velto-navy);
+  --color-text-body: #30373d;
+  --color-text-secondary: #596168;
+  --color-text-muted: #7b8288;
+  --color-text-inverse: #ffffff;
+
+  --color-bg: #ffffff;
+  --color-bg-warm: #fafaf8;
+  --color-bg-soft: #f5f7f8;
+  --color-bg-navy: var(--velto-navy);
+
+  --color-border: #d9e0e4;
+  --color-border-strong: #b8c5cd;
+
+  --color-disabled-bg: #eceff1;
+  --color-disabled-text: #92999f;
+  --color-error: #b42318;
+  --color-error-soft: #fef3f2;
+  --color-success: #137a4a;
+  --color-success-soft: #eff8f3;
+
+  /* WhatsApp is only used on the dedicated WhatsApp action (spec §16). */
+  --color-whatsapp: #25d366;
+
+  /* Header heights — spec §18 */
+  --header-h: 64px;
+
+  /* Vertical rhythm — spec §14 (mobile values first) */
+  --space-section: 64px;
+  --space-related: 52px;
+  --space-heading-intro: 16px;
+  --space-intro-content: 32px;
+  --space-group: 24px;
+  --space-tight: 12px;
+  --space-caption: 6px;
+
+  /* Mobile conversion bar — spec §18 */
+  --mobile-bar-h: 64px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --space-section: 88px;
+    --space-related: 72px;
+    --space-heading-intro: 20px;
+    --space-intro-content: 40px;
+    --space-group: 28px;
+    --space-tight: 16px;
+    --space-caption: 8px;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --header-h: 76px;
+  }
+}
+
+@media (min-width: 1200px) {
+  :root {
+    --space-section: 112px;
+    --space-related: 80px;
+    --space-heading-intro: 24px;
+    --space-intro-content: 48px;
+    --space-group: 32px;
+  }
+}
+
+@theme {
+  /* Only Velto colours exist — no unrelated default palette. */
+  --color-*: initial;
+  --color-white: #ffffff;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-navy: var(--velto-navy);
+  --color-blue: var(--velto-blue);
+  --color-action: #0078bc;
+  --color-action-hover: #00659e;
+  --color-action-active: #005688;
+  --color-cyan: var(--velto-cyan);
+  --color-purple: var(--velto-purple);
+  --color-ink: var(--color-text-primary);
+  --color-body: var(--color-text-body);
+  --color-secondary: var(--color-text-secondary);
+  --color-muted: var(--color-text-muted);
+  --color-inverse: var(--color-text-inverse);
+  --color-page: var(--color-bg);
+  --color-warm: var(--color-bg-warm);
+  --color-soft: var(--color-bg-soft);
+  --color-line: var(--color-border);
+  --color-line-strong: var(--color-border-strong);
+  --color-disabled-bg: #eceff1;
+  --color-disabled-text: #92999f;
+  --color-error: #b42318;
+  --color-error-soft: #fef3f2;
+  --color-success: #137a4a;
+  --color-success-soft: #eff8f3;
+  --color-whatsapp: #25d366;
+
+  /* Layout breakpoints — spec §14 */
+  --breakpoint-xs: 360px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1200px;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  --font-sans: var(--font-instrument-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-source-serif), ui-serif, Georgia, serif;
+}
+
+/* ---------- Base ---------- */
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: calc(var(--header-h) + 16px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text-body);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Keep page content clear of the mobile conversion bar. */
+@media (max-width: 767px) {
+  body:has([data-mobile-bar]) {
+    padding-bottom: calc(var(--mobile-bar-h) + env(safe-area-inset-bottom));
+  }
+}
+
+::selection {
+  background: #cfe7f6;
+  color: var(--velto-navy);
+}
+
+:focus-visible {
+  outline: 2px solid var(--velto-blue);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.on-navy :focus-visible {
+  outline-color: var(--velto-cyan);
+}
+
+/* ---------- Type scale — spec §13 ---------- */
+
+@utility t-display {
+  /* Mobile ~36px keeps headline, copy, actions and proof in one first screen. */
+  font-size: 2.25rem;
+  @media (min-width: 768px) {
+    font-size: clamp(2.75rem, 4.4vw, 4rem);
+  }
+  line-height: 1.02;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+@utility t-h2 {
+  font-size: clamp(2rem, 3vw, 2.75rem);
+  line-height: 1.08;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+@utility t-h3 {
+  font-size: clamp(1.5rem, 2vw, 2rem);
+  line-height: 1.15;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+@utility t-h4 {
+  font-size: 20px;
+  line-height: 1.25;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  @media (min-width: 768px) {
+    font-size: 22px;
+  }
+}
+
+@utility t-body-lg {
+  font-size: 18px;
+  line-height: 1.55;
+  font-weight: 400;
+  @media (min-width: 768px) {
+    font-size: 20px;
+  }
+}
+
+@utility t-body {
+  font-size: 16px;
+  line-height: 1.6;
+  font-weight: 400;
+}
+
+@utility t-small {
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+@utility t-caption {
+  font-size: 13px;
+  line-height: 1.45;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+@utility t-label {
+  font-size: 13px;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+}
+
+@utility t-quote {
+  font-family: var(--font-serif);
+  font-size: 19px;
+  line-height: 1.45;
+  font-weight: 400;
+  @media (min-width: 768px) {
+    font-size: 22px;
+  }
+  @media (min-width: 1200px) {
+    font-size: 24px;
+  }
+}
+
+/* ---------- Layout — spec §14 ---------- */
+
+@utility container-page {
+  width: 100%;
+  max-width: calc(1240px + 2 * 32px);
+  margin-inline: auto;
+  padding-inline: 16px;
+  @media (min-width: 360px) {
+    padding-inline: 20px;
+  }
+  @media (min-width: 768px) {
+    padding-inline: 24px;
+  }
+  @media (min-width: 1200px) {
+    padding-inline: 32px;
+  }
+}
+
+@utility grid-page {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  column-gap: 16px;
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    column-gap: 20px;
+  }
+  @media (min-width: 1200px) {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    column-gap: 24px;
+  }
+}
+
+/* ---------- Interaction details ---------- */
+
+/* FAQ accordion (native <details>) */
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+.faq-item summary {
+  list-style: none;
+}
+.faq-item[open] .faq-icon-v {
+  transform: scaleY(0);
+}
+
+/* Process story crossfade — spec §20 section 03 */
+.process-frame {
+  opacity: 0;
+  transform: scale(1.015);
+  transition:
+    opacity 380ms ease,
+    transform 700ms ease;
+}
+.process-frame[data-active="true"] {
+  opacity: 1;
+  transform: scale(1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .process-frame {
+    transition: none;
+    transform: none;
+  }
+}
+
+.process-stage .process-num {
+  transition: color 200ms ease;
+}
+.process-stage[data-active="true"] .process-num {
+  color: var(--velto-blue);
+}
+.process-stage .process-marker {
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 450ms ease;
+}
+.process-stage[data-active="true"] .process-marker {
+  transform: scaleX(1);
+}
+/* Desktop active emphasis: inactive stages step back but stay AA-readable. */
+@media (min-width: 1024px) {
+  .process-stage .process-title {
+    color: var(--color-text-secondary);
+    transition: color 200ms ease;
+  }
+  .process-stage[data-active="true"] .process-title {
+    color: var(--velto-navy);
+  }
+}
+.process-tick {
+  background: var(--color-border);
+  transition: background-color 200ms ease;
+}
+.process-tick[data-active="true"] {
+  background: var(--velto-blue);
+}
+@media (prefers-reduced-motion: reduce) {
+  .process-stage .process-num,
+  .process-stage .process-marker,
+  .process-stage .process-title,
+  .process-tick {
+    transition: none;
+  }
+}
+
+/* Skeleton rows for pricing loading */
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+.skeleton {
+  background: var(--color-disabled-bg);
+  border-radius: 4px;
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
