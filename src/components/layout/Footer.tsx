@@ -4,7 +4,7 @@ import { LOCATIONS, NAV, SERVICE_AREA, WHATSAPP_URL, bookHref } from "@/content/
 
 export function Footer() {
   return (
-    <footer className="on-navy bg-navy text-white/80">
+    <footer className="on-navy border-t border-white/15 bg-navy-deep text-white/80">
       <div className="container-page pb-10 pt-16 md:pt-20">
         <div className="grid-page gap-y-12">
           <div className="col-span-4 md:col-span-8 xl:col-span-4">

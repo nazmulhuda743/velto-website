@@ -408,6 +408,7 @@ The following working values were derived from the supplied Velto logo asset. If
   --color-bg-warm: #FAFAF8;
   --color-bg-soft: #F5F7F8;
   --color-bg-navy: var(--velto-navy);
+  --color-bg-navy-deep: #00223D; /* footer surface, one step below navy */
 
   --color-border: #D9E0E4;
   --color-border-strong: #B8C5CD;
@@ -654,13 +655,15 @@ Do not reorder, remove or insert homepage sections without explicit instruction.
 1. Hero + local proof
 2. Service chooser
 3. What happens to your clothes after pickup?
-4. Find a Price
-5. Curtains, carpets & bedding
-6. Customer proof
-7. Built around Uttara
+4. Customer proof
+5. Built around Uttara
+6. Find a Price
+7. Curtains, carpets & bedding
 8. Regular laundry
 9. FAQ
 10. Final booking
+
+Order adjusted in the owner-requested UI audit: the proof cluster (customer proof, locations) now precedes the pricing cluster (Find a Price, household), so trust evidence lands before price. Section backgrounds alternate white / warm / white / warm / white / soft / white / soft / white / navy with no adjacent repeats; the footer sits on `--color-bg-navy-deep` with a hairline top rule so the final booking section and footer read as separate surfaces.
 
 ---
 
@@ -887,7 +890,89 @@ All eight stages stay present, grouped visually into four movements, each with o
 
 ---
 
-## SECTION 04 — Find a Price
+## SECTION 04 — Customer proof
+
+### H2
+
+**What customers noticed**
+
+No intro paragraph.
+
+### Purpose
+
+Use 3–4 strong reviews that are not already used contextually elsewhere.
+
+Do not duplicate reviews.
+
+No carousel.
+
+### Metadata
+
+Show:
+- reviewer name
+- Google or Facebook
+- rating/recommendation where available
+- source link where practical
+
+Do not rewrite customer language.
+
+---
+
+## SECTION 05 — Built around Uttara
+
+### H2
+
+**Built around Uttara.**
+
+### Supporting copy
+
+Velto serves Uttara Sectors 1–18, with locations in Sector 11 and Sector 18.
+
+Book a pickup from home or visit the outlet that works for you.
+
+### Sector 11
+
+**5.0 ★ · 102 Google reviews**
+
+House 2, Road 14, Sector 11, Uttara, Dhaka
+
+9:00 AM–10:00 PM
+
+**Get Directions**
+
+**See Google Reviews**
+
+### Sector 18
+
+**4.9 ★ · 8 Google reviews**
+
+RUAP, North Side of Gate 1, Poncoboti Bazar, Sector 18, Uttara, Dhaka
+
+10:00 AM–9:00 PM
+
+**Get Directions**
+
+**See Google Reviews**
+
+### Desktop
+
+Two 6-column location blocks.
+
+Storefront image ~3:2.
+
+No heavy map embed on homepage.
+
+### Mobile
+
+Sector 11 then Sector 18. Image → rating → address → hours → directions → reviews.
+
+Never merge the two branch ratings.
+
+Review counts must be verified immediately before launch or retrieved dynamically where practical.
+
+---
+
+## SECTION 06 — Find a Price
 
 ### H2
 
@@ -993,7 +1078,7 @@ Search → results → turnaround → delivery rule → CTAs.
 
 ---
 
-## SECTION 05 — Curtains, carpets & bedding
+## SECTION 07 — Curtains, carpets & bedding
 
 ### H2
 
@@ -1031,88 +1116,6 @@ Pricing depends mainly on the item, type and size. These jobs can take longer th
 ### Mobile
 
 Image first → heading/copy → service rows → CTA.
-
----
-
-## SECTION 06 — Customer proof
-
-### H2
-
-**What customers noticed**
-
-No intro paragraph.
-
-### Purpose
-
-Use 3–4 strong reviews that are not already used contextually elsewhere.
-
-Do not duplicate reviews.
-
-No carousel.
-
-### Metadata
-
-Show:
-- reviewer name
-- Google or Facebook
-- rating/recommendation where available
-- source link where practical
-
-Do not rewrite customer language.
-
----
-
-## SECTION 07 — Built around Uttara
-
-### H2
-
-**Built around Uttara.**
-
-### Supporting copy
-
-Velto serves Uttara Sectors 1–18, with locations in Sector 11 and Sector 18.
-
-Book a pickup from home or visit the outlet that works for you.
-
-### Sector 11
-
-**5.0 ★ · 102 Google reviews**
-
-House 2, Road 14, Sector 11, Uttara, Dhaka
-
-9:00 AM–10:00 PM
-
-**Get Directions**
-
-**See Google Reviews**
-
-### Sector 18
-
-**4.9 ★ · 8 Google reviews**
-
-RUAP, North Side of Gate 1, Poncoboti Bazar, Sector 18, Uttara, Dhaka
-
-10:00 AM–9:00 PM
-
-**Get Directions**
-
-**See Google Reviews**
-
-### Desktop
-
-Two 6-column location blocks.
-
-Storefront image ~3:2.
-
-No heavy map embed on homepage.
-
-### Mobile
-
-Sector 11 then Sector 18. Image → rating → address → hours → directions → reviews.
-
-Never merge the two branch ratings.
-
-Review counts must be verified immediately before launch or retrieved dynamically where practical.
 
 ---
 

@@ -34,6 +34,8 @@
   --color-bg-warm: #fafaf8;
   --color-bg-soft: #f5f7f8;
   --color-bg-navy: var(--velto-navy);
+  /* Footer surface: one step below navy so the closing CTA and footer read as two surfaces. */
+  --color-bg-navy-deep: #00223d;
 
   --color-border: #d9e0e4;
   --color-border-strong: #b8c5cd;
@@ -99,6 +101,7 @@
   --color-transparent: transparent;
   --color-current: currentColor;
   --color-navy: var(--velto-navy);
+  --color-navy-deep: var(--color-bg-navy-deep);
   --color-blue: var(--velto-blue);
   --color-action: #0078bc;
   --color-action-hover: #00659e;
