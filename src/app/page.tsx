@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { MobileConversionBar } from "@/components/layout/MobileConversionBar";
 import { FAQ } from "@/components/home/FAQ";
 import { FinalBookingCTA } from "@/components/home/FinalBookingCTA";
@@ -9,6 +10,10 @@ import { ProcessStory } from "@/components/home/ProcessStory";
 import { RegularLaundrySection } from "@/components/home/RegularLaundrySection";
 import { ReviewsSection } from "@/components/home/ReviewsSection";
 import { ServiceChooser } from "@/components/home/ServiceChooser";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 const FINAL_ID = "book";
 
