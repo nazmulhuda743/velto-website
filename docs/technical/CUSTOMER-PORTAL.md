@@ -34,3 +34,7 @@ Optional:
 - `VELTO_PORTAL_SITE_URL`
 
 Vercel previews otherwise use the platform-controlled `VERCEL_URL` for auth redirects.
+
+## Scope isolation
+
+This clean portal branch starts from `bd58a8a117801237afde9342c2f1a3d3228dcfce` and deliberately excludes the parallel image-upload, Command Center/consent, revenue-attribution and admin-architecture work.
