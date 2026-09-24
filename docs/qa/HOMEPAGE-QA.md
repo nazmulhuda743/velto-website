@@ -49,6 +49,19 @@ To reproduce the pricing states in dev: `/?mockPricing=slow` (loading) and `/?mo
 - Crops are set per slot through `position` in `src/content/mock.ts`. Copy, hierarchy and layouts are unchanged.
 - Captures are in `docs/qa/homepage/photography/`. No broken images, no console errors, and no horizontal overflow at 390 px.
 
+## Phase 3 final refinement
+
+Architecture and visual language are unchanged. The copy edits below were approved in review and mirrored into `docs/PROJECT-BUILD-SPEC.md`.
+- **Hero:** shorter supporting copy. The headline is 36 px on mobile (was 40). On desktop the display clamp is `clamp(2.75rem, 4.4vw, 4rem)` with a ~600 px headline measure. Measured headline lines: 4 at 1440 px, 3 at 1280 and 1024, 4 on mobile.
+- **Services:** copy edits to Dry Cleaning, Curtain Cleaning and Carpet Cleaning.
+- **Process:** a more human intro. Stage 02 is renamed "Checked in", the stage lines are rewritten, the "QC" wording is gone, and the delicate-garment insert is shortened.
+- **Mobile process:** grouped into four movements (Pickup, Intake, Cleaning & finishing, QC & return). All eight stages stay in the markup as compact title-plus-line rows. The mobile narrative went from 2,720 px to 1,621 px (**−40%**). The desktop sticky story is unchanged.
+- **Regular laundry and final CTA:** copy edits.
+- **Sticky header:** 64 px when scrolled (was 68), with a scaled-down logo and CTA and a hairline border plus soft shadow.
+- **Mobile bar:** reads "Book a Pickup" / "WhatsApp" in normal casing.
+- **Unchanged:** the stock photography is still temporary, the location placeholders are untouched, and no internal pages were started.
+- **Captures:** `docs/qa/homepage/phase3-final/`.
+
 ## Blockers / items needing a decision
 
 1. **Company profile PDF** (`docs/brand/velto-company-profile.pdf`) is still not in the repo, so it could not be used as a reference in this pass.

@@ -34,13 +34,13 @@ function ServiceItem({
 const household = [
   {
     title: "Curtain Cleaning",
-    copy: "Tell us the approximate size and quantity so we can guide you on pricing.",
+    copy: "Tell us roughly how many curtains you have and their size. We'll help you work out the price.",
     link: "View Curtain Cleaning",
     ...SERVICES.curtains,
   },
   {
     title: "Carpet Cleaning",
-    copy: "Share the approximate dimensions. Material and condition may affect the final price.",
+    copy: "Share the approximate dimensions. The material and condition may affect the final price.",
     link: "View Carpet Cleaning",
     ...SERVICES.carpets,
   },
@@ -78,8 +78,8 @@ export function ServiceChooser() {
                 href={SERVICES.dryCleaning.href}
                 linkLabel="View Dry Cleaning"
               >
-                For suits, blazers, sarees, sherwanis and other garments that need closer attention
-                before cleaning.
+                For suits, blazers, sarees, sherwanis and garments that need a closer look before
+                cleaning.
               </ServiceItem>
             </div>
           </article>

@@ -22,8 +22,8 @@ export function RegularLaundrySection() {
             title="If the laundry comes back every week, make pickup part of the week."
           >
             <p>
-              Regular laundry and ironing can be arranged as recurring pickups, so you do not have
-              to start from zero every time.
+              Regular laundry and ironing can be arranged as recurring pickups, so you don&apos;t
+              need to book from scratch every time.
             </p>
             <p>
               Put the week&apos;s laundry together and orders of ৳499+ qualify for free pickup and

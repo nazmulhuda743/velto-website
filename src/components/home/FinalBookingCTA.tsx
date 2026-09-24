@@ -12,9 +12,9 @@ export function FinalBookingCTA({ id }: { id: string }) {
         <div className="col-span-4 md:col-span-4 md:col-start-5 md:self-center xl:col-span-5 xl:col-start-8 xl:row-start-1">
           <SectionIntro id="final-title" title="Ready to send it?" inverse>
             <p>
-              Tell us where to collect from, what you need cleaned and when you would prefer pickup.
+              Tell us where to collect from, what you need cleaned and your preferred pickup time.
             </p>
-            <p>That is enough to get the booking started.</p>
+            <p>That&apos;s enough to get the booking started.</p>
           </SectionIntro>
           <div className="mt-8 flex flex-col gap-3 md:flex-row md:flex-wrap xl:mt-10">
             <ButtonLink href={bookHref("home_final")} event="book_pickup_click" placement="final">

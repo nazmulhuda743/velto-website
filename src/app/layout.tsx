@@ -23,7 +23,7 @@ const sourceSerif = Source_Serif_4({
 export const metadata: Metadata = {
   title: "Velto Premium Laundry — Laundry & dry cleaning in Uttara",
   description:
-    "Laundry and dry cleaning in Uttara, with pickup from your door. Velto collects from Uttara Sectors 1–18.",
+    "Laundry and dry cleaning in Uttara, with pickup from your door. We collect across Uttara Sectors 1–18.",
 };
 
 export const viewport: Viewport = {

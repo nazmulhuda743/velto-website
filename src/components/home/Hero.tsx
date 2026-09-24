@@ -8,14 +8,14 @@ export function Hero() {
   return (
     <section id="hero" aria-labelledby="hero-title" className="pb-14 pt-6 md:pb-20 md:pt-14 xl:pb-20 xl:pt-20">
       <div className="container-page grid-page gap-y-7 md:gap-y-0">
-        <div className="col-span-4 md:col-span-4 xl:col-span-5 xl:row-start-1">
-          <h1 id="hero-title" className="t-display max-w-[520px] text-navy">
+        <div className="col-span-4 md:col-span-4 xl:col-span-6 xl:row-start-1">
+          <h1 id="hero-title" className="t-display max-w-[600px] text-navy">
             Laundry and dry cleaning in Uttara, with pickup from your door.
           </h1>
           <p className="mt-4 max-w-[520px] t-body text-body md:mt-6 md:t-body-lg xl:mt-7">
-            Send everyday laundry, dry cleaning, ironing, curtains, carpets or bedding. Velto
-            collects from Uttara Sectors 1–18 and returns your order after it has been received,
-            checked, cleaned, finished and packed.
+            Send everyday laundry, dry cleaning, ironing, curtains, carpets or bedding. We collect
+            across Uttara Sectors <span className="whitespace-nowrap">1–18</span> and bring it back
+            when it&apos;s ready.
           </p>
           <div className="mt-6 flex gap-2.5 md:mt-8 md:flex-wrap md:gap-3 xl:mt-10">
             <ButtonLink

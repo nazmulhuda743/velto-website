@@ -8,36 +8,36 @@ import { SectionIntro } from "./SectionIntro";
 const STAGES = [
   { title: "Collected", copy: "We arrange pickup from your address in Uttara." },
   {
-    title: "Received & identified",
-    copy: "Your order is checked in and connected to the correct customer and order.",
+    title: "Checked in",
+    copy: "We count the order and connect the items to the right customer and order.",
   },
-  {
-    title: "Tagged",
-    copy: "Items are identified so they stay connected to the correct order while they move through Velto.",
-  },
+  { title: "Tagged", copy: "Items are tagged so they stay connected to the correct order." },
   {
     title: "Checked before cleaning",
-    copy: "Garment condition and visible stains are reviewed before work begins.",
+    copy: "We look over the garment condition and visible stains before cleaning starts.",
   },
   {
     title: "Cleaned & finished",
-    copy: "The garment is cleaned according to the booked service, then finished or pressed where required.",
+    copy: "The garment is cleaned for the booked service, then pressed or finished where needed.",
   },
-  {
-    title: "Checked before packing",
-    copy: "Finished items go through Velto's QC before they are packed.",
-  },
-  {
-    title: "Packed for return",
-    copy: "Your finished order is organised and packed before delivery.",
-  },
+  { title: "Checked before packing", copy: "Finished items are checked again before they are packed." },
+  { title: "Packed for return", copy: "Your finished order is organised and packed for delivery." },
   { title: "Returned to you", copy: "Delivery is arranged back to your address." },
 ];
 
-/** Mobile editorial groups — pairs of stages (spec §20 section 03). */
-const GROUPS = [0, 2, 4, 6];
+/**
+ * Four movements (mobile/tablet visual grouping). All eight stages stay in the
+ * DOM; on desktop the grouping is transparent and the sticky story runs per stage.
+ */
+const MOVEMENTS = [
+  { label: "Pickup", stages: [0], image: 0 },
+  { label: "Intake", stages: [1, 2, 3], image: 2 },
+  { label: "Cleaning & finishing", stages: [4], image: 4 },
+  { label: "QC & return", stages: [5, 6, 7], image: 6 },
+];
 
 const num = (i: number) => String(i + 1).padStart(2, "0");
+const stage = (i: number) => STAGES[i];
 
 export function ProcessStory() {
   return (
@@ -45,8 +45,9 @@ export function ProcessStory() {
       <div className="container-page">
         <SectionIntro id="process-title" title="What happens to your clothes after pickup?" titleClassName="max-w-[18ch]">
           <p>
-            Your order is checked in, identified and tagged before cleaning starts. Garments and
-            visible stains are reviewed, the work is completed, checked again, packed and returned.
+            Once your order reaches Velto, we check it in, identify the items and look over the
+            garments before cleaning starts. When the work is finished, everything is checked again,
+            packed and returned.
           </p>
         </SectionIntro>
 
@@ -95,36 +96,48 @@ export function ProcessStory() {
 
           {/* Narrative */}
           <div className="col-span-4 md:col-span-8 lg:col-span-4 lg:pb-[24vh] xl:col-span-5">
-            {GROUPS.map((start, g) => (
-              <div key={start} className={g > 0 ? "mt-12 md:mt-16 lg:mt-0" : ""}>
-                <div className="mb-8 lg:hidden">
+            {MOVEMENTS.map((movement, g) => (
+              <div
+                key={movement.label}
+                className={`md:grid md:grid-cols-2 md:items-start md:gap-x-5 lg:block ${
+                  g > 0 ? "mt-8 md:mt-12 lg:mt-0" : ""
+                }`}
+              >
+                <div className="mb-4 md:mb-0 lg:hidden">
                   <ResponsiveImage
-                    image={IMAGES.process[start]}
-                    aspect="aspect-[4/3] md:aspect-[16/9]"
-                    sizes="(min-width: 768px) 90vw, 100vw"
+                    image={IMAGES.process[movement.image]}
+                    aspect="aspect-[2/1] md:aspect-[4/3]"
+                    sizes="(min-width: 768px) 45vw, 100vw"
                   />
                 </div>
-                <ol start={start + 1} className="list-none md:grid md:grid-cols-2 md:gap-5 lg:block">
-                  {STAGES.slice(start, start + 2).map((stage, j) => {
-                    const i = start + j;
-                    return (
+                <div>
+                  <p className="mb-2 flex items-baseline gap-3 lg:hidden">
+                    <span className="t-label text-blue">{num(g)}</span>
+                    <span className="t-h4 text-navy">{movement.label}</span>
+                  </p>
+                  <ol start={movement.stages[0] + 1} className="list-none">
+                    {movement.stages.map((i) => (
                       <li
                         key={i}
                         data-stage={i}
                         data-active={i === 0}
-                        className="process-stage relative border-t border-line pb-8 pt-5 lg:flex lg:min-h-[30vh] lg:flex-col lg:pb-10 lg:pt-6"
+                        className="process-stage relative border-t border-line py-2.5 lg:flex lg:min-h-[30vh] lg:flex-col lg:pb-10 lg:pt-6"
                       >
                         <span
                           aria-hidden="true"
                           className="process-marker absolute -top-px left-0 hidden h-0.5 w-full bg-blue lg:block"
                         />
-                        <span className="process-num t-label text-secondary">{num(i)}</span>
-                        <h3 className="process-title mt-3 t-h4 text-navy">{stage.title}</h3>
-                        <p className="mt-2 max-w-[40ch] text-secondary">{stage.copy}</p>
+                        <span className="process-num hidden t-label text-secondary lg:block">{num(i)}</span>
+                        <h3 className="process-title inline text-[15px] font-semibold leading-snug text-navy lg:mt-3 lg:block lg:t-h4">
+                          {stage(i).title}
+                        </h3>
+                        <p className="ml-1.5 inline t-small text-secondary lg:mt-2 lg:ml-0 lg:block lg:max-w-[40ch] lg:t-body">
+                          {stage(i).copy}
+                        </p>
                       </li>
-                    );
-                  })}
-                </ol>
+                    ))}
+                  </ol>
+                </div>
               </div>
             ))}
           </div>
@@ -135,7 +148,7 @@ export function ProcessStory() {
           <div className="col-span-4 md:col-span-4 xl:col-span-6">
             <ResponsiveImage
               image={IMAGES.delicate}
-              aspect="aspect-[4/3] xl:aspect-[3/2]"
+              aspect="aspect-[16/9] md:aspect-[4/3] xl:aspect-[3/2]"
               sizes="(min-width: 1200px) 610px, (min-width: 768px) 50vw, 100vw"
             />
           </div>
@@ -143,12 +156,12 @@ export function ProcessStory() {
             <h3 className="t-h3 max-w-[18ch] text-navy">Some garments need a closer look.</h3>
             <div className="mt-5 max-w-[48ch] space-y-4 text-body">
               <p>
-                A blazer, saree or sherwani is not the same job as everyday laundry. We check the
+                A blazer, saree or sherwani isn&apos;t the same job as everyday laundry. We check the
                 garment and visible stains before cleaning starts.
               </p>
               <p>
-                Some stains cannot be fully removed. If a garment needs extra attention, that should
-                be clear before unrealistic promises are made.
+                Some stains cannot be fully removed. If something needs extra attention, we&apos;ll
+                explain the options first.
               </p>
             </div>
             <div className="mt-5">

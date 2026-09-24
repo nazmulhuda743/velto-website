@@ -444,7 +444,7 @@ Secondary: **Source Serif 4**, used selectively for reviews / editorial quotes.
 
 | Style | Desktop | Mobile | Line height | Weight | Tracking |
 |---|---:|---:|---:|---:|---:|
-| Display / Hero | clamp(2.75rem, 4.7vw, 4.25rem) | min ~44px | 1.02 | 600 | -0.035em |
+| Display / Hero | clamp(2.75rem, 4.4vw, 4rem), text width ~600px (aim ≤4 lines) | ~36px | 1.02 | 600 | -0.035em |
 | H1 | clamp(2.5rem, 4vw, 3.5rem) | min ~40px | 1.05 | 600 | -0.03em |
 | H2 | clamp(2rem, 3vw, 2.75rem) | min ~32px | 1.08 | 600 | -0.025em |
 | H3 | clamp(1.5rem, 2vw, 2rem) | min ~24px | 1.15 | 600 | -0.015em |
@@ -594,7 +594,7 @@ Booking must remain simple and accessible.
 
 Header height:
 - initial 76px
-- scrolled 68px
+- scrolled 64px, lighter (smaller logo/CTA, hairline border + soft shadow)
 
 Navigation:
 - Services
@@ -630,9 +630,9 @@ Mobile menu:
 
 Persistent on homepage and service pages.
 
-Primary: **BOOK PICKUP**
+Primary: **Book a Pickup** (same casing as every other CTA)
 
-Secondary: **WHATSAPP**
+Secondary: **WhatsApp** (with WhatsApp icon)
 
 Book Pickup gets ~68–70% visual width.
 
@@ -674,7 +674,7 @@ Do not reorder, remove or insert homepage sections without explicit instruction.
 
 ### Supporting copy
 
-Send everyday laundry, dry cleaning, ironing, curtains, carpets or bedding. Velto collects from Uttara Sectors 1–18 and returns your order after it has been received, checked, cleaned, finished and packed.
+Send everyday laundry, dry cleaning, ironing, curtains, carpets or bedding. We collect across Uttara Sectors 1–18 and bring it back when it's ready.
 
 ### Primary CTA
 
@@ -697,9 +697,9 @@ Send everyday laundry, dry cleaning, ironing, curtains, carpets or bedding. Velt
 ### Desktop layout
 
 - 12-column grid
-- copy columns 1–5
+- copy columns 1–6 (headline max ~600px, aim ≤4 lines)
 - image columns 7–12
-- text max width ~520px
+- supporting text max width ~520px
 - hero top padding 72–88px below header
 - hero bottom ~80px
 - image ratio approximately 4:5 or 5:6
@@ -736,7 +736,7 @@ Choose the service you need. If you are unsure, send us a photo or message Velto
 
 ### Dry Cleaning
 
-For suits, blazers, sarees, sherwanis and other garments that need closer attention before cleaning.
+For suits, blazers, sarees, sherwanis and garments that need a closer look before cleaning.
 
 **View Dry Cleaning**
 
@@ -754,13 +754,13 @@ Already washed? Send it to Velto for ironing and finishing.
 
 ### Curtain Cleaning
 
-Tell us the approximate size and quantity so we can guide you on pricing.
+Tell us roughly how many curtains you have and their size. We'll help you work out the price.
 
 **View Curtain Cleaning**
 
 ### Carpet Cleaning
 
-Share the approximate dimensions. Material and condition may affect the final price.
+Share the approximate dimensions. The material and condition may affect the final price.
 
 **View Carpet Cleaning**
 
@@ -797,7 +797,7 @@ Vertical list. No horizontal carousel.
 
 ### Supporting copy
 
-Your order is checked in, identified and tagged before cleaning starts. Garments and visible stains are reviewed, the work is completed, checked again, packed and returned.
+Once your order reaches Velto, we check it in, identify the items and look over the garments before cleaning starts. When the work is finished, everything is checked again, packed and returned.
 
 ### Stages
 
@@ -805,29 +805,29 @@ Your order is checked in, identified and tagged before cleaning starts. Garments
 
 We arrange pickup from your address in Uttara.
 
-#### 02 — Received & identified
+#### 02 — Checked in
 
-Your order is checked in and connected to the correct customer and order.
+We count the order and connect the items to the right customer and order.
 
 #### 03 — Tagged
 
-Items are identified so they stay connected to the correct order while they move through Velto.
+Items are tagged so they stay connected to the correct order.
 
 #### 04 — Checked before cleaning
 
-Garment condition and visible stains are reviewed before work begins.
+We look over the garment condition and visible stains before cleaning starts.
 
 #### 05 — Cleaned & finished
 
-The garment is cleaned according to the booked service, then finished or pressed where required.
+The garment is cleaned for the booked service, then pressed or finished where needed.
 
 #### 06 — Checked before packing
 
-Finished items go through Velto's QC before they are packed.
+Finished items are checked again before they are packed.
 
 #### 07 — Packed for return
 
-Your finished order is organised and packed before delivery.
+Your finished order is organised and packed for delivery.
 
 #### 08 — Returned to you
 
@@ -841,9 +841,9 @@ Delivery is arranged back to your address.
 
 #### Copy
 
-A blazer, saree or sherwani is not the same job as everyday laundry. We check the garment and visible stains before cleaning starts.
+A blazer, saree or sherwani isn't the same job as everyday laundry. We check the garment and visible stains before cleaning starts.
 
-Some stains cannot be fully removed. If a garment needs extra attention, that should be clear before unrealistic promises are made.
+Some stains cannot be fully removed. If something needs extra attention, we'll explain the options first.
 
 CTA: **See Dry Cleaning**
 
@@ -878,14 +878,12 @@ All stage copy remains fully accessible. First image remains visible and no cont
 
 No sticky process.
 
-Use four editorial groups:
+All eight stages stay present, grouped visually into four movements, each with one real image and compact stage rows:
 
-1. Collected + Received & identified
-2. Tagged + Checked before cleaning
-3. Cleaned & finished + Checked before packing
-4. Packed for return + Returned to you
-
-Use real images between groups.
+1. Pickup: Collected
+2. Intake: Checked in, Tagged, Checked before cleaning
+3. Cleaning & finishing: Cleaned & finished
+4. QC & return: Checked before packing, Packed for return, Returned to you
 
 ---
 
@@ -1126,7 +1124,7 @@ Review counts must be verified immediately before launch or retrieved dynamicall
 
 ### Supporting copy
 
-Regular laundry and ironing can be arranged as recurring pickups, so you do not have to start from zero every time.
+Regular laundry and ironing can be arranged as recurring pickups, so you don't need to book from scratch every time.
 
 Put the week's laundry together and orders of ৳499+ qualify for free pickup and delivery.
 
@@ -1218,9 +1216,9 @@ Accessible single-column accordion.
 
 ### Supporting copy
 
-Tell us where to collect from, what you need cleaned and when you would prefer pickup.
+Tell us where to collect from, what you need cleaned and your preferred pickup time.
 
-That is enough to get the booking started.
+That's enough to get the booking started.
 
 ### Primary CTA
 

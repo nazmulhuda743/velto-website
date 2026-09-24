@@ -55,18 +55,18 @@ export function MobileConversionBar({ finalSectionId }: { finalSectionId: string
       <div className="flex h-16 items-center gap-2 px-4 min-[375px]:px-5">
         <Link
           href={bookHref("mobile_sticky")}
-          className="inline-flex h-11 flex-[7] items-center justify-center rounded-md bg-action text-[14px] font-semibold uppercase tracking-[0.03em] text-white active:bg-action-active"
+          className="inline-flex h-11 flex-[7] items-center justify-center rounded-md bg-action text-[15px] font-semibold tracking-[-0.005em] text-white active:bg-action-active"
           data-analytics="book_pickup_click"
           data-placement="mobile_sticky"
         >
-          Book Pickup
+          Book a Pickup
         </Link>
         <a
           href={WHATSAPP_URL}
           target="_blank"
           rel="noopener noreferrer"
           aria-label="WhatsApp Velto (opens in a new tab)"
-          className="inline-flex h-11 min-w-0 flex-[3] items-center justify-center gap-1.5 rounded-md border border-line px-1 text-[12px] font-semibold uppercase tracking-[0.03em] text-navy active:bg-soft"
+          className="inline-flex h-11 min-w-0 flex-[3] items-center justify-center gap-1.5 rounded-md border border-line px-1 text-[14px] font-semibold text-navy active:bg-soft"
           data-analytics="whatsapp_click"
           data-placement="mobile_sticky"
         >

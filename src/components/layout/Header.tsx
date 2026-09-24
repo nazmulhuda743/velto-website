@@ -26,16 +26,24 @@ export function Header({ logo }: { logo: ReactNode }) {
 
   return (
     <header
-      className={`sticky top-0 z-40 border-b bg-white transition-[border-color] duration-200 ${
-        scrolled || menuOpen ? "border-line" : "border-transparent"
+      className={`sticky top-0 z-40 border-b bg-white transition-[border-color,box-shadow] duration-200 ${
+        scrolled || menuOpen
+          ? "border-line/70 lg:shadow-[0_8px_24px_-18px_rgba(0,43,78,0.35)]"
+          : "border-transparent"
       }`}
     >
       <div
         className={`container-page flex items-center justify-between gap-6 transition-[height] duration-200 motion-reduce:transition-none h-16 ${
-          scrolled ? "lg:h-[68px]" : "lg:h-[76px]"
+          scrolled ? "lg:h-16" : "lg:h-[76px]"
         }`}
       >
-        <Link href="/" className="-m-1 flex shrink-0 items-center p-1" aria-label="Velto home">
+        <Link
+          href="/"
+          className={`-m-1 flex shrink-0 origin-left items-center p-1 transition-transform duration-200 motion-reduce:transition-none ${
+            scrolled ? "lg:scale-[0.86]" : ""
+          }`}
+          aria-label="Velto home"
+        >
           {logo}
         </Link>
 
@@ -71,7 +79,7 @@ export function Header({ logo }: { logo: ReactNode }) {
               href={bookHref("header")}
               event="book_pickup_click"
               placement="header"
-              className="!h-11 !px-5 lg:!h-11"
+              className={`!h-11 !px-5 transition-[height] duration-200 ${scrolled ? "lg:!h-10" : "lg:!h-11"}`}
             >
               Book a Pickup
             </ButtonLink>
