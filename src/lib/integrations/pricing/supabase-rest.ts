@@ -26,7 +26,7 @@ export type SupabasePricingConfig = {
   fetch?: typeof globalThis.fetch;
 };
 
-function normalizeProjectUrl(value: string) {
+export function normalizeProjectUrl(value: string) {
   let url: URL;
   try {
     url = new URL(value);
