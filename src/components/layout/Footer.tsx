@@ -8,9 +8,8 @@ export function Footer() {
       <div className="container-page pb-10 pt-16 md:pt-20">
         <div className="grid-page gap-y-12">
           <div className="col-span-4 md:col-span-8 xl:col-span-4">
-            {/* No official reversed logo supplied: the colour artwork sits on a white plate. */}
-            <Link href="/" aria-label="Velto home" className="inline-flex rounded-md bg-white px-4 py-3">
-              <Logo className="h-10" />
+            <Link href="/" aria-label="Velto home" className="inline-flex">
+              <Logo inverse className="h-11" />
             </Link>
             <p className="mt-5 max-w-[30ch] t-small">
               Laundry and dry cleaning with pickup across {SERVICE_AREA}.
