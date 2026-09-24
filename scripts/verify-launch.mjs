@@ -115,8 +115,14 @@ async function main() {
     "pricing_anon_select","pricing_authenticated_select","content_anon_select",
     "limiter_service_direct_select","create_request_anon_execute","track_order_anon_execute","track_limit_anon_execute",
   ];
-  for (const key of expectedTrue) state?.[key] === true ? pass(`DB launch state ${key}`) : fail(`DB launch state ${key} expected true`);
-  for (const key of expectedFalse) state?.[key] === false ? pass(`DB launch state ${key}=false`) : fail(`DB launch state ${key} expected false`);
+  for (const key of expectedTrue) {
+    if (state?.[key] === true) pass(`DB launch state ${key}`);
+    else fail(`DB launch state ${key} expected true`);
+  }
+  for (const key of expectedFalse) {
+    if (state?.[key] === false) pass(`DB launch state ${key}=false`);
+    else fail(`DB launch state ${key} expected false`);
+  }
   for (const key of ["create_request_search_path","track_order_search_path","track_limit_search_path"]) {
     const values = Array.isArray(state?.[key]) ? state[key].join(",") : "";
     if (values.includes("search_path=pg_catalog, public")) pass(`${key} hardened`); else fail(`${key} is not pg_catalog, public`);
