@@ -11,13 +11,9 @@ import {
   validateSubmissionContext,
   type ValidationIssue,
 } from "@/lib/integrations/ops/validation";
+import { logServerEvent } from "@/lib/observability/log";
 import { readBoundedJson } from "@/lib/security/json-request";
 
-/**
- * Website-owned household quote endpoint (spec §7/§8). Same wire format and
- * error contract as /api/bookings. photoReferences only ever carries opaque
- * references from the future controlled upload flow — never file bodies.
- */
 const fail = (
   code: SafeErrorCode,
   requestId: string,
@@ -49,12 +45,13 @@ export async function POST(request: NextRequest) {
 
   try {
     const result = await gateway.createQuote(parsed.value, context.value);
+    logServerEvent("quote_submission_success", "info", { operation: "quote", requestId });
     return NextResponse.json(
       { ok: true as const, reference: result.reference, requestId },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {
-    console.error("quote_failed", integrationLogContext(error, "quote", requestId));
+    logServerEvent("quote_submission_failure", "error", integrationLogContext(error, "quote", requestId));
     const safe = toSafeIntegrationError(error, requestId, "quote_unavailable");
     const status =
       error instanceof IntegrationError && error.code === "duplicate_submission"

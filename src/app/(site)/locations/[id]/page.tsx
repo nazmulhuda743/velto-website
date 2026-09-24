@@ -5,16 +5,16 @@ import { ProofList } from "@/components/home/ProofLine";
 import { SectionIntro } from "@/components/home/SectionIntro";
 import { FactRows } from "@/components/pages/FactRows";
 import { PageHero } from "@/components/pages/PageHero";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { ButtonLink } from "@/components/ui/Button";
 import { Star } from "@/components/ui/icons";
 import { TextLink } from "@/components/ui/TextLink";
 import { IMAGES } from "@/content/mock";
 import { LOCATIONS, bookHref } from "@/content/site";
 import { pageMetadata } from "@/lib/seo/page-metadata";
+import { buildBreadcrumbSchema, buildLaundryLocationSchema } from "@/lib/seo/schema";
 import { getLocations } from "@/lib/site-content";
 
-// Unknown slugs 404 via notFound(). dynamicParams=false would also 404 the real pages
-// after an admin save revalidates the layout (Next.js NoFallbackError on regeneration).
 export const dynamicParams = true;
 
 export function generateStaticParams() {
@@ -36,10 +36,19 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
   const other = locations.find((l) => l.id !== loc.id)!;
   return (
     <>
+      <JsonLd
+        data={[
+          buildLaundryLocationSchema(loc),
+          buildBreadcrumbSchema([
+            { name: "Home", path: "/" },
+            { name: "Locations", path: "/locations" },
+            { name: loc.name, path: `/locations/${loc.id}` },
+          ]),
+        ]}
+      />
       <PageHero
         crumbs={[{ label: "Home", href: "/" }, { label: "Locations", href: "/locations" }, { label: loc.name }]}
         title={`Velto ${loc.name}`}
-        // Real outlet: MOCK placeholder until verified Velto photography exists (never stock).
         image={IMAGES.locations[loc.id]}
         aside={<ProofList items={[`Open ${loc.hours}`, `${loc.rating} on Google · ${loc.reviewCount} reviews for ${loc.name}`]} />}
         actions={
@@ -83,7 +92,6 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
                 { label: "Hours", value: loc.hours },
                 {
                   label: "Google rating",
-                  // TODO_VERIFY: review counts before launch (spec §36). Never merged across branches.
                   value: (
                     <span className="inline-flex items-center gap-1.5">
                       <span aria-hidden="true" className="inline-flex items-center gap-1.5">
