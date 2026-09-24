@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test:foundation": "tsc --ignoreConfig --outDir .foundation-test-build --module node16 --moduleResolution node16 --target es2022 --esModuleInterop --skipLibCheck src/lib/attribution.ts src/lib/integrations/errors.ts src/lib/integrations/ops/validation.ts src/lib/integrations/pricing/validation.ts && node --test tests/*.test.cjs"
+    "test:foundation": "tsc --ignoreConfig --outDir .foundation-test-build --module node16 --moduleResolution node16 --target es2022 --esModuleInterop --skipLibCheck src/lib/attribution.ts src/lib/integrations/errors.ts src/lib/integrations/ops/validation.ts src/lib/integrations/pricing/validation.ts && node --test tests/*.test.cjs",
+    "test:launch": "node scripts/launch-smoke.mjs"
   },
   "dependencies": {
     "next": "^16.3.6",
