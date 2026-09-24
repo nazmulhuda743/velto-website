@@ -1,7 +1,7 @@
 import { ButtonLink, WhatsAppButton } from "@/components/ui/Button";
 import { ResponsiveImage } from "@/components/ui/ResponsiveImage";
 import { IMAGES, REGULAR_REVIEW } from "@/content/mock";
-import { WHATSAPP_URL, bookHref } from "@/content/site";
+import { REGULAR_FREE_DELIVERY_THRESHOLD, WHATSAPP_URL, bookHref } from "@/content/site";
 import { ReviewBlock } from "./ReviewsSection";
 import { SectionIntro } from "./SectionIntro";
 
@@ -26,8 +26,8 @@ export function RegularLaundrySection() {
               need to book from scratch every time.
             </p>
             <p>
-              Put the week&apos;s laundry together and orders of ৳499+ qualify for free pickup and
-              delivery.
+              On a fixed weekly or fortnightly pickup, regular orders of{" "}
+              {REGULAR_FREE_DELIVERY_THRESHOLD}+ qualify for free pickup and delivery.
             </p>
           </SectionIntro>
 

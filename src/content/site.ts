@@ -10,6 +10,9 @@ export const SERVICE_AREA = "Uttara Sectors 1\u2060–\u206018";
 /** Free pickup & delivery threshold (§4). */
 export const FREE_DELIVERY_THRESHOLD = "৳499";
 
+/** Owner-confirmed: on a fixed weekly or fortnightly pickup, regular orders qualify from this amount. */
+export const REGULAR_FREE_DELIVERY_THRESHOLD = "৳300";
+
 /**
  * Homepage durable Google proof (§21). Refers to the Sector 11 profile only.
  * Fallback is used if live rating data is unavailable (§20 hero).
@@ -20,11 +23,8 @@ export const GOOGLE_PROOF = {
   rating: 5,
 };
 
-/**
- * TODO_VERIFY: final WhatsApp destination (§36). Until the number is supplied
- * this opens WhatsApp without a pre-selected chat.
- */
-export const WHATSAPP_URL = "https://wa.me/";
+/** Owner-confirmed Velto WhatsApp number (+880 1605-162788). */
+export const WHATSAPP_URL = "https://wa.me/8801605162788";
 
 export type Location = {
   id: "sector-11" | "sector-18";

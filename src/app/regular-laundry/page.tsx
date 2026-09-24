@@ -7,7 +7,7 @@ import { ProcessSteps } from "@/components/pages/ProcessSteps";
 import { ButtonLink, WhatsAppButton } from "@/components/ui/Button";
 import { TextLink } from "@/components/ui/TextLink";
 import { IMAGES } from "@/content/mock";
-import { FREE_DELIVERY_THRESHOLD, WHATSAPP_URL, bookHref } from "@/content/site";
+import { FREE_DELIVERY_THRESHOLD, REGULAR_FREE_DELIVERY_THRESHOLD, WHATSAPP_URL, bookHref } from "@/content/site";
 
 export const metadata: Metadata = {
   title: "Regular Laundry Pickup — Velto, Uttara",
@@ -73,8 +73,9 @@ export default function RegularLaundryPage() {
           <div className="col-span-4 md:col-span-8 xl:col-span-5">
             <SectionIntro id="regular-save-title" title="Put the week together.">
               <p>
-                Orders of {FREE_DELIVERY_THRESHOLD}+ qualify for free pickup and delivery. One weekly
-                pickup of everything is usually simpler than several small ones.
+                On a fixed weekly or fortnightly pickup, regular orders of{" "}
+                {REGULAR_FREE_DELIVERY_THRESHOLD}+ qualify for free pickup and delivery. Other orders
+                qualify from {FREE_DELIVERY_THRESHOLD}+.
               </p>
             </SectionIntro>
           </div>

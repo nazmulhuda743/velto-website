@@ -28,6 +28,7 @@ export const FAQS: FAQItem[] = [
     a: (
       <>
         <p>Orders of ৳499+ qualify for free pickup and delivery.</p>
+        <p>On a fixed weekly or fortnightly pickup, regular orders of ৳300+ qualify.</p>
         <p>Smaller orders have an applicable pickup and delivery charge.</p>
       </>
     ),

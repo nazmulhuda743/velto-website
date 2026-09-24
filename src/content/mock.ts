@@ -1,8 +1,9 @@
 /**
  * MOCK — temporary homepage development data (spec §27).
  *
- * Everything in this file is a placeholder and must be replaced with verified
- * material before launch. Nothing here is a real review, price or Velto photograph.
+ * Images here are placeholders or licensed stock and must be replaced with real
+ * Velto photography before launch. The reviews are verified, owner-supplied
+ * Google reviews. No prices live in this file.
  */
 
 export type ImageSlot = {
@@ -134,13 +135,37 @@ export type Review = {
   sourceUrl: string | null;
 };
 
-/** MOCK: review slots for "What customers noticed". Never fill with invented text. */
-export const REVIEWS: Review[] = [
-  { name: null, platform: "Google", rating: null, text: null, sourceUrl: null },
-  { name: null, platform: "Google", rating: null, text: null, sourceUrl: null },
-  { name: null, platform: "Google", rating: null, text: null, sourceUrl: null },
-  { name: null, platform: "Facebook", rating: null, text: null, sourceUrl: null },
-];
+/**
+ * Verified Google reviews supplied by the owner from Velto's Google profiles.
+ * Text is transcribed exactly; paragraphs are separated by a blank line.
+ * TODO_VERIFY: direct review links (sourceUrl) if they should be linked.
+ */
+export const REVIEW_FAHIM: Review = {
+  name: "Mahmudur Rahman Fahim",
+  platform: "Google",
+  rating: 5,
+  text: "I’ve been living in RUAP in my own residence for the past three years, and during this time, I’ve tried at least 8–10 different laundry services. Honestly, the experience was always horrible.\n\nThen I connected with Velto, and since then, the experience has been absolutely top-notch. I’ve never experienced this level of professionalism from any laundry service before.\n\nPlease keep up the good work and continue providing us with such amazing service.\n\nThank you! ❤️",
+  sourceUrl: null,
+};
+
+export const REVIEW_ANGELA: Review = {
+  name: "Angela Sung",
+  platform: "Google",
+  rating: 5,
+  text: "Near midnight,  after discovering to my horror all beddings and comforter were soiled by my kittens, I decided to try my luck and made a frantic whatsapp sos to Velto for help.  To my surprise, I received an immediate response from Mr. Nazmul, CEO of Velto, at such late hour (sorry).\nHe was extremely professional and provided sound advice to the services required for my many concerns.\n\nPrompt collection was done at my door next early morning and was delivered right at the scheduled time.\n\nAll my cleaned laundry were carefully packed, properly labeled for traceability and validated with quality check. My soiled beddings and comforter from nightmare were returned to me looking pristine, smelling fresh and clean, exactly as what Mr. Nazmul@Velto had assured and committed.\n\nVelto has indeed lived up to their claim of being \"Premium Laundry at your Doorstep\".  I am happy to have found a jewel in Uttara and have Velto a door step away.\n\nFor all folks like me who cares about your cherishables, Velto is the indubitable choice for assurance in professionalism to take care of all your necessities.\n\nI found Velto noteworthy to be:\n1) prompt & accurate in status update;\n2) attentive to quality assurance;\n3) service oriented and reliable.\n\nLastly, a note of appreciation to rider Moniruzzaman for always keeping a pleasant smile and doing the rounds.\n\nKittens Soiling - No panic - Call Velto ~\nHappy New Year Everybody ~",
+  sourceUrl: null,
+};
+
+export const REVIEW_ETR: Review = {
+  name: "ETR I SAI",
+  platform: "Google",
+  rating: 5,
+  text: "Very satisfied after received my laundry, items smells very nice. Excellent service. Friendly Pro staff. Reasonable price. Will comeback for this laundry service.",
+  sourceUrl: null,
+};
+
+/** "What customers noticed" (homepage). */
+export const REVIEWS: Review[] = [REVIEW_FAHIM, REVIEW_ANGELA, REVIEW_ETR];
 
 /** TODO_VERIFY: verified repeat-customer review for Regular laundry. Rendered only when present. */
 export const REGULAR_REVIEW: Review | null = null;
