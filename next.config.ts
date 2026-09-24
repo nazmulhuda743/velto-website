@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const isVercelPreview = Boolean(process.env.VERCEL_ENV) && process.env.VERCEL_ENV !== "production";
+
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" },
@@ -9,6 +11,9 @@ const securityHeaders = [
     key: "Permissions-Policy",
     value: "camera=(self), microphone=(), geolocation=()",
   },
+  ...(isVercelPreview
+    ? [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" }]
+    : []),
 ];
 
 const nextConfig: NextConfig = {
