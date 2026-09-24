@@ -1,4 +1,5 @@
 import { Suspense, type ReactNode } from "react";
+import { ReviewBlock } from "@/components/home/ReviewsSection";
 import { SectionIntro } from "@/components/home/SectionIntro";
 import { FactRows } from "@/components/pages/FactRows";
 import { ProcessSteps } from "@/components/pages/ProcessSteps";
@@ -189,6 +190,18 @@ export function ServiceBlockView({
                 <ProcessSteps className="mt-6" steps={block.steps.steps} />
               </div>
             ) : null}
+          </div>
+        </Section>
+      );
+
+    case "review":
+      return (
+        <Section id={id} tone={tone}>
+          <div className={LEFT}>
+            <SectionIntro id={id} title={block.title} titleClassName="max-w-[14ch]" />
+          </div>
+          <div className={`${RIGHT} max-w-[720px]`}>
+            <ReviewBlock review={block.review} />
           </div>
         </Section>
       );

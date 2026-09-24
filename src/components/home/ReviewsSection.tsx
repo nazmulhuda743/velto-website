@@ -1,6 +1,54 @@
 import { Stars } from "@/components/ui/icons";
 import { REVIEWS, type Review } from "@/content/mock";
 
+const Paragraph = ({ text }: { text: string }) => (
+  <p>
+    {text.split("\n").map((line, i) => (
+      <span key={i}>
+        {i > 0 ? <br /> : null}
+        {line}
+      </span>
+    ))}
+  </p>
+);
+
+/** Long reviews show their opening; the rest stays one tap away, never edited. */
+const COLLAPSE_OVER_CHARS = 600;
+const PREVIEW_CHARS = 300;
+
+function ReviewText({ text }: { text: string }) {
+  const paragraphs = text.split("\n\n");
+  const limit = text.length > COLLAPSE_OVER_CHARS ? PREVIEW_CHARS : Infinity;
+  let shown = 0;
+  let used = 0;
+  while (shown < paragraphs.length && (shown === 0 || used + paragraphs[shown].length <= limit)) {
+    used += paragraphs[shown].length;
+    shown++;
+  }
+  const rest = paragraphs.slice(shown);
+  return (
+    <>
+      <div className="space-y-4">
+        {paragraphs.slice(0, shown).map((p, i) => (
+          <Paragraph key={i} text={p} />
+        ))}
+      </div>
+      {rest.length ? (
+        <details className="group/review mt-4">
+          <summary className="inline-flex min-h-11 cursor-pointer items-center font-sans text-base font-semibold text-navy underline decoration-blue/60 underline-offset-[6px] group-open/review:hidden">
+            Read the full review
+          </summary>
+          <div className="space-y-4">
+            {rest.map((p, i) => (
+              <Paragraph key={i} text={p} />
+            ))}
+          </div>
+        </details>
+      ) : null}
+    </>
+  );
+}
+
 export function ReviewBlock({ review }: { review: Review }) {
   const pending = review.text === null;
   const platformLabel = review.platform === "Google" ? "Google review" : "Facebook recommendation";
@@ -10,7 +58,7 @@ export function ReviewBlock({ review }: { review: Review }) {
         &ldquo;
       </span>
       <blockquote className={`mt-4 t-quote ${pending ? "text-secondary" : "text-navy"}`}>
-        <p>{pending ? "Verified review will appear here" : review.text}</p>
+        {review.text === null ? <p>Verified review will appear here</p> : <ReviewText text={review.text} />}
       </blockquote>
       <figcaption className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 pt-6 t-small">
         {review.name ? <span className="font-semibold text-navy">{review.name}</span> : null}
@@ -48,7 +96,7 @@ export function ReviewsSection() {
         </h2>
         <ul className="mt-(--space-intro-content) grid-page gap-y-12">
           {REVIEWS.map((review, i) => (
-            <li key={i} className="col-span-4 md:col-span-4 xl:col-span-6">
+            <li key={i} className="col-span-4 md:col-span-8 xl:col-span-4">
               <ReviewBlock review={review} />
             </li>
           ))}

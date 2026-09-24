@@ -7,7 +7,7 @@
  * file names the items a page features, never their prices.
  * Anything that still needs live verification is marked TODO_VERIFY.
  */
-import { IMAGES, type ImageSlot } from "./mock";
+import { IMAGES, REVIEW_ANGELA, type ImageSlot, type Review } from "./mock";
 import type { FAQ_KEYS } from "@/components/home/FAQ";
 import type { Step } from "@/components/pages/ProcessSteps";
 
@@ -75,7 +75,8 @@ export type ServiceBlock =
       footnote?: string;
       steps?: { title: string; steps: Step[] };
     }
-  | { type: "area"; title: string };
+  | { type: "area"; title: string }
+  | { type: "review"; title: string; review: Review };
 
 export type ServiceContent = {
   slug: ServiceSlug;
@@ -275,7 +276,7 @@ export const SERVICE_PAGES: ServiceContent[] = [
           },
           {
             title: "People who send every week",
-            copy: "Regular pickups can be arranged, so you don't need to book from scratch each time.",
+            copy: "Set up a fixed weekly or fortnightly pickup. Regular orders of ৳300+ then qualify for free pickup and delivery.",
           },
         ],
       },
@@ -546,6 +547,7 @@ export const SERVICE_PAGES: ServiceContent[] = [
         note: "Not sure which size or type yours is? Send a photo on WhatsApp, or request a quote.",
         searchHint: "bed",
       },
+      { type: "review", title: "Soiled bedding, collected the next morning", review: REVIEW_ANGELA },
       {
         type: "notes",
         title: "Good to know before you send bedding",
