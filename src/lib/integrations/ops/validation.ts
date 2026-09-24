@@ -1,4 +1,4 @@
-import { readAttribution } from "../../attribution";
+import { readSubmissionAttribution } from "../../attribution";
 import type {
   BookingSubmission,
   QuoteSubmission,
@@ -61,14 +61,9 @@ function text(
   return normalized;
 }
 
+/** Canonical submission contract: allowlist + consent gates (src/lib/attribution.ts). */
 function attribution(value: unknown) {
-  const data = record(value);
-  if (!data) return {};
-  const params = new URLSearchParams();
-  for (const [key, item] of Object.entries(data)) {
-    if (typeof item === "string") params.set(key, item);
-  }
-  return readAttribution(params);
+  return readSubmissionAttribution(record(value));
 }
 
 export function validateBookingSubmission(

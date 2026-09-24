@@ -17,7 +17,13 @@ execFileSync(
     "src/lib/analytics/collect-validation.ts",
     "src/lib/admin/insights.ts",
     "src/lib/admin/request-intel.ts",
+    "src/lib/admin/revenue.ts",
+    "src/lib/attribution.ts",
   ],
   { stdio: "inherit" },
 );
-execFileSync("node", ["--test", "tests/command-center/*.test.cjs"], { stdio: "inherit" });
+try {
+  execFileSync("node", ["--test", "tests/command-center/*.test.cjs"], { stdio: "inherit" });
+} finally {
+  rmSync(out, { recursive: true, force: true });
+}

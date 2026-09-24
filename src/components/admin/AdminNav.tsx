@@ -11,6 +11,7 @@ const GROUPS = [
       { href: "/admin/funnel", label: "Funnel" },
       { href: "/admin/visitors", label: "Visitors" },
       { href: "/admin/marketing", label: "Marketing" },
+      { href: "/admin/revenue", label: "Revenue" },
       { href: "/admin/consent", label: "Consent & tracking" },
     ],
   },

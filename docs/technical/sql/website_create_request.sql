@@ -3,6 +3,12 @@
 --
 -- Bookings become open `pickup` tasks and household quotes become open `call`
 -- tasks in the existing Ops task list. No new operational table is created.
+--
+-- Revenue attribution V1: attribution is cleaned by the canonical contract
+-- (public.website_clean_attribution, strict allowlist + consent gates) and a
+-- website_leads row is written in the same transaction as the task. The lead
+-- holds no phone, name, address or notes — it points at the task.
+-- Requires docs/technical/sql/website_revenue_attribution.sql first.
 -- Execution is restricted to service_role. The website still needs
 -- VELTO_OPS_WRITES_ENABLED=true before any request can reach this RPC.
 --
@@ -13,6 +19,11 @@ do $$
 begin
   if to_regclass('public.tasks') is null then
     raise exception 'website_create_request requires public.tasks';
+  end if;
+
+  if to_regclass('public.website_leads') is null
+     or to_regprocedure('public.website_clean_attribution(jsonb)') is null then
+    raise exception 'website_create_request requires website_revenue_attribution.sql (website_leads, website_clean_attribution)';
   end if;
 
   if not exists (
@@ -74,6 +85,17 @@ declare
   v_desc text;
   v_attr text;
   v_attribution jsonb;
+  v_session uuid;
+  v_visitor uuid;
+  v_ft_at timestamptz;
+  v_ft_source text;
+  v_ft_medium text;
+  v_ft_campaign text;
+  v_ft_content text;
+  v_ft_landing text;
+  v_ft_referrer text;
+  v_ft_click text;
+  v_sector smallint;
 begin
   if p_kind is null or p_kind not in ('booking', 'quote') then
     return jsonb_build_object('ok', false, 'error', 'invalid');
@@ -166,20 +188,26 @@ begin
     else 'S11'
   end;
 
-  v_attribution := case
-    when jsonb_typeof(p_payload->'attribution') = 'object'
-      then p_payload->'attribution'
-    else '{}'::jsonb
-  end;
+  -- Canonical contract: allowlisted keys, bounded values, consent-gated
+  -- advertising ids and analytics session (see website_clean_attribution).
+  v_attribution := public.website_clean_attribution(p_payload->'attribution');
 
-  select string_agg(key || '=' || left(value, 256), ', ' order by key)
+  -- Staff-facing summary. Opaque identifiers (click ids, analytics session,
+  -- consent state) are kept out of the task text; click ids appear only as
+  -- presence (click_id=fbclid|gclid).
+  select string_agg(key || '=' || value, ', ' order by key)
     into v_attr
-  from jsonb_each_text(v_attribution)
-  where key = any (array[
-    'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
-    'fbclid', 'fbc', 'fbp', 'gclid',
-    'landing_page', 'source', 'medium', 'campaign', 'content', 'ad', 'service'
-  ]::text[]);
+  from (
+    select key, value from jsonb_each_text(v_attribution)
+    where key = any (array[
+      'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term',
+      'landing_page', 'source', 'medium', 'campaign', 'content', 'ad', 'service',
+      'referrer', 'device'
+    ]::text[])
+    union all
+    select 'click_id', case when v_attribution ? 'gclid' then 'gclid' else 'fbclid' end
+    where v_attribution ?| array['gclid', 'fbclid']
+  ) a;
 
   if p_kind = 'booking' then
     v_title := 'Website pickup - ' || v_name || ' (' || v_phone || ')';
@@ -250,6 +278,57 @@ begin
       'reference', 'WEB-' || upper(substr(replace(v_id::text, '-', ''), 1, 8))
     );
   end if;
+
+  -- Lead row (same transaction). First touch = the earliest first-party
+  -- session of the same anonymous visitor within 90 days, only when the
+  -- submission carried an analytics session (Analytics consent).
+  v_session := (v_attribution->>'analytics_session')::uuid;
+  if v_session is not null then
+    select e.visitor_id into v_visitor
+    from public.website_analytics_events e
+    where e.session_id = v_session
+    limit 1;
+    if v_visitor is not null then
+      select e.occurred_at, e.utm_source, e.utm_medium, e.utm_campaign, e.utm_content,
+             coalesce(e.landing_page, e.path), e.referrer_host, e.click_id
+        into v_ft_at, v_ft_source, v_ft_medium, v_ft_campaign, v_ft_content, v_ft_landing, v_ft_referrer, v_ft_click
+      from public.website_analytics_events e
+      where e.visitor_id = v_visitor
+        and e.occurred_at > now() - interval '90 days'
+      order by e.occurred_at, e.id
+      limit 1;
+    end if;
+  end if;
+
+  v_sector := case
+    when v_area_key ~ '^uttara sector ([1-9]|1[0-8])$' then substring(v_area_key from '([0-9]+)$')::smallint
+    when v_area_key like 'outside%' then 0
+    else null
+  end;
+
+  insert into public.website_leads (
+    kind, task_id, reference, service, outlet_code, area_sector,
+    consent, consent_analytics, consent_marketing, analytics_session_id, device,
+    utm_source, utm_medium, utm_campaign, utm_content, utm_term,
+    source, medium, campaign, content, ad, landing_page, referrer_host, click_id,
+    ft_at, ft_utm_source, ft_utm_medium, ft_utm_campaign, ft_utm_content,
+    ft_landing_page, ft_referrer_host, ft_click_id
+  )
+  values (
+    p_kind, v_id, 'WEB-' || upper(substr(replace(v_id::text, '-', ''), 1, 8)), v_service, v_outlet, v_sector,
+    v_attribution->>'consent',
+    v_attribution->>'consent' in ('analytics', 'analytics+marketing'),
+    v_attribution->>'consent' in ('marketing', 'analytics+marketing'),
+    v_session, v_attribution->>'device',
+    v_attribution->>'utm_source', v_attribution->>'utm_medium', v_attribution->>'utm_campaign',
+    v_attribution->>'utm_content', v_attribution->>'utm_term',
+    v_attribution->>'source', v_attribution->>'medium', v_attribution->>'campaign',
+    v_attribution->>'content', v_attribution->>'ad',
+    v_attribution->>'landing_page', v_attribution->>'referrer',
+    case when v_attribution ? 'gclid' then 'gclid' when v_attribution ? 'fbclid' then 'fbclid' end,
+    v_ft_at, v_ft_source, v_ft_medium, v_ft_campaign, v_ft_content, v_ft_landing, v_ft_referrer,
+    case when v_attribution->>'consent' in ('marketing', 'analytics+marketing') then v_ft_click end
+  );
 
   return jsonb_build_object(
     'ok', true,

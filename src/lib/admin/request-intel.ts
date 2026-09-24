@@ -58,7 +58,7 @@ export function analyseRequest(r: WebsiteRequest, now = Date.now()): RequestInsi
       utm_source: campaign.utm_source ?? null,
       utm_medium: campaign.utm_medium ?? null,
       utm_campaign: campaign.utm_campaign ?? null,
-      click_id: campaign.gclid ? "gclid" : campaign.fbclid ? "fbclid" : null,
+      click_id: campaign.click_id === "gclid" || campaign.gclid ? "gclid" : campaign.click_id === "fbclid" || campaign.fbclid ? "fbclid" : null,
       referrer_host: campaign.referrer ?? null,
     }),
     landing: campaign.landing_page ?? null,
