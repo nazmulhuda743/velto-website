@@ -37,8 +37,17 @@ async function html(path) {
 }
 
 for (const route of routes) {
-  const response = await request(route);
-  assert.equal(response.status, 200, `${route} returned ${response.status}`);
+  const { body } = await html(route);
+  assert.match(body, /<html[^>]+lang="en"/i, `${route} is missing html lang=en`);
+  assert.match(body, /<main[^>]+id="main"/i, `${route} is missing the primary main landmark`);
+  assert.match(body, /<h1\b/i, `${route} is missing an H1`);
+
+  for (const match of body.matchAll(/<img\b[^>]*>/gi)) {
+    const image = match[0];
+    assert.match(image, /\balt="[^"]*"/i, `${route} rendered an image without alt text`);
+    assert.match(image, /\bwidth="\d+"/i, `${route} rendered an image without width`);
+    assert.match(image, /\bheight="\d+"/i, `${route} rendered an image without height`);
+  }
 }
 
 for (const route of [
@@ -53,7 +62,10 @@ for (const route of [
   const { body } = await html(route);
   const expected = route === "/" ? `${productionOrigin}/` : `${productionOrigin}${route}`;
   assert.match(body, /rel="canonical"/i, `${route} canonical link missing`);
-  assert.ok(body.includes(`href="${expected}"`) || body.includes(`href="${expected.replace(/\/$/, "")}"`), `${route} canonical URL is not ${expected}`);
+  assert.ok(
+    body.includes(`href="${expected}"`) || body.includes(`href="${expected.replace(/\/$/, "")}"`),
+    `${route} canonical URL is not ${expected}`,
+  );
 }
 
 for (const route of ["/book", "/quote", "/privacy", "/terms"]) {
@@ -65,6 +77,7 @@ const homeResponse = await request("/");
 assert.equal(homeResponse.headers.get("x-content-type-options"), "nosniff");
 assert.equal(homeResponse.headers.get("x-frame-options"), "DENY");
 assert.equal(homeResponse.headers.get("referrer-policy"), "strict-origin-when-cross-origin");
+assert.match(homeResponse.headers.get("permissions-policy") ?? "", /microphone=\(\)/, "Permissions-Policy missing microphone restriction");
 
 const missing = await request("/__launch-audit-missing-page__");
 assert.equal(missing.status, 404, `missing route should be 404, got ${missing.status}`);
@@ -105,4 +118,6 @@ const oversized = await request("/api/bookings", {
 });
 assert.equal(oversized.status, 413, `booking endpoint should reject oversized JSON with 413, got ${oversized.status}`);
 
-console.log(`Launch smoke audit passed for ${routes.length} public routes plus canonicals, noindex rules, sitemap, headers, 404 and API guards.`);
+console.log(
+  `Launch smoke audit passed for ${routes.length} public routes plus accessibility structure, image dimensions, canonicals, noindex rules, sitemap, headers, 404 and API guards.`,
+);
