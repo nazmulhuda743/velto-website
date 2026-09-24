@@ -2,7 +2,7 @@
  * MOCK — temporary homepage development data (spec §27).
  *
  * Everything in this file is a placeholder and must be replaced with verified
- * material before launch. Nothing here is a real review, price or photograph.
+ * material before launch. Nothing here is a real review, price or Velto photograph.
  */
 
 export type ImageSlot = {
@@ -30,43 +30,93 @@ const slot = (alt: string, width: number, height: number): ImageSlot => ({
   height,
 });
 
-/** MOCK: production photography shot list. */
+/**
+ * Licensed Pexels stock photography (Pexels License), stored in
+ * public/images/home and credited in docs/brand/IMAGE-SOURCES.md.
+ *
+ * TRUST RULE: these photos are illustrative. Alt text describes what each
+ * photo shows and never presents stock people, places or tags as Velto's own
+ * staff, outlets or SOP evidence. Replace with real Velto photography before
+ * launch, especially for intake, tagging, QC, packing, riders and outlets.
+ */
+const stock = (
+  file: string,
+  alt: string,
+  width: number,
+  height: number,
+  pexelsId: number,
+  photographer: string,
+  position?: string,
+): ImageSlot => ({
+  src: `/images/home/${file}.jpg`,
+  alt,
+  width,
+  height,
+  position,
+  source: { platform: "Pexels", url: `https://www.pexels.com/photo/${pexelsId}/`, photographer },
+});
+
 export const IMAGES = {
-  hero: slot(
-    "Velto rider handing a packed order to a customer at their door in Uttara.",
-    1500,
-    1800,
+  hero: stock(
+    "hero",
+    "A courier at a doorway holding out two packed paper-bag orders.",
+    2400, 1600, 6969972, "Mikhail Nilov", "center 40%",
   ),
-  dryCleaning: slot(
-    "A Velto team member checking the lapel of a blazer before dry cleaning.",
-    1800,
-    1200,
+  dryCleaning: stock(
+    "dry-cleaning",
+    "A dark suit jacket with shirt and tie on a tailor's mannequin.",
+    1600, 2400, 6764952, "Tima Miroshnichenko", "center 42%",
   ),
-  washAndIron: slot("Freshly ironed shirts folded and stacked for a customer's order.", 1600, 1200),
-  ironing: slot("A shirt being pressed on an ironing board at Velto.", 1600, 1200),
-  household: slot("Curtains being measured before cleaning at Velto.", 1600, 1200),
+  washAndIron: stock(
+    "wash-and-iron",
+    "A stack of neatly folded shirts held in two hands.",
+    2400, 1600, 4440574, "Polina Tankilevitch", "40% center",
+  ),
+  ironing: stock(
+    "ironing",
+    "Hands pressing a white shirt with a steam iron.",
+    2400, 1600, 5901624, "cottonbro studio", "40% 60%",
+  ),
+  household: stock(
+    "household-curtains",
+    "Sheer white curtains being drawn open at a bright window.",
+    2400, 1600, 6619046, "Thirdman", "35% center",
+  ),
   process: [
-    slot("Velto rider collecting a laundry bag from a customer's door.", 1400, 1600),
-    slot("An order being checked in at the Velto counter.", 1400, 1600),
-    slot("Velto staff attaching an order tag to a customer's garment during intake.", 1400, 1600),
-    slot("A team member inspecting a visible stain on a shirt collar before cleaning.", 1400, 1600),
-    slot("A garment being pressed and finished after cleaning.", 1400, 1600),
-    slot("A finished garment being checked before packing.", 1400, 1600),
-    slot("A finished order being folded and packed for return.", 1400, 1600),
-    slot("Velto rider delivering a packed order back to the customer.", 1400, 1600),
+    stock("process-01-collected", "A courier holding out a packed box order at a doorway.", 2400, 1600, 6969971, "Mikhail Nilov", "center"),
+    stock("process-02-received", "A tailor and a customer reviewing a garment order together.", 2400, 1600, 6764934, "Tima Miroshnichenko", "55% center"),
+    stock("process-03-tagged", "A blank paper tag on a string resting on folded fabric.", 2400, 1599, 11485130, "Andrzej Gdula", "center"),
+    stock("process-04-checked", "Hands checking the sleeve of a checked wool jacket.", 1600, 2400, 6764947, "Tima Miroshnichenko", "center 40%"),
+    stock("process-05-finished", "Hands pressing a garment with a steam iron.", 1600, 2400, 5901623, "cottonbro studio", "center 55%"),
+    stock("process-06-qc", "A person checking finished garments on a rail in a bright studio.", 2400, 1602, 3965552, "Ksenia Chernaya", "30% center"),
+    stock("process-07-packed", "Hands stacking neatly folded shirts on a navy blanket.", 2400, 1600, 4440571, "Polina Tankilevitch", "center"),
+    stock("process-08-returned", "A customer picking up a stack of packed orders at her front door.", 1600, 2400, 6969968, "Mikhail Nilov", "center 60%"),
   ],
-  delicate: slot("A saree being examined closely before dry cleaning.", 1400, 1600),
-  householdSection: slot(
-    "Curtains, a rolled carpet and a folded comforter received for cleaning.",
-    1600,
-    1200,
+  delicate: stock(
+    "delicate",
+    "Close-up of a wool coat lapel over a striped shirt and tie.",
+    2400, 1600, 6764932, "Tima Miroshnichenko", "center",
   ),
+  householdSection: stock(
+    "household-section",
+    "Hands rolling up a woven jute rug on a wooden floor.",
+    2400, 1600, 7217758, "Blue Bird", "60% center",
+  ),
+  /** Real Velto outlets: never substituted with stock storefronts. MOCK until supplied. */
   locations: {
     "sector-11": slot("The Velto outlet at House 2, Road 14, Sector 11, Uttara.", 1500, 1000),
     "sector-18": slot("The Velto outlet at Poncoboti Bazar, Sector 18, Uttara.", 1500, 1000),
   },
-  regular: slot("A week's laundry being handed to a Velto rider for regular pickup.", 1600, 1200),
-  final: slot("A packed Velto order ready to go out for delivery.", 1600, 1200),
+  regular: stock(
+    "regular",
+    "Folded shirts laid out in a row on a navy blanket.",
+    2400, 1600, 4440566, "Polina Tankilevitch", "center",
+  ),
+  final: stock(
+    "final",
+    "Hands placing a folded white shirt on a neat stack.",
+    2400, 1600, 4440572, "Polina Tankilevitch", "center",
+  ),
 } as const;
 
 export type Review = {

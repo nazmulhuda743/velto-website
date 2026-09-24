@@ -8,6 +8,7 @@
  * to a sane master size and strips metadata; next/image serves AVIF/WebP.
  *
  * Usage: node scripts/import-images.mjs
+ * (behind an HTTPS proxy: NODE_USE_ENV_PROXY=1 node scripts/import-images.mjs)
  * Prints the width/height to copy into src/content/mock.ts for each slot.
  */
 import fs from "node:fs/promises";

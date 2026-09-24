@@ -42,10 +42,17 @@ To reproduce the pricing states in dev: `/?mockPricing=slow` (loading) and `/?mo
 - **Desktop hero:** structure unchanged. With placeholder photography the balance can't be judged properly, so it will be rebalanced once the real hero photo exists.
 - **Find a Price:** unchanged apart from the button colour.
 
+## Photography pass
+
+- 17 homepage image slots now use licensed Pexels stock photography stored in `public/images/home/` (no hotlinking). Sources, licence and credits are in `docs/brand/IMAGE-SOURCES.md`.
+- The alt text describes each photo without presenting stock people or places as Velto. The two location images stay as placeholders until real outlet photos exist.
+- Crops are set per slot through `position` in `src/content/mock.ts`. Copy, hierarchy and layouts are unchanged.
+- Captures are in `docs/qa/homepage/photography/`. No broken images, no console errors, and no horizontal overflow at 390 px.
+
 ## Blockers / items needing a decision
 
 1. **Company profile PDF** (`docs/brand/velto-company-profile.pdf`) is still not in the repo, so it could not be used as a reference in this pass.
-2. **No photography.** Every image is a clearly marked MOCK frame that carries its shot brief and alt text (`src/content/mock.ts`). To swap in real photos, set `src` for each slot.
+2. **Photography is illustrative stock.** Replace it with real Velto photography before launch (see `docs/brand/IMAGE-SOURCES.md`). The two outlet images are still placeholders.
 3. **Logo tagline legibility:** the official lockup includes "Premium Laundry At Your Doorstep", which renders at about 4 px in the header. An official lockup without the tagline would suit the header better. The artwork was not altered.
 4. **TODO_VERIFY data** (§36): live prices (shown as `[Live price]`), WhatsApp number (`WHATSAPP_URL` currently opens WhatsApp without a recipient), Google Maps directions and review links (currently search URLs built from the verified addresses), review counts, the four reviews (placeholder text "Verified review will appear here"), and the repeat-customer review for Regular laundry (section omits it until one is supplied).
 
