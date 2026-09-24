@@ -29,13 +29,14 @@ export async function getPortalIdentity() {
   const supabase = await createPortalServerClient();
   if (!supabase) return null;
   const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
-  const subject = typeof claimsData?.claims?.sub === "string" ? claimsData.claims.sub : null;
-  if (claimsError || !subject) return null;
+  const claims = claimsData?.claims;
+  const subject = typeof claims?.sub === "string" ? claims.sub : null;
+  if (claimsError || !subject || !claims) return null;
 
   // Fresh user lookup catches revoked/deleted/disabled users before customer data is queried.
   const { data: userData, error: userError } = await supabase.auth.getUser();
   if (userError || !userData.user || userData.user.id !== subject) return null;
-  return { supabase, user: userData.user, claims: claimsData.claims };
+  return { supabase, user: userData.user, claims };
 }
 
 export async function hasPortalSession() {
