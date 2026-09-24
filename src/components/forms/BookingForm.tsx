@@ -54,7 +54,7 @@ type FormState = {
   notes: string;
 };
 
-type ErrorKey = "sector" | "address" | "date" | "name" | "phone";
+type ErrorKey = "sector" | "address" | "day" | "date" | "name" | "phone";
 type Errors = Partial<Record<ErrorKey, string>>;
 type Status =
   | { state: "idle" }
@@ -127,6 +127,7 @@ function validate(s: FormState): Errors {
   const e: Errors = {};
   if (!s.sector) e.sector = "Choose your sector.";
   if (!s.address.trim()) e.address = "Add your house and road so we can find you.";
+  if (!s.day) e.day = "Choose a pickup day.";
   if (s.day === "other" && !s.date) e.date = "Pick a date, or choose Today or Tomorrow.";
   if (!s.name.trim()) e.name = "Add your name.";
   if (!s.phone.trim()) e.phone = "Add a number we can call or WhatsApp.";
@@ -134,7 +135,7 @@ function validate(s: FormState): Errors {
   return e;
 }
 
-const FIELD_ORDER: ErrorKey[] = ["sector", "address", "date", "name", "phone"];
+const FIELD_ORDER: ErrorKey[] = ["sector", "address", "day", "date", "name", "phone"];
 
 /* ---------- presentational pieces (booking page only) ---------- */
 
@@ -180,6 +181,9 @@ function ChoiceTiles<T extends string>({
   onChange,
   columns,
   segmented = false,
+  firstId,
+  describedBy,
+  invalid = false,
 }: {
   name: string;
   label: string;
@@ -189,19 +193,30 @@ function ChoiceTiles<T extends string>({
   columns: string;
   /** Compact single-row choices: centred text, radio kept for accessibility but visually hidden. */
   segmented?: boolean;
+  /** id on the first radio so validation can focus the group. */
+  firstId?: string;
+  describedBy?: string;
+  invalid?: boolean;
 }) {
   return (
-    <div role="radiogroup" aria-label={label} className={`grid gap-2 ${columns}`}>
-      {options.map((o) => {
+    <div
+      role="radiogroup"
+      aria-label={label}
+      aria-invalid={invalid || undefined}
+      aria-describedby={describedBy}
+      className={`grid gap-2 ${columns}`}
+    >
+      {options.map((o, i) => {
         const checked = value === o.value;
         return (
           <label
             key={`${name}-${o.value || "none"}`}
             className={`flex min-h-11 cursor-pointer items-center rounded-md border py-2 leading-tight text-navy transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-blue ${
               segmented ? "justify-center px-1 text-center text-[14px] md:text-[15px]" : "gap-3 px-3.5 text-[15px]"
-            } ${checked ? "border-blue bg-[#f0f7fc] font-semibold" : "border-line-strong hover:border-navy/50"}`}
+            } ${checked ? "border-blue bg-[#f0f7fc] font-semibold" : invalid ? "border-error" : "border-line-strong hover:border-navy/50"}`}
           >
             <input
+              id={i === 0 ? firstId : undefined}
               type="radio"
               name={name}
               value={o.value}
@@ -423,7 +438,7 @@ export function BookingForm({
             </div>
           </Group>
 
-          <Group title="When suits you?" hint="Optional. We'll confirm the exact time with you.">
+          <Group title="When suits you?" hint="We'll confirm the exact time with you.">
             <div>
               <ChoiceTiles
                 name="day"
@@ -433,7 +448,11 @@ export function BookingForm({
                 onChange={(v) => update("day", v)}
                 columns="grid-cols-3"
                 segmented
+                firstId="booking-day"
+                invalid={Boolean(errors.day)}
+                describedBy={errors.day ? "booking-day-error" : undefined}
               />
+              <ErrorText id="booking-day-error">{errors.day}</ErrorText>
               {s.day === "other" ? (
                 <div className="mt-3">
                   <FieldLabel htmlFor="booking-date">Date</FieldLabel>
@@ -620,19 +639,12 @@ function BookingSuccess({
             <dd className="min-w-0 break-words t-small text-body">{r.value}</dd>
           </div>
         ))}
-        <div className="grid grid-cols-[7.5rem_1fr] gap-4 border-b border-line py-3.5 md:grid-cols-[10rem_1fr]">
-          <dt className="t-small font-semibold text-navy">Reference</dt>
-          <dd className="t-small text-body">
-            {reference ? (
-              <strong className="font-semibold text-navy">{reference}</strong>
-            ) : (
-              // INTEGRATION PLACEHOLDER: the reference is issued by Velto Ops once booking is connected.
-              <span data-placeholder="booking-reference" className="text-secondary">
-                Shared when we confirm
-              </span>
-            )}
-          </dd>
-        </div>
+        {reference ? (
+          <div className="grid grid-cols-[7.5rem_1fr] gap-4 border-b border-line py-3.5 md:grid-cols-[10rem_1fr]">
+            <dt className="t-small font-semibold text-navy">Reference</dt>
+            <dd className="t-small font-semibold text-navy">{reference}</dd>
+          </div>
+        ) : null}
       </dl>
 
       <h3 className="mt-8 t-label uppercase text-navy">What happens next</h3>
