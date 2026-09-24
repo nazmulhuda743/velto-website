@@ -26,7 +26,7 @@ function Price({ service }: { service: PublicPriceService | undefined }) {
     );
   }
   if (service.amountMinor === null) {
-    return <span className="t-small font-medium text-secondary">Price confirmed by Velto</span>;
+    return <span className="t-small font-medium text-secondary">Price on request</span>;
   }
   return (
     <span className="whitespace-nowrap font-semibold tabular-nums text-navy">

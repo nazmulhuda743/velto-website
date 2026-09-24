@@ -63,6 +63,15 @@ export function Header({ logo }: { logo: ReactNode }) {
         </nav>
 
         <div className="flex items-center gap-2 lg:gap-5">
+          {NAV.utility.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="hidden rounded-sm px-1 py-2 text-[14px] font-medium text-secondary transition-colors hover:text-blue xl:inline-flex"
+            >
+              {item.label}
+            </Link>
+          ))}
           <a
             href={WHATSAPP_URL}
             target="_blank"

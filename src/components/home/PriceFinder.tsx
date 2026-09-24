@@ -275,6 +275,20 @@ export function PriceFinder({
               </button>
               <WhatsAppButton href={WHATSAPP_URL} placement="pricing_error" />
             </div>
+            {bookFromResult ? (
+              <p className="mt-4 t-small text-secondary">
+                Or{" "}
+                <a
+                  href={`/book?${new URLSearchParams({ source: `${bookFromResult.source}-error` }).toString()}`}
+                  data-analytics="book_pickup_click"
+                  data-placement="pricing_error"
+                  className="font-semibold text-navy underline decoration-blue/60 underline-offset-4 hover:decoration-blue"
+                >
+                  book a pickup
+                </a>
+                . We can go through prices when we call to confirm.
+              </p>
+            ) : null}
           </div>
         ) : null}
       </div>
@@ -310,14 +324,11 @@ function PriceResult({
                       {formatAmount(s.amountMinor)}
                       {s.unitLabel ? <span className="ml-1 t-small font-normal text-secondary">{s.unitLabel}</span> : null}
                     </>
-                  ) : source === "mock" ? (
-                    // MOCK: no real amount exists yet; customer-safe wording, never a number.
-                    <span data-mock="price" className="t-small font-medium text-secondary">
-                      Price confirmed by Velto
-                    </span>
                   ) : (
-                    // Adapter contract: null amount = price needs confirmation.
-                    <span className="t-small font-medium text-secondary">Price confirmed by Velto</span>
+                    // Adapter contract: null amount = price needs confirmation (MOCK source never shows a number either).
+                    <span data-mock={source === "mock" ? "price" : undefined} className="t-small font-medium text-secondary">
+                      Price on request
+                    </span>
                   )}
                 </span>
                 {canBook ? (
@@ -343,6 +354,11 @@ function PriceResult({
           );
         })}
       </dl>
+      {item.services.some((s) => s.amountMinor === null) ? (
+        <p className="border-t border-line px-5 py-3 t-small text-secondary md:px-6">
+          &ldquo;Price on request&rdquo; means we confirm the amount once we see the item. Ask on WhatsApp or add it to a pickup.
+        </p>
+      ) : null}
     </div>
   );
 }

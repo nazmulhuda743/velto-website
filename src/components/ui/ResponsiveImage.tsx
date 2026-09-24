@@ -1,6 +1,14 @@
 import Image from "next/image";
 import type { ImageSlot } from "@/content/mock";
 import { resolveImage } from "@/lib/site-content";
+import { Logo } from "./Logo";
+
+/**
+ * Shot briefs ("Photo · to be supplied") are for review builds. Production
+ * shows a quiet branded panel instead, so customers never see an unfinished slot.
+ */
+const SHOW_PHOTO_BRIEFS =
+  process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_SHOW_PHOTO_BRIEFS === "1";
 
 type ResponsiveImageProps = {
   image: ImageSlot;
@@ -48,6 +56,20 @@ export async function ResponsiveImage({
   }
 
   const navy = tone === "navy";
+  if (!SHOW_PHOTO_BRIEFS) {
+    return (
+      <div
+        aria-hidden="true"
+        data-mock="photo"
+        className={`relative flex items-center justify-center overflow-hidden rounded-md ${aspect} ${
+          navy ? "bg-[#0a3a62]" : "bg-soft"
+        } ${className}`}
+      >
+        <Logo inverse={navy} className="!h-auto !w-[42%] max-w-[140px]" />
+      </div>
+    );
+  }
+
   return (
     <div
       role={decorative ? undefined : "img"}
