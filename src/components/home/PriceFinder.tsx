@@ -313,13 +313,13 @@ function PriceResult({
                       {s.unitLabel ? <span className="ml-1 t-small font-normal text-secondary">{s.unitLabel}</span> : null}
                     </>
                   ) : source === "mock" ? (
-                    // MOCK: live price comes from the Velto Ops pricing view.
+                    // MOCK: no real amount exists yet; customer-safe wording, never a number.
                     <span data-mock="price" className="t-small font-medium text-secondary">
-                      [Live price]
+                      Price confirmed by Velto
                     </span>
                   ) : (
                     // Adapter contract: null amount = price needs confirmation.
-                    <span className="t-small font-medium text-secondary">Confirmed before pickup</span>
+                    <span className="t-small font-medium text-secondary">Price confirmed by Velto</span>
                   )}
                 </span>
                 {canBook ? (
