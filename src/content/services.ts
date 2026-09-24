@@ -91,7 +91,11 @@ export type ServiceContent = {
   /** Book-first for itemised services; quote-first where the amount needs confirming. */
   primary: "book" | "quote";
   secondary?: "book" | "quote" | "whatsapp";
-  heroFacts: string[];
+  /**
+   * "At a glance" band under the hero (S1). Restates facts already on the page
+   * (overviewFact, the former hero facts, whenToChoose); never a new claim.
+   */
+  glance: { pricing: string; turnaround: string; bestFor: string };
   heroGoogleProof?: boolean;
   blocks: ServiceBlock[];
   faq: { title: string; items: FAQRef[] };
@@ -125,7 +129,7 @@ export const SERVICE_PAGES: ServiceContent[] = [
     image: IMAGES.dryCleaning,
     primary: "book",
     secondary: "whatsapp",
-    heroFacts: ["Usually around 72 hours", "Pickup across Uttara Sectors 1–18", "Free pickup & delivery on orders of ৳499+"],
+    glance: { pricing: "Per item, each garment has its own price", turnaround: "Usually around 72 hours", bestFor: "A suit, blazer, sari, sherwani or anything that needs a closer look before cleaning." },
     heroGoogleProof: true,
     blocks: [
       {
@@ -230,7 +234,7 @@ export const SERVICE_PAGES: ServiceContent[] = [
     image: IMAGES.washAndIron,
     primary: "book",
     secondary: "whatsapp",
-    heroFacts: ["Usually around 72 hours", "Pickup across Uttara Sectors 1–18", "Free pickup & delivery on orders of ৳499+"],
+    glance: { pricing: "Per item, from the Velto price list", turnaround: "Usually around 72 hours", bestFor: "Everyday clothes and linen that need washing and ironing." },
     blocks: [
       {
         type: "prices",
@@ -308,7 +312,7 @@ export const SERVICE_PAGES: ServiceContent[] = [
     image: IMAGES.ironing,
     primary: "book",
     secondary: "whatsapp",
-    heroFacts: ["General orders usually around 48 hours", "Pickup across Uttara Sectors 1–18", "Free pickup & delivery on orders of ৳499+"],
+    glance: { pricing: "Per item, from the Velto price list", turnaround: "General orders usually around 48 hours", bestFor: "Clothes you've already washed at home that just need ironing." },
     blocks: [
       {
         type: "prices",
@@ -377,7 +381,7 @@ export const SERVICE_PAGES: ServiceContent[] = [
     image: IMAGES.household,
     primary: "quote",
     secondary: "book",
-    heroFacts: ["Normal and heavy curtain rates", "Amount confirmed before pickup", "Pickup across Uttara Sectors 1–18"],
+    glance: { pricing: "Per sq ft, normal or heavy rate. Amount confirmed before pickup", turnaround: "Can take longer than everyday laundry. Confirmed with your quote", bestFor: "Curtains from any room, normal or heavy." },
     blocks: [
       {
         type: "prices",
@@ -458,7 +462,7 @@ export const SERVICE_PAGES: ServiceContent[] = [
     image: IMAGES.householdSection,
     primary: "quote",
     secondary: "book",
-    heroFacts: ["Priced per square foot", "Amount confirmed before pickup", "Pickup across Uttara Sectors 1–18"],
+    glance: { pricing: "Per sq ft. Amount confirmed before pickup", turnaround: "Takes longer than everyday laundry. Confirmed with your quote", bestFor: "A carpet, a doormat or a prayer mat." },
     blocks: [
       {
         type: "prices",
@@ -532,7 +536,7 @@ export const SERVICE_PAGES: ServiceContent[] = [
     primary: "book",
     secondary: "quote",
     // TODO_VERIFY: planning range from spec §7, confirm against current operations.
-    heroFacts: ["Plan for roughly 3–4 days", "Pickup across Uttara Sectors 1–18", "Free pickup & delivery on orders of ৳499+"],
+    glance: { pricing: "Per piece, by type and size", turnaround: "Plan for roughly 3–4 days", bestFor: "Blankets, comforters, quilts or katha." },
     blocks: [
       {
         type: "prices",
@@ -622,7 +626,7 @@ export const SERVICE_PAGES: ServiceContent[] = [
     image: IMAGES.process[7],
     primary: "book",
     secondary: "whatsapp",
-    heroFacts: ["Depends on item, service and workload", "Extra charge, confirmed with you first", "Pickup across Uttara Sectors 1–18"],
+    glance: { pricing: "Extra charge, confirmed with you first", turnaround: "Depends on the item, service and current workload", bestFor: "You need an order back sooner than usual. Ask first, it isn't always possible." },
     blocks: [
       {
         type: "facts",

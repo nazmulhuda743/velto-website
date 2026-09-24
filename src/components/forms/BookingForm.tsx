@@ -141,13 +141,42 @@ const inputBase =
   "block w-full rounded-md border border-line-strong bg-white px-4 text-base text-navy placeholder:text-secondary/80 hover:border-navy/50 focus:border-blue focus:outline-1 focus:outline-offset-0 focus:outline-blue aria-[invalid=true]:border-error";
 const inputHeight = "h-[54px] md:h-[52px]";
 
-function Group({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
+const STEPS = ["What", "Where", "When", "You"] as const;
+
+/** S4: the form really is four groups, so show it. Each step fills in as it's answered. */
+function StepProgress({ done }: { done: boolean[] }) {
+  return (
+    <ol aria-label="Booking steps" className="grid grid-cols-4 gap-2">
+      {STEPS.map((label, i) => (
+        <li
+          key={label}
+          className={`border-t-2 pt-2 t-label transition-colors duration-200 motion-reduce:transition-none ${
+            done[i] ? "border-action text-navy" : "border-line text-secondary"
+          }`}
+        >
+          <span className="tabular-nums">{i + 1}</span> {label}
+          <span className="sr-only">{done[i] ? ", done" : ", to do"}</span>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function Group({ step, title, hint, children }: { step: number; title: string; hint?: string; children: ReactNode }) {
   return (
     <fieldset className="min-w-0 border-t border-line pt-5 first:border-t-0 first:pt-0">
       <legend className="contents">
-        <span className="block t-h4 text-navy">{title}</span>
+        <span className="flex items-baseline gap-3 t-h4 text-navy">
+          <span aria-hidden="true" className="w-4 shrink-0 text-action tabular-nums">
+            {step}
+          </span>
+          <span>
+            <span className="sr-only">Step {step} of 4: </span>
+            {title}
+          </span>
+        </span>
       </legend>
-      {hint ? <p className="mt-1 t-small text-secondary">{hint}</p> : null}
+      {hint ? <p className="mt-1 pl-7 t-small text-secondary">{hint}</p> : null}
       <div className="mt-3.5 space-y-4">{children}</div>
     </fieldset>
   );
@@ -349,6 +378,16 @@ export function BookingForm({
         Book a pickup
       </h1>
       <p className="mt-3 t-body text-body md:mt-4 md:t-body-lg">{intro}</p>
+      <div className="mt-6 md:mt-8">
+        <StepProgress
+          done={[
+            s.service !== null,
+            Boolean(s.sector && s.address.trim()),
+            Boolean(s.day && (s.day !== "other" || s.date)),
+            Boolean(s.name.trim() && phoneOk(s.phone)),
+          ]}
+        />
+      </div>
       <div className="mt-8 md:mt-10">
         <form
           noValidate
@@ -356,7 +395,7 @@ export function BookingForm({
           aria-labelledby="page-title"
           className="space-y-6 [&_input]:scroll-mt-32 [&_select]:scroll-mt-32 [&_textarea]:scroll-mt-32"
         >
-          <Group title="What needs cleaning?">
+          <Group step={1} title="What needs cleaning?">
             {serviceOpen ? (
               <ChoiceTiles
                 name="service"
@@ -381,7 +420,7 @@ export function BookingForm({
             )}
           </Group>
 
-          <Group title="Where should we collect from?">
+          <Group step={2} title="Where should we collect from?">
             <div>
               <FieldLabel htmlFor="booking-sector">Sector</FieldLabel>
               <div className="relative mt-2">
@@ -436,7 +475,7 @@ export function BookingForm({
             </div>
           </Group>
 
-          <Group title="When suits you?" hint="We'll confirm the exact time with you.">
+          <Group step={3} title="When suits you?" hint="We'll confirm the exact time with you.">
             <div>
               <ChoiceTiles
                 name="day"
@@ -480,7 +519,7 @@ export function BookingForm({
             />
           </Group>
 
-          <Group title="Your details">
+          <Group step={4} title="Your details">
             <div>
               <FieldLabel htmlFor="booking-name">Name</FieldLabel>
               <input

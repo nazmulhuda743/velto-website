@@ -7,7 +7,6 @@ import { Hero } from "@/components/home/Hero";
 import { HouseholdSection } from "@/components/home/HouseholdSection";
 import { LocationsSection } from "@/components/home/LocationsSection";
 import { ProcessStory } from "@/components/home/ProcessStory";
-import { ProofMarquee } from "@/components/home/ProofMarquee";
 import { RegularLaundrySection } from "@/components/home/RegularLaundrySection";
 import { ReviewsSection } from "@/components/home/ReviewsSection";
 import { ServiceChooser } from "@/components/home/ServiceChooser";
@@ -16,12 +15,11 @@ const FINAL_ID = "book";
 
 export const generateMetadata = () => pageMetadata("/");
 
-/** Homepage — section order is LOCKED (spec §19); the proof strip under the hero was added at the owner's request. */
+/** Homepage — section order is LOCKED (spec §19). The owner-requested proof strip was retired when hero proof became figures (H9). */
 export default function HomePage() {
   return (
     <>
       <Hero />
-      <ProofMarquee />
       <ServiceChooser />
       <ProcessStory />
       <ReviewsSection />

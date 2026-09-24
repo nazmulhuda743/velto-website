@@ -61,7 +61,7 @@ export function ServiceChooser() {
   return (
     <section id="services" aria-labelledby="services-title" className="bg-warm py-(--space-section)">
       <div className="container-page">
-        <SectionIntro id="services-title" title="What do you need cleaned?">
+        <SectionIntro id="services-title" eyebrow="Services" title="What do you need cleaned?">
           <p>
             Choose the service you need. If you are unsure, send us a photo or message Velto on
             WhatsApp.

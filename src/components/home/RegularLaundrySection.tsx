@@ -19,6 +19,7 @@ export function RegularLaundrySection() {
         <div className="col-span-4 md:col-span-4 md:self-center xl:col-span-5 xl:col-start-8">
           <SectionIntro
             id="regular-title"
+            eyebrow="Regular laundry"
             title="If the laundry comes back every week, make pickup part of the week."
           >
             <p>

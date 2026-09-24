@@ -86,7 +86,7 @@ export default async function PricingPage({ searchParams }: { searchParams: Sear
       <section aria-labelledby="compare-title" className="py-(--space-section)">
         <div className="container-page">
           <div className="max-w-[640px]">
-            <SectionIntro id="compare-title" title="Dry Cleaning, Wash & Iron or Ironing?">
+            <SectionIntro id="compare-title" eyebrow="Choosing a service" title="Dry Cleaning, Wash & Iron or Ironing?">
               <p>
                 Many items have a price for more than one service. This is what each one covers, so
                 you can pick the right one.
@@ -102,7 +102,7 @@ export default async function PricingPage({ searchParams }: { searchParams: Sear
       <section aria-labelledby="household-pricing-title" className="bg-warm py-(--space-section)">
         <div className="container-page grid-page gap-y-10">
           <div className="col-span-4 md:col-span-8 xl:col-span-5">
-            <SectionIntro id="household-pricing-title" title="Curtains, carpets and bedding are priced differently.">
+            <SectionIntro id="household-pricing-title" eyebrow="Household care" title="Curtains, carpets and bedding are priced differently.">
               <p>
                 These depend on size, material and condition, so they are not always a single item
                 price.

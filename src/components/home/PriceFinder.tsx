@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { WhatsAppButton } from "@/components/ui/Button";
 import { SearchIcon } from "@/components/ui/icons";
 import { track } from "@/components/layout/Analytics";
+import { SERVICE_SUMMARY } from "@/content/service-summaries";
 import { WHATSAPP_URL } from "@/content/site";
 import { formatAmount } from "@/lib/format-price";
 
@@ -307,48 +308,47 @@ function PriceResult({
 }) {
   return (
     <div className="rounded-md border border-line bg-white">
-      <h3 className="px-5 pb-4 pt-5 t-h4 text-navy md:px-6">{item.name}</h3>
+      <h3 className="px-5 pb-1 pt-5 t-h4 text-navy md:px-6">{item.name}</h3>
+      <p className="px-5 pb-4 t-small text-secondary md:px-6">Current Velto price for each service</p>
       <dl>
         {item.services.map((s) => {
           const canBook = bookFromResult && BOOKABLE.has(s.slug);
+          const summary = SERVICE_SUMMARY[s.slug];
           return (
-            <div
-              key={s.slug}
-              className={`flex items-baseline justify-between gap-4 border-t border-line px-5 md:px-6 ${canBook ? "py-3" : "py-4"}`}
-            >
-              <dt className="text-body">{s.name}</dt>
-              <dd className="flex items-baseline gap-4 text-right">
-                <span className="font-semibold tabular-nums text-navy">
-                  {s.amountMinor !== null ? (
-                    <>
-                      {formatAmount(s.amountMinor)}
-                      {s.unitLabel ? <span className="ml-1 t-small font-normal text-secondary">{s.unitLabel}</span> : null}
-                    </>
-                  ) : (
-                    // Adapter contract: null amount = price needs confirmation (MOCK source never shows a number either).
-                    <span data-mock={source === "mock" ? "price" : undefined} className="t-small font-medium text-secondary">
-                      Price on request
-                    </span>
-                  )}
-                </span>
+            <div key={s.slug} className="flex items-start justify-between gap-4 border-t border-line px-5 py-4 md:px-6">
+              <dt className="min-w-0">
+                <span className="block font-semibold text-navy">{s.name}</span>
+                {summary ? <span className="mt-0.5 block t-small text-secondary">{summary}</span> : null}
                 {canBook ? (
                   <a
                     href={`/book?${new URLSearchParams({ service: s.slug, source: bookFromResult.source }).toString()}`}
                     data-analytics="book_pickup_click"
                     data-placement="pricing_result"
                     data-service={s.slug}
-                    className="inline-flex min-h-11 items-center gap-1.5 rounded-sm t-small font-semibold text-navy underline decoration-blue/60 underline-offset-4 hover:decoration-blue"
+                    className="mt-1 inline-flex min-h-11 items-center gap-1.5 rounded-sm t-small font-semibold text-navy underline decoration-blue/60 underline-offset-4 hover:decoration-blue"
                   >
-                    Book
-                    <span className="sr-only">
-                      {" "}
-                      {s.name} for {item.name}
-                    </span>
+                    Book {s.name}
+                    <span className="sr-only"> for {item.name}</span>
                     <span aria-hidden="true" className="text-blue no-underline">
                       →
                     </span>
                   </a>
                 ) : null}
+              </dt>
+              <dd className="shrink-0 text-right">
+                {s.amountMinor !== null ? (
+                  <>
+                    <span className="block text-[26px] font-semibold leading-none tracking-[-0.02em] text-navy tabular-nums md:text-[30px]">
+                      {formatAmount(s.amountMinor)}
+                    </span>
+                    {s.unitLabel ? <span className="mt-1 block t-caption text-secondary">{s.unitLabel}</span> : null}
+                  </>
+                ) : (
+                  // Adapter contract: null amount = price needs confirmation (MOCK source never shows a number either).
+                  <span data-mock={source === "mock" ? "price" : undefined} className="block pt-0.5 font-semibold text-secondary">
+                    On request
+                  </span>
+                )}
               </dd>
             </div>
           );
@@ -356,7 +356,7 @@ function PriceResult({
       </dl>
       {item.services.some((s) => s.amountMinor === null) ? (
         <p className="border-t border-line px-5 py-3 t-small text-secondary md:px-6">
-          &ldquo;Price on request&rdquo; means we confirm the amount once we see the item. Ask on WhatsApp or add it to a pickup.
+          &ldquo;On request&rdquo; means we confirm the amount once we see the item. Ask on WhatsApp or add it to a pickup.
         </p>
       ) : null}
     </div>
