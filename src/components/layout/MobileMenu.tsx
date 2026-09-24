@@ -48,34 +48,34 @@ export function MobileMenu({ open, onClose }: { open: boolean; onClose: () => vo
       ref={panelRef}
       className="fixed inset-x-0 bottom-0 top-16 z-50 overflow-y-auto border-t border-line bg-white lg:hidden"
     >
-      <nav aria-label="Mobile" className="container-page flex min-h-full flex-col pb-[calc(24px+env(safe-area-inset-bottom))] pt-2">
+      <nav aria-label="Mobile" className="container-page pb-[calc(24px+env(safe-area-inset-bottom))] pt-3">
         <ul>
           {NAV.mobile.map((item) => (
             <li key={item.href} className="border-b border-line">
               <Link
                 href={item.href}
                 onClick={onClose}
-                className="flex items-center justify-between py-[18px] t-h4 text-navy"
+                className="flex min-h-[52px] items-center justify-between py-3 text-[17px] font-medium tracking-[-0.01em] text-navy"
               >
                 {item.label}
-                <ArrowRight className="size-5 text-blue" />
+                <ArrowRight className="size-4 text-blue" />
               </Link>
             </li>
           ))}
         </ul>
-        <div className="mt-auto flex flex-col gap-3 pt-10">
-          <WhatsAppButton href={WHATSAPP_URL} placement="mobile_menu" className="w-full">
-            WhatsApp
-          </WhatsAppButton>
+        <div className="mt-8 flex gap-2.5">
           <ButtonLink
             href={bookHref("mobile_menu")}
             event="book_pickup_click"
             placement="mobile_menu"
-            className="w-full"
+            className="!h-12 flex-[1.4] !px-4"
             onClick={onClose}
           >
             Book a Pickup
           </ButtonLink>
+          <WhatsAppButton href={WHATSAPP_URL} placement="mobile_menu" className="!h-12 flex-1 !px-4">
+            WhatsApp
+          </WhatsAppButton>
         </div>
       </nav>
     </div>

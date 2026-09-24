@@ -71,17 +71,24 @@ export function ProcessStory() {
                   </div>
                 ))}
               </div>
-              <div className="relative mt-4 h-5">
-                {STAGES.map((stage, i) => (
-                  <p
-                    key={i}
-                    data-frame={i}
-                    data-active={i === 0}
-                    className="process-frame absolute inset-0 t-caption text-secondary"
-                  >
-                    <span className="font-semibold text-navy">{num(i)}</span> / 08 · {stage.title}
-                  </p>
-                ))}
+              <div className="mt-4 flex items-center gap-6">
+                <div className="relative h-5 flex-1">
+                  {STAGES.map((stage, i) => (
+                    <p
+                      key={i}
+                      data-frame={i}
+                      data-active={i === 0}
+                      className="process-frame absolute inset-0 t-caption text-secondary"
+                    >
+                      <span className="font-semibold text-navy">{num(i)}</span> / 08 · {stage.title}
+                    </p>
+                  ))}
+                </div>
+                <div className="flex gap-1">
+                  {STAGES.map((_, i) => (
+                    <span key={i} data-frame={i} data-active={i === 0} className="process-tick h-0.5 w-5 rounded-full" />
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -105,14 +112,14 @@ export function ProcessStory() {
                         key={i}
                         data-stage={i}
                         data-active={i === 0}
-                        className="process-stage relative border-t border-line pb-8 pt-5 lg:flex lg:min-h-[34vh] lg:flex-col lg:pb-12 lg:pt-6"
+                        className="process-stage relative border-t border-line pb-8 pt-5 lg:flex lg:min-h-[30vh] lg:flex-col lg:pb-10 lg:pt-6"
                       >
                         <span
                           aria-hidden="true"
-                          className="process-marker absolute -top-px left-0 hidden h-0.5 w-16 bg-blue lg:block"
+                          className="process-marker absolute -top-px left-0 hidden h-0.5 w-full bg-blue lg:block"
                         />
                         <span className="process-num t-label text-secondary">{num(i)}</span>
-                        <h3 className="mt-3 t-h4 text-navy">{stage.title}</h3>
+                        <h3 className="process-title mt-3 t-h4 text-navy">{stage.title}</h3>
                         <p className="mt-2 max-w-[40ch] text-secondary">{stage.copy}</p>
                       </li>
                     );

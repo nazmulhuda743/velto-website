@@ -52,10 +52,10 @@ export function MobileConversionBar({ finalSectionId }: { finalSectionId: string
         hidden ? "invisible translate-y-full" : "visible translate-y-0"
       }`}
     >
-      <div className="flex h-[72px] items-center gap-2 px-4 min-[375px]:px-5">
+      <div className="flex h-16 items-center gap-2 px-4 min-[375px]:px-5">
         <Link
           href={bookHref("mobile_sticky")}
-          className="inline-flex h-12 flex-[7] items-center justify-center rounded-md bg-blue text-[15px] font-semibold uppercase tracking-[0.04em] text-white active:bg-[#025a8f]"
+          className="inline-flex h-11 flex-[7] items-center justify-center rounded-md bg-action text-[14px] font-semibold uppercase tracking-[0.03em] text-white active:bg-action-active"
           data-analytics="book_pickup_click"
           data-placement="mobile_sticky"
         >
@@ -65,12 +65,13 @@ export function MobileConversionBar({ finalSectionId }: { finalSectionId: string
           href={WHATSAPP_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex h-12 min-w-0 flex-[3] items-center justify-center gap-1 rounded-md border border-line-strong px-1 text-[13px] font-semibold uppercase tracking-[0.01em] max-[374px]:text-[12px] max-[374px]:tracking-normal text-navy active:bg-soft"
+          aria-label="WhatsApp Velto (opens in a new tab)"
+          className="inline-flex h-11 min-w-0 flex-[3] items-center justify-center gap-1.5 rounded-md border border-line px-1 text-[12px] font-semibold uppercase tracking-[0.03em] text-navy active:bg-soft"
           data-analytics="whatsapp_click"
           data-placement="mobile_sticky"
         >
           <WhatsAppIcon className="size-4 shrink-0 text-whatsapp" />
-          WhatsApp
+          <span className="max-[374px]:sr-only">WhatsApp</span>
         </a>
       </div>
     </div>

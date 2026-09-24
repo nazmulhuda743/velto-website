@@ -29,15 +29,29 @@ Status: **BUILT · TESTED** (not yet APPROVED). Stopped at the homepage approval
 Preview states (§29) are in `docs/qa/homepage/` (numbered 01–14, plus laptop, tablet, small-mobile and per-section captures).
 To reproduce the pricing states in dev: `/?mockPricing=slow` (loading) and `/?mockPricing=error` (error). Search `zzzz` to see the no-result state.
 
+## Refinement pass 1 (after first review)
+
+- Branch synced with `main` (brand asset manifest + directories).
+- **Logo:** the supplied official PNG is stored untouched at `docs/brand/source/velto-logo-original.png` and the white-background reference at `docs/brand/velto-logo-reference.jpg`. `public/brand/velto-logo.png` is the original with only the transparent canvas cropped away (pixel-identical artwork, 1982×673). The header renders it at 36 px (mobile) and 44 px (≥1024). The Logo component reads the real ratio from the PNG.
+- **Footer logo:** no official reversed variant exists, so the colour artwork sits on a small white plate on navy. It is not recoloured. Please confirm, or supply `velto-logo-white.png`.
+- **Mobile hero:** below 768 px the H1 uses the H1 mobile minimum (40 px) and the supporting copy uses Body (16 px), with tighter spacing. Book a Pickup and Find a Price share one row, and Book a Pickup is wider and filled. The hero image now starts at **545 px** on 390×844 (previously about 720 px). The copy is unchanged.
+- **Mobile bar:** 64 px instead of 72 px, with 44 px buttons and a lighter border. The Book Pickup/WhatsApp split stays at about 70/30. Below 375 px, WhatsApp shows the glyph only and keeps its accessible label. The header and bar backgrounds are now solid white, so content no longer shows through.
+- **Mobile menu:** 52 px rows at 17 px. Actions sit directly under the list in one row (Book a Pickup wider) instead of being pinned to the bottom.
+- **Process:** interaction unchanged. Stages are tighter (30 vh). On desktop, inactive stage titles step back to secondary grey (still AA-compliant) and the active stage gets navy, a blue number and a full-width blue rule. The image caption row gains an 8-step progress indicator.
+- **Primary blue:** filled buttons use new `--color-brand-action: #0078BC` (4.76:1 with white, AA pass). The hover is `#00659E` and the active state `#005688`. `--velto-blue` is unchanged for accents, rules and stars.
+- **Desktop hero:** structure unchanged. With placeholder photography the balance can't be judged properly, so it will be rebalanced once the real hero photo exists.
+- **Find a Price:** unchanged apart from the button colour.
+
 ## Blockers / items needing a decision
 
-1. **Brand assets missing.** `public/brand/velto-logo.png`, `velto-logo-white.png` and `docs/brand/velto-company-profile.pdf` are not in the repo. The logo is **not** recreated. A dashed "Logo asset" slot renders instead, and the real file is picked up automatically once it is added (`src/components/ui/Logo.tsx`). Update `ASSUMED_RATIO` to match the artwork.
+1. **Company profile PDF** (`docs/brand/velto-company-profile.pdf`) is still not in the repo, so it could not be used as a reference in this pass.
 2. **No photography.** Every image is a clearly marked MOCK frame that carries its shot brief and alt text (`src/content/mock.ts`). To swap in real photos, set `src` for each slot.
-3. **Contrast contradiction (§12 vs §24).** White text on Velto blue `#027CC3` is **4.49:1**, just under AA 4.5:1 for 16 px button text. The token was left unchanged, as it is locked. Recommended fix: confirm the official brand-manual blue (the current value was sampled from a PNG). Mitigations already applied: text links use navy with a blue underline (blue text on white would also fail), focus rings use blue on light surfaces and cyan on navy (cyan on white is only 2.77:1), and muted `#7B8288` is not used for small text.
+3. **Logo tagline legibility:** the official lockup includes "Premium Laundry At Your Doorstep", which renders at about 4 px in the header. An official lockup without the tagline would suit the header better. The artwork was not altered.
 4. **TODO_VERIFY data** (§36): live prices (shown as `[Live price]`), WhatsApp number (`WHATSAPP_URL` currently opens WhatsApp without a recipient), Google Maps directions and review links (currently search URLs built from the verified addresses), review counts, the four reviews (placeholder text "Verified review will appear here"), and the repeat-customer review for Regular laundry (section omits it until one is supplied).
 
 ## Implementation notes for reviewers
 
+- Filled-button contrast issue from the first pass (`#027CC3`, 4.49:1) is resolved by the action token above.
 - `Request a Quote` and `View Full Pricing` use the secondary style so Book a Pickup stays the strongest action (§3).
 - The mobile bar labels render as BOOK PICKUP / WHATSAPP as written in §18.
 - `next.config.ts` sets `agentRules: false`, because otherwise Next.js 16's dev server rewrites this repo's `AGENTS.md`.

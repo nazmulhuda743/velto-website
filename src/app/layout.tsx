@@ -41,7 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           Skip to content
         </a>
-        <Header logo={<Logo height={30} priority />} />
+        <Header logo={<Logo className="h-9 lg:h-11" priority />} />
         <main id="main">{children}</main>
         <Footer />
         <Analytics />

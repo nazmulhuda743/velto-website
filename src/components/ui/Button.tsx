@@ -8,7 +8,7 @@ const base =
   "inline-flex items-center justify-center gap-2.5 rounded-md px-6 text-base font-semibold leading-none tracking-[-0.005em] whitespace-nowrap transition-colors duration-150 h-[52px] lg:h-12";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-blue text-white hover:bg-[#0268a6] active:bg-[#025a8f]",
+  primary: "bg-action text-white hover:bg-action-hover active:bg-action-active",
   secondary:
     "border border-line-strong bg-white text-navy hover:border-navy active:bg-soft",
   "secondary-inverse":

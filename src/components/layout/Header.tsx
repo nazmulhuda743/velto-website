@@ -26,7 +26,7 @@ export function Header({ logo }: { logo: ReactNode }) {
 
   return (
     <header
-      className={`sticky top-0 z-40 border-b bg-white/[0.97] transition-[border-color] duration-200 ${
+      className={`sticky top-0 z-40 border-b bg-white transition-[border-color] duration-200 ${
         scrolled || menuOpen ? "border-line" : "border-transparent"
       }`}
     >
