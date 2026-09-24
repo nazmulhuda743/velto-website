@@ -44,9 +44,9 @@ export function createSupabasePricingSource(
   if (!SAFE_IDENTIFIER.test(view)) {
     throw new PricingConfigurationError("VELTO_PRICING_VIEW is not a safe identifier");
   }
-  if (!config.secretKey.startsWith("sb_secret_")) {
+  if (!config.secretKey.startsWith("sb_secret_") && !config.secretKey.startsWith("eyJ")) {
     throw new PricingConfigurationError(
-      "VELTO_SUPABASE_SECRET_KEY must use a current Supabase secret key",
+      "VELTO_SUPABASE_SECRET_KEY must be a Supabase secret key (sb_secret_...) or service role JWT",
     );
   }
 
