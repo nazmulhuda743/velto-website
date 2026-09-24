@@ -14,6 +14,43 @@ import { searchPriceItems } from "@/lib/pricing";
 const isLiveConfigured = () =>
   Boolean(process.env.VELTO_SUPABASE_URL && process.env.VELTO_SUPABASE_SECRET_KEY);
 
+/**
+ * Word-level aliases so common local spellings still match the official
+ * item names in the approved pricing view (e.g. "saree" → "Sari (Cotton)").
+ * The list mirrors the price list's own vocabulary — it never invents items.
+ */
+const QUERY_ALIASES: Record<string, string> = {
+  saree: "sari",
+  sharee: "sari",
+  shari: "sari",
+  comforter: "blanket",
+  comforters: "blanket",
+  tshirt: "t-shirt",
+  tshirts: "t-shirt",
+  punjabi: "panjabi",
+  punjabee: "panjabi",
+  lehenga: "lahanga",
+  lehanga: "lahanga",
+  bedsheet: "bed sheet",
+  bedsheets: "bed sheet",
+};
+
+/**
+ * Strip characters that would break the upstream PostgREST `ilike` filter,
+ * collapse whitespace, and apply the alias map word by word.
+ */
+function normalizeQuery(raw: string): string {
+  const cleaned = raw
+    .replace(/[,()."'`:;*%\\]/g, " ")
+    .replace(/\bt[\s-]shirt\b/gi, "tshirt")
+    .replace(/\s+/g, " ")
+    .trim();
+  return cleaned
+    .split(" ")
+    .map((word) => QUERY_ALIASES[word.toLowerCase()] ?? word)
+    .join(" ");
+}
+
 export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams.get("q") ?? "";
 
@@ -29,7 +66,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const query = q.slice(0, 64);
+    const query = normalizeQuery(q.slice(0, 64));
     let items: PublicPriceItem[];
     let source: "live" | "mock";
     if (query.trim().length < 2) {
