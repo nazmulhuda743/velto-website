@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 
 const base = process.env.LAUNCH_BASE_URL || "http://127.0.0.1:3000";
+const productionOrigin = "https://www.velto.com.bd";
 
 const routes = [
   "/",
@@ -29,15 +30,38 @@ async function request(path, init) {
   return fetch(new URL(path, base), { redirect: "manual", ...init });
 }
 
+async function html(path) {
+  const response = await request(path);
+  assert.equal(response.status, 200, `${path} returned ${response.status}`);
+  return { response, body: await response.text() };
+}
+
 for (const route of routes) {
   const response = await request(route);
   assert.equal(response.status, 200, `${route} returned ${response.status}`);
 }
 
+for (const route of [
+  "/",
+  "/services",
+  "/services/dry-cleaning",
+  "/services/express",
+  "/pricing",
+  "/locations",
+  "/locations/sector-11",
+]) {
+  const { body } = await html(route);
+  const expected = route === "/" ? `${productionOrigin}/` : `${productionOrigin}${route}`;
+  assert.match(body, /rel="canonical"/i, `${route} canonical link missing`);
+  assert.ok(body.includes(`href="${expected}"`) || body.includes(`href="${expected.replace(/\/$/, "")}"`), `${route} canonical URL is not ${expected}`);
+}
+
+for (const route of ["/book", "/quote", "/privacy", "/terms"]) {
+  const { body } = await html(route);
+  assert.match(body, /name="robots"[^>]+noindex|noindex[^>]+name="robots"/i, `${route} must be noindex`);
+}
+
 const homeResponse = await request("/");
-const home = await homeResponse.text();
-assert.match(home, /rel="canonical"/i, "homepage canonical link missing");
-assert.ok(home.includes("https://www.velto.com.bd"), "production canonical origin missing");
 assert.equal(homeResponse.headers.get("x-content-type-options"), "nosniff");
 assert.equal(homeResponse.headers.get("x-frame-options"), "DENY");
 assert.equal(homeResponse.headers.get("referrer-policy"), "strict-origin-when-cross-origin");
@@ -53,8 +77,11 @@ assert.match(robots, /Disallow:\s*\/api\//i, "robots.txt must block API crawling
 const sitemapResponse = await request("/sitemap.xml");
 assert.equal(sitemapResponse.status, 200);
 const sitemap = await sitemapResponse.text();
-for (const route of ["/services/dry-cleaning", "/pricing", "/locations/sector-11"]) {
-  assert.ok(sitemap.includes(`https://www.velto.com.bd${route}`), `sitemap missing ${route}`);
+for (const route of ["/services/dry-cleaning", "/services/express", "/pricing", "/locations/sector-11"]) {
+  assert.ok(sitemap.includes(`${productionOrigin}${route}`), `sitemap missing ${route}`);
+}
+for (const route of ["/book", "/quote", "/privacy", "/terms"]) {
+  assert.ok(!sitemap.includes(`${productionOrigin}${route}`), `sitemap must not include utility route ${route}`);
 }
 
 const wrongType = await request("/api/bookings", {
@@ -78,4 +105,4 @@ const oversized = await request("/api/bookings", {
 });
 assert.equal(oversized.status, 413, `booking endpoint should reject oversized JSON with 413, got ${oversized.status}`);
 
-console.log(`Launch smoke audit passed for ${routes.length} public routes plus SEO, headers, 404 and API guards.`);
+console.log(`Launch smoke audit passed for ${routes.length} public routes plus canonicals, noindex rules, sitemap, headers, 404 and API guards.`);
