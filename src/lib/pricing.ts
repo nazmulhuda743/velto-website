@@ -21,9 +21,6 @@ export type PublicPriceItem = {
   services: PublicPriceService[];
 };
 
-/** Where the items came from. The UI marks prices as placeholders only for "mock". */
-export type PriceSource = "mock" | "live";
-
 const svc = (slug: string, name: string): PublicPriceService => ({
   slug,
   name,
@@ -48,8 +45,6 @@ const MOCK_ITEMS: PublicPriceItem[] = [
   { slug: "suit", name: "Suit", services: [DRY()] },
   { slug: "sherwani", name: "Sherwani", services: [DRY()] },
 ];
-
-export const PRICE_SOURCE: PriceSource = "mock";
 
 const MAX_RESULTS = 5;
 
