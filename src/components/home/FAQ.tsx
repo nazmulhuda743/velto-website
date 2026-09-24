@@ -112,7 +112,8 @@ export function FAQ({
         <div className="col-span-4 md:col-span-8 xl:col-span-7 xl:col-start-6">
           <div className="border-t border-navy">
             {items.map((item) => (
-              <details key={item.q} className="faq-item group border-b border-line">
+              // Shared name = exclusive accordion: opening one question closes the others.
+              <details key={item.q} name="faq" className="faq-item group border-b border-line">
                 <summary className="flex min-h-16 cursor-pointer items-center justify-between gap-6 py-5 text-navy">
                   <span className="text-[18px] font-semibold leading-snug tracking-[-0.01em] md:text-[20px]">
                     {item.q}

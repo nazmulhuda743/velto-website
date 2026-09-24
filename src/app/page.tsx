@@ -6,17 +6,19 @@ import { Hero } from "@/components/home/Hero";
 import { HouseholdSection } from "@/components/home/HouseholdSection";
 import { LocationsSection } from "@/components/home/LocationsSection";
 import { ProcessStory } from "@/components/home/ProcessStory";
+import { ProofMarquee } from "@/components/home/ProofMarquee";
 import { RegularLaundrySection } from "@/components/home/RegularLaundrySection";
 import { ReviewsSection } from "@/components/home/ReviewsSection";
 import { ServiceChooser } from "@/components/home/ServiceChooser";
 
 const FINAL_ID = "book";
 
-/** Homepage — section order is LOCKED (spec §19). */
+/** Homepage — section order is LOCKED (spec §19); the proof strip under the hero was added at the owner's request. */
 export default function HomePage() {
   return (
     <>
       <Hero />
+      <ProofMarquee />
       <ServiceChooser />
       <ProcessStory />
       <ReviewsSection />
