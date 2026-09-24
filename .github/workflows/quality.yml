@@ -19,7 +19,7 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       NEXT_PUBLIC_SITE_URL: https://www.velto.com.bd
     steps:
@@ -46,3 +46,27 @@ jobs:
 
       - name: Production build
         run: npm run build
+
+      - name: Launch smoke audit
+        shell: bash
+        run: |
+          npm start > /tmp/velto-next.log 2>&1 &
+          NEXT_PID=$!
+          trap 'kill "$NEXT_PID" 2>/dev/null || true' EXIT
+
+          READY=0
+          for _ in {1..30}; do
+            if curl --fail --silent --show-error http://127.0.0.1:3000/ > /dev/null; then
+              READY=1
+              break
+            fi
+            sleep 1
+          done
+
+          if [ "$READY" -ne 1 ]; then
+            echo "Next.js server did not become ready"
+            cat /tmp/velto-next.log
+            exit 1
+          fi
+
+          npm run test:launch
