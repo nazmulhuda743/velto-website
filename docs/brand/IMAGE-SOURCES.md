@@ -1,6 +1,6 @@
 # Homepage image sources
 
-Status: **imported**. 17 licensed stock photos from Pexels, downloaded into `public/images/home/`. Nothing is hotlinked.
+Status: **imported**. 12 licensed stock photos from Pexels plus 5 owner-supplied photos (marked ²), downloaded into `public/images/home/`. Nothing is hotlinked.
 Data and alt text live in `src/content/mock.ts` (`IMAGES`). The import manifest is `docs/brand/image-imports.json`.
 
 ## Licence
@@ -29,10 +29,10 @@ Where possible the set was drawn from a few coherent shoots, so colour temperatu
 
 | File | Section | Source URL | Platform | Photographer |
 |---|---|---|---|---|
-| `public/images/home/hero.jpg` | Hero | https://www.pexels.com/photo/6969972/ | Pexels | Mikhail Nilov ¹ |
-| `public/images/home/dry-cleaning.jpg` | Service chooser — Dry Cleaning | https://www.pexels.com/photo/6764952/ | Pexels | Tima Miroshnichenko ¹ |
-| `public/images/home/wash-and-iron.jpg` | Service chooser — Wash & Iron | https://www.pexels.com/photo/4440574/ | Pexels | Polina Tankilevitch |
-| `public/images/home/ironing.jpg` | Service chooser — Ironing | https://www.pexels.com/photo/5901624/ | Pexels | cottonbro studio ¹ |
+| `public/images/home/hero.webp` | Hero | — | Supplied by Velto (2026-09-25) | Origin/licence to confirm ² |
+| `public/images/home/dry-cleaning.webp` | Service chooser — Dry Cleaning | — | Supplied by Velto (2026-09-25) | Origin/licence to confirm ² |
+| `public/images/home/wash-and-iron.webp` | Service chooser — Wash & Iron | — | Supplied by Velto (2026-09-25) | Origin/licence to confirm ² |
+| `public/images/home/ironing.webp` | Service chooser — Ironing | — | Supplied by Velto (2026-09-25) | Origin/licence to confirm ² |
 | `public/images/home/household-curtains.jpg` | Service chooser — household group (curtains) | https://www.pexels.com/photo/6619046/ | Pexels | Thirdman |
 | `public/images/home/household-section.jpg` | Curtains, carpets & bedding section | https://www.pexels.com/photo/7217758/ | Pexels | Blue Bird ¹ |
 | `public/images/home/process-01-collected.jpg` | Process 01 — Collected | https://www.pexels.com/photo/6969971/ | Pexels | Mikhail Nilov ¹ |
@@ -44,8 +44,10 @@ Where possible the set was drawn from a few coherent shoots, so colour temperatu
 | `public/images/home/process-07-packed.jpg` | Process 07 — Packed for return | https://www.pexels.com/photo/4440571/ | Pexels | Polina Tankilevitch ¹ |
 | `public/images/home/process-08-returned.jpg` | Process 08 — Returned to you | https://www.pexels.com/photo/6969968/ | Pexels | Mikhail Nilov ¹ |
 | `public/images/home/delicate.jpg` | Process — delicate garment insert | https://www.pexels.com/photo/6764932/ | Pexels | Tima Miroshnichenko ¹ |
-| `public/images/home/regular.jpg` | Regular laundry | https://www.pexels.com/photo/4440566/ | Pexels | Polina Tankilevitch ¹ |
+| `public/images/home/regular.webp` | Regular laundry | — | Supplied by Velto (2026-09-25) | Origin/licence to confirm ² |
 | `public/images/home/final.jpg` | Final booking | https://www.pexels.com/photo/4440572/ | Pexels | Polina Tankilevitch ¹ |
+
+² Supplied directly by the Velto owner in September 2026 to replace the Pexels photos in these five slots. The owner should confirm where each image came from and that Velto may use it commercially. Several look AI-generated; if so, record the tool and its licence terms here.
 
 ¹ The photographer is inferred from the rest of the same Pexels shoot (neighbouring photo IDs whose credit was confirmed in search results). Confirm it on the source page before relying on the credit.
 

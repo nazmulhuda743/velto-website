@@ -23,7 +23,7 @@ export type ImageSlot = {
   /** CSS object-position focal point used when the component crops the photo. */
   position?: string;
   /** Provenance for licensed stock (mirrored in docs/brand/IMAGE-SOURCES.md). */
-  source?: { platform: string; url: string; photographer?: string };
+  source?: { platform: string; url?: string; photographer?: string };
 };
 
 const slot = (alt: string, width: number, height: number): ImageSlot => ({
@@ -59,26 +59,42 @@ const stock = (
   source: { platform: "Pexels", url: `https://www.pexels.com/photo/${pexelsId}/`, photographer },
 });
 
+/**
+ * Photography supplied by the Velto owner (batch received 2026-09-25), stored
+ * in public/images/home and listed in docs/brand/IMAGE-SOURCES.md. Origin and
+ * licence are to be confirmed by the owner. The same trust rule applies: alt
+ * text describes what the photo shows and does not present the people in it
+ * as Velto staff.
+ */
+const supplied = (file: string, alt: string, width: number, height: number, position?: string): ImageSlot => ({
+  src: `/images/home/${file}.webp`,
+  alt,
+  width,
+  height,
+  position,
+  source: { platform: "Supplied by Velto" },
+});
+
 export const IMAGES = {
-  hero: stock(
+  hero: supplied(
     "hero",
-    "A courier at a doorway holding out two packed paper-bag orders.",
-    2400, 1600, 6969972, "Mikhail Nilov", "center 40%",
+    "A courier in a navy cap handing a bundle of garments in clear covers to a smiling woman at her front door.",
+    1086, 1448, "center 30%",
   ),
-  dryCleaning: stock(
+  dryCleaning: supplied(
     "dry-cleaning",
-    "A dark suit jacket with shirt and tie on a tailor's mannequin.",
-    1600, 2400, 6764952, "Tima Miroshnichenko", "center 42%",
+    "A hand holding up a grey suit jacket in a clear garment cover on a wooden hanger, with covered garments on rails behind.",
+    1619, 971, "center 40%",
   ),
-  washAndIron: stock(
+  washAndIron: supplied(
     "wash-and-iron",
-    "A stack of neatly folded shirts held in two hands.",
-    2400, 1600, 4440574, "Polina Tankilevitch", "40% center",
+    "A heap of everyday clothes, including shirts, jeans, chinos and knitwear, on a living-room table.",
+    1430, 1100, "center 55%",
   ),
-  ironing: stock(
+  ironing: supplied(
     "ironing",
-    "Hands pressing a white shirt with a steam iron.",
-    2400, 1600, 5901624, "cottonbro studio", "40% 60%",
+    "A person holding a stack of neatly folded shirts beside a steam iron on an ironing board.",
+    1254, 1254, "45% 55%",
   ),
   household: stock(
     "household-curtains",
@@ -114,10 +130,10 @@ export const IMAGES = {
     "sector-11": slot("The Velto outlet at House 2, Road 14, Sector 11, Uttara.", 1500, 1000),
     "sector-18": slot("The Velto outlet at Poncoboti Bazar, Sector 18, Uttara.", 1500, 1000),
   },
-  regular: stock(
+  regular: supplied(
     "regular",
-    "Folded shirts laid out in a row on a navy blanket.",
-    2400, 1600, 4440566, "Polina Tankilevitch", "center",
+    "Freshly folded shirts, trousers and sweaters laid out in neat stacks.",
+    1536, 1024, "center",
   ),
   final: stock(
     "final",
