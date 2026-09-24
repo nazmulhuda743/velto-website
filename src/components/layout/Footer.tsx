@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
-import { LOCATIONS, NAV, SERVICE_AREA, WHATSAPP_URL, bookHref } from "@/content/site";
+import { NAV, SERVICE_AREA, WHATSAPP_URL, bookHref } from "@/content/site";
+import { getLocations } from "@/lib/site-content";
 
-export function Footer() {
+export async function Footer() {
+  const locations = await getLocations();
   return (
     <footer className="on-navy border-t border-white/15 bg-navy-deep text-white/80">
       <div className="container-page pb-10 pt-16 md:pt-20">
@@ -62,7 +64,7 @@ export function Footer() {
             </ul>
           </div>
 
-          {LOCATIONS.map((loc) => (
+          {locations.map((loc) => (
             <div key={loc.id} className="col-span-4 md:col-span-4 xl:col-span-2">
               <h2 className="t-label uppercase text-white/60">{loc.name}</h2>
               <address className="mt-4 t-small not-italic text-white">{loc.address}</address>

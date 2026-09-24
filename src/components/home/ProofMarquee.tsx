@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Marquee } from "@/components/ui/Marquee";
-import { FREE_DELIVERY_THRESHOLD, LOCATIONS, REGULAR_FREE_DELIVERY_THRESHOLD } from "@/content/site";
+import { FREE_DELIVERY_THRESHOLD, REGULAR_FREE_DELIVERY_THRESHOLD } from "@/content/site";
+import { getLocations } from "@/lib/site-content";
 
 const Icon = ({ children }: { children: ReactNode }) => (
   <span aria-hidden="true" className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-soft text-blue">
@@ -53,29 +54,27 @@ const ICONS = {
   store: <path d="M4 9.5 5.5 4h13L20 9.5M4 9.5h16M5 9.5V20h14V9.5M9.5 20v-5h5v5" />,
 };
 
-const [s11, s18] = LOCATIONS;
-
-/** Facts only from the spec and owner confirmations — never invented stats. */
-const ITEMS: { icon: keyof typeof ICONS; title: string; sub: string }[] = [
-  { icon: "star", title: `${s11.rating} on Google`, sub: `${s11.name} · ${s11.reviewCount} reviews` },
-  { icon: "pin", title: "Uttara Sectors 1–18", sub: "Pickup from your door" },
-  { icon: "truck", title: "Free pickup & delivery", sub: `On orders of ${FREE_DELIVERY_THRESHOLD}+` },
-  { icon: "repeat", title: `${REGULAR_FREE_DELIVERY_THRESHOLD}+ on regular pickups`, sub: "Weekly or fortnightly" },
-  { icon: "clock", title: "Usually around 72 hours", sub: "Dry Cleaning & Wash & Iron" },
-  { icon: "tag", title: "Every item tagged", sub: "At check-in, to your order" },
-  { icon: "check", title: "Checked before packing", sub: "Quality check on every order" },
-  { icon: "search", title: "Prices you can check", sub: "Per item, before you send" },
-  { icon: "star", title: `${s18.rating} on Google`, sub: `${s18.name} · ${s18.reviewCount} reviews` },
-  { icon: "store", title: "Two outlets", sub: `${s11.name} & ${s18.name}` },
-];
-
 /** Moving proof strip directly under the hero. */
-export function ProofMarquee() {
+export async function ProofMarquee() {
+  const [s11, s18] = await getLocations();
+  /** Facts only from the spec and owner confirmations — never invented stats. */
+  const items: { icon: keyof typeof ICONS; title: string; sub: string }[] = [
+    { icon: "star", title: `${s11.rating} on Google`, sub: `${s11.name} · ${s11.reviewCount} reviews` },
+    { icon: "pin", title: "Uttara Sectors 1–18", sub: "Pickup from your door" },
+    { icon: "truck", title: "Free pickup & delivery", sub: `On orders of ${FREE_DELIVERY_THRESHOLD}+` },
+    { icon: "repeat", title: `${REGULAR_FREE_DELIVERY_THRESHOLD}+ on regular pickups`, sub: "Weekly or fortnightly" },
+    { icon: "clock", title: "Usually around 72 hours", sub: "Dry Cleaning & Wash & Iron" },
+    { icon: "tag", title: "Every item tagged", sub: "At check-in, to your order" },
+    { icon: "check", title: "Checked before packing", sub: "Quality check on every order" },
+    { icon: "search", title: "Prices you can check", sub: "Per item, before you send" },
+    { icon: "star", title: `${s18.rating} on Google`, sub: `${s18.name} · ${s18.reviewCount} reviews` },
+    { icon: "store", title: "Two outlets", sub: `${s11.name} & ${s18.name}` },
+  ];
   return (
     <section aria-label="Why people use Velto" className="border-y border-line bg-white py-5 md:py-6">
       <div className="container-page">
         <Marquee label="Velto facts" seconds={55} gapClass="gap-3" toggleAt="side">
-          {ITEMS.map((item) => (
+          {items.map((item) => (
             <div
               key={item.title}
               className="inline-flex shrink-0 items-center gap-3 rounded-full border border-line bg-white py-2 pl-2 pr-6"

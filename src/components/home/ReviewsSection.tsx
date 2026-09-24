@@ -2,7 +2,8 @@ import { Stars } from "@/components/ui/icons";
 import { Marquee } from "@/components/ui/Marquee";
 import { LOCATIONS } from "@/content/site";
 import { GoogleProof } from "./ProofLine";
-import { REVIEWS, type Review } from "@/content/mock";
+import type { Review } from "@/content/mock";
+import { getSiteContent } from "@/lib/site-content";
 
 const Paragraph = ({ text }: { text: string }) => (
   <p>
@@ -71,7 +72,7 @@ export function ReviewBlock({ review }: { review: Review }) {
             <span className="sr-only">{review.rating} out of 5</span>
           </span>
         ) : null}
-        <ReviewSourceLink review={review} label={platformLabel} className="text-secondary underline decoration-blue/50 underline-offset-4 hover:text-navy" />
+        <ReviewSourceLink review={review} label={platformLabel} className="inline-block py-1 text-secondary underline decoration-blue/50 underline-offset-4 hover:text-navy" />
       </figcaption>
     </figure>
   );
@@ -134,7 +135,7 @@ function ReviewCard({ review }: { review: Review }) {
           <ReviewSourceLink
             review={review}
             label={long ? "Read the full review" : "Google review"}
-            className="t-small text-secondary underline decoration-blue/50 underline-offset-4 hover:text-navy"
+            className="inline-block py-1 t-small text-secondary underline decoration-blue/50 underline-offset-4 hover:text-navy"
           />
         </span>
       </figcaption>
@@ -142,8 +143,9 @@ function ReviewCard({ review }: { review: Review }) {
   );
 }
 
-export function ReviewsSection() {
-  const reviews = REVIEWS.filter((r) => r.text && r.name);
+export async function ReviewsSection() {
+  const reviews = (await getSiteContent()).reviews.filter((r) => r.showOnHome && r.text && r.name);
+  if (!reviews.length) return null;
   return (
     <section id="reviews" aria-labelledby="reviews-title" className="bg-warm py-(--space-section)">
       <div className="container-page flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -162,7 +164,7 @@ export function ReviewsSection() {
           className="container-page"
         >
           {reviews.map((review) => (
-            <ReviewCard key={review.name} review={review} />
+            <ReviewCard key={review.id} review={review} />
           ))}
         </Marquee>
       </div>

@@ -2,7 +2,8 @@ import { ResponsiveImage } from "@/components/ui/ResponsiveImage";
 import { Star } from "@/components/ui/icons";
 import { TextLink } from "@/components/ui/TextLink";
 import { IMAGES } from "@/content/mock";
-import { LOCATIONS, type Location } from "@/content/site";
+import type { Location } from "@/content/site";
+import { getLocations } from "@/lib/site-content";
 import { SectionIntro } from "./SectionIntro";
 
 export function LocationBlock({ loc }: { loc: Location }) {
@@ -52,7 +53,8 @@ export function LocationBlock({ loc }: { loc: Location }) {
   );
 }
 
-export function LocationsSection() {
+export async function LocationsSection() {
+  const locations = await getLocations();
   return (
     <section id="locations" aria-labelledby="locations-title" className="py-(--space-section)">
       <div className="container-page">
@@ -63,7 +65,7 @@ export function LocationsSection() {
           <p>Book a pickup from home or visit the outlet that works for you.</p>
         </SectionIntro>
         <div className="mt-(--space-intro-content) grid-page gap-y-14">
-          {LOCATIONS.map((loc) => (
+          {locations.map((loc) => (
             <div key={loc.id} className="col-span-4 md:col-span-4 xl:col-span-6">
               <LocationBlock loc={loc} />
             </div>

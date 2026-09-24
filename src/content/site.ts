@@ -23,8 +23,11 @@ export const GOOGLE_PROOF = {
   rating: 5,
 };
 
-/** Owner-confirmed Velto WhatsApp number (+880 1605-162788). */
-export const WHATSAPP_URL = "https://wa.me/8801605162788";
+/**
+ * All WhatsApp actions go through this redirect, which opens the number set in
+ * the admin dashboard (default: the owner-confirmed +880 1605-162788).
+ */
+export const WHATSAPP_URL = "/go/whatsapp";
 
 export type Location = {
   id: "sector-11" | "sector-18";
@@ -105,5 +108,6 @@ export const NAV = {
     { label: "Pricing", href: "/pricing" },
     { label: "Regular Laundry", href: "/regular-laundry" },
     { label: "Locations", href: "/locations" },
+    { label: "Track an Order", href: "/track" },
   ],
 };

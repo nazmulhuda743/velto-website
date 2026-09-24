@@ -6,7 +6,8 @@ import { ProcessSteps } from "@/components/pages/ProcessSteps";
 import { ResponsiveImage } from "@/components/ui/ResponsiveImage";
 import { TextLink } from "@/components/ui/TextLink";
 import type { ServiceBlock } from "@/content/services";
-import { LOCATIONS, SERVICE_AREA } from "@/content/site";
+import { SERVICE_AREA } from "@/content/site";
+import { getLocations, getSiteContent } from "@/lib/site-content";
 import { ServiceCompare } from "./ServiceCompare";
 import { ServicePriceTable, ServicePriceTableSkeleton } from "./ServicePriceTable";
 
@@ -25,7 +26,7 @@ const LEFT = "col-span-4 md:col-span-8 xl:col-span-4";
 const RIGHT = "col-span-4 md:col-span-8 xl:col-span-7 xl:col-start-6";
 
 /** Renders one typed content block with the shared Velto section rhythm. */
-export function ServiceBlockView({
+export async function ServiceBlockView({
   block,
   id,
   tone,
@@ -194,17 +195,21 @@ export function ServiceBlockView({
         </Section>
       );
 
-    case "review":
+    case "review": {
+      // The dashboard's review list wins; a review removed there disappears here too.
+      const review = (await getSiteContent()).reviews.find((r) => r.name === block.review.name);
+      if (!review) return null;
       return (
         <Section id={id} tone={tone}>
           <div className={LEFT}>
             <SectionIntro id={id} title={block.title} titleClassName="max-w-[14ch]" />
           </div>
           <div className={`${RIGHT} max-w-[720px]`}>
-            <ReviewBlock review={block.review} />
+            <ReviewBlock review={review} />
           </div>
         </Section>
       );
+    }
 
     case "area":
       return (
@@ -217,7 +222,7 @@ export function ServiceBlockView({
             </SectionIntro>
           </div>
           <div className={`${RIGHT} grid gap-y-8 md:grid-cols-2 md:gap-x-10`}>
-            {LOCATIONS.map((loc) => (
+            {(await getLocations()).map((loc) => (
               <div key={loc.id} className="border-t border-navy pt-4">
                 <h3 className="t-h4 text-navy">{loc.name}</h3>
                 <address className="mt-2 not-italic text-body">{loc.address}</address>
