@@ -197,6 +197,17 @@ body {
   text-wrap: balance;
 }
 
+@utility t-h1 {
+  font-size: 2.5rem;
+  line-height: 1.05;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+  @media (min-width: 768px) {
+    font-size: clamp(2.5rem, 4vw, 3.5rem);
+  }
+}
+
 @utility t-h2 {
   font-size: clamp(2rem, 3vw, 2.75rem);
   line-height: 1.08;

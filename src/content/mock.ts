@@ -102,6 +102,10 @@ export const IMAGES = {
     "Hands rolling up a woven jute rug on a wooden floor.",
     2400, 1600, 7217758, "Blue Bird", "60% center",
   ),
+  /** No suitable bedding photography yet: MOCK placeholder rather than a mismatched stock image. */
+  blankets: slot("Folded comforters and blankets received for cleaning.", 1600, 1200),
+  curtainsMeasured: slot("Curtain panels being measured for a quote.", 1600, 1200),
+  carpetMeasured: slot("A carpet being measured for a quote.", 1600, 1200),
   /** Real Velto outlets: never substituted with stock storefronts. MOCK until supplied. */
   locations: {
     "sector-11": slot("The Velto outlet at House 2, Road 14, Sector 11, Uttara.", 1500, 1000),

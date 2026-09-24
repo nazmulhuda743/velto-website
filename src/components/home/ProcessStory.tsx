@@ -39,16 +39,28 @@ const MOVEMENTS = [
 const num = (i: number) => String(i + 1).padStart(2, "0");
 const stage = (i: number) => STAGES[i];
 
-export function ProcessStory() {
+const DEFAULT_INTRO = (
+  <p>
+    Once your order reaches Velto, we check it in, identify the items and look over the garments
+    before cleaning starts. When the work is finished, everything is checked again, packed and
+    returned.
+  </p>
+);
+
+export function ProcessStory({
+  title = "What happens to your clothes after pickup?",
+  intro = DEFAULT_INTRO,
+  showInsert = true,
+}: {
+  title?: string;
+  intro?: React.ReactNode;
+  showInsert?: boolean;
+} = {}) {
   return (
     <section id="process" aria-labelledby="process-title" className="py-(--space-section)">
       <div className="container-page">
-        <SectionIntro id="process-title" title="What happens to your clothes after pickup?" titleClassName="max-w-[18ch]">
-          <p>
-            Once your order reaches Velto, we check it in, identify the items and look over the
-            garments before cleaning starts. When the work is finished, everything is checked again,
-            packed and returned.
-          </p>
+        <SectionIntro id="process-title" title={title} titleClassName="max-w-[18ch]">
+          {intro}
         </SectionIntro>
 
         <div className="mt-(--space-intro-content) grid-page">
@@ -144,6 +156,7 @@ export function ProcessStory() {
         </div>
 
         {/* Delicate garment insert */}
+        {showInsert ? (
         <div className="mt-(--space-related) grid-page gap-y-8 border-t border-line pt-(--space-related) lg:mt-0">
           <div className="col-span-4 md:col-span-4 xl:col-span-6">
             <ResponsiveImage
@@ -171,6 +184,7 @@ export function ProcessStory() {
             </div>
           </div>
         </div>
+        ) : null}
       </div>
       <ProcessScrollSync rootId="process" />
     </section>
