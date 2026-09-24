@@ -15,6 +15,7 @@ export function PageHero({
   aside,
   image,
   priority = true,
+  stackActionsOnMobile = false,
 }: {
   crumbs: Crumb[];
   title: ReactNode;
@@ -24,6 +25,8 @@ export function PageHero({
   aside?: ReactNode;
   image?: ImageSlot;
   priority?: boolean;
+  /** Stack the two actions on mobile when both are text buttons that won't fit side by side. */
+  stackActionsOnMobile?: boolean;
 }) {
   return (
     <section aria-labelledby="page-title" className="pb-14 pt-6 md:pb-20 md:pt-10 xl:pb-24 xl:pt-12">
@@ -37,7 +40,11 @@ export function PageHero({
             {children ? (
               <div className="mt-5 max-w-[560px] space-y-4 t-body text-body md:mt-6 md:t-body-lg">{children}</div>
             ) : null}
-            {actions ? <div className="mt-7 flex gap-2.5 md:mt-8 md:flex-wrap md:gap-3">{actions}</div> : null}
+            {actions ? (
+              <div className={`mt-7 flex gap-2.5 md:mt-8 md:flex-wrap md:gap-3 ${stackActionsOnMobile ? "max-md:flex-col" : ""}`}>
+                {actions}
+              </div>
+            ) : null}
             {aside ? <div className="mt-8 max-w-[560px]">{aside}</div> : null}
           </div>
           {image ? (

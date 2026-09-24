@@ -4,6 +4,7 @@ import { Analytics } from "@/components/layout/Analytics";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { Logo } from "@/components/ui/Logo";
+import { SITE_URL } from "@/lib/site-url";
 import "./globals.css";
 
 const instrumentSans = Instrument_Sans({
@@ -21,6 +22,7 @@ const sourceSerif = Source_Serif_4({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Velto Premium Laundry — Laundry & dry cleaning in Uttara",
   description:
     "Laundry and dry cleaning in Uttara, with pickup from your door. We collect across Uttara Sectors 1–18.",

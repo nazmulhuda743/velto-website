@@ -74,6 +74,14 @@ export const bookHref = (source: string, service?: string) => {
   return `/book?${params.toString()}`;
 };
 
+/** Household quote entry point, preserving the selected service (§7, §22). */
+export const quoteHref = (service: string | undefined, source: string) => {
+  const params = new URLSearchParams();
+  if (service) params.set("service", service);
+  params.set("source", source);
+  return `/quote?${params.toString()}`;
+};
+
 export const SERVICES = {
   dryCleaning: { slug: "dry-cleaning", href: "/services/dry-cleaning" },
   washAndIron: { slug: "wash-and-iron", href: "/services/wash-and-iron" },
@@ -81,6 +89,7 @@ export const SERVICES = {
   curtains: { slug: "curtain-cleaning", href: "/services/curtain-cleaning" },
   carpets: { slug: "carpet-cleaning", href: "/services/carpet-cleaning" },
   blankets: { slug: "blanket-comforter-cleaning", href: "/services/blanket-comforter-cleaning" },
+  express: { slug: "express", href: "/services/express" },
 } as const;
 
 export const NAV = {

@@ -254,14 +254,14 @@ function WhatsAppFallback({ href, placement, label, className = "" }: { href: st
 export function BookingForm({
   intro,
   initialService,
-  regular = false,
+  presetNote,
   previewOutcome,
 }: {
   /** Page heading copy. The form owns the h1 so the success state can replace it. */
   intro: ReactNode;
   initialService?: string;
-  /** Came from "Set Up Regular Pickup": prefill and open the note (no separate contract field). */
-  regular?: boolean;
+  /** Came from Regular Pickup or Express: prefill and open the note (no separate contract field). */
+  presetNote?: string;
   /** Development-only: simulates the adapter result to QA success/error UI. Never set in production. */
   previewOutcome?: "success" | "error";
 }) {
@@ -274,11 +274,11 @@ export function BookingForm({
     time: "",
     name: "",
     phone: "",
-    notes: regular ? "I'd like to set up a regular pickup." : "",
+    notes: presetNote ?? "",
   });
   const [errors, setErrors] = useState<Errors>({});
   const [status, setStatus] = useState<Status>({ state: "idle" });
-  const [notesOpen, setNotesOpen] = useState(regular);
+  const [notesOpen, setNotesOpen] = useState(Boolean(presetNote));
   // Arriving from a service page: show the choice as one line, with the option to change it.
   const [serviceOpen, setServiceOpen] = useState(s.service === null);
   const started = useRef(false);

@@ -5,6 +5,7 @@ import { WhatsAppButton } from "@/components/ui/Button";
 import { SearchIcon } from "@/components/ui/icons";
 import { track } from "@/components/layout/Analytics";
 import { WHATSAPP_URL } from "@/content/site";
+import { formatAmount } from "@/lib/format-price";
 
 /** Mirrors the Codex pricing adapter's PublicPriceItem (via /api/prices). */
 type PriceService = {
@@ -280,9 +281,6 @@ export function PriceFinder({
     </div>
   );
 }
-
-const formatAmount = (minor: number) =>
-  `৳${(minor / 100).toLocaleString("en-US", { maximumFractionDigits: minor % 100 ? 2 : 0 })}`;
 
 function PriceResult({
   item,
