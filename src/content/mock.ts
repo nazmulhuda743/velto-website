@@ -8,11 +8,19 @@
 export type ImageSlot = {
   /** Path under /public once production photography is supplied. null = MOCK placeholder. */
   src: string | null;
-  /** Meaningful alt text describing the evidence the photo shows (§24). */
+  /**
+   * Alt text (§24). While src is null this is the shot brief. For licensed stock
+   * photography it must describe what the photo actually shows and must not
+   * present stock people, places or tags as Velto's own staff, outlets or SOPs.
+   */
   alt: string;
   /** Intrinsic dimensions of the final image; used to reserve space. */
   width: number;
   height: number;
+  /** CSS object-position focal point used when the component crops the photo. */
+  position?: string;
+  /** Provenance for licensed stock (mirrored in docs/brand/IMAGE-SOURCES.md). */
+  source?: { platform: string; url: string; photographer?: string };
 };
 
 const slot = (alt: string, width: number, height: number): ImageSlot => ({

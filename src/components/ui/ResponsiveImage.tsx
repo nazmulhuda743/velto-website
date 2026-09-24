@@ -38,6 +38,7 @@ export function ResponsiveImage({
           sizes={sizes}
           priority={priority}
           className="object-cover"
+          style={image.position ? { objectPosition: image.position } : undefined}
         />
       </div>
     );
