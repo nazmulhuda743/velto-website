@@ -13,13 +13,29 @@ declare global {
   }
 }
 
-/** Emits UI events (spec §23). No production analytics IDs are configured here. */
+/**
+ * Emits approved UI events into one browser-side data layer. GTM can consume
+ * these events when configured, while the custom event remains available to
+ * local QA without requiring a production analytics ID.
+ */
 export function track(event: string, context: Payload = {}) {
   if (process.env.NODE_ENV !== "production" && !isAnalyticsEvent(event)) {
     console.warn(`[analytics] "${event}" is not in the approved event taxonomy`);
   }
-  const payload = { event, page: window.location.pathname, ...context };
-  window.dataLayer?.push(payload);
+
+  const attribution = storedAttribution();
+  const payload = {
+    event,
+    page: window.location.pathname,
+    source: attribution.source ?? attribution.utm_source,
+    medium: attribution.medium ?? attribution.utm_medium,
+    campaign: attribution.campaign ?? attribution.utm_campaign,
+    content: attribution.content ?? attribution.utm_content,
+    ...context,
+  };
+
+  window.dataLayer ??= [];
+  window.dataLayer.push(payload);
   window.dispatchEvent(new CustomEvent("velto:analytics", { detail: payload }));
 }
 

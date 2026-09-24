@@ -11,6 +11,7 @@ import {
   validateSubmissionContext,
   type ValidationIssue,
 } from "@/lib/integrations/ops/validation";
+import { readBoundedJson } from "@/lib/security/json-request";
 
 /**
  * Website-owned booking endpoint (spec §8). Wire format:
@@ -29,20 +30,16 @@ const fail = (
 ) =>
   NextResponse.json(
     { ok: false as const, error: { code, requestId, retryable }, ...(issues ? { issues } : {}) },
-    { status },
+    { status, headers: { "Cache-Control": "no-store" } },
   );
 
 export async function POST(request: NextRequest) {
   const requestId = crypto.randomUUID();
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return fail("invalid_request", requestId, false, 400);
-  }
-  const input = (body ?? {}) as Record<string, unknown>;
+  const body = await readBoundedJson(request);
+  if (!body.ok) return fail("invalid_request", requestId, false, body.status);
 
+  const input = (body.value ?? {}) as Record<string, unknown>;
   const parsed = validateBookingSubmission(input.data);
   const context = validateSubmissionContext({ idempotencyKey: input.idempotencyKey, requestId });
   if (!parsed.ok || !context.ok) {
@@ -55,7 +52,10 @@ export async function POST(request: NextRequest) {
 
   try {
     const result = await gateway.createBooking(parsed.value, context.value);
-    return NextResponse.json({ ok: true as const, reference: result.reference, requestId });
+    return NextResponse.json(
+      { ok: true as const, reference: result.reference, requestId },
+      { headers: { "Cache-Control": "no-store" } },
+    );
   } catch (error) {
     console.error("booking_failed", integrationLogContext(error, "booking", requestId));
     const safe = toSafeIntegrationError(error, requestId, "booking_unavailable");
@@ -65,6 +65,6 @@ export async function POST(request: NextRequest) {
         : error instanceof IntegrationError && error.code === "request_timeout"
           ? 504
           : 502;
-    return NextResponse.json(safe, { status });
+    return NextResponse.json(safe, { status, headers: { "Cache-Control": "no-store" } });
   }
 }

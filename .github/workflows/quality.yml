@@ -1,0 +1,75 @@
+name: Quality Gate
+
+on:
+  push:
+    branches:
+      - main
+      - "claude/**"
+      - "codex/**"
+      - "gpt/**"
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_SITE_URL: https://www.velto.com.bd
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Static security audit
+        run: npm run test:security
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Foundation tests
+        run: npm run test:foundation
+
+      - name: Production build
+        run: npm run build
+
+      - name: Launch smoke audit
+        shell: bash
+        run: |
+          npm start > /tmp/velto-next.log 2>&1 &
+          NEXT_PID=$!
+          trap 'kill "$NEXT_PID" 2>/dev/null || true' EXIT
+
+          READY=0
+          for _ in {1..30}; do
+            if curl --fail --silent --show-error http://127.0.0.1:3000/ > /dev/null; then
+              READY=1
+              break
+            fi
+            sleep 1
+          done
+
+          if [ "$READY" -ne 1 ]; then
+            echo "Next.js server did not become ready"
+            cat /tmp/velto-next.log
+            exit 1
+          fi
+
+          npm run test:launch

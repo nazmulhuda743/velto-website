@@ -6,6 +6,7 @@
  * answer 501 and the UI keeps its honest "isn't switched on yet" state — no
  * fake success is ever shown.
  */
+import { track } from "@/components/layout/Analytics";
 import { submissionAttribution } from "@/lib/attribution-client";
 
 export type BookingFormData = {
@@ -72,7 +73,14 @@ async function post(path: string, data: Record<string, unknown>): Promise<Submit
 }
 
 export async function submitBooking(data: BookingFormData): Promise<SubmitResult> {
-  return post("/api/bookings", { ...data });
+  const result = await post("/api/bookings", { ...data });
+  if (!result.ok) {
+    track("booking_error", {
+      section: "booking-form",
+      service: data.service,
+    });
+  }
+  return result;
 }
 
 export async function submitQuote(data: QuoteFormData): Promise<SubmitResult> {
