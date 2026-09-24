@@ -20,6 +20,7 @@ const routes = [
   "/locations/sector-11",
   "/locations/sector-18",
   "/about",
+  "/track",
   "/book",
   "/quote",
   "/privacy",
@@ -60,6 +61,7 @@ for (const route of [
   "/pricing",
   "/locations",
   "/locations/sector-11",
+  "/track",
 ]) {
   const { body } = await html(route);
   const expected = route === "/" ? `${productionOrigin}/` : `${productionOrigin}${route}`;
@@ -88,6 +90,7 @@ const robotsResponse = await request("/robots.txt");
 assert.equal(robotsResponse.status, 200);
 const robots = await robotsResponse.text();
 assert.match(robots, /Disallow:\s*\/api\//i, "robots.txt must block API crawling");
+assert.match(robots, /Disallow:\s*\/admin/i, "robots.txt must block admin crawling");
 
 const sitemapResponse = await request("/sitemap.xml");
 assert.equal(sitemapResponse.status, 200);
@@ -119,6 +122,27 @@ const oversized = await request("/api/bookings", {
   body: JSON.stringify({ data: { notes: "x".repeat(40 * 1024) } }),
 });
 assert.equal(oversized.status, 413, `booking endpoint should reject oversized JSON with 413, got ${oversized.status}`);
+
+const trackWrongType = await request("/api/track", {
+  method: "POST",
+  headers: { "content-type": "text/plain" },
+  body: "{}",
+});
+assert.equal(trackWrongType.status, 415, `tracking endpoint should reject non-JSON with 415, got ${trackWrongType.status}`);
+
+const trackMalformed = await request("/api/track", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: "{",
+});
+assert.equal(trackMalformed.status, 400, `tracking endpoint should reject malformed JSON with 400, got ${trackMalformed.status}`);
+
+const trackOversized = await request("/api/track", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({ orderNumber: "VEL-00001", phone: `017${"0".repeat(5000)}` }),
+});
+assert.equal(trackOversized.status, 413, `tracking endpoint should reject oversized JSON with 413, got ${trackOversized.status}`);
 
 console.log(
   `Launch smoke audit passed for ${routes.length} public routes plus accessibility structure, image stability, canonicals, noindex rules, sitemap, headers, 404 and API guards.`,
