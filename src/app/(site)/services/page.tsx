@@ -138,8 +138,8 @@ export default function ServicesPage() {
           <div className="col-span-4 md:col-span-8 xl:col-span-4">
             <SectionIntro id="pricing-models-title" title="How each service is priced" titleClassName="max-w-[14ch]">
               <p>
-                Free pickup &amp; delivery on orders of {FREE_DELIVERY_THRESHOLD}+. For smaller orders,
-                the applicable charge is shown before booking.
+                Free pickup &amp; delivery on orders of {FREE_DELIVERY_THRESHOLD}+. Smaller orders have a
+                pickup and delivery charge, which we tell you when we confirm.
               </p>
             </SectionIntro>
           </div>

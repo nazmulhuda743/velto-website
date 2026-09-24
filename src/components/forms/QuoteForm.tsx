@@ -1,10 +1,10 @@
 "use client";
 
-import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { track } from "@/components/layout/Analytics";
 import { ButtonLink, WhatsAppButton } from "@/components/ui/Button";
 import { WHATSAPP_URL } from "@/content/site";
-import { AREA_OPTIONS, FieldShell, OUTSIDE_AREA, SelectField, TextAreaField, TextField } from "./fields";
+import { AREA_OPTIONS, FieldShell, OUTSIDE_AREA, SelectField, TextAreaField, TextField, normalisePhone, phoneOk } from "./fields";
 import { submitQuote, type QuoteFormData, type SubmitResult } from "./submit";
 
 type QuoteService = QuoteFormData["service"];
@@ -32,13 +32,32 @@ const SERVICES: { value: QuoteService; label: string; detailsHelper: string; pla
 
 /** Matches the Ops contract limit of five photo references. */
 const MAX_PHOTOS = 5;
-const PHONE = /^\+?[\d\s-]{10,16}$/;
+
+type QuoteDraft = Omit<QuoteFormData, "service"> & { service: QuoteService | "" };
+
+/**
+ * Photos can't be uploaded online yet (no controlled upload flow), so every
+ * WhatsApp hand-off carries what the customer already typed and asks for the photos there.
+ */
+function whatsappHref(d: QuoteDraft, reference?: string) {
+  const label = SERVICES.find((s) => s.value === d.service)?.label;
+  const lines = [
+    reference ? `Hi Velto, I sent a quote request (reference ${reference}).` : "Hi Velto, I'd like a quote.",
+    label ? `Service: ${label}` : "",
+    d.area ? `Area: ${d.area}` : "",
+    d.approximateDetails?.trim() ? `Details: ${d.approximateDetails.trim()}` : "",
+    d.notes?.trim() ? `Notes: ${d.notes.trim()}` : "",
+    d.name.trim() ? `Name: ${d.name.trim()}` : "",
+    d.photos.length ? `I'll send ${d.photos.length === 1 ? "a photo" : `${d.photos.length} photos`} here.` : "",
+  ].filter(Boolean);
+  return `${WHATSAPP_URL}?text=${encodeURIComponent(lines.join("\n"))}`;
+}
 
 type Errors = Partial<Record<"name" | "phone" | "area" | "service" | "photos", string>>;
 type Status = { state: "idle" } | { state: "submitting" } | { state: "done"; result: SubmitResult };
 
 export function QuoteForm({ initialService, preview }: { initialService?: string; preview?: "success" | "error" }) {
-  const [data, setData] = useState<Omit<QuoteFormData, "service"> & { service: QuoteService | "" }>({
+  const [data, setData] = useState<QuoteDraft>({
     name: "",
     phone: "",
     area: "",
@@ -57,7 +76,17 @@ export function QuoteForm({ initialService, preview }: { initialService?: string
   );
   const started = useRef(false);
   const summaryRef = useRef<HTMLDivElement>(null);
+  const failedRef = useRef<HTMLDivElement>(null);
+  const successRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const done = status.state === "done" ? status.result : null;
+  useEffect(() => {
+    if (!done || preview) return;
+    const el = done.ok ? successRef.current : failedRef.current;
+    el?.scrollIntoView({ block: "center" });
+    el?.focus({ preventScroll: true });
+  }, [done, preview]);
 
   const markStarted = () => {
     if (!started.current) {
@@ -91,8 +120,8 @@ export function QuoteForm({ initialService, preview }: { initialService?: string
     e.preventDefault();
     const found: Errors = {};
     if (!data.name.trim()) found.name = "Enter your name.";
-    if (!data.phone.trim()) found.phone = "Enter a phone or WhatsApp number.";
-    else if (!PHONE.test(data.phone.trim())) found.phone = "Enter a valid phone number, for example 01XXXXXXXXX.";
+    if (!data.phone.trim()) found.phone = "Add a number we can call or WhatsApp.";
+    else if (!phoneOk(data.phone)) found.phone = "Check the number. It should look like 01XXX XXXXXX.";
     if (!data.area) found.area = "Choose your area.";
     if (!data.service) found.service = "Choose what you need cleaned.";
     setErrors(found);
@@ -101,20 +130,36 @@ export function QuoteForm({ initialService, preview }: { initialService?: string
       return;
     }
     setStatus({ state: "submitting" });
-    const result = await submitQuote({ ...data, service: data.service as QuoteService });
+    const result = await submitQuote({ ...data, phone: normalisePhone(data.phone), service: data.service as QuoteService });
     if (result.ok) track("quote_success", { service: data.service });
     setStatus({ state: "done", result });
   };
 
-  if (status.state === "done" && status.result.ok) {
+  if (done?.ok) {
     return (
-      <div role="status" className="border-t-2 border-success pt-6">
+      <div ref={successRef} tabIndex={-1} role="status" className="scroll-mt-28 border-t-2 border-success pt-6 focus:outline-none">
         <p className="t-label uppercase text-success">Quote request received</p>
-        <h2 className="mt-3 t-h3 text-navy">Thanks. We&apos;ll come back to you with price guidance.</h2>
-        <p className="mt-3 max-w-[48ch] text-body">
-          We confirm the final amount when measurement or condition needs checking. Your reference is{" "}
-          <strong className="font-semibold text-navy">{status.result.reference}</strong>.
+        <h2 className="mt-3 t-h3 text-navy">Thanks. We&apos;ll call or WhatsApp you with a price.</h2>
+        <p className="mt-3 max-w-[52ch] text-body">
+          We work it out from Velto&apos;s current pricing and your details. Where size, material or condition
+          needs checking, we confirm the final amount before pickup. Nothing is booked until you agree.
         </p>
+        {done.reference ? (
+          <p className="mt-3 text-body">
+            Your reference is <strong className="font-semibold text-navy">{done.reference}</strong>.
+          </p>
+        ) : null}
+        {data.photos.length ? (
+          <div className="mt-6 rounded-md border border-line-strong bg-soft p-4">
+            <p className="font-semibold text-navy">One more step: send your {data.photos.length === 1 ? "photo" : "photos"}</p>
+            <p className="mt-1 t-small text-body">
+              Photos can&apos;t be uploaded online yet. Send them on WhatsApp and we&apos;ll add them to your request.
+            </p>
+            <WhatsAppButton href={whatsappHref(data, done.reference)} placement="quote_success_photos" className="mt-3 w-full md:w-auto">
+              Send Photos on WhatsApp
+            </WhatsAppButton>
+          </div>
+        ) : null}
         <div className="mt-6">
           <ButtonLink href="/" variant="secondary">
             Back to the homepage
@@ -126,7 +171,7 @@ export function QuoteForm({ initialService, preview }: { initialService?: string
 
   const service = SERVICES.find((s) => s.value === data.service);
   const errorList = Object.entries(errors).filter(([k, v]) => v && k !== "photos");
-  const failed = status.state === "done" && !status.result.ok ? status.result : null;
+  const failed = done && !done.ok ? done : null;
   const labels: Record<string, string> = { name: "Name", phone: "Phone", area: "Area", service: "Service" };
 
   return (
@@ -147,16 +192,18 @@ export function QuoteForm({ initialService, preview }: { initialService?: string
       ) : null}
 
       {failed ? (
-        <div role="alert" className="rounded-md border border-line-strong bg-soft p-5">
+        <div ref={failedRef} tabIndex={-1} role="alert" className="scroll-mt-28 rounded-md border border-line-strong bg-soft p-5 focus:outline-2 focus:outline-blue">
           <p className="t-h4 text-navy">
-            {failed.code === "not_connected" ? "Online quotes aren't connected yet." : "Your request couldn't be sent right now."}
+            {failed.code === "not_connected" ? "Online quotes aren't switched on yet." : "We couldn't send your request just now."}
           </p>
           <p className="mt-2 max-w-[52ch] text-body">
             {failed.code === "not_connected"
-              ? "Your details have not been sent. Message Velto on WhatsApp with the same details and any photos."
-              : "Please try again, or send the details and photos on WhatsApp."}
+              ? "Nothing was sent. Send the same details on WhatsApp instead. They're already filled in, and you can add photos there."
+              : "Nothing is lost. Try again, or send the same details and any photos on WhatsApp."}
           </p>
-          <WhatsAppButton href={WHATSAPP_URL} placement="quote_error" className="mt-4" />
+          <WhatsAppButton href={whatsappHref(data)} placement="quote_error" className="mt-4 w-full md:w-auto">
+            Send on WhatsApp
+          </WhatsAppButton>
         </div>
       ) : null}
 
@@ -243,7 +290,7 @@ export function QuoteForm({ initialService, preview }: { initialService?: string
       <FieldShell
         id="photos"
         label="Add photos, optional"
-        helper={`Up to ${MAX_PHOTOS} photos. A photo helps when size, material or condition matters.`}
+        helper={`Up to ${MAX_PHOTOS}. Helpful when size, material or condition matters. After you send the request, we'll ask you to share them on WhatsApp.`}
         error={errors.photos}
       >
         <input
@@ -283,7 +330,14 @@ export function QuoteForm({ initialService, preview }: { initialService?: string
         ) : null}
       </FieldShell>
 
-      <TextAreaField id="notes" label="Notes" optional value={data.notes} onChange={set("notes")} />
+      <TextAreaField
+        id="notes"
+        label="Condition or notes"
+        optional
+        placeholder="For example: pet stains on one corner, or lined curtains with hooks"
+        value={data.notes}
+        onChange={set("notes")}
+      />
 
       <div className="flex flex-col gap-3 border-t border-line pt-6 md:flex-row md:items-center md:gap-5">
         <button
@@ -291,9 +345,9 @@ export function QuoteForm({ initialService, preview }: { initialService?: string
           disabled={status.state === "submitting"}
           className="inline-flex h-[52px] shrink-0 items-center justify-center whitespace-nowrap rounded-md bg-action px-7 text-base font-semibold text-white hover:bg-action-hover disabled:bg-disabled-bg disabled:text-disabled-text lg:h-12"
         >
-          {status.state === "submitting" ? "Sending…" : "Request Quote"}
+          {status.state === "submitting" ? "Sending…" : "Request a Quote"}
         </button>
-        <p className="t-small text-secondary">We confirm the final amount before pickup when measurement or condition needs checking.</p>
+        <p className="t-small text-secondary">Nothing to pay now. We confirm the price with you before pickup.</p>
       </div>
     </form>
   );

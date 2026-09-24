@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { ButtonLink } from "@/components/ui/Button";
 import SiteLayout from "./(site)/layout";
 
 export default function NotFound() {
@@ -9,28 +9,19 @@ export default function NotFound() {
           <p className="t-label uppercase text-blue">404</p>
           <h1 className="mt-3 t-h1 text-navy">We can’t find that page.</h1>
           <p className="mt-4 max-w-[52ch] t-body-lg text-body">
-            The link may be old, or the page may have moved. You can return
-            home, view Velto’s services, or book a pickup.
+            The link may be old, or the page may have moved. You can still book a
+            pickup, look through Velto’s services or go back to the homepage.
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link
-              href="/"
-              className="inline-flex min-h-12 items-center justify-center rounded-md bg-blue px-6 font-semibold text-white hover:bg-navy"
-            >
-              Back to homepage
-            </Link>
-            <Link
-              href="/services"
-              className="inline-flex min-h-12 items-center justify-center rounded-md border border-line-strong bg-white px-6 font-semibold text-navy hover:border-navy"
-            >
-              View services
-            </Link>
-            <Link
-              href="/book?source=404"
-              className="inline-flex min-h-12 items-center justify-center rounded-md border border-line-strong bg-white px-6 font-semibold text-navy hover:border-navy"
-            >
-              Book a pickup
-            </Link>
+          <div className="mt-8 flex flex-col gap-3 md:flex-row md:flex-wrap">
+            <ButtonLink href="/book?source=404" event="book_pickup_click" placement="not_found">
+              Book a Pickup
+            </ButtonLink>
+            <ButtonLink href="/services" variant="secondary">
+              See Services
+            </ButtonLink>
+            <ButtonLink href="/" variant="secondary">
+              Back to the homepage
+            </ButtonLink>
           </div>
         </div>
       </section>

@@ -125,6 +125,24 @@ function Result({ order }: { order: Order }) {
   );
 }
 
+/** Shown before a lookup, so the statuses mean something before the customer needs them. */
+function StatusGuide() {
+  return (
+    <div className="border-t border-line pt-6">
+      <h2 className="t-label uppercase text-navy">What each status means</h2>
+      <dl className="mt-3">
+        {STAGES.map((stage) => (
+          <div key={stage.status} className="grid grid-cols-[7.5rem_1fr] gap-4 border-b border-line py-3 md:grid-cols-[10rem_1fr]">
+            <dt className="t-small font-semibold text-navy">{stage.title}</dt>
+            <dd className="t-small text-body">{stage.copy}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="mt-4 t-small text-secondary">Can&apos;t find your receipt? Message Velto from the number you booked with.</p>
+    </div>
+  );
+}
+
 export function TrackOrder() {
   const [state, setState] = useState<State>({ kind: "idle" });
   const [errors, setErrors] = useState<{ orderNumber?: string; phone?: string }>({});
@@ -168,6 +186,7 @@ export function TrackOrder() {
         <TextField
           id="orderNumber"
           label="Order number"
+          helper="You'll find it on your Velto receipt."
           placeholder="VEL-01940"
           autoComplete="off"
           autoCapitalize="characters"
@@ -176,6 +195,7 @@ export function TrackOrder() {
         <TextField
           id="phone"
           label="Phone number"
+          helper="The one you gave when booking."
           type="tel"
           inputMode="tel"
           autoComplete="tel"
@@ -185,11 +205,19 @@ export function TrackOrder() {
         <button
           type="submit"
           disabled={state.kind === "loading"}
+          aria-busy={state.kind === "loading" || undefined}
           className={`inline-flex h-[54px] items-center justify-center rounded-md bg-action px-6 font-semibold text-white hover:bg-action-hover disabled:opacity-70 md:h-[52px] ${
             errors.orderNumber || errors.phone ? "md:mb-[30px]" : ""
           }`}
         >
-          {state.kind === "loading" ? "Checking…" : "Track Order"}
+          {state.kind === "loading" ? (
+            <>
+              <span aria-hidden="true" className="mr-2.5 size-4 animate-spin rounded-full border-2 border-white/40 border-t-white motion-reduce:animate-none" />
+              Checking…
+            </>
+          ) : (
+            "Track Order"
+          )}
         </button>
       </form>
 
@@ -199,11 +227,13 @@ export function TrackOrder() {
           <div className="border-t border-line pt-6">
             <p className="t-h4 text-navy">We couldn&apos;t find that order.</p>
             <p className="mt-2 max-w-[52ch] text-secondary">
-              Check the order number and use the same phone number you gave when booking. Still stuck? Message Velto.
+              Check the order number on your receipt and use the phone number you gave when booking. If it still
+              doesn&apos;t show, message Velto and we&apos;ll check for you.
             </p>
             <WhatsAppButton href={WHATSAPP_URL} placement="track_not_found" className="mt-5" />
           </div>
         ) : null}
+        {state.kind === "idle" ? <StatusGuide /> : null}
         {state.kind === "error" ? (
           <div role="alert" className="border-t border-line pt-6">
             <p className="t-h4 text-navy">{state.message}</p>

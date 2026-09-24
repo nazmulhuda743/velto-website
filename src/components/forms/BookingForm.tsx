@@ -5,6 +5,7 @@ import { track } from "@/components/layout/Analytics";
 import { ButtonLink } from "@/components/ui/Button";
 import { WhatsAppIcon } from "@/components/ui/icons";
 import { FREE_DELIVERY_THRESHOLD, WHATSAPP_URL } from "@/content/site";
+import { normalisePhone, phoneOk } from "./fields";
 import { submitBooking, type BookingFormData, type SubmitResult } from "./submit";
 
 /**
@@ -62,9 +63,6 @@ type Status =
   | { state: "failed"; code: Extract<SubmitResult, { ok: false }>["code"] }
   | { state: "success"; reference?: string };
 
-/** Bangladeshi mobile numbers, with or without +880, spaces or dashes. */
-const normalisePhone = (v: string) => v.replace(/[\s-]/g, "");
-const phoneOk = (v: string) => /^(\+?880|0)1\d{9}$/.test(normalisePhone(v));
 const displayPhone = (v: string) => {
   const n = normalisePhone(v);
   return /^01\d{9}$/.test(n) ? `${n.slice(0, 5)} ${n.slice(5)}` : n;
@@ -588,12 +586,12 @@ export function BookingForm({
                   Sending…
                 </>
               ) : (
-                "Book a Pickup"
+                "Send Pickup Request"
               )}
             </button>
 
             <ul className="mt-4 space-y-1.5 t-small text-secondary">
-              <li>Nothing to pay now. We confirm the pickup time with you first.</li>
+              <li>Nothing to pay now. We call or WhatsApp you to confirm the time before we come.</li>
               <li>Free pickup &amp; delivery on orders of {FREE_DELIVERY_THRESHOLD}+.</li>
             </ul>
           </div>
@@ -629,7 +627,7 @@ function BookingSuccess({
         Pickup request received
       </h1>
       <p className="mt-3 t-body text-body md:mt-4 md:t-body-lg">
-        Thanks, {firstName}. We&apos;ll call or WhatsApp you to confirm the pickup time.
+        Thanks, {firstName}. We&apos;ll call or WhatsApp you to confirm the pickup time. Your pickup is booked once we&apos;ve confirmed it with you.
       </p>
 
       <dl className="mt-7 border-t border-navy">
@@ -642,17 +640,20 @@ function BookingSuccess({
         {reference ? (
           <div className="grid grid-cols-[7.5rem_1fr] gap-4 border-b border-line py-3.5 md:grid-cols-[10rem_1fr]">
             <dt className="t-small font-semibold text-navy">Reference</dt>
-            <dd className="t-small font-semibold text-navy">{reference}</dd>
+            <dd className="t-small text-body">
+              <span className="font-semibold text-navy">{reference}</span>
+              <span className="mt-0.5 block text-secondary">Mention this if you contact us about the pickup.</span>
+            </dd>
           </div>
         ) : null}
       </dl>
 
-      <h3 className="mt-8 t-label uppercase text-navy">What happens next</h3>
+      <h2 className="mt-8 t-label uppercase text-navy">What happens next</h2>
       <ol className="mt-3 space-y-2.5 text-body">
         {[
           "We call or WhatsApp you to confirm the pickup time.",
           "We collect from your door.",
-          "Your order comes back checked, cleaned, finished and packed.",
+          "Your order comes back cleaned, finished, checked and packed.",
         ].map((step, i) => (
           <li key={step} className="flex gap-3">
             <span className="t-label pt-[4px] text-blue">{String(i + 1).padStart(2, "0")}</span>

@@ -111,3 +111,7 @@ export const AREA_OPTIONS = [
 ];
 
 export const OUTSIDE_AREA = "Outside Uttara Sectors 1–18";
+
+/** Bangladeshi mobile numbers, with or without +880, spaces or dashes. Shared by the booking and quote forms. */
+export const normalisePhone = (v: string) => v.replace(/[\s-]/g, "");
+export const phoneOk = (v: string) => /^(\+?880|0)1\d{9}$/.test(normalisePhone(v));

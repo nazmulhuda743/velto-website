@@ -19,7 +19,7 @@ const PRESET_NOTES: Record<string, string> = {
 const NEXT_STEPS = [
   "We call or WhatsApp you to confirm the pickup time.",
   "We collect from your door.",
-  "Your order comes back checked, cleaned, finished and packed.",
+  "Your order comes back cleaned, finished, checked and packed.",
 ];
 
 /** Primary booking route (spec §22). The mobile conversion bar is intentionally absent here. */
@@ -61,8 +61,8 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
                   ))}
                 </ol>
                 <p className="mt-4 t-small text-secondary">
-                  Pickup covers Uttara Sectors 1–18. For smaller orders, the applicable pickup and delivery
-                  charge is shown before booking.
+                  Pickup covers Uttara Sectors 1–18. Orders under ৳499 have a pickup and delivery charge.
+                  We tell you the amount when we confirm.
                 </p>
               </div>
               <div className="border-t border-line pt-6 xl:mt-8">

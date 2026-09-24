@@ -95,6 +95,16 @@ export const SERVICES = {
   express: { slug: "express", href: "/services/express" },
 } as const;
 
+/**
+ * Customer Portal hand-off. The portal team owns /account and auth; when it
+ * lands, flip `enabled` (or replace it with the signed-in state) and "My
+ * Account" appears in the header utility links, mobile menu and footer.
+ * Nothing here checks a session or builds auth.
+ */
+export const CUSTOMER_PORTAL = { enabled: false, href: "/account", label: "My Account" } as const;
+
+const ACCOUNT_LINK = CUSTOMER_PORTAL.enabled ? [{ label: CUSTOMER_PORTAL.label, href: CUSTOMER_PORTAL.href }] : [];
+
 export const NAV = {
   desktop: [
     { label: "Services", href: "/services" },
@@ -109,5 +119,8 @@ export const NAV = {
     { label: "Regular Laundry", href: "/regular-laundry" },
     { label: "Locations", href: "/locations" },
     { label: "Track an Order", href: "/track" },
+    ...ACCOUNT_LINK,
   ],
+  /** Quiet header links for returning customers (desktop, ≥1280px). */
+  utility: [{ label: "Track Order", href: "/track" }, ...ACCOUNT_LINK],
 };

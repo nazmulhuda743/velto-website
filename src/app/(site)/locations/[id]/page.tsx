@@ -9,7 +9,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { Star } from "@/components/ui/icons";
 import { TextLink } from "@/components/ui/TextLink";
 import { IMAGES } from "@/content/mock";
-import { LOCATIONS, bookHref } from "@/content/site";
+import { FREE_DELIVERY_THRESHOLD, LOCATIONS, SERVICE_AREA, WHATSAPP_URL, bookHref } from "@/content/site";
 import { pageMetadata } from "@/lib/seo/page-metadata";
 import { getLocations } from "@/lib/site-content";
 
@@ -82,6 +82,10 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
                 { label: "Address", value: <address className="not-italic">{loc.address}</address> },
                 { label: "Hours", value: loc.hours },
                 {
+                  label: "Pickup",
+                  value: `From your door anywhere in ${SERVICE_AREA}. Free on orders of ${FREE_DELIVERY_THRESHOLD}+.`,
+                },
+                {
                   label: "Google rating",
                   // TODO_VERIFY: review counts before launch (spec §36). Never merged across branches.
                   value: (
@@ -101,6 +105,9 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
             <div className="mt-6 flex flex-wrap gap-x-8 gap-y-1">
               <TextLink href={loc.reviewsUrl} external event="google_reviews_click" placement="location_page" branch={loc.id}>
                 See Google Reviews
+              </TextLink>
+              <TextLink href={WHATSAPP_URL} external event="whatsapp_click" placement="location_page">
+                WhatsApp Velto
               </TextLink>
               <TextLink href={`/locations/${other.id}`} placement="location_page">
                 {`Velto ${other.name}`}

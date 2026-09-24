@@ -5,6 +5,7 @@ import { PriceFinder } from "@/components/home/PriceFinder";
 import { SectionIntro } from "@/components/home/SectionIntro";
 import { Breadcrumbs } from "@/components/pages/Breadcrumbs";
 import { FactRows } from "@/components/pages/FactRows";
+import { ServiceCompare } from "@/components/services/ServiceCompare";
 import { TextLink } from "@/components/ui/TextLink";
 import { FREE_DELIVERY_THRESHOLD } from "@/content/site";
 
@@ -65,8 +66,8 @@ export default async function PricingPage({ searchParams }: { searchParams: Sear
                 Free pickup &amp; delivery on orders of {FREE_DELIVERY_THRESHOLD}+.
               </p>
               <p className="mt-3 t-small text-secondary">
-                For smaller orders, the applicable pickup and delivery charge will be shown before
-                booking.
+                For smaller orders, a pickup and delivery charge applies. We tell you the amount when
+                we confirm your pickup.
               </p>
               <FactRows
                 className="mt-10"
@@ -82,7 +83,23 @@ export default async function PricingPage({ searchParams }: { searchParams: Sear
         </div>
       </section>
 
-      <section aria-labelledby="household-pricing-title" className="py-(--space-section)">
+      <section aria-labelledby="compare-title" className="py-(--space-section)">
+        <div className="container-page">
+          <div className="max-w-[640px]">
+            <SectionIntro id="compare-title" title="Dry Cleaning, Wash & Iron or Ironing?">
+              <p>
+                Many items have a price for more than one service. This is what each one covers, so
+                you can pick the right one.
+              </p>
+            </SectionIntro>
+          </div>
+          <div className="mt-(--space-intro-content)">
+            <ServiceCompare current={null} />
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="household-pricing-title" className="bg-warm py-(--space-section)">
         <div className="container-page grid-page gap-y-10">
           <div className="col-span-4 md:col-span-8 xl:col-span-5">
             <SectionIntro id="household-pricing-title" title="Curtains, carpets and bedding are priced differently.">
@@ -115,7 +132,7 @@ export default async function PricingPage({ searchParams }: { searchParams: Sear
         </div>
       </section>
 
-      <FAQ title="Pricing questions." items={faqItems("freeDelivery", "express", "household", "unsure")} className="bg-warm" />
+      <FAQ title="Pricing questions." items={faqItems("freeDelivery", "express", "household", "unsure")} />
 
       <FinalBookingCTA
         id="book"
