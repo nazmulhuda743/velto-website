@@ -255,6 +255,7 @@ export function BookingForm({
   intro,
   initialService,
   presetNote,
+  prefill,
   previewOutcome,
 }: {
   /** Page heading copy. The form owns the h1 so the success state can replace it. */
@@ -262,18 +263,20 @@ export function BookingForm({
   initialService?: string;
   /** Came from Regular Pickup or Express: prefill and open the note (no separate contract field). */
   presetNote?: string;
+  /** Safe account fields loaded server-side. Customer still confirms and submits. */
+  prefill?: { sector?: string; address?: string; name?: string; phone?: string };
   /** Development-only: simulates the adapter result to QA success/error UI. Never set in production. */
   previewOutcome?: "success" | "error";
 }) {
   const [s, setS] = useState<FormState>({
     service: BOOKING_SERVICES.some((o) => o.value !== "" && o.value === initialService) ? initialService! : null,
-    sector: "",
-    address: "",
+    sector: prefill?.sector ?? "",
+    address: prefill?.address ?? "",
     day: "",
     date: "",
     time: "",
-    name: "",
-    phone: "",
+    name: prefill?.name ?? "",
+    phone: prefill?.phone ?? "",
     notes: presetNote ?? "",
   });
   const [errors, setErrors] = useState<Errors>({});
