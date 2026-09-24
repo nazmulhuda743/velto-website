@@ -71,11 +71,16 @@ export function Footer() {
           ))}
         </div>
 
-        <div className="mt-16 flex flex-col gap-3 border-t border-white/15 pt-6 t-caption text-white/60 md:flex-row md:justify-between">
+        <div className="mt-16 flex flex-col gap-3 border-t border-white/15 pt-6 t-caption text-white/60 md:flex-row md:items-center md:justify-between">
           <p>© {new Date().getFullYear()} Velto Premium Laundry</p>
-          <Link href="/privacy" className="hover:text-white">
-            Privacy
-          </Link>
+          <div className="flex gap-4">
+            <Link href="/privacy" className="hover:text-white">
+              Privacy
+            </Link>
+            <Link href="/terms" className="hover:text-white">
+              Terms
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

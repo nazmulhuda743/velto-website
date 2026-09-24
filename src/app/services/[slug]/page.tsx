@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { ServiceViewTracker } from "@/components/analytics/ServiceViewTracker";
 import { ServicePage } from "@/components/services/ServicePage";
 import { SERVICE_PAGES, getServicePage } from "@/content/services";
 
@@ -35,5 +36,10 @@ export default async function ServiceRoute({ params }: { params: Promise<{ slug:
   const { slug } = await params;
   const service = getServicePage(slug);
   if (!service) notFound();
-  return <ServicePage service={service} />;
+  return (
+    <>
+      <ServiceViewTracker service={service.slug} />
+      <ServicePage service={service} />
+    </>
+  );
 }
