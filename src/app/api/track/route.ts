@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
+import { logServerEvent } from "@/lib/observability/log";
 import { readBoundedJson } from "@/lib/security/json-request";
 import { isSupabaseConfigured, supabaseRpc } from "@/lib/supabase-server";
 
@@ -19,11 +20,7 @@ export type TrackedOrder = {
   paymentStatus: string | null;
 };
 
-type RateLimitResult = {
-  ok?: unknown;
-  allowed?: unknown;
-  retry_after_seconds?: unknown;
-};
+type RateLimitResult = { ok?: unknown; allowed?: unknown; retry_after_seconds?: unknown };
 
 const rateKey = (bucket: "ip" | "order", value: string) =>
   createHash("sha256").update(`${bucket}:${value}`).digest("hex");
@@ -40,7 +37,7 @@ async function checkRateLimit(bucket: "ip" | "order", key: string) {
     p_rate_key: key,
   });
   if (result.ok !== true || typeof result.allowed !== "boolean") {
-    throw new Error("tracking rate limiter returned an invalid response");
+    throw new Error("invalid tracking limiter response");
   }
   return {
     allowed: result.allowed,
@@ -53,7 +50,7 @@ async function checkRateLimit(bucket: "ip" | "order", key: string) {
   };
 }
 
-/** Order status lookup: order number and phone must both match (Velto Ops). */
+/** Order status lookup: order number and phone must both match in Velto Ops. */
 export async function POST(request: NextRequest) {
   const body = await readBoundedJson(request, 4 * 1024);
   if (!body.ok) {
@@ -67,8 +64,7 @@ export async function POST(request: NextRequest) {
     body.value && typeof body.value === "object" && !Array.isArray(body.value)
       ? (body.value as Record<string, unknown>)
       : {};
-  const orderNumber =
-    typeof input.orderNumber === "string" ? input.orderNumber.trim().slice(0, 32) : "";
+  const orderNumber = typeof input.orderNumber === "string" ? input.orderNumber.trim().slice(0, 32) : "";
   const phone = typeof input.phone === "string" ? input.phone.trim().slice(0, 32) : "";
   if (!orderNumber || !phone) {
     return NextResponse.json(
@@ -84,9 +80,6 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Vercel overwrites x-forwarded-for for normal deployments, so the first
-    // value is the requester IP rather than a client-controlled spoofed value.
-    // Only a SHA-256 digest is persisted by the database rate limiter.
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
     const [ipLimit, orderLimit] = await Promise.all([
       checkRateLimit("ip", rateKey("ip", ip)),
@@ -95,31 +88,26 @@ export async function POST(request: NextRequest) {
 
     if (!ipLimit.allowed || !orderLimit.allowed) {
       const retryAfter = Math.max(ipLimit.retryAfter, orderLimit.retryAfter, 1);
+      logServerEvent("tracking_rate_limited", "warn", { route: "/api/track", retryAfter });
       return NextResponse.json(
         { error: "too_many_attempts" },
         {
           status: 429,
-          headers: {
-            "Cache-Control": "no-store",
-            "Retry-After": String(retryAfter),
-          },
+          headers: { "Cache-Control": "no-store", "Retry-After": String(retryAfter) },
         },
       );
     }
 
-    const result = await supabaseRpc<{ found: boolean; order?: TrackedOrder }>(
-      "website_track_order",
-      {
-        p_order_number: orderNumber,
-        p_phone: phone,
-      },
-    );
+    const result = await supabaseRpc<{ found: boolean; order?: TrackedOrder }>("website_track_order", {
+      p_order_number: orderNumber,
+      p_phone: phone,
+    });
     return NextResponse.json(
       result.found && result.order ? { found: true, order: result.order } : { found: false },
       { headers: { "Cache-Control": "no-store" } },
     );
-  } catch (error) {
-    console.error("track_failed", error instanceof Error ? error.message : "unknown");
+  } catch {
+    logServerEvent("tracking_failure", "error", { route: "/api/track", code: "dependency_failed" });
     return NextResponse.json(
       { error: "unavailable" },
       { status: 503, headers: { "Cache-Control": "no-store" } },

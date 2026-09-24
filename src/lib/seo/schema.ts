@@ -16,16 +16,9 @@ export const ORGANIZATION_SCHEMA = {
   name: SITE_NAME,
   url: SITE_URL,
   logo: absoluteUrl("/brand/velto-logo.png"),
-  areaServed: {
-    "@type": "Place",
-    name: "Uttara, Dhaka",
-  },
+  areaServed: { "@type": "Place", name: "Uttara, Dhaka" },
 };
 
-/**
- * Location pages can use this once their page content is launch-approved.
- * It deliberately uses only facts already present in the project source of truth.
- */
 export function buildLaundryLocationSchema(location: Location) {
   return {
     "@context": "https://schema.org",
@@ -41,9 +34,32 @@ export function buildLaundryLocationSchema(location: Location) {
       addressRegion: "Dhaka",
       addressCountry: "BD",
     },
-    areaServed: {
-      "@type": "Place",
-      name: "Uttara, Dhaka",
-    },
+    areaServed: { "@type": "Place", name: "Uttara, Dhaka" },
+  };
+}
+
+export function buildServiceSchema(service: { slug: string; name: string; meta: { description: string } }) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "@id": `${absoluteUrl(`/services/${service.slug}`)}#service`,
+    name: service.name,
+    description: service.meta.description,
+    url: absoluteUrl(`/services/${service.slug}`),
+    provider: { "@id": `${SITE_URL}/#organization` },
+    areaServed: { "@type": "Place", name: "Uttara, Dhaka" },
+  };
+}
+
+export function buildBreadcrumbSchema(items: { name: string; path: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: absoluteUrl(item.path),
+    })),
   };
 }

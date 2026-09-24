@@ -2,6 +2,7 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath, updateTag } from "next/cache";
+import { logServerEvent } from "../observability/log";
 import { SITE_CONTENT_TAG } from "../site-content";
 import { supabaseFetch, supabaseOrigin } from "../supabase-server";
 
@@ -15,7 +16,10 @@ export async function saveContent(key: ContentKey, value: unknown, updatedBy: st
     body: JSON.stringify({ key, value, updated_at: new Date().toISOString(), updated_by: updatedBy.slice(0, 120) }),
     cache: "no-store",
   });
-  if (!res.ok) throw new Error(`Saving ${key} failed with HTTP ${res.status}`);
+  if (!res.ok) {
+    logServerEvent("admin_content_save_failure", "error", { contentKey: key, status: res.status });
+    throw new Error(`Saving ${key} failed with HTTP ${res.status}`);
+  }
   updateTag(SITE_CONTENT_TAG);
   revalidatePath("/", "layout");
 }
@@ -43,6 +47,9 @@ export async function uploadImage(file: File, folder: string): Promise<string> {
     cache: "no-store",
     signal: AbortSignal.timeout(30_000),
   });
-  if (!res.ok) throw new Error(`Upload failed with HTTP ${res.status}`);
+  if (!res.ok) {
+    logServerEvent("storage_upload_failure", "error", { bucket: BUCKET, status: res.status });
+    throw new Error(`Upload failed with HTTP ${res.status}`);
+  }
   return `${supabaseOrigin()}/storage/v1/object/public/${BUCKET}/${path}`;
 }

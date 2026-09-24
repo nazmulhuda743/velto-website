@@ -1,21 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getPricingSource, isPricingConfigured as isLiveConfigured } from "@/lib/integrations/pricing/server";
 import type { PublicPriceItem } from "@/lib/integrations/pricing/types";
+import { logServerEvent } from "@/lib/observability/log";
 import { searchPriceItems } from "@/lib/pricing";
 
-/**
- * Public-safe pricing endpoint (spec §6). When the server pricing integration
- * is configured (VELTO_SUPABASE_URL + VELTO_SUPABASE_SECRET_KEY), results come
- * from the Codex Supabase adapter and `source` is "live"; otherwise the
- * clearly-marked mock source answers so the site keeps working until the
- * approved pricing view and credentials exist. The UI shows placeholder
- * wording only for "mock" data.
- */
-/**
- * Word-level aliases so common local spellings still match the official
- * item names in the approved pricing view (e.g. "saree" → "Sari (Cotton)").
- * The list mirrors the price list's own vocabulary — it never invents items.
- */
 const QUERY_ALIASES: Record<string, string> = {
   saree: "sari",
   sharee: "sari",
@@ -32,10 +20,6 @@ const QUERY_ALIASES: Record<string, string> = {
   bedsheets: "bed sheet",
 };
 
-/**
- * Strip characters that would break the upstream PostgREST `ilike` filter,
- * collapse whitespace, and apply the alias map word by word.
- */
 function normalizeQuery(raw: string): string {
   const cleaned = raw
     .replace(/[,()."'`:;*%\\]/g, " ")
@@ -51,15 +35,19 @@ function normalizeQuery(raw: string): string {
 export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams.get("q") ?? "";
 
-  // Development-only hooks to preview the loading and error states (spec §29).
   if (process.env.NODE_ENV !== "production") {
     const mock = request.nextUrl.searchParams.get("mock");
-    if (mock === "error") {
-      return NextResponse.json({ error: "unavailable" }, { status: 503 });
-    }
-    if (mock === "slow") {
-      await new Promise((r) => setTimeout(r, 30_000));
-    }
+    if (mock === "error") return NextResponse.json({ error: "unavailable" }, { status: 503 });
+    if (mock === "slow") await new Promise((r) => setTimeout(r, 30_000));
+  }
+
+  const liveConfigured = isLiveConfigured();
+  if (process.env.VERCEL_ENV === "production" && !liveConfigured) {
+    logServerEvent("pricing_configuration_failure", "error", { route: "/api/prices", code: "missing_live_config" });
+    return NextResponse.json(
+      { error: "unavailable" },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
+    );
   }
 
   try {
@@ -68,8 +56,8 @@ export async function GET(request: NextRequest) {
     let source: "live" | "mock";
     if (query.trim().length < 2) {
       items = [];
-      source = isLiveConfigured() ? "live" : "mock";
-    } else if (isLiveConfigured()) {
+      source = liveConfigured ? "live" : "mock";
+    } else if (liveConfigured) {
       items = await getPricingSource().search({ query, limit: 5 });
       source = "live";
     } else {
@@ -78,7 +66,10 @@ export async function GET(request: NextRequest) {
     }
     return NextResponse.json({ items, source }, { headers: { "Cache-Control": "no-store" } });
   } catch {
-    // Never expose raw API/database errors to the browser.
-    return NextResponse.json({ error: "unavailable" }, { status: 503 });
+    logServerEvent("pricing_upstream_failure", "error", { route: "/api/prices", code: "upstream_failed" });
+    return NextResponse.json(
+      { error: "unavailable" },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
+    );
   }
 }

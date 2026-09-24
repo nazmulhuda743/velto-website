@@ -11,16 +11,9 @@ import {
   validateSubmissionContext,
   type ValidationIssue,
 } from "@/lib/integrations/ops/validation";
+import { logServerEvent } from "@/lib/observability/log";
 import { readBoundedJson } from "@/lib/security/json-request";
 
-/**
- * Website-owned booking endpoint (spec §8). Wire format:
- *   POST { data: BookingSubmission-shaped fields + attribution, idempotencyKey }
- *   → 200 { ok: true, reference, requestId }
- *   → 400 invalid_request (+ field issues), 501 while no Ops gateway is
- *     configured, 409/502/504 mapped from gateway errors. Customer responses
- *     never carry upstream messages (Codex error contract).
- */
 const fail = (
   code: SafeErrorCode,
   requestId: string,
@@ -52,12 +45,13 @@ export async function POST(request: NextRequest) {
 
   try {
     const result = await gateway.createBooking(parsed.value, context.value);
+    logServerEvent("booking_submission_success", "info", { operation: "booking", requestId });
     return NextResponse.json(
       { ok: true as const, reference: result.reference, requestId },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {
-    console.error("booking_failed", integrationLogContext(error, "booking", requestId));
+    logServerEvent("booking_submission_failure", "error", integrationLogContext(error, "booking", requestId));
     const safe = toSafeIntegrationError(error, requestId, "booking_unavailable");
     const status =
       error instanceof IntegrationError && error.code === "duplicate_submission"

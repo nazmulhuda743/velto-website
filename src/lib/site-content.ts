@@ -3,15 +3,14 @@ import "server-only";
 import { cache } from "react";
 import { REVIEWS, type ImageSlot, type Review } from "@/content/mock";
 import { GOOGLE_PROOF, LOCATIONS, type Location } from "@/content/site";
+import { logServerEvent } from "./observability/log";
 import { isSupabaseConfigured, supabaseFetch } from "./supabase-server";
 
-/** Cache tag invalidated by every admin save. */
 export const SITE_CONTENT_TAG = "site-content";
 
 export type LocationId = Location["id"];
 
 export type SiteSettings = {
-  /** Digits only, with country code, e.g. 8801605162788. */
   whatsappNumber: string;
   announcement: { enabled: boolean; text: string; href: string };
   outlets: Record<LocationId, { rating: string; reviewCount: number; hours: string }>;
@@ -132,13 +131,13 @@ async function loadRows(): Promise<Record<string, unknown>> {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const rows = (await res.json()) as { key: string; value: unknown }[];
     return Object.fromEntries(rows.map((r) => [r.key, r.value]));
-  } catch (error) {
-    console.error("site_content_load_failed", error instanceof Error ? error.message : "unknown");
+  } catch {
+    logServerEvent("site_content_load_failure", "error", { dependency: "website_content" });
     return {};
   }
 }
 
-/** Admin-managed website content, merged over the built-in defaults. Never throws. */
+/** Admin-managed website content, merged over built-in defaults. Never throws. */
 export const getSiteContent = cache(async (): Promise<SiteContent> => {
   const rows = await loadRows();
   return {
@@ -154,7 +153,6 @@ export async function getLocations(): Promise<Location[]> {
   return LOCATIONS.map((l) => ({ ...l, ...settings.outlets[l.id] }));
 }
 
-/** "5.0 on Google · 100+ reviews" for the primary (Sector 11) profile. */
 export async function getGoogleProofLabel() {
   const [primary] = await getLocations();
   const rounded = primary.reviewCount >= 100 ? `${Math.floor(primary.reviewCount / 100) * 100}+` : String(primary.reviewCount);

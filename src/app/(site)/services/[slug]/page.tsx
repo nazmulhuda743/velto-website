@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ServiceViewTracker } from "@/components/analytics/ServiceViewTracker";
-import { pageMetadata } from "@/lib/seo/page-metadata";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { ServicePage } from "@/components/services/ServicePage";
 import { SERVICE_PAGES, getServicePage } from "@/content/services";
+import { pageMetadata } from "@/lib/seo/page-metadata";
+import { buildBreadcrumbSchema, buildServiceSchema } from "@/lib/seo/schema";
 
-// Unknown slugs 404 via notFound(). dynamicParams=false would also 404 the real pages
-// after an admin save revalidates the layout (Next.js NoFallbackError on regeneration).
 export const dynamicParams = true;
-/** Price tables come from the public pricing view; refresh them every 5 minutes. */
 export const revalidate = 300;
 
 export function generateStaticParams() {
@@ -26,6 +25,16 @@ export default async function ServiceRoute({ params }: { params: Promise<{ slug:
   if (!service) notFound();
   return (
     <>
+      <JsonLd
+        data={[
+          buildServiceSchema(service),
+          buildBreadcrumbSchema([
+            { name: "Home", path: "/" },
+            { name: "Services", path: "/services" },
+            { name: service.name, path: `/services/${service.slug}` },
+          ]),
+        ]}
+      />
       <ServiceViewTracker service={service.slug} />
       <ServicePage service={service} />
     </>
