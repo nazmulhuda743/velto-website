@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getPricingSource } from "@/lib/integrations/pricing/server";
+import { getPricingSource, isPricingConfigured as isLiveConfigured } from "@/lib/integrations/pricing/server";
 import type { PublicPriceItem } from "@/lib/integrations/pricing/types";
 import { searchPriceItems } from "@/lib/pricing";
 
@@ -11,9 +11,6 @@ import { searchPriceItems } from "@/lib/pricing";
  * approved pricing view and credentials exist. The UI shows placeholder
  * wording only for "mock" data.
  */
-const isLiveConfigured = () =>
-  Boolean(process.env.VELTO_SUPABASE_URL && process.env.VELTO_SUPABASE_SECRET_KEY);
-
 /**
  * Word-level aliases so common local spellings still match the official
  * item names in the approved pricing view (e.g. "saree" → "Sari (Cotton)").

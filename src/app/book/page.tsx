@@ -13,6 +13,12 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
+/** Arrival contexts that aren't a cleaning service: carried as a pre-filled note. */
+const PRESET_NOTES: Record<string, string> = {
+  "regular-laundry": "I'd like to set up a regular pickup.",
+  express: "I'd like Express, if it's possible for this order.",
+};
+
 const NEXT_STEPS = [
   "We call or WhatsApp you to confirm the pickup time.",
   "We collect from your door.",
@@ -39,7 +45,7 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
               <BookingForm
                 intro="Tell us what you're sending and where to collect it. We'll confirm the time with you before we come."
                 initialService={service}
-                regular={service === "regular-laundry"}
+                presetNote={PRESET_NOTES[service ?? ""]}
                 previewOutcome={previewOutcome}
               />
             </div>

@@ -1,8 +1,10 @@
 /**
- * Service page content (internal pages, phase 4).
+ * Service page content.
  *
- * Facts are limited to docs/PROJECT-BUILD-SPEC.md §4 (turnaround, express,
- * delivery rule), §5 (verified workflows) and §7 (household quote logic).
+ * Facts come from docs/PROJECT-BUILD-SPEC.md (§4 turnaround/express/delivery,
+ * §5 verified workflows, §7 household quote logic) and from the live Velto
+ * price list, which is only ever read through the public pricing view: this
+ * file names the items a page features, never their prices.
  * Anything that still needs live verification is marked TODO_VERIFY.
  */
 import { IMAGES, type ImageSlot } from "./mock";
@@ -15,331 +17,662 @@ export type ServiceSlug =
   | "ironing"
   | "curtain-cleaning"
   | "carpet-cleaning"
-  | "blanket-comforter-cleaning";
+  | "blanket-comforter-cleaning"
+  | "express";
+
+/** Service slugs used by the public pricing view. */
+export type PriceColumn = "dry-cleaning" | "wash-and-iron" | "ironing";
+
+export type CustomFAQ = { q: string; a: string[] };
+export type FAQRef = keyof typeof FAQ_KEYS | CustomFAQ;
+
+export type ServiceBlock =
+  | {
+      type: "scope";
+      title: string;
+      intro?: string;
+      groups: { title: string; copy: string }[];
+    }
+  | {
+      type: "prices";
+      title: string;
+      intro: string;
+      columns: PriceColumn[];
+      /** Exact item names in the price list, grouped for display. */
+      groups: { label: string; names: string[] }[];
+      note?: string;
+      /** Pre-filled search for the "look up another item" link. */
+      searchHint?: string;
+    }
+  | {
+      type: "process";
+      title: string;
+      intro: string;
+      steps: Step[];
+      image: ImageSlot;
+    }
+  | {
+      type: "notes";
+      title: string;
+      intro?: string;
+      items: { title: string; copy: string }[];
+    }
+  | { type: "compare"; title: string; intro?: string; current: "wash-and-iron" | "ironing" | "dry-cleaning" | null }
+  | {
+      type: "measure";
+      title: string;
+      intro: string;
+      steps: Step[];
+      examples: { label: string; value: string }[];
+      note: string;
+    }
+  | {
+      type: "facts";
+      title: string;
+      intro?: string;
+      rows: { label: string; value: string }[];
+      /** Text + link rendered under the rows. */
+      footnote?: string;
+      steps?: { title: string; steps: Step[] };
+    }
+  | { type: "area"; title: string };
 
 export type ServiceContent = {
   slug: ServiceSlug;
-  kind: "garment" | "household";
   name: string;
-  /** Short line used on the services overview. */
-  summary: string;
+  /** Situation-first line used on the services decision page. */
+  whenToChoose: string;
+  /** One-line answer to "how is it priced / how long". */
+  overviewFact: string;
   h1: string;
   intro: string[];
   image: ImageSlot;
-  processImage: ImageSlot;
+  /** Book-first for itemised services; quote-first where the amount needs confirming. */
   primary: "book" | "quote";
-  /** Overview label for how the job is priced/timed. */
-  turnaround: string;
-  handles: { title: string; items: string[] };
-  goodToKnow: { title: string; copy: string }[];
-  process: { title: string; intro: string; steps: Step[] };
-  /** Household only: what to share for an accurate quote. */
-  quoteDetails?: string[];
-  faq: (keyof typeof FAQ_KEYS)[];
+  secondary?: "book" | "quote" | "whatsapp";
+  heroFacts: string[];
+  heroGoogleProof?: boolean;
+  blocks: ServiceBlock[];
+  faq: { title: string; items: FAQRef[] };
   final: { title: string; body: string };
-  metaDescription: string;
+  meta: { title: string; description: string };
 };
 
-const GARMENT_RETURN: Step[] = [
+const RETURN_STEPS: Step[] = [
   { title: "Checked before packing", copy: "Finished items are checked again before they are packed." },
   { title: "Packed and returned", copy: "Your order is packed and delivered back to your address." },
 ];
 
+const IRONING_VS_WASH: CustomFAQ = {
+  q: "What is the difference between Wash & Iron and Ironing?",
+  a: [
+    "Wash & Iron covers washing, drying and ironing.",
+    "Ironing is for clothes already washed at home: we iron, finish and pack them.",
+  ],
+};
+
 export const SERVICE_PAGES: ServiceContent[] = [
   {
     slug: "dry-cleaning",
-    kind: "garment",
     name: "Dry Cleaning",
-    summary: "Suits, blazers, sarees, sherwanis and garments that need a closer look.",
+    whenToChoose: "A suit, blazer, sari, sherwani or anything that needs a closer look before cleaning.",
+    overviewFact: "Priced per item · usually around 72 hours",
     h1: "Dry cleaning for garments that need a closer look.",
     intro: [
-      "Suits, blazers, sarees and sherwanis are checked in, tagged and looked over before any cleaning starts. We collect from your door in Uttara and bring them back finished and packed.",
+      "Suits, blazers, saris and sherwanis are checked in, tagged and looked over before any cleaning starts. We collect from your door in Uttara and bring them back finished and packed.",
     ],
     image: IMAGES.dryCleaning,
-    processImage: IMAGES.process[3],
     primary: "book",
-    turnaround: "Usually around 72 hours",
-    handles: {
-      title: "What people send for dry cleaning",
-      items: ["Suits and blazers", "Sarees", "Sherwanis", "Other garments that need closer attention"],
-    },
-    goodToKnow: [
+    secondary: "whatsapp",
+    heroFacts: ["Usually around 72 hours", "Pickup across Uttara Sectors 1–18", "Free pickup & delivery on orders of ৳499+"],
+    heroGoogleProof: true,
+    blocks: [
       {
-        title: "Stains are checked first",
-        copy: "We look at visible stains before cleaning and treat them for the garment and service. Some stains cannot be fully removed. If something needs extra attention, we'll explain the options first.",
+        type: "scope",
+        title: "What people send for dry cleaning",
+        intro: "Every item below has its own line on the Velto price list.",
+        groups: [
+          { title: "Suits, blazers and coats", copy: "From a single blazer to three-piece suits, overcoats and waistcoats." },
+          { title: "Saris", copy: "Cotton, silk, katan, Jamdani, Tangail and Banarasi saris are each priced separately." },
+          { title: "Occasion and ethnic wear", copy: "Sherwanis, silk panjabis, lehengas, gowns and heavy kamiz suits." },
+          { title: "Winter wear", copy: "Shawls, sweaters, cardigans and jackets." },
+        ],
       },
       {
-        title: "Timing",
-        copy: "Dry cleaning is usually around 72 hours. Special garments and unusual conditions may take longer.",
+        type: "process",
+        title: "What happens to a garment after you hand it over",
+        intro: "Each garment is assessed and routed to the treatment it needs, rather than handled as anonymous laundry.",
+        image: IMAGES.process[3],
+        steps: [
+          { title: "Collected", copy: "We collect the order from your address in Uttara." },
+          { title: "Checked in", copy: "The order is counted and connected to you." },
+          { title: "Identified and tagged", copy: "Each garment is tagged so it stays with your order from check-in to packing." },
+          { title: "Garment and stain assessment", copy: "We look over the fabric, condition and visible stains before choosing the treatment." },
+          { title: "Routed to the right treatment", copy: "The garment goes to the treatment it was assessed for." },
+          { title: "Dry cleaned, finished and pressed", copy: "After cleaning, it is pressed and finished." },
+          { title: "Quality check", copy: "Finished garments are checked again before they are packed." },
+          { title: "Packed and returned", copy: "Your order is packed and delivered back to your address." },
+        ],
       },
       {
-        title: "Need it sooner?",
-        copy: "Express may be available depending on the item and current workload. Confirm with Velto before booking.",
+        type: "prices",
+        title: "Current dry cleaning prices",
+        intro: "A selection from the Velto price list. Search for anything else before you book.",
+        columns: ["dry-cleaning"],
+        groups: [
+          { label: "Suits and jackets", names: ["Blazer", "Suit (2pc)", "Suit (3pc)", "Coat", "Overcoat", "Waist Coat"] },
+          { label: "Saris", names: ["Sari (Cotton)", "Sari (Silk)", "Sari (Silk Jamdani)", "Sari (Katan)", "Banarashi (Normal)", "Banarashi (Heavy)"] },
+          { label: "Occasion wear", names: ["Sherwani", "Panjabi (Silk/Heavy)", "Kamiz Suit (3pc Heavy)", "Lahanga (Heavy 2pc)", "Gown"] },
+          { label: "Priced after inspection", names: ["Wedding Gown", "Leather Jacket"] },
+        ],
+        searchHint: "saree",
       },
+      {
+        type: "notes",
+        title: "Before you send something valuable",
+        items: [
+          {
+            title: "Tell us what worries you",
+            copy: "Mention a stain, a delicate detail or anything you're unsure about in the booking notes, or send a photo on WhatsApp before pickup.",
+          },
+          {
+            title: "Stains are checked, not promised",
+            copy: "We look at visible stains before cleaning and treat them for the garment and service. Some stains cannot be fully removed. If something needs extra attention, we'll explain the options first.",
+          },
+          {
+            title: "Timing",
+            copy: "Dry cleaning is usually around 72 hours. Special garments and unusual conditions may take longer.",
+          },
+          {
+            title: "Need it sooner?",
+            copy: "Express may be possible depending on the item and current workload. Ask before you book.",
+          },
+        ],
+      },
+      { type: "area", title: "Collected from your door, or drop it off" },
     ],
-    process: {
-      title: "How a dry cleaning order is handled",
-      intro: "Each garment is assessed and routed to the right treatment, rather than handled as anonymous laundry.",
-      steps: [
-        { title: "Collected", copy: "We collect the order from your address in Uttara." },
-        { title: "Checked in and tagged", copy: "Each item is identified and tagged so it stays connected to your order." },
-        { title: "Garment and stain assessment", copy: "We look over the fabric, condition and visible stains before choosing the treatment." },
-        { title: "Dry cleaned", copy: "The garment goes to the treatment it was assessed for." },
-        { title: "Finished and pressed", copy: "After cleaning, it is pressed and finished." },
-        ...GARMENT_RETURN,
+    faq: {
+      title: "Questions people ask before sending a garment.",
+      items: [
+        "stains",
+        {
+          q: "What if my garment isn't on the price list?",
+          a: [
+            "Send a photo on WhatsApp or mention it when you book.",
+            "Some items, such as wedding gowns and leather jackets, are priced after Velto has seen them.",
+          ],
+        },
+        "turnaround",
+        "express",
+        "unsure",
       ],
     },
-    faq: ["turnaround", "stains", "express", "unsure"],
     final: {
       title: "Send your dry cleaning.",
       body: "Tell us where to collect from and what you are sending. If a garment needs a closer look, mention it in the notes.",
     },
-    metaDescription:
-      "Dry cleaning in Uttara for suits, blazers, sarees and sherwanis. Garments are checked and tagged before cleaning, with pickup from your door.",
+    meta: {
+      title: "Dry Cleaning in Uttara, Dhaka — suits, saris, sherwanis | Velto",
+      description:
+        "Dry cleaning with pickup across Uttara Sectors 1–18. Garments are tagged and checked for stains before cleaning. See current prices for suits, blazers and saris.",
+    },
   },
   {
     slug: "wash-and-iron",
-    kind: "garment",
     name: "Wash & Iron",
-    summary: "Everyday clothes washed, ironed and returned ready to wear.",
-    h1: "Wash & Iron, collected from your door.",
+    whenToChoose: "Everyday clothes and linen that need washing and ironing.",
+    overviewFact: "Priced per item · usually around 72 hours",
+    h1: "Everyday laundry, washed, ironed and brought back.",
     intro: [
-      "Everyday clothes are counted and tagged to your order, then washed, dried, ironed and packed. You get them back ready to wear.",
+      "Shirts, trousers, kamiz and bed sheets are counted and tagged to your order, then washed, dried, ironed and packed. They come back ready to wear or put away.",
     ],
     image: IMAGES.washAndIron,
-    processImage: IMAGES.process[6],
     primary: "book",
-    turnaround: "Usually around 72 hours",
-    handles: {
-      title: "Good for",
-      items: ["Shirts and office wear", "Everyday clothes", "A week's household laundry"],
-    },
-    goodToKnow: [
+    secondary: "whatsapp",
+    heroFacts: ["Usually around 72 hours", "Pickup across Uttara Sectors 1–18", "Free pickup & delivery on orders of ৳499+"],
+    blocks: [
       {
-        title: "Timing",
-        copy: "Wash & Iron is usually around 72 hours. Larger or unusual orders may take longer.",
+        type: "prices",
+        title: "What Wash & Iron costs",
+        intro: "Priced per item. These are some of the pieces people send most often.",
+        columns: ["wash-and-iron"],
+        groups: [
+          { label: "Everyday wear", names: ["Shirt", "T-Shirt", "Pant", "Jeans", "Kamiz", "Salwar", "Panjabi", "Kurta"] },
+          { label: "Around the house", names: ["Bed Sheet (Medium)", "Bed Sheet (Large)", "Pillow Cover", "Towel (Bath)"] },
+        ],
+        searchHint: "shirt",
       },
       {
-        title: "Free pickup and delivery",
-        copy: "Orders of ৳499+ qualify for free pickup and delivery. For smaller orders, the applicable charge is shown before booking.",
+        type: "compare",
+        title: "Wash & Iron or Ironing?",
+        intro: "If the clothes are already clean, Ironing costs less per piece.",
+        current: "wash-and-iron",
       },
       {
-        title: "Every week?",
-        copy: "If the laundry comes back every week, a regular pickup saves booking from scratch each time.",
+        type: "process",
+        title: "What Wash & Iron includes",
+        intro: "Items are counted and tagged before washing, so everything that goes out comes back to the right order.",
+        image: IMAGES.process[6],
+        steps: [
+          { title: "Collected", copy: "We collect the order from your address in Uttara." },
+          { title: "Counted and tagged", copy: "Items are counted, identified and tagged to your order." },
+          { title: "Washed and dried", copy: "Items are routed to the right wash, then dried." },
+          { title: "Ironed and finished", copy: "Everything is ironed and finished ready to wear." },
+          ...RETURN_STEPS,
+        ],
       },
+      {
+        type: "notes",
+        title: "Who uses Wash & Iron",
+        items: [
+          {
+            title: "Households sending a week's laundry",
+            copy: "Put the week's clothes and linen together. Orders of ৳499+ qualify for free pickup and delivery.",
+          },
+          {
+            title: "Office shirts and everyday wear",
+            copy: "Shirts, trousers and kamiz come back ironed, so there is nothing left to do at home.",
+          },
+          {
+            title: "People who send every week",
+            copy: "Regular pickups can be arranged, so you don't need to book from scratch each time.",
+          },
+        ],
+      },
+      { type: "area", title: "Where Velto collects from" },
     ],
-    process: {
-      title: "How a Wash & Iron order is handled",
-      intro: "Items are counted and tagged before washing, so everything that goes out comes back to the right order.",
-      steps: [
-        { title: "Collected", copy: "We collect the order from your address in Uttara." },
-        { title: "Counted and identified", copy: "Items are counted and connected to your order." },
-        { title: "Tagged", copy: "Each item is tagged so it stays with the right order." },
-        { title: "Washed and dried", copy: "Items are routed to the right wash, then dried." },
-        { title: "Ironed and finished", copy: "Everything is ironed and finished ready to wear." },
-        ...GARMENT_RETURN,
-      ],
+    faq: {
+      title: "Questions about Wash & Iron.",
+      items: ["turnaround", IRONING_VS_WASH, "freeDelivery", "area"],
     },
-    faq: ["turnaround", "freeDelivery", "area", "unsure"],
     final: {
       title: "Send this week's laundry.",
       body: "Tell us where to collect from and when suits you. Orders of ৳499+ qualify for free pickup and delivery.",
     },
-    metaDescription:
-      "Wash & Iron in Uttara with pickup from your door. Clothes are counted, tagged, washed, ironed and returned ready to wear.",
+    meta: {
+      title: "Wash & Iron laundry service in Uttara | Velto",
+      description:
+        "Everyday clothes and bed linen collected from your door in Uttara, washed, ironed and returned. Priced per item, usually around 72 hours.",
+    },
   },
   {
     slug: "ironing",
-    kind: "garment",
     name: "Ironing",
-    summary: "Already washed? Ironing and finishing only.",
-    h1: "Ironing for clothes that are already washed.",
+    whenToChoose: "Clothes you've already washed at home that just need ironing.",
+    overviewFact: "Priced per item · general orders usually around 48 hours",
+    h1: "Already washed? Send it for ironing.",
     intro: [
-      "Send clean clothes and we'll iron and finish them, then pack them and bring them back to your door.",
+      "Send clothes you've washed at home. We count and tag them to your order, iron and finish each piece, then pack them and bring them back.",
     ],
     image: IMAGES.ironing,
-    processImage: IMAGES.process[4],
     primary: "book",
-    turnaround: "General orders usually around 48 hours",
-    handles: {
-      title: "Good for",
-      items: ["Shirts and trousers", "Office wear", "Clothes washed at home"],
-    },
-    goodToKnow: [
+    secondary: "whatsapp",
+    heroFacts: ["General orders usually around 48 hours", "Pickup across Uttara Sectors 1–18", "Free pickup & delivery on orders of ৳499+"],
+    blocks: [
       {
-        title: "Timing",
-        copy: "General orders are usually around 48 hours. Special garments may take longer.",
+        type: "prices",
+        title: "Ironing prices",
+        intro: "Priced per piece, straight from the Velto price list.",
+        columns: ["ironing"],
+        groups: [
+          { label: "Everyday wear", names: ["Shirt", "T-Shirt", "Pant", "Trouser", "Kamiz", "Salwar", "Panjabi", "Kurta"] },
+          { label: "Saris and linen", names: ["Sari (Cotton)", "Blouse", "Dupatta", "Bed Sheet (Large)"] },
+        ],
+        note: "Some items, such as towels, blankets and undergarments, don't have an ironing-only price.",
+        searchHint: "shirt",
       },
       {
-        title: "Needs washing too?",
-        copy: "If the clothes still need washing, book Wash & Iron instead and we'll do both.",
+        type: "compare",
+        title: "Only ironing, or washing too?",
+        current: "ironing",
+      },
+      {
+        type: "process",
+        title: "How an ironing order is handled",
+        intro: "Even an ironing-only order is counted and tagged, so it comes back complete.",
+        image: IMAGES.process[4],
+        steps: [
+          { title: "Collected", copy: "We collect the clothes from your address in Uttara." },
+          { title: "Counted and tagged", copy: "Items are counted and tagged to your order." },
+          { title: "Ironed and finished", copy: "Each item is ironed and finished." },
+          ...RETURN_STEPS,
+        ],
       },
     ],
-    process: {
-      title: "How an ironing order is handled",
-      intro: "Even an ironing-only order is counted and tagged, so it comes back complete.",
-      steps: [
-        { title: "Collected", copy: "We collect the order from your address in Uttara." },
-        { title: "Counted and tagged", copy: "Items are counted and tagged to your order." },
-        { title: "Ironed and finished", copy: "Each item is ironed and finished." },
-        ...GARMENT_RETURN,
+    faq: {
+      title: "Questions about ironing.",
+      items: [
+        IRONING_VS_WASH,
+        {
+          q: "Can everything be sent for ironing only?",
+          a: [
+            "Not everything. Towels, blankets and undergarments, for example, don't have an ironing-only price.",
+            "Search an item on the pricing page to see which services it has.",
+          ],
+        },
+        "turnaround",
+        "freeDelivery",
       ],
     },
-    faq: ["turnaround", "freeDelivery", "unsure"],
     final: {
       title: "Send your ironing.",
       body: "Tell us where to collect from and roughly how much there is. That's enough to get started.",
     },
-    metaDescription: "Ironing service in Uttara for clothes that are already washed, with pickup and delivery.",
+    meta: {
+      title: "Ironing service in Uttara — pickup and delivery | Velto",
+      description:
+        "Ironing for clothes already washed at home, collected and returned across Uttara Sectors 1–18. See the current per-piece ironing prices.",
+    },
   },
   {
     slug: "curtain-cleaning",
-    kind: "household",
     name: "Curtain Cleaning",
-    summary: "Priced from the number of curtains and their size.",
-    h1: "Curtain cleaning, starting with a few details.",
+    whenToChoose: "Curtains from any room, normal or heavy.",
+    overviewFact: "Priced per sq ft · amount confirmed before pickup",
+    h1: "Curtain cleaning, priced by the square foot.",
     intro: [
-      "Curtain pricing depends on how many you have and their size. Tell us roughly what you have, add a photo if it helps, and we'll help you work out the price before pickup.",
+      "Velto prices curtains per square foot, with separate rates for normal and heavy curtains. Tell us how many panels you have and roughly how big they are. We'll help you work out the price and confirm it when measurement or condition needs checking.",
     ],
     image: IMAGES.household,
-    processImage: IMAGES.curtainsMeasured,
     primary: "quote",
-    turnaround: "Quantity and size decide the price",
-    handles: {
-      title: "What we need to know",
-      items: [],
-    },
-    quoteDetails: [
-      "How many curtains or panels you have",
-      "Their approximate length and width",
-      "The fabric, if you know it",
-      "A photo, optional",
-    ],
-    goodToKnow: [
+    secondary: "book",
+    heroFacts: ["Normal and heavy curtain rates", "Amount confirmed before pickup", "Pickup across Uttara Sectors 1–18"],
+    blocks: [
       {
-        title: "Final price",
-        copy: "We confirm the final amount when measurement or condition needs to be checked.",
+        type: "prices",
+        title: "Curtain rates",
+        intro: "Rates per square foot of curtain, by service.",
+        columns: ["dry-cleaning", "wash-and-iron", "ironing"],
+        groups: [{ label: "Curtains", names: ["Curtain Normal (per sqft)", "Curtain Heavy (per sqft)"] }],
+        note: "Not sure if yours count as normal or heavy? Send a photo on WhatsApp and Velto will tell you.",
       },
       {
-        title: "Timing",
-        // TODO_VERIFY: current curtain turnaround range (spec §36).
-        copy: "Household items can take longer than everyday laundry. We'll confirm timing with your quote.",
+        type: "measure",
+        title: "Work out a rough size before you ask",
+        intro: "You don't need exact measurements. An approximate size gets you a useful price guide.",
+        steps: [
+          { title: "Count the panels", copy: "Count each separate curtain panel, not each window." },
+          { title: "Measure one panel", copy: "Width and length in feet. A tape measure is fine, approximate is fine." },
+          { title: "Multiply", copy: "Width × length gives the square feet for one panel. Multiply by the number of panels." },
+        ],
+        examples: [
+          { label: "One panel, 4 ft × 8 ft", value: "32 sq ft" },
+          { label: "Four panels that size", value: "128 sq ft" },
+        ],
+        note: "Multiply the total by the rate above for a rough guide. Velto confirms the final amount when measurement or condition needs checking.",
+      },
+      {
+        type: "process",
+        title: "From quote to clean curtains",
+        intro: "A few details up front means no surprises at pickup.",
+        image: IMAGES.curtainsMeasured,
+        steps: [
+          { title: "Tell us what you have", copy: "Send the number of panels and their approximate size, plus a photo on WhatsApp if it helps." },
+          { title: "Price guidance", copy: "We guide you on the price from Velto's current rates." },
+          { title: "Confirmation", copy: "We confirm the final amount when measurement or condition needs checking." },
+          { title: "Pickup", copy: "We collect the curtains from your address in Uttara." },
+          { title: "Checked in and tagged", copy: "Each panel is tagged to your order at intake." },
+          { title: "Cleaned, checked and returned", copy: "Curtains are cleaned for the booked service, checked, packed and delivered back." },
+        ],
       },
     ],
-    process: {
-      title: "How a curtain quote works",
-      intro: "A few details up front means fewer surprises later.",
-      steps: [
-        { title: "Tell us what you have", copy: "Share the approximate quantity and size, and a photo if it helps." },
-        { title: "Price guidance", copy: "We guide you on the price from Velto's current pricing." },
-        { title: "Confirmation", copy: "We confirm the final amount when measurement or condition needs checking." },
-        { title: "Pickup", copy: "We collect the curtains from your address in Uttara." },
+    faq: {
+      title: "Curtain questions.",
+      items: [
+        "household",
+        {
+          q: "What is the difference between normal and heavy curtains?",
+          a: [
+            "Heavier curtains have their own rate.",
+            "If you're not sure which yours are, send a photo on WhatsApp and Velto will tell you.",
+          ],
+        },
+        {
+          q: "How long does curtain cleaning take?",
+          // TODO_VERIFY: current curtain turnaround range (spec §36).
+          a: ["Curtains can take longer than everyday laundry. Velto confirms the timing with your quote."],
+        },
+        "area",
       ],
     },
-    faq: ["household", "area", "freeDelivery"],
     final: {
       title: "Start a curtain quote.",
-      body: "Send the quantity and approximate size. A photo helps but is optional.",
+      body: "Send the number of panels and their approximate size. It takes a minute, and there's no obligation.",
     },
-    metaDescription:
-      "Curtain cleaning in Uttara. Share the quantity and approximate size for price guidance, then book a pickup.",
+    meta: {
+      title: "Curtain Cleaning in Uttara — priced per sq ft | Velto",
+      description:
+        "Curtain cleaning in Uttara with pickup from your door. See the current per-square-foot rates for normal and heavy curtains, then request a quote.",
+    },
   },
   {
     slug: "carpet-cleaning",
-    kind: "household",
     name: "Carpet Cleaning",
-    summary: "Priced by size. Material and condition can change the price.",
-    h1: "Carpet cleaning, priced from the size.",
+    whenToChoose: "A carpet, a doormat or a prayer mat.",
+    overviewFact: "Priced per sq ft · amount confirmed before pickup",
+    h1: "Carpet cleaning, priced by size.",
     intro: [
-      "Share the approximate length and width of your carpet. The material and condition can change the final price, so a photo helps us guide you before pickup.",
+      "Carpets are priced per square foot. Send the approximate length and width. Material and condition can change the final price, so Velto confirms it before pickup.",
     ],
     image: IMAGES.householdSection,
-    processImage: IMAGES.carpetMeasured,
     primary: "quote",
-    turnaround: "Size, material and condition decide the price",
-    handles: { title: "What we need to know", items: [] },
-    quoteDetails: [
-      "Approximate length and width",
-      "The material, if you know it",
-      "Anything about its condition, such as stains or wear",
-      "A photo, optional",
-    ],
-    goodToKnow: [
+    secondary: "book",
+    heroFacts: ["Priced per square foot", "Amount confirmed before pickup", "Pickup across Uttara Sectors 1–18"],
+    blocks: [
       {
-        title: "No guessing",
-        copy: "When the size is uncertain or the material and condition change the work, we won't promise an exact price until it is confirmed.",
+        type: "prices",
+        title: "Carpet and mat prices",
+        intro: "Carpets are priced per square foot. Doormats and mats are priced per piece.",
+        columns: ["dry-cleaning", "wash-and-iron"],
+        groups: [
+          { label: "Carpets", names: ["Carpet (per sqft)"] },
+          { label: "Doormats and mats, per piece", names: ["Paposh (Small)", "Paposh (Medium)", "Paposh (Large)", "Mat (Medium)", "Prayer Mat", "Prayer Mat (Heavy)"] },
+        ],
       },
       {
-        title: "Timing",
-        // TODO_VERIFY: current carpet turnaround range (spec §36).
-        copy: "Carpets can take longer than everyday laundry. We'll confirm timing with your quote.",
+        type: "measure",
+        title: "Measure the carpet first",
+        intro: "Length and width in feet is enough for a first price guide.",
+        steps: [
+          { title: "Measure the length and width", copy: "In feet, edge to edge. Approximate is fine." },
+          { title: "Multiply", copy: "Length × width gives the square feet." },
+          { title: "Note the material and condition", copy: "If you know the material, or there are stains or wear, mention it. A photo helps." },
+        ],
+        examples: [
+          { label: "A 5 ft × 8 ft carpet", value: "40 sq ft" },
+          { label: "An 8 ft × 10 ft carpet", value: "80 sq ft" },
+        ],
+        note: "Multiply by the rate above for a rough guide. When the size is uncertain or the material and condition change the work, Velto confirms the amount before pickup.",
+      },
+      {
+        type: "facts",
+        title: "What happens next",
+        rows: [
+          { label: "Price", value: "Velto guides you on the price, or prepares a quote." },
+          { label: "Photo", value: "Optional. Send it on WhatsApp if the material or condition matters." },
+          { label: "Confirmation", value: "Velto confirms the final amount before pickup." },
+          // TODO_VERIFY: current carpet turnaround range (spec §36).
+          { label: "Timing", value: "Carpets take longer than everyday laundry. Velto confirms timing with your quote." },
+        ],
       },
     ],
-    process: {
-      title: "How a carpet quote works",
-      intro: "Dimensions first, then confirmation, then pickup.",
-      steps: [
-        { title: "Send the dimensions", copy: "Tell us the approximate length and width." },
-        { title: "Price guidance or quote", copy: "We guide you on the price, or prepare a quote." },
-        { title: "Add a photo", copy: "Optional, but it helps when material or condition matters." },
-        { title: "Confirmation", copy: "Velto confirms the final amount." },
-        { title: "Pickup", copy: "We collect the carpet from your address in Uttara." },
+    faq: {
+      title: "Carpet questions.",
+      items: [
+        "household",
+        {
+          q: "Do you clean doormats and prayer mats?",
+          a: ["Yes. They are priced per piece rather than per square foot, and the prices are listed on this page."],
+        },
+        "area",
+        "freeDelivery",
       ],
     },
-    faq: ["household", "area", "freeDelivery"],
     final: {
       title: "Start a carpet quote.",
-      body: "Send the approximate length and width. Add a photo if the material or condition matters.",
+      body: "Send the approximate length and width. Add a photo on WhatsApp if the material or condition matters.",
     },
-    metaDescription:
-      "Carpet cleaning in Uttara. Share approximate dimensions and a photo for price guidance, then book a pickup.",
+    meta: {
+      title: "Carpet Cleaning in Uttara — priced per sq ft | Velto",
+      description:
+        "Carpet cleaning with pickup across Uttara. See the per-square-foot carpet rate and per-piece mat prices, then send the size for a quote.",
+    },
   },
   {
     slug: "blanket-comforter-cleaning",
-    kind: "household",
     name: "Blankets & Comforters",
-    summary: "Priced by item, type and size.",
-    h1: "Blanket and comforter cleaning.",
+    whenToChoose: "Blankets, comforters, quilts or katha.",
+    overviewFact: "Priced per piece · plan for roughly 3–4 days",
+    h1: "Blankets, comforters and quilts, priced by type and size.",
     intro: [
-      "Blankets, heavy blankets, comforters and quilts are priced mainly by the item, type and size. These jobs take longer than everyday laundry.",
+      "Each blanket, comforter or quilt has a price per piece, set by its type and size, so you can see the cost before you book. Bedding takes longer than everyday laundry.",
     ],
     image: IMAGES.blankets,
-    processImage: IMAGES.blankets,
     primary: "book",
+    secondary: "quote",
     // TODO_VERIFY: planning range from spec §7, confirm against current operations.
-    turnaround: "Roughly 3–4 days",
-    handles: {
-      title: "What we clean",
-      items: ["Blankets", "Heavy blankets", "Comforters", "Quilts and similar bedding"],
-    },
-    goodToKnow: [
+    heroFacts: ["Plan for roughly 3–4 days", "Pickup across Uttara Sectors 1–18", "Free pickup & delivery on orders of ৳499+"],
+    blocks: [
       {
-        title: "Pricing",
-        copy: "Pricing depends mainly on the item, type and size, not on measurements.",
+        type: "prices",
+        title: "Bedding prices",
+        intro: "Per piece, by type and size.",
+        columns: ["dry-cleaning", "wash-and-iron"],
+        groups: [
+          { label: "Blankets", names: ["Blanket (Small)", "Blanket (Regular/Medium)", "Blanket (Large/Heavy)", "Blanket (Baby)"] },
+          { label: "Comforters", names: ["Comforter (Regular)", "Comforter (Heavy)"] },
+          { label: "Quilts and katha", names: ["Quilt (Normal)", "Quilt (Synthetic)", "Quilt (Special)", "Katha (Medium)", "Katha (Large)"] },
+        ],
+        note: "Not sure which size or type yours is? Send a photo on WhatsApp, or request a quote.",
+        searchHint: "bed",
       },
       {
-        title: "Timing",
-        // TODO_VERIFY: spec §7 planning range.
-        copy: "Plan for roughly 3–4 days. Bedding takes longer to clean and dry than everyday laundry.",
+        type: "notes",
+        title: "Good to know before you send bedding",
+        items: [
+          {
+            title: "Pricing",
+            copy: "Blankets, comforters and quilts are priced by item, type and size, not by measurement.",
+          },
+          {
+            title: "Timing",
+            // TODO_VERIFY: spec §7 planning range.
+            copy: "Plan for roughly 3–4 days. Bedding takes longer to clean and dry than everyday laundry.",
+          },
+          {
+            title: "Covers and sheets",
+            copy: "Quilt covers, bed covers and bed sheets are on the price list too, and can go in the same order.",
+          },
+        ],
       },
+      {
+        type: "process",
+        title: "How a bedding order is handled",
+        intro: "Bedding follows the same intake as the rest of your order.",
+        image: IMAGES.process[1],
+        steps: [
+          { title: "Collected", copy: "We collect from your address in Uttara." },
+          { title: "Checked in and tagged", copy: "Each item is identified and tagged to your order." },
+          { title: "Cleaned", copy: "Each item is cleaned for the booked service and its type." },
+          ...RETURN_STEPS,
+        ],
+      },
+      { type: "area", title: "Where Velto collects from" },
     ],
-    process: {
-      title: "How a bedding order is handled",
-      intro: "Bedding follows the same intake as the rest of your order.",
-      steps: [
-        { title: "Collected", copy: "We collect from your address in Uttara." },
-        { title: "Checked in and tagged", copy: "Each item is identified and tagged to your order." },
-        { title: "Cleaned", copy: "Each item is cleaned for its type and size." },
-        ...GARMENT_RETURN,
+    faq: {
+      title: "Bedding questions.",
+      items: [
+        {
+          q: "Do I need a quote for a blanket or comforter?",
+          a: [
+            "Usually not. Blankets, comforters and quilts have a price per piece, so you can book a pickup directly.",
+            "If you're not sure which type or size yours is, or it isn't on the list, request a quote or send a photo.",
+          ],
+        },
+        {
+          q: "How long does bedding take?",
+          // TODO_VERIFY: spec §7 planning range.
+          a: ["Plan for roughly 3–4 days. Bedding takes longer to clean and dry than everyday laundry."],
+        },
+        "freeDelivery",
+        "area",
       ],
     },
-    faq: ["household", "turnaround", "freeDelivery"],
     final: {
       title: "Send your bedding.",
-      body: "Tell us what you are sending and where to collect from. Not sure of the price? Request a quote first.",
+      body: "Tell us what you are sending and where to collect from. Not sure of the size or type? Request a quote first.",
     },
-    metaDescription:
-      "Blanket, comforter and quilt cleaning in Uttara, priced by item, type and size, with pickup from your door.",
+    meta: {
+      title: "Blanket & Comforter Cleaning in Uttara | Velto",
+      description:
+        "Blanket, comforter and quilt cleaning with pickup across Uttara. Priced per piece by type and size. See current prices before you book.",
+    },
+  },
+  {
+    slug: "express",
+    name: "Express",
+    whenToChoose: "You need an order back sooner than usual. Ask first, it isn't always possible.",
+    overviewFact: "Not guaranteed · confirmed before pickup",
+    h1: "Need it back sooner? Ask about Express.",
+    intro: [
+      "Express isn't a separate kind of cleaning. It is a request to have an order back sooner than usual. Whether it's possible depends on the item, the service and how busy Velto is at the time, so we confirm it before pickup.",
+    ],
+    image: IMAGES.process[7],
+    primary: "book",
+    secondary: "whatsapp",
+    heroFacts: ["Depends on item, service and workload", "Extra charge, confirmed with you first", "Pickup across Uttara Sectors 1–18"],
+    blocks: [
+      {
+        type: "facts",
+        title: "What Express means at Velto",
+        rows: [
+          { label: "Availability", value: "Depends on the item, the service and current workload. It is never guaranteed in advance." },
+          { label: "Timing", value: "Velto gives you a ready time when it confirms Express with you." },
+          // Every Express order recorded in Velto Ops carries an Express fee; the amount is TODO_VERIFY (spec §36).
+          { label: "Charge", value: "Express carries an extra charge. Velto confirms it with you before the order goes ahead." },
+          { label: "Household items", value: "Curtains, carpets and bedding take longer than everyday laundry. Ask about these first." },
+        ],
+        steps: {
+          title: "How to ask for Express",
+          steps: [
+            { title: "Book a pickup", copy: "Your booking is marked as an Express request. Or ask on WhatsApp first." },
+            { title: "Velto confirms", copy: "When we call or WhatsApp to confirm the pickup, we tell you whether Express is possible, when it would be ready and the extra charge." },
+            { title: "You decide", copy: "Go ahead with Express, or send it at the usual timing." },
+          ],
+        },
+      },
+      {
+        type: "facts",
+        title: "Usual timing, for comparison",
+        rows: [
+          { label: "General orders", value: "Usually around 48 hours" },
+          { label: "Wash & Iron", value: "Usually around 72 hours" },
+          { label: "Dry Cleaning", value: "Usually around 72 hours" },
+        ],
+        footnote: "Special garments, household items and unusual conditions may take longer.",
+      },
+    ],
+    faq: {
+      title: "Express questions.",
+      items: [
+        "express",
+        {
+          q: "Does Express cost more?",
+          a: ["Yes. Express carries an extra charge, and Velto confirms it with you before the order goes ahead."],
+        },
+        "turnaround",
+        "unsure",
+      ],
+    },
+    final: {
+      title: "Ask for Express with your pickup.",
+      body: "Book as usual and your request is marked as Express. We'll confirm what's possible before we collect.",
+    },
+    meta: {
+      title: "Express laundry and dry cleaning in Uttara | Velto",
+      description:
+        "Need an order back sooner? Express depends on the item, service and workload, and carries an extra charge. Velto confirms before pickup.",
+    },
   },
 ];
 

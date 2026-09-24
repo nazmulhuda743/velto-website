@@ -19,6 +19,14 @@ export type PriceSearch = {
   limit?: number;
 };
 
+/** Exact item-name lookup, returned in the order requested; unknown names are skipped. */
+export type PriceLookup = {
+  names: string[];
+  /** Cache the upstream response for this many seconds instead of fetching per request. */
+  revalidateSeconds?: number;
+};
+
 export interface PricingSource {
   search(input: PriceSearch): Promise<PublicPriceItem[]>;
+  getItems(input: PriceLookup): Promise<PublicPriceItem[]>;
 }
