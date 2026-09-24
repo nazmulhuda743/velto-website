@@ -1,9 +1,12 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { IMAGE_SLOTS } from "@/content/mock";
 import { getSeoRoute } from "@/content/seo-routes";
 import { saveContent, uploadImage } from "@/lib/admin/content-store";
+import { SEEN_COOKIE } from "@/lib/admin/notifications";
+import { logServerEvent } from "@/lib/analytics/store";
 import { requireAdmin, signIn, signOut } from "@/lib/admin/session";
 import { getSiteContent, type ReviewEntry, type SiteSettings } from "@/lib/site-content";
 
@@ -14,6 +17,8 @@ const file = (form: FormData, key: string) => {
 };
 const back = (path: string, params: Record<string, string>): never => redirect(`${path}?${new URLSearchParams(params)}`);
 const failure = (error: unknown) => (error instanceof Error ? error.message : "Something went wrong.").slice(0, 160);
+/** Health Center record of a failed admin save/upload (kind + route only). */
+const logFailure = (kind: "media_upload_error" | "content_save_error", route: string) => logServerEvent(kind, route);
 
 /* ---------- session ---------- */
 
@@ -66,6 +71,7 @@ export async function saveSettingsAction(form: FormData) {
   try {
     await saveContent("settings", next, admin.name);
   } catch (e) {
+    await logFailure("content_save_error", "/admin/settings");
     back("/admin/settings", { error: failure(e) });
   }
   back("/admin/settings", { saved: "1" });
@@ -92,6 +98,7 @@ export async function saveSeoAction(form: FormData) {
       if (upload) entry.ogImage = await uploadImage(upload, "seo");
       else if (form.get("removeOgImage") === "on") entry.ogImage = undefined;
     } catch (e) {
+      await logFailure("media_upload_error", "/admin/seo");
       back(editUrl, { path, error: failure(e) });
     }
     seo[path] = entry;
@@ -99,6 +106,7 @@ export async function saveSeoAction(form: FormData) {
   try {
     await saveContent("seo", seo, admin.name);
   } catch (e) {
+    await logFailure("content_save_error", "/admin/seo");
     back(editUrl, { path, error: failure(e) });
   }
   back(editUrl, { path, saved: "1" });
@@ -126,14 +134,17 @@ export async function saveImageAction(form: FormData) {
         src: upload ? await uploadImage(upload, id) : current!.src,
         alt: alt || current?.alt,
         position: /^[\w% .-]*$/.test(position) && position ? position : current?.position,
+        updatedAt: new Date().toISOString(),
       };
     } catch (e) {
+      await logFailure("media_upload_error", "/admin/images");
       back(target, { error: failure(e), slot: id });
     }
   }
   try {
     await saveContent("images", images, admin.name);
   } catch (e) {
+    await logFailure("content_save_error", "/admin/images");
     back(target, { error: failure(e), slot: id });
   }
   back(target, { saved: id });
@@ -186,7 +197,22 @@ export async function saveReviewAction(form: FormData) {
   try {
     await saveContent("reviews", reviews, admin.name);
   } catch (e) {
+    await logFailure("content_save_error", "/admin/reviews");
     back("/admin/reviews", { error: failure(e) });
   }
   back("/admin/reviews", { saved: "1" });
+}
+
+/* ---------- notifications ---------- */
+
+export async function markNotificationsReadAction() {
+  await requireAdmin();
+  (await cookies()).set(SEEN_COOKIE, String(Date.now()), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/admin",
+    maxAge: 60 * 60 * 24 * 90,
+  });
+  redirect("/admin/notifications");
 }

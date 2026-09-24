@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CookieSettingsButton } from "@/components/consent/CookieSettingsButton";
 import { Logo } from "@/components/ui/Logo";
 import { SERVICE_PAGES } from "@/content/services";
 import { CUSTOMER_PORTAL, SERVICE_AREA, WHATSAPP_URL, bookHref } from "@/content/site";
@@ -112,8 +113,7 @@ export async function Footer() {
 
         <div className="mt-16 flex flex-col gap-3 border-t border-white/15 pt-6 t-caption text-white/60 md:flex-row md:items-center md:justify-between">
           <p>© {new Date().getFullYear()} Velto Premium Laundry</p>
-          {/* Cookies link joins here when the consent work (PR #19) lands. */}
-          <ul className="flex gap-4">
+          <ul className="flex flex-wrap gap-x-4">
             <li>
               <Link href="/privacy" className="inline-block py-1.5 hover:text-white">
                 Privacy
@@ -123,6 +123,14 @@ export async function Footer() {
               <Link href="/terms" className="inline-block py-1.5 hover:text-white">
                 Terms
               </Link>
+            </li>
+            <li>
+              <Link href="/cookies" className="inline-block py-1.5 hover:text-white">
+                Cookies
+              </Link>
+            </li>
+            <li>
+              <CookieSettingsButton className="inline-block py-1.5 hover:text-white">Cookie settings</CookieSettingsButton>
             </li>
           </ul>
         </div>

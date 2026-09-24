@@ -16,6 +16,12 @@ const approvedEvents = [
   "pricing_search",
   "google_reviews_click",
   "service_view",
+  "page_view",
+  "track_order_open",
+  "cookie_banner_view",
+  "consent_accept_all",
+  "consent_reject_nonessential",
+  "consent_preferences_saved",
 ] as const satisfies readonly AnalyticsEvent[];
 
 const taxonomyIsComplete: Exclude<AnalyticsEvent, (typeof approvedEvents)[number]> extends never

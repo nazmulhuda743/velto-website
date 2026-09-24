@@ -47,6 +47,9 @@ jobs:
       - name: Foundation tests
         run: npm run test:foundation
 
+      - name: Command Center tests
+        run: node scripts/command-center-tests.mjs
+
       - name: Production build
         run: npm run build
 

@@ -1,5 +1,10 @@
 import { AdminHeader, Badge, Field, Notice, one, type SearchParams } from "@/components/admin/ui";
+import { SERVICE_PAGES } from "@/content/services";
 import { getSiteContent, type ReviewEntry } from "@/lib/site-content";
+
+/** Service pages that show a review (matched by reviewer name, as the service page does). */
+const serviceLinks = (name: string | null) =>
+  SERVICE_PAGES.filter((s) => s.blocks.some((b) => b.type === "review" && b.review.name === name)).map((s) => s.name);
 import { saveReviewAction } from "../../actions";
 
 function ReviewFields({ review }: { review?: ReviewEntry }) {
@@ -76,12 +81,22 @@ export default async function ReviewsPage({ searchParams }: { searchParams: Sear
           <li key={review.id} className="admin-card">
             <details>
               <summary className="flex cursor-pointer list-none flex-wrap items-center gap-3 px-5 py-4">
+                <span className="inline-flex size-7 items-center justify-center rounded-md bg-soft t-caption font-semibold tabular-nums text-secondary" aria-label={`Position ${i + 1}`}>
+                  {i + 1}
+                </span>
                 <span className="font-semibold text-navy">{review.name}</span>
                 <span className="t-small text-secondary">
                   {review.platform}
-                  {typeof review.rating === "number" ? ` · ${review.rating}★` : ""}
+                  {typeof review.rating === "number" ? ` · ${review.rating}★` : review.rating === "recommends" ? " · Recommends" : ""}
+                  {review.branch ? ` · ${review.branch === "sector-11" ? "Sector 11" : "Sector 18"}` : ""}
                 </span>
-                {review.showOnHome ? <Badge tone="blue">On homepage</Badge> : <Badge>Hidden</Badge>}
+                {review.showOnHome ? <Badge tone="blue">On homepage</Badge> : <Badge>Not on homepage</Badge>}
+                {serviceLinks(review.name).map((s) => (
+                  <Badge key={s} tone="green">
+                    {s} page
+                  </Badge>
+                ))}
+                {review.sourceUrl ? <Badge>Source linked</Badge> : <Badge tone="amber">No source link</Badge>}
                 <span className="w-full truncate t-small text-secondary md:ml-auto md:w-auto md:max-w-[40ch]">{review.text}</span>
               </summary>
               <form action={saveReviewAction} className="border-t border-line p-5">

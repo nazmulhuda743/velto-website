@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { supabaseFetch } from "../supabase-server";
+import { isAdminPreview } from "./preview";
 
 const COOKIE = "velto_admin";
 const MAX_AGE_SECONDS = 12 * 60 * 60;
@@ -89,6 +90,8 @@ export async function signOut() {
 
 /** The signed-in admin, re-checked against Ops on every request (deactivated admins lose access). */
 export const getAdmin = cache(async (): Promise<Admin | null> => {
+  // Local visual QA only; always false outside `next dev` (see ./preview.ts).
+  if (isAdminPreview()) return { id: "preview", name: "Preview admin", email: "local preview" };
   const session = decode((await cookies()).get(COOKIE)?.value);
   if (!session) return null;
   try {

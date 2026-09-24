@@ -1,4 +1,5 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { after, NextResponse, type NextRequest } from "next/server";
+import { logServerEvent } from "@/lib/analytics/store";
 import { getPricingSource, isPricingConfigured as isLiveConfigured } from "@/lib/integrations/pricing/server";
 import type { PublicPriceItem } from "@/lib/integrations/pricing/types";
 import { searchPriceItems } from "@/lib/pricing";
@@ -79,6 +80,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ items, source }, { headers: { "Cache-Control": "no-store" } });
   } catch {
     // Never expose raw API/database errors to the browser.
+    after(() => logServerEvent("pricing_error", "/api/prices", "unavailable"));
     return NextResponse.json({ error: "unavailable" }, { status: 503 });
   }
 }
