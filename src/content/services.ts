@@ -49,7 +49,8 @@ export type ServiceBlock =
       title: string;
       intro: string;
       steps: Step[];
-      image: ImageSlot;
+      /** Optional: without a photo the block uses the plain two-column text layout. */
+      image?: ImageSlot;
     }
   | {
       type: "notes";
@@ -399,7 +400,6 @@ export const SERVICE_PAGES: ServiceContent[] = [
         type: "process",
         title: "From quote to clean curtains",
         intro: "A few details up front means no surprises at pickup.",
-        image: IMAGES.curtainsMeasured,
         steps: [
           { title: "Tell us what you have", copy: "Send the number of panels and their approximate size, plus a photo on WhatsApp if it helps." },
           { title: "Price guidance", copy: "We guide you on the price from Velto's current rates." },
@@ -448,7 +448,7 @@ export const SERVICE_PAGES: ServiceContent[] = [
     intro: [
       "Carpets are priced per square foot. Send the approximate length and width. Material and condition can change the final price, so Velto confirms it before pickup.",
     ],
-    image: IMAGES.householdSection,
+    image: IMAGES.carpet,
     primary: "quote",
     secondary: "book",
     glance: { pricing: "Per sq ft. Amount confirmed before pickup", turnaround: "Takes longer than everyday laundry. Confirmed with your quote", bestFor: "A carpet, a doormat or a prayer mat." },
@@ -564,7 +564,7 @@ export const SERVICE_PAGES: ServiceContent[] = [
         type: "process",
         title: "How a bedding order is handled",
         intro: "Bedding follows the same intake as the rest of your order.",
-        image: IMAGES.process[1],
+        image: IMAGES.bedding,
         steps: [
           { title: "Collected", copy: "We collect from your address in Uttara." },
           { title: "Checked in and tagged", copy: "Each item is identified and tagged to your order." },
@@ -611,7 +611,7 @@ export const SERVICE_PAGES: ServiceContent[] = [
     intro: [
       "Express isn't a separate kind of cleaning. It is a request to have an order back sooner than usual. Whether it's possible depends on the item, the service and how busy Velto is at the time, so we confirm it before pickup.",
     ],
-    image: IMAGES.process[7],
+    image: IMAGES.express,
     primary: "book",
     secondary: "whatsapp",
     glance: { pricing: "Extra charge, confirmed with you first", turnaround: "Depends on the item, service and current workload", bestFor: "You need an order back sooner than usual. Ask first, it isn't always possible." },

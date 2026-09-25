@@ -91,6 +91,25 @@ export async function ServiceBlockView({
       );
 
     case "process":
+      if (!block.image) {
+        return (
+          <Section id={id} tone={tone}>
+            <div className={LEFT}>
+              <SectionIntro id={id} title={block.title} titleClassName="max-w-[14ch]">
+                <p>{block.intro}</p>
+              </SectionIntro>
+            </div>
+            <div className={RIGHT}>
+              <ProcessSteps steps={block.steps} />
+              <div className="mt-6">
+                <TextLink href="/how-it-works" placement="service_process">
+                  See how every order is handled
+                </TextLink>
+              </div>
+            </div>
+          </Section>
+        );
+      }
       return (
         <Section id={id} tone={tone}>
           <div className="col-span-4 md:col-span-8 lg:col-span-4 xl:col-span-5">

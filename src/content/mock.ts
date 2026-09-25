@@ -75,6 +75,28 @@ const supplied = (file: string, alt: string, width: number, height: number, posi
   source: { platform: "Supplied by Velto" },
 });
 
+/**
+ * Licensed Pexels stock for internal pages (Pexels License), optimised to WebP
+ * in public/images/pages and credited in docs/brand/IMAGE-SOURCES.md. Same
+ * trust rule as `stock`.
+ */
+const pageStock = (
+  file: string,
+  alt: string,
+  width: number,
+  height: number,
+  pexelsId: number,
+  photographer: string,
+  position?: string,
+): ImageSlot => ({
+  src: `/images/pages/${file}.webp`,
+  alt,
+  width,
+  height,
+  position,
+  source: { platform: "Pexels", url: `https://www.pexels.com/photo/${pexelsId}/`, photographer },
+});
+
 export const IMAGES = {
   hero: supplied(
     "hero",
@@ -121,8 +143,32 @@ export const IMAGES = {
     "Hands rolling up a woven jute rug on a wooden floor.",
     2400, 1600, 7217758, "Blue Bird", "60% center",
   ),
-  /** No suitable bedding photography yet: MOCK placeholder rather than a mismatched stock image. */
-  blankets: slot("Folded comforters and blankets received for cleaning.", 1600, 1200),
+  blankets: pageStock(
+    "bedding-folded",
+    "A folded herringbone wool blanket on a folded cream blanket, on a wooden table.",
+    1600, 2400, 11125918, "Qiana Zhang", "center 62%",
+  ),
+  /** Supporting bedding image (blanket page process block). */
+  bedding: pageStock(
+    "bedding-linen-stack",
+    "A neat stack of folded white bed sheets and pillowcases.",
+    2000, 1333, 31902663, "chikawaztla", "center 55%",
+  ),
+  carpet: pageStock(
+    "carpet-woven",
+    "A woven grey carpet under the corner of a blue sofa.",
+    1600, 1067, 35964344, "Thomas Parker", "center",
+  ),
+  express: pageStock(
+    "express-shirt-hanger",
+    "A hand holding up a pressed green shirt on a wooden hanger.",
+    2000, 1334, 9594952, "Ron Lach", "55% center",
+  ),
+  about: pageStock(
+    "finished-shirts-rail",
+    "A row of pressed linen shirts on wooden hangers along a rail.",
+    1600, 2400, 17293343, "nguyendesigner", "center 35%",
+  ),
   curtainsMeasured: slot("Curtain panels being measured for a quote.", 1600, 1200),
   carpetMeasured: slot("A carpet being measured for a quote.", 1600, 1200),
   /** Real Velto outlets: never substituted with stock storefronts. MOCK until supplied. */

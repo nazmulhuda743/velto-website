@@ -45,7 +45,7 @@ const household = [
     title: "Carpet Cleaning",
     copy: "Share the approximate dimensions. The material and condition may affect the final price.",
     link: "View Carpet Cleaning",
-    image: IMAGES.householdSection,
+    image: IMAGES.carpet,
     ...SERVICES.carpets,
   },
   {
