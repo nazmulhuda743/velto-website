@@ -1,7 +1,22 @@
 import type { ReactNode } from "react";
 import { ResponsiveImage } from "@/components/ui/ResponsiveImage";
 import type { ImageSlot } from "@/content/mock";
+import { Eyebrow } from "@/components/home/SectionIntro";
 import { Breadcrumbs, type Crumb } from "./Breadcrumbs";
+
+/** Sets one phrase of the title in Velto blue: the page's single highlighted idea. */
+function emphasise(title: ReactNode, phrase?: string) {
+  if (!phrase || typeof title !== "string") return title;
+  const at = title.indexOf(phrase);
+  if (at < 0) return title;
+  return (
+    <>
+      {title.slice(0, at)}
+      <span className="text-blue">{phrase}</span>
+      {title.slice(at + phrase.length)}
+    </>
+  );
+}
 
 /**
  * Internal-page hero. Same grid, type and CTA hierarchy as the homepage hero,
@@ -10,6 +25,8 @@ import { Breadcrumbs, type Crumb } from "./Breadcrumbs";
 export function PageHero({
   crumbs,
   title,
+  eyebrow,
+  highlight,
   children,
   actions,
   aside,
@@ -19,6 +36,10 @@ export function PageHero({
 }: {
   crumbs: Crumb[];
   title: ReactNode;
+  /** Small blue label above the H1 (the site-wide section label system). */
+  eyebrow?: string;
+  /** One phrase of a string title to set in Velto blue. Ignored if it isn't in the title. */
+  highlight?: string;
   children?: ReactNode;
   actions?: ReactNode;
   /** Content under the actions (proof lines, facts). */
@@ -34,8 +55,9 @@ export function PageHero({
         <Breadcrumbs items={crumbs} />
         <div className="mt-6 grid-page gap-y-8 md:mt-8">
           <div className={image ? "col-span-4 md:col-span-4 xl:col-span-6" : "col-span-4 md:col-span-8 xl:col-span-9"}>
+            {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
             <h1 id="page-title" className="t-h1 max-w-[20ch] text-navy">
-              {title}
+              {emphasise(title, highlight)}
             </h1>
             {children ? (
               <div className="mt-5 max-w-[560px] space-y-4 t-body text-body md:mt-6 md:t-body-lg">{children}</div>

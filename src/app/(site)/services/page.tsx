@@ -1,8 +1,9 @@
 import { pageMetadata } from "@/lib/seo/page-metadata";
+import { ProofFigures } from "@/components/pages/ProofFigures";
+import { freeDeliveryFigure, googleFigure, sectorsFigure } from "@/components/pages/figures";
 import Link from "next/link";
 import { FAQ, faqItems } from "@/components/home/FAQ";
 import { FinalBookingCTA } from "@/components/home/FinalBookingCTA";
-import { GoogleProof } from "@/components/home/ProofLine";
 import { SectionIntro } from "@/components/home/SectionIntro";
 import { MobileConversionBar } from "@/components/layout/MobileConversionBar";
 import { PageHero } from "@/components/pages/PageHero";
@@ -74,12 +75,14 @@ const PRICING_MODELS = [
   },
 ];
 
-export default function ServicesPage() {
+export default async function ServicesPage() {
   return (
     <>
       <PageHero
         crumbs={[{ label: "Home", href: "/" }, { label: "Services" }]}
         title="Which service do you need?"
+        eyebrow="Services"
+        highlight="Which service"
         actions={
           <>
             <ButtonLink
@@ -95,7 +98,7 @@ export default function ServicesPage() {
             </ButtonLink>
           </>
         }
-        aside={<GoogleProof placement="services_hero" />}
+        aside={<ProofFigures wide={3} figures={[await googleFigure("services_hero"), sectorsFigure, freeDeliveryFigure]} />}
       >
         <p>
           Every service begins with a pickup from your door in Uttara Sectors 1–18. Not sure which one
@@ -105,7 +108,7 @@ export default function ServicesPage() {
 
       <section aria-labelledby="choose-title" className="bg-warm py-(--space-section)">
         <div className="container-page">
-          <SectionIntro id="choose-title" title="Start with what you're sending." />
+          <SectionIntro id="choose-title" eyebrow="All services" title="Start with what you're sending." />
           <div className="mt-(--space-intro-content) space-y-(--space-related)">
             {GROUPS.map((group) => (
               <div key={group.title}>
@@ -124,7 +127,7 @@ export default function ServicesPage() {
 
       <section aria-labelledby="compare-title" className="py-(--space-section)">
         <div className="container-page">
-          <SectionIntro id="compare-title" title="Wash & Iron, Ironing or Dry Cleaning?">
+          <SectionIntro id="compare-title" eyebrow="Choosing a service" title="Wash & Iron, Ironing or Dry Cleaning?">
             <p>The three clothing services, side by side.</p>
           </SectionIntro>
           <div className="mt-(--space-intro-content)">
@@ -136,7 +139,7 @@ export default function ServicesPage() {
       <section aria-labelledby="pricing-models-title" className="bg-soft py-(--space-section)">
         <div className="container-page grid-page gap-y-(--space-intro-content)">
           <div className="col-span-4 md:col-span-8 xl:col-span-4">
-            <SectionIntro id="pricing-models-title" title="How each service is priced" titleClassName="max-w-[14ch]">
+            <SectionIntro id="pricing-models-title" eyebrow="Pricing" title="How each service is priced" titleClassName="max-w-[14ch]">
               <p>
                 Free pickup &amp; delivery on orders of {FREE_DELIVERY_THRESHOLD}+. Smaller orders have a
                 pickup and delivery charge, which we tell you when we confirm.

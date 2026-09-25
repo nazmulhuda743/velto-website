@@ -1,4 +1,6 @@
 import { pageMetadata } from "@/lib/seo/page-metadata";
+import { ProofFigures } from "@/components/pages/ProofFigures";
+import { googleFigure, outletsFigure, sectorsFigure } from "@/components/pages/figures";
 import { FinalBookingCTA } from "@/components/home/FinalBookingCTA";
 import { SectionIntro } from "@/components/home/SectionIntro";
 import { BulletList } from "@/components/pages/BulletList";
@@ -10,12 +12,15 @@ import { bookHref } from "@/content/site";
 
 export const generateMetadata = () => pageMetadata("/about");
 
-export default function AboutPage() {
+export default async function AboutPage() {
   return (
     <>
       <PageHero
         crumbs={[{ label: "Home", href: "/" }, { label: "About" }]}
         title="A laundry in Uttara that works to a written process."
+        eyebrow="About Velto"
+        highlight="a written process"
+        aside={<ProofFigures wide={3} figures={[await googleFigure("about_hero"), outletsFigure, sectorsFigure]} />}
         image={IMAGES.about}
         actions={
           <ButtonLink href={bookHref("about-page")} event="book_pickup_click" placement="about_hero">
@@ -32,7 +37,7 @@ export default function AboutPage() {
       <section aria-labelledby="sops-title" className="bg-warm py-(--space-section)">
         <div className="container-page grid-page gap-y-10">
           <div className="col-span-4 md:col-span-8 xl:col-span-5">
-            <SectionIntro id="sops-title" title="Written down, not left to memory.">
+            <SectionIntro id="sops-title" eyebrow="How we work" title="Written down, not left to memory.">
               <p>
                 The key steps of every order follow written operating procedures, so each order goes
                 through the same checks.
@@ -61,7 +66,7 @@ export default function AboutPage() {
       <section aria-labelledby="promise-title" className="py-(--space-section)">
         <div className="container-page grid-page gap-y-6">
           <div className="col-span-4 md:col-span-8 xl:col-span-5">
-            <SectionIntro id="promise-title" title="What we will and won't promise." />
+            <SectionIntro id="promise-title" eyebrow="Honest limits" title="What we will and won't promise." />
           </div>
           <div className="col-span-4 space-y-4 t-body-lg text-body md:col-span-8 xl:col-span-6 xl:col-start-7">
             <p>

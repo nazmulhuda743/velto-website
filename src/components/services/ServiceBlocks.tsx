@@ -13,6 +13,18 @@ import { ServicePriceTable, ServicePriceTableSkeleton } from "./ServicePriceTabl
 type Tone = "white" | "warm" | "soft";
 const TONE: Record<Tone, string> = { white: "", warm: "bg-warm", soft: "bg-soft" };
 
+/** Section label per block type: the same small blue label system as the homepage. */
+const EYEBROW: Record<ServiceBlock["type"], string> = {
+  scope: "What you can send",
+  prices: "Prices",
+  process: "How it's handled",
+  notes: "Good to know",
+  compare: "Choosing a service",
+  measure: "Measuring",
+  facts: "What happens next",
+  review: "Customer proof",
+};
+
 function Section({ id, tone, children }: { id: string; tone: Tone; children: ReactNode }) {
   return (
     <section aria-labelledby={id} className={`py-(--space-section) ${TONE[tone]}`}>
@@ -41,7 +53,7 @@ export async function ServiceBlockView({
       return (
         <Section id={id} tone={tone}>
           <div className={LEFT}>
-            <SectionIntro id={id} title={block.title} titleClassName="max-w-[16ch]">
+            <SectionIntro id={id} eyebrow={EYEBROW[block.type]} title={block.title} titleClassName="max-w-[16ch]">
               {block.intro ? <p>{block.intro}</p> : null}
             </SectionIntro>
           </div>
@@ -60,7 +72,7 @@ export async function ServiceBlockView({
       return (
         <Section id={id} tone={tone}>
           <div className={LEFT}>
-            <SectionIntro id={id} title={block.title} titleClassName="max-w-[14ch]" className="xl:sticky xl:top-[100px]">
+            <SectionIntro id={id} eyebrow={EYEBROW[block.type]} title={block.title} titleClassName="max-w-[14ch]" className="xl:sticky xl:top-[100px]">
               <p>{block.intro}</p>
             </SectionIntro>
           </div>
@@ -95,7 +107,7 @@ export async function ServiceBlockView({
         return (
           <Section id={id} tone={tone}>
             <div className={LEFT}>
-              <SectionIntro id={id} title={block.title} titleClassName="max-w-[14ch]">
+              <SectionIntro id={id} eyebrow={EYEBROW[block.type]} title={block.title} titleClassName="max-w-[14ch]">
                 <p>{block.intro}</p>
               </SectionIntro>
             </div>
@@ -122,7 +134,7 @@ export async function ServiceBlockView({
             </div>
           </div>
           <div className="col-span-4 md:col-span-8 lg:col-span-4 xl:col-span-6 xl:col-start-7">
-            <SectionIntro id={id} title={block.title}>
+            <SectionIntro id={id} eyebrow={EYEBROW[block.type]} title={block.title}>
               <p>{block.intro}</p>
             </SectionIntro>
             <ProcessSteps className="mt-(--space-intro-content)" steps={block.steps} />
@@ -139,7 +151,7 @@ export async function ServiceBlockView({
       return (
         <Section id={id} tone={tone}>
           <div className={LEFT}>
-            <SectionIntro id={id} title={block.title} titleClassName="max-w-[14ch]">
+            <SectionIntro id={id} eyebrow={EYEBROW[block.type]} title={block.title} titleClassName="max-w-[14ch]">
               {block.intro ? <p>{block.intro}</p> : null}
             </SectionIntro>
           </div>
@@ -158,7 +170,7 @@ export async function ServiceBlockView({
       return (
         <Section id={id} tone={tone}>
           <div className="col-span-4 md:col-span-8 xl:col-span-8">
-            <SectionIntro id={id} title={block.title}>
+            <SectionIntro id={id} eyebrow={EYEBROW[block.type]} title={block.title}>
               {block.intro ? <p>{block.intro}</p> : null}
             </SectionIntro>
           </div>
@@ -172,7 +184,7 @@ export async function ServiceBlockView({
       return (
         <Section id={id} tone={tone}>
           <div className="col-span-4 md:col-span-8 xl:col-span-6">
-            <SectionIntro id={id} title={block.title} titleClassName="max-w-[16ch]">
+            <SectionIntro id={id} eyebrow={EYEBROW[block.type]} title={block.title} titleClassName="max-w-[16ch]">
               <p>{block.intro}</p>
             </SectionIntro>
             <ProcessSteps className="mt-(--space-intro-content)" steps={block.steps} />
@@ -196,7 +208,7 @@ export async function ServiceBlockView({
       return (
         <Section id={id} tone={tone}>
           <div className={LEFT}>
-            <SectionIntro id={id} title={block.title} titleClassName="max-w-[14ch]">
+            <SectionIntro id={id} eyebrow={EYEBROW[block.type]} title={block.title} titleClassName="max-w-[14ch]">
               {block.intro ? <p>{block.intro}</p> : null}
             </SectionIntro>
           </div>
@@ -220,7 +232,7 @@ export async function ServiceBlockView({
       return (
         <Section id={id} tone={tone}>
           <div className={LEFT}>
-            <SectionIntro id={id} title={block.title} titleClassName="max-w-[14ch]" />
+            <SectionIntro id={id} eyebrow={EYEBROW[block.type]} title={block.title} titleClassName="max-w-[14ch]" />
           </div>
           <div className={`${RIGHT} max-w-[720px]`}>
             <ReviewBlock review={review} />

@@ -1,4 +1,6 @@
 import { pageMetadata } from "@/lib/seo/page-metadata";
+import { ProofFigures } from "@/components/pages/ProofFigures";
+import { freeDeliveryFigure, outletsFigure, sectorsFigure } from "@/components/pages/figures";
 import { FinalBookingCTA } from "@/components/home/FinalBookingCTA";
 import { LocationBlock } from "@/components/home/LocationsSection";
 import { SectionIntro } from "@/components/home/SectionIntro";
@@ -17,6 +19,9 @@ export default async function LocationsPage() {
       <PageHero
         crumbs={[{ label: "Home", href: "/" }, { label: "Locations" }]}
         title="Two outlets in Uttara. Pickup across Sectors 1–18."
+        eyebrow="Locations"
+        highlight="Pickup across Sectors 1–18."
+        aside={<ProofFigures wide={3} figures={[outletsFigure, sectorsFigure, freeDeliveryFigure]} />}
         actions={
           <ButtonLink href={bookHref("locations-page")} event="book_pickup_click" placement="locations_hero">
             Book a Pickup
@@ -50,7 +55,7 @@ export default async function LocationsPage() {
       <section aria-labelledby="area-title" className="py-(--space-section)">
         <div className="container-page grid-page gap-y-6">
           <div className="col-span-4 md:col-span-8 xl:col-span-5">
-            <SectionIntro id="area-title" title="Pickup and delivery area" />
+            <SectionIntro id="area-title" eyebrow="Pickup" title="Pickup and delivery area" />
           </div>
           <div className="col-span-4 space-y-4 t-body-lg text-body md:col-span-8 xl:col-span-6 xl:col-start-7">
             <p>Velto&apos;s confirmed core service area is Uttara, Sectors 1–18.</p>

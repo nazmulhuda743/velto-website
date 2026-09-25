@@ -2,7 +2,7 @@ import { pageMetadata } from "@/lib/seo/page-metadata";
 import { FAQ, faqItems } from "@/components/home/FAQ";
 import { FinalBookingCTA } from "@/components/home/FinalBookingCTA";
 import { PriceFinder } from "@/components/home/PriceFinder";
-import { SectionIntro } from "@/components/home/SectionIntro";
+import { Eyebrow, SectionIntro } from "@/components/home/SectionIntro";
 import { Breadcrumbs } from "@/components/pages/Breadcrumbs";
 import { FactRows } from "@/components/pages/FactRows";
 import { ServiceCompare } from "@/components/services/ServiceCompare";
@@ -49,8 +49,9 @@ export default async function PricingPage({ searchParams }: { searchParams: Sear
           <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Pricing" }]} />
           <div className="mt-6 grid-page gap-y-12 md:mt-8">
             <div className="col-span-4 md:col-span-8 xl:col-span-7">
+              <Eyebrow>Pricing</Eyebrow>
               <h1 id="page-title" className="t-h1 max-w-[18ch] text-navy">
-                Find the price of an item.
+                Find the <span className="text-blue">price</span> of an item.
               </h1>
               <div className="mt-5 max-w-[560px] space-y-4 t-body text-body md:mt-6 md:t-body-lg">
                 <p>

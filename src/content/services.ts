@@ -86,6 +86,8 @@ export type ServiceContent = {
   /** One-line answer to "how is it priced / how long". */
   overviewFact: string;
   h1: string;
+  /** The one phrase of the H1 set in Velto blue (must appear in h1 exactly). */
+  h1Highlight?: string;
   intro: string[];
   image: ImageSlot;
   /** Book-first for itemised services; quote-first where the amount needs confirming. */
@@ -116,6 +118,7 @@ export const SERVICE_PAGES: ServiceContent[] = [
     whenToChoose: "A suit, blazer, sari, sherwani or anything that needs a closer look before cleaning.",
     overviewFact: "Priced per item · usually around 72 hours",
     h1: "Dry cleaning for garments that need a closer look.",
+    h1Highlight: "a closer look",
     intro: [
       "Suits, blazers, saris and sherwanis are checked in, tagged and looked over before any cleaning starts. We collect from your door in Uttara and bring them back finished and packed.",
     ],
@@ -220,6 +223,7 @@ export const SERVICE_PAGES: ServiceContent[] = [
     whenToChoose: "Everyday clothes and linen that need washing and ironing.",
     overviewFact: "Priced per item · usually around 72 hours",
     h1: "Everyday laundry, washed, ironed and brought back.",
+    h1Highlight: "brought back",
     intro: [
       "Shirts, trousers, kamiz and bed sheets are counted and tagged to your order, then washed, dried, ironed and packed. They come back ready to wear or put away.",
     ],
@@ -297,6 +301,7 @@ export const SERVICE_PAGES: ServiceContent[] = [
     whenToChoose: "Clothes you've already washed at home that just need ironing.",
     overviewFact: "Priced per item · general orders usually around 48 hours",
     h1: "Already washed? Send it for ironing.",
+    h1Highlight: "Send it for ironing",
     intro: [
       "Send clothes you've washed at home. We count and tag them to your order, iron and finish each piece, then pack them and bring them back.",
     ],
@@ -365,6 +370,7 @@ export const SERVICE_PAGES: ServiceContent[] = [
     whenToChoose: "Curtains from any room, normal or heavy.",
     overviewFact: "Priced per sq ft · amount confirmed before pickup",
     h1: "Curtain cleaning, priced by the square foot.",
+    h1Highlight: "priced by the square foot",
     intro: [
       "Velto prices curtains per square foot, with separate rates for normal and heavy curtains. Tell us how many panels you have and roughly how big they are. We'll help you work out the price and confirm it when measurement or condition needs checking.",
     ],
@@ -445,6 +451,7 @@ export const SERVICE_PAGES: ServiceContent[] = [
     whenToChoose: "A carpet, a doormat or a prayer mat.",
     overviewFact: "Priced per sq ft · amount confirmed before pickup",
     h1: "Carpet cleaning, priced by size.",
+    h1Highlight: "priced by size",
     intro: [
       "Carpets are priced per square foot. Send the approximate length and width. Material and condition can change the final price, so Velto confirms it before pickup.",
     ],
@@ -518,6 +525,7 @@ export const SERVICE_PAGES: ServiceContent[] = [
     whenToChoose: "Blankets, comforters, quilts or katha.",
     overviewFact: "Priced per piece · plan for roughly 3–4 days",
     h1: "Blankets, comforters and quilts, priced by type and size.",
+    h1Highlight: "priced by type and size",
     intro: [
       "Each blanket, comforter or quilt has a price per piece, set by its type and size, so you can see the cost before you book. Bedding takes longer than everyday laundry.",
     ],
@@ -608,6 +616,7 @@ export const SERVICE_PAGES: ServiceContent[] = [
     whenToChoose: "You need an order back sooner than usual. Ask first, it isn't always possible.",
     overviewFact: "Not guaranteed · confirmed before pickup",
     h1: "Need it back sooner? Ask about Express.",
+    h1Highlight: "Ask about Express",
     intro: [
       "Express isn't a separate kind of cleaning. It is a request to have an order back sooner than usual. Whether it's possible depends on the item, the service and how busy Velto is at the time, so we confirm it before pickup.",
     ],
