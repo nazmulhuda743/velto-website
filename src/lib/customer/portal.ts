@@ -3,6 +3,7 @@ import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
+import { loginRedirectPath } from "@/lib/i18n/server";
 import { customerSupabase } from "./supabase";
 
 export type LinkStatus = "none" | "pending" | "linked" | "rejected";
@@ -76,7 +77,7 @@ export const getCustomerSession = cache(async (): Promise<CustomerSession> => {
 /** Account pages: bounce to sign-in (coming back here afterwards) unless a customer is signed in. */
 export async function requireCustomer(nextPath: string) {
   const session = await getCustomerSession();
-  if (session.kind === "anonymous") redirect(`/login?next=${encodeURIComponent(nextPath)}`);
+  if (session.kind === "anonymous") redirect(await loginRedirectPath(nextPath));
   return session;
 }
 

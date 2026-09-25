@@ -1,84 +1,17 @@
 import type { ReactNode } from "react";
+import { dictionary } from "@/content/i18n";
+import { getLocale } from "@/lib/i18n/server";
 import { Eyebrow } from "./SectionIntro";
 
 export type FAQItem = { q: string; a: ReactNode };
 
-/** Approved FAQ answers (spec §20 section 09). Reused on internal pages by index. */
-export const FAQS: FAQItem[] = [
-  {
-    q: "How long does an order usually take?",
-    a: (
-      <>
-        <p>General orders are usually around 48 hours.</p>
-        <p>Wash &amp; Iron and Dry Cleaning are usually around 72 hours.</p>
-        <p>Special garments, household items and unusual conditions may take longer.</p>
-      </>
-    ),
-  },
-  {
-    q: "Where do you provide pickup and delivery?",
-    a: (
-      <>
-        <p>Velto&apos;s confirmed core service area is Uttara, Sectors 1–18.</p>
-        <p>If you are outside that area, ask us before booking.</p>
-      </>
-    ),
-  },
-  {
-    q: "When is pickup and delivery free?",
-    a: (
-      <>
-        <p>Orders of ৳499+ qualify for free pickup and delivery.</p>
-        <p>On a fixed weekly or fortnightly pickup, regular orders of ৳300+ qualify.</p>
-        <p>Smaller orders have an applicable pickup and delivery charge.</p>
-      </>
-    ),
-  },
-  {
-    q: "Can every stain be removed?",
-    a: (
-      <>
-        <p>No.</p>
-        <p>
-          We check visible stains and treat them according to the garment and service, but no
-          laundry should promise that every stain will come out.
-        </p>
-      </>
-    ),
-  },
-  {
-    q: "What if I do not know which service I need?",
-    a: (
-      <p>
-        Send us a photo or message Velto on WhatsApp. We can help you choose before booking.
-      </p>
-    ),
-  },
-  {
-    q: "Is Express service available?",
-    a: (
-      <>
-        <p>Sometimes.</p>
-        <p>
-          Availability depends on the item, service and current workload. Confirm with Velto before
-          booking.
-        </p>
-      </>
-    ),
-  },
-  {
-    q: "How are curtains and carpets priced?",
-    a: (
-      <>
-        <p>Curtain and carpet pricing can depend on size, material and condition.</p>
-        <p>
-          Share approximate measurements and a photo where useful. We can confirm the final price
-          when more information is needed.
-        </p>
-      </>
-    ),
-  },
-];
+/** Approved FAQ answers (spec §20 section 09), one list per language in the UI dictionary. */
+const toItems = (list: { q: string; a: string[] }[]): FAQItem[] =>
+  list.map(({ q, a }) => ({ q, a: a.map((p) => <p key={p}>{p}</p>) }));
+
+/** Reused on internal pages by key (English until those pages are translated). */
+export const FAQS: FAQItem[] = toItems(dictionary("en").faqs);
+const FAQS_BN: FAQItem[] = toItems(dictionary("bn").faqs);
 
 /** Native <details> accordion — keyboard accessible with no client JS. */
 export const FAQ_KEYS = {
@@ -93,10 +26,10 @@ export const FAQ_KEYS = {
 
 export const faqItems = (...keys: (keyof typeof FAQ_KEYS)[]) => keys.map((k) => FAQS[FAQ_KEYS[k]]);
 
-export function FAQ({
-  title = "A few things worth knowing before you book.",
-  items = FAQS,
-  eyebrow = "Questions",
+export async function FAQ({
+  title,
+  items,
+  eyebrow,
   className = "",
 }: {
   title?: string;
@@ -104,6 +37,11 @@ export function FAQ({
   items?: FAQItem[];
   className?: string;
 }) {
+  const locale = await getLocale();
+  const t = dictionary(locale).home.faq;
+  title ??= t.title;
+  eyebrow ??= t.eyebrow;
+  items ??= locale === "bn" ? FAQS_BN : FAQS;
   return (
     <section id="faq" aria-labelledby="faq-title" className={`py-(--space-section) ${className}`}>
       <div className="container-page grid-page gap-y-(--space-intro-content)">

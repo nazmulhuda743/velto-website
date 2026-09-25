@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/i18n/Link";
 import { ArrowRight } from "@/components/ui/icons";
 import { SERVICE_SUMMARY } from "@/content/service-summaries";
 import { formatAmount } from "@/lib/format-price";

@@ -3,54 +3,27 @@ import { TextLink } from "@/components/ui/TextLink";
 import { IMAGES } from "@/content/mock";
 import { SERVICES } from "@/content/site";
 import { ProcessScrollSync } from "./ProcessScrollSync";
+import { dictionary } from "@/content/i18n";
+import { localDigits } from "@/lib/i18n/config";
+import { getLocale } from "@/lib/i18n/server";
 import { SectionIntro } from "./SectionIntro";
-
-const STAGES = [
-  { title: "Collected", copy: "We arrange pickup from your address in Uttara." },
-  {
-    title: "Checked in",
-    copy: "We count the order and connect the items to the right customer and order.",
-  },
-  { title: "Tagged", copy: "Items are tagged so they stay connected to the correct order." },
-  {
-    title: "Checked before cleaning",
-    copy: "We look over the garment condition and visible stains before cleaning starts.",
-  },
-  {
-    title: "Cleaned & finished",
-    copy: "The garment is cleaned for the booked service, then pressed or finished where needed.",
-  },
-  { title: "Checked before packing", copy: "Finished items are checked again before they are packed." },
-  { title: "Packed for return", copy: "Your finished order is organised and packed for delivery." },
-  { title: "Returned to you", copy: "Delivery is arranged back to your address." },
-];
 
 /**
  * Four movements (mobile/tablet visual grouping). All eight stages stay in the
  * DOM; on desktop the grouping is transparent and the sticky story runs per stage.
+ * Stage and movement text lives in the UI dictionary (home.process).
  */
 const MOVEMENTS = [
-  { label: "Pickup", stages: [0], image: 0 },
-  { label: "Intake", stages: [1, 2, 3], image: 2 },
-  { label: "Cleaning & finishing", stages: [4], image: 4 },
-  { label: "QC & return", stages: [5, 6, 7], image: 6 },
+  { stages: [0], image: 0 },
+  { stages: [1, 2, 3], image: 2 },
+  { stages: [4], image: 4 },
+  { stages: [5, 6, 7], image: 6 },
 ];
 
-const num = (i: number) => String(i + 1).padStart(2, "0");
-const stage = (i: number) => STAGES[i];
-
-const DEFAULT_INTRO = (
-  <p>
-    Once your order reaches Velto, we check it in, identify the items and look over the garments
-    before cleaning starts. When the work is finished, everything is checked again, packed and
-    returned.
-  </p>
-);
-
-export function ProcessStory({
-  title = "What happens to your clothes after pickup?",
-  eyebrow = "After pickup",
-  intro = DEFAULT_INTRO,
+export async function ProcessStory({
+  title,
+  eyebrow,
+  intro,
   showInsert = true,
 }: {
   title?: string;
@@ -58,6 +31,14 @@ export function ProcessStory({
   intro?: React.ReactNode;
   showInsert?: boolean;
 } = {}) {
+  const locale = await getLocale();
+  const t = dictionary(locale).home.process;
+  const STAGES = t.stages;
+  const stage = (i: number) => STAGES[i];
+  const num = (i: number) => localDigits(String(i + 1).padStart(2, "0"), locale);
+  title ??= t.title;
+  eyebrow ??= t.eyebrow;
+  intro ??= <p>{t.intro}</p>;
   return (
     <section id="process" aria-labelledby="process-title" className="py-(--space-section)">
       <div className="container-page">
@@ -95,7 +76,7 @@ export function ProcessStory({
                       data-active={i === 0}
                       className="process-frame absolute inset-0 t-caption text-secondary"
                     >
-                      <span className="font-semibold text-navy">{num(i)}</span> / 08 · {stage.title}
+                      <span className="font-semibold text-navy">{num(i)}</span> / {localDigits("08", locale)} · {stage.title}
                     </p>
                   ))}
                 </div>
@@ -112,7 +93,7 @@ export function ProcessStory({
           <div className="col-span-4 md:col-span-8 lg:col-span-4 lg:pb-[24vh] xl:col-span-5">
             {MOVEMENTS.map((movement, g) => (
               <div
-                key={movement.label}
+                key={g}
                 className={`md:grid md:grid-cols-2 md:items-start md:gap-x-5 lg:block ${
                   g > 0 ? "mt-8 md:mt-12 lg:mt-0" : ""
                 }`}
@@ -127,7 +108,7 @@ export function ProcessStory({
                 <div>
                   <p className="mb-2 flex items-baseline gap-3 lg:hidden">
                     <span className="t-label text-blue">{num(g)}</span>
-                    <span className="t-h4 text-navy">{movement.label}</span>
+                    <span className="t-h4 text-navy">{t.movements[g]}</span>
                   </p>
                   <ol start={movement.stages[0] + 1} className="list-none">
                     {movement.stages.map((i) => (
@@ -168,20 +149,14 @@ export function ProcessStory({
             />
           </div>
           <div className="col-span-4 md:col-span-4 md:self-center xl:col-span-5 xl:col-start-8">
-            <h3 className="t-h3 max-w-[18ch] text-navy">Some garments need a closer look.</h3>
+            <h3 className="t-h3 max-w-[18ch] text-navy">{t.delicateTitle}</h3>
             <div className="mt-5 max-w-[48ch] space-y-4 text-body">
-              <p>
-                A blazer, saree or sherwani isn&apos;t the same job as everyday laundry. We check the
-                garment and visible stains before cleaning starts.
-              </p>
-              <p>
-                Some stains cannot be fully removed. If something needs extra attention, we&apos;ll
-                explain the options first.
-              </p>
+              <p>{t.delicate1}</p>
+              <p>{t.delicate2}</p>
             </div>
             <div className="mt-5">
               <TextLink href={SERVICES.dryCleaning.href} placement="process_delicate">
-                See Dry Cleaning
+                {t.seeDryCleaning}
               </TextLink>
             </div>
           </div>

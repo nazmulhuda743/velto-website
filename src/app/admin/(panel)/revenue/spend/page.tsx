@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { fmt } from "@/components/admin/charts";
 import { RevenueTabs } from "@/components/admin/RevenueTabs";
 import { SpendCsvImport } from "@/components/admin/SpendCsvImport";
@@ -71,9 +72,9 @@ function SpendForm({ row }: { row?: SpendRow }) {
           {row ? "Save changes" : "Add spend"}
         </button>
         {row ? (
-          <a href="/admin/revenue/spend" className="admin-btn-secondary">
+          <Link href="/admin/revenue/spend" className="admin-btn-secondary">
             Cancel
-          </a>
+          </Link>
         ) : null}
       </div>
     </form>
@@ -132,9 +133,9 @@ export default async function SpendPage({ searchParams }: { searchParams: Search
             <button type="submit" className="admin-btn-danger">
               Yes, delete
             </button>
-            <a href="/admin/revenue/spend" className="admin-btn-secondary">
+            <Link href="/admin/revenue/spend" className="admin-btn-secondary">
               Keep it
-            </a>
+            </Link>
           </form>
         </section>
       ) : null}
@@ -194,12 +195,12 @@ export default async function SpendPage({ searchParams }: { searchParams: Search
                 <Td className="font-semibold">{money(Number(r.spend_bdt))}</Td>
                 <Td>{r.import_source}</Td>
                 <Td>
-                  <a href={`/admin/revenue/spend?edit=${r.id}`} className="font-semibold text-navy underline underline-offset-4">
+                  <Link href={`/admin/revenue/spend?edit=${r.id}`} className="font-semibold text-navy underline underline-offset-4">
                     Edit
-                  </a>{" "}
-                  <a href={`/admin/revenue/spend?delete=${r.id}`} className="ml-2 font-semibold text-error underline underline-offset-4">
+                  </Link>{" "}
+                  <Link href={`/admin/revenue/spend?delete=${r.id}`} className="ml-2 font-semibold text-error underline underline-offset-4">
                     Delete
-                  </a>
+                  </Link>
                 </Td>
               </tr>
             ))}

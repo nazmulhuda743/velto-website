@@ -130,7 +130,7 @@ export function readSubmissionAttribution(data: Record<string, unknown> | null |
 export function appendAttribution(href: string, attribution: Attribution) {
   const url = new URL(href, "https://velto.local");
 
-  if (url.origin !== "https://velto.local" || !/^\/(book|quote)(?:\/|$)/.test(url.pathname)) {
+  if (url.origin !== "https://velto.local" || !/^(?:\/bn)?\/(book|quote)(?:\/|$)/.test(url.pathname)) {
     return href;
   }
 

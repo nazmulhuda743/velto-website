@@ -3,6 +3,9 @@ import "server-only";
 import { cache } from "react";
 import { REVIEWS, type ImageSlot, type Review } from "@/content/mock";
 import { GOOGLE_PROOF, LOCATIONS, type Location } from "@/content/site";
+import { dictionary } from "@/content/i18n";
+import { fill } from "@/lib/i18n/config";
+import { getLocale } from "@/lib/i18n/server";
 import { isSupabaseConfigured, supabaseFetch } from "./supabase-server";
 
 /** Cache tag invalidated by every admin save. */
@@ -170,10 +173,13 @@ export async function getGoogleProof() {
   return { live: Boolean(primary.rating && primary.reviewCount), rating: primary.rating, reviews, location: primary };
 }
 
-/** "5.0 on Google · 100+ reviews" for the primary (Sector 11) profile. */
+/** "5.0 on Google · 100+ reviews" for the primary (Sector 11) profile, in the page language. */
 export async function getGoogleProofLabel() {
   const proof = await getGoogleProof();
-  return proof.live ? `${proof.rating} on Google · ${proof.reviews} reviews` : GOOGLE_PROOF.fallback;
+  const locale = await getLocale();
+  const t = dictionary(locale).googleProof;
+  if (!proof.live) return locale === "en" ? GOOGLE_PROOF.fallback : t.fallback;
+  return fill(t.label, { rating: proof.rating, reviews: proof.reviews }, locale);
 }
 
 export async function resolveImage(image: ImageSlot): Promise<ImageSlot> {

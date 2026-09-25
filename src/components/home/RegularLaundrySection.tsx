@@ -4,9 +4,14 @@ import { TextLink } from "@/components/ui/TextLink";
 import { IMAGES, REGULAR_REVIEW } from "@/content/mock";
 import { REGULAR_FREE_DELIVERY_THRESHOLD, WHATSAPP_URL, bookHref } from "@/content/site";
 import { ReviewBlock } from "./ReviewsSection";
+import { dictionary } from "@/content/i18n";
+import { fill } from "@/lib/i18n/config";
+import { getLocale } from "@/lib/i18n/server";
 import { SectionIntro } from "./SectionIntro";
 
-export function RegularLaundrySection() {
+export async function RegularLaundrySection() {
+  const locale = await getLocale();
+  const t = dictionary(locale).home.regular;
   return (
     <section id="regular-laundry" aria-labelledby="regular-title" className="bg-soft py-(--space-section)">
       <div className="container-page grid-page gap-y-10">
@@ -20,17 +25,11 @@ export function RegularLaundrySection() {
         <div className="col-span-4 md:col-span-4 md:self-center xl:col-span-5 xl:col-start-8">
           <SectionIntro
             id="regular-title"
-            eyebrow="Regular laundry"
-            title="If the laundry comes back every week, make pickup part of the week."
+            eyebrow={t.eyebrow}
+            title={t.title}
           >
-            <p>
-              Regular laundry and ironing can be arranged as recurring pickups, so you don&apos;t
-              need to book from scratch every time.
-            </p>
-            <p>
-              On a fixed weekly or fortnightly pickup, regular orders of{" "}
-              {REGULAR_FREE_DELIVERY_THRESHOLD}+ qualify for free pickup and delivery.
-            </p>
+            <p>{t.intro1}</p>
+            <p>{fill(t.intro2, { amount: REGULAR_FREE_DELIVERY_THRESHOLD }, locale)}</p>
           </SectionIntro>
 
           {REGULAR_REVIEW ? (
@@ -45,13 +44,13 @@ export function RegularLaundrySection() {
               event="regular_laundry_interest"
               placement="regular_laundry"
             >
-              Set Up Regular Pickup
+              {t.setUp}
             </ButtonLink>
             <WhatsAppButton href={WHATSAPP_URL} placement="regular_laundry" />
           </div>
           <div className="mt-5">
             <TextLink href="/regular-laundry" placement="regular_laundry">
-              How regular pickup works
+              {t.howItWorks}
             </TextLink>
           </div>
         </div>

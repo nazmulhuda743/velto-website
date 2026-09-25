@@ -4,6 +4,7 @@ import type { EmailOtpType } from "@supabase/supabase-js";
 import { ACCOUNT_HINT_COOKIE, RECOVERY_COOKIE } from "@/lib/customer/config";
 import { AUTH_COOKIE_OPTIONS, customerSupabase } from "@/lib/customer/supabase";
 import { safeNextPath } from "@/lib/customer/validation";
+import { localizeHref, splitLocale } from "@/lib/i18n/config";
 
 const OTP_TYPES = new Set<EmailOtpType>(["signup", "email", "recovery", "email_change", "invite", "magiclink"]);
 
@@ -15,12 +16,15 @@ const OTP_TYPES = new Set<EmailOtpType>(["signup", "email", "recovery", "email_c
 export async function GET(request: NextRequest) {
   const url = request.nextUrl;
   const next = safeNextPath(url.searchParams.get("next"));
-  const recovery = next.startsWith("/reset-password") || url.searchParams.get("type") === "recovery";
+  // The link carries the language the form was used in (next=/bn/...); stay in it.
+  const { locale, path: nextPath } = splitLocale(next);
+  const to = (path: string) => NextResponse.redirect(new URL(localizeHref(path, locale), url.origin));
+  const recovery = nextPath.startsWith("/reset-password") || url.searchParams.get("type") === "recovery";
   const fail = (reason: "expired" | "unavailable") =>
-    NextResponse.redirect(new URL(recovery ? `/reset-password?error=${reason}` : `/login?error=link_${reason}`, url.origin));
+    to(recovery ? `/reset-password?error=${reason}` : `/login?error=link_${reason}`);
 
   const supabase = await customerSupabase();
-  if (!supabase) return NextResponse.redirect(new URL("/login", url.origin));
+  if (!supabase) return to("/login");
 
   // Supabase itself reports a dead link this way (e.g. error_code=otp_expired).
   if (url.searchParams.get("error") || url.searchParams.get("error_code")) return fail("expired");
@@ -43,8 +47,8 @@ export async function GET(request: NextRequest) {
   store.set(ACCOUNT_HINT_COOKIE, "1", { path: "/", sameSite: "lax", secure: AUTH_COOKIE_OPTIONS.secure, maxAge: 60 * 60 * 24 * 30 });
   if (recovery) {
     store.set(RECOVERY_COOKIE, "1", { ...AUTH_COOKIE_OPTIONS, maxAge: 15 * 60 });
-    return NextResponse.redirect(new URL("/reset-password", url.origin));
+    return to("/reset-password");
   }
   await supabase.rpc("portal_touch_login");
-  return NextResponse.redirect(new URL(next === "/account" ? "/account?welcome=1" : next, url.origin));
+  return to(nextPath === "/account" ? "/account?welcome=1" : nextPath);
 }

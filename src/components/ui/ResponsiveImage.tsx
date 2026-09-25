@@ -1,5 +1,7 @@
 import Image from "next/image";
 import type { ImageSlot } from "@/content/mock";
+import { dictionary } from "@/content/i18n";
+import { getLocale } from "@/lib/i18n/server";
 import { resolveImage } from "@/lib/site-content";
 import { Logo } from "./Logo";
 
@@ -38,7 +40,10 @@ export async function ResponsiveImage({
   decorative = false,
 }: ResponsiveImageProps) {
   // Photos replaced from the admin dashboard override the built-in slot.
-  const image = await resolveImage(slot);
+  const resolved = await resolveImage(slot);
+  // Built-in alt text has a Bangla version; alt text written in the admin is shown as entered.
+  const localAlt = slot.id && resolved.alt === slot.alt ? dictionary(await getLocale()).imageAlts[slot.id] : undefined;
+  const image = localAlt ? { ...resolved, alt: localAlt } : resolved;
   if (image.src) {
     return (
       <div className={`relative overflow-hidden rounded-md bg-soft ${aspect} ${className}`}>

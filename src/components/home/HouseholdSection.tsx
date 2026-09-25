@@ -1,24 +1,12 @@
 import { ButtonLink } from "@/components/ui/Button";
 import { ResponsiveImage } from "@/components/ui/ResponsiveImage";
 import { IMAGES } from "@/content/mock";
+import { dictionary } from "@/content/i18n";
+import { getLocale } from "@/lib/i18n/server";
 import { SectionIntro } from "./SectionIntro";
 
-const ROWS = [
-  {
-    title: "Curtains",
-    copy: "Approximate quantity and dimensions help us quote more accurately.",
-  },
-  {
-    title: "Carpets",
-    copy: "Send the approximate length and width. Material and condition can change the final price.",
-  },
-  {
-    title: "Blankets & Comforters",
-    copy: "Pricing depends mainly on the item, type and size. These jobs can take longer than everyday laundry.",
-  },
-];
-
-export function HouseholdSection() {
+export async function HouseholdSection() {
+  const t = dictionary(await getLocale()).home.household;
   return (
     <section id="household" aria-labelledby="household-title" className="py-(--space-section)">
       <div className="container-page grid-page gap-y-10">
@@ -34,17 +22,14 @@ export function HouseholdSection() {
         <div className="col-span-4 md:col-span-4 xl:col-span-5 xl:col-start-8">
           <SectionIntro
             id="household-title"
-            eyebrow="Household care"
-            title="For curtains, carpets and bedding, start with a few details."
+            eyebrow={t.eyebrow}
+            title={t.title}
           >
-            <p>
-              Size, material and condition can affect the price. Tell us what you have, add
-              approximate measurements where useful and upload a photo if it helps.
-            </p>
-            <p>We will confirm the final amount when measurement or condition needs to be checked.</p>
+            <p>{t.intro1}</p>
+            <p>{t.intro2}</p>
           </SectionIntro>
           <ul className="mt-(--space-intro-content)">
-            {ROWS.map((row) => (
+            {t.rows.map((row) => (
               <li key={row.title} className="border-t border-line py-5 last:border-b">
                 <h3 className="t-h4 text-navy">{row.title}</h3>
                 <p className="mt-2 text-secondary">{row.copy}</p>
@@ -52,7 +37,7 @@ export function HouseholdSection() {
             ))}
           </ul>
           <ButtonLink href="/quote?source=home_household" variant="secondary" className="mt-8">
-            Request a Quote
+            {t.requestQuote}
           </ButtonLink>
         </div>
       </div>

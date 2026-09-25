@@ -14,7 +14,8 @@
     "test:launch": "node scripts/launch-smoke.mjs",
     "test:seo": "node scripts/seo-audit.mjs",
     "test:portal-smoke": "node scripts/customer-portal-smoke.mjs",
-    "verify:production-readiness": "node scripts/production-readiness.mjs"
+    "verify:production-readiness": "node scripts/production-readiness.mjs",
+    "i18n:review": "node scripts/bangla-review.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",

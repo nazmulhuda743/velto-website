@@ -1,14 +1,18 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/i18n/Link";
 import { useEffect, useRef } from "react";
 import { ButtonLink, WhatsAppButton } from "@/components/ui/Button";
 import { ArrowRight } from "@/components/ui/icons";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
+import { useLocale } from "@/components/i18n/LocaleProvider";
+import { dictionary } from "@/content/i18n";
 import { NAV, WHATSAPP_URL, bookHref } from "@/content/site";
 import { AccountLink } from "./AccountLink";
 
 export function MobileMenu({ open, onClose, accounts = false }: { open: boolean; onClose: () => void; accounts?: boolean }) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const t = dictionary(useLocale());
 
   useEffect(() => {
     if (!open) return;
@@ -49,7 +53,7 @@ export function MobileMenu({ open, onClose, accounts = false }: { open: boolean;
       ref={panelRef}
       className="fixed inset-x-0 bottom-0 top-16 z-50 overflow-y-auto border-t border-line bg-white lg:hidden"
     >
-      <nav aria-label="Mobile" className="container-page pb-[calc(24px+env(safe-area-inset-bottom))] pt-3">
+      <nav aria-label={t.nav.mobile} className="container-page pb-[calc(24px+env(safe-area-inset-bottom))] pt-3">
         {accounts ? <AccountLink variant="menu" onClick={onClose} className="mb-3 mt-1" /> : null}
         <ul>
           {NAV.mobile.map((item) => (
@@ -59,13 +63,13 @@ export function MobileMenu({ open, onClose, accounts = false }: { open: boolean;
                 onClick={onClose}
                 className="flex min-h-[52px] items-center justify-between py-3 text-[17px] font-medium tracking-[-0.01em] text-navy"
               >
-                {item.label}
+                {t.nav[item.key]}
                 <ArrowRight className="size-4 text-blue" />
               </Link>
             </li>
           ))}
-
         </ul>
+        <LanguageSwitcher className="mt-4 inline-flex min-h-11 items-center rounded-md border border-line-strong px-4 text-[16px] font-semibold text-navy" />
         <div className="mt-8 flex gap-2.5">
           <ButtonLink
             href={bookHref("mobile_menu")}
@@ -74,10 +78,10 @@ export function MobileMenu({ open, onClose, accounts = false }: { open: boolean;
             className="!h-12 flex-[1.4] !px-4"
             onClick={onClose}
           >
-            Book a Pickup
+            {t.common.bookPickup}
           </ButtonLink>
           <WhatsAppButton href={WHATSAPP_URL} placement="mobile_menu" className="!h-12 flex-1 !px-4">
-            WhatsApp
+            {t.common.whatsapp}
           </WhatsAppButton>
         </div>
       </nav>

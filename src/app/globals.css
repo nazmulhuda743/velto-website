@@ -136,8 +136,8 @@
   --radius-md: 8px;
   --radius-lg: 12px;
 
-  --font-sans: var(--font-instrument-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-source-serif), ui-serif, Georgia, serif;
+  --font-sans: var(--font-instrument-sans), var(--font-bengali), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-source-serif), var(--font-bengali), ui-serif, Georgia, serif;
 }
 
 /* ---------- Base ---------- */
@@ -508,4 +508,22 @@ textarea.admin-input {
   border: 1px solid var(--color-border);
   border-radius: 12px;
   background: #fff;
+}
+
+/*
+ * Bangla pages. Bengali script needs its natural spacing: the negative tracking and
+ * tight leading tuned for Instrument Sans crowd conjuncts and clip vowel signs.
+ * Unlayered, so it outranks the tracking/leading utilities; English is untouched.
+ */
+html[lang="bn"] body * {
+  letter-spacing: normal;
+}
+html[lang="bn"] :is(.t-display, .t-h1) {
+  line-height: 1.22;
+}
+html[lang="bn"] :is(.t-h2, .t-h3) {
+  line-height: 1.28;
+}
+html[lang="bn"] .t-h4 {
+  line-height: 1.35;
 }

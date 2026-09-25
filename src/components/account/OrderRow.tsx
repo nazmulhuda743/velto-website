@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/i18n/Link";
 import { formatDay, serviceLabel, statusTitle, taka } from "@/content/order-status";
 import type { PortalOrder } from "@/lib/customer/portal";
 

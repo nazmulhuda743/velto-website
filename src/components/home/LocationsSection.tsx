@@ -4,6 +4,9 @@ import { TextLink } from "@/components/ui/TextLink";
 import { IMAGES } from "@/content/mock";
 import type { Location } from "@/content/site";
 import { getLocations, resolveImage } from "@/lib/site-content";
+import { dictionary } from "@/content/i18n";
+import { fill } from "@/lib/i18n/config";
+import { getLocale, localLocation } from "@/lib/i18n/server";
 import { SectionIntro } from "./SectionIntro";
 
 /**
@@ -30,7 +33,8 @@ async function LocationVisual({ loc }: { loc: Location }) {
  * Typographic stand-in for an outlet photo: the sector number set large.
  * `hero` fills an internal-page hero column; the default is a short block header.
  */
-export function LocationPlate({ loc, size = "block" }: { loc: Location; size?: "block" | "hero" }) {
+export async function LocationPlate({ loc, size = "block" }: { loc: Location; size?: "block" | "hero" }) {
+  const plate = dictionary(await getLocale()).locationBlock.plate;
   const hero = size === "hero";
   return (
     <div
@@ -41,56 +45,60 @@ export function LocationPlate({ loc, size = "block" }: { loc: Location; size?: "
           : "h-[124px] px-5 py-4 md:h-[150px] md:px-6 md:py-5 xl:h-[190px]"
       }`}
     >
-      <span className="t-label uppercase text-secondary">Velto outlet · Uttara Sector</span>
+      <span className="t-label uppercase text-secondary">{plate}</span>
       <span
         className={`font-semibold leading-[0.85] tracking-[-0.03em] text-navy ${
           hero ? "text-[120px] md:text-[160px] xl:text-[200px]" : "text-[56px] md:text-[72px]"
         }`}
       >
-        {loc.name.replace(/\D/g, "")}
+        {/* Western or Bangla digits, whichever the (localized) name uses. */}
+        {loc.name.replace(/[^0-9০-৯]/g, "")}
       </span>
       {hero ? <span className="t-small text-secondary">{loc.hours}</span> : null}
     </div>
   );
 }
 
-export function LocationBlock({ loc }: { loc: Location }) {
+export async function LocationBlock({ loc: source }: { loc: Location }) {
+  const locale = await getLocale();
+  const t = dictionary(locale).locationBlock;
+  const common = dictionary(locale).common;
+  const loc = await localLocation(source);
+  const count = { rating: loc.rating, count: loc.reviewCount };
   return (
     <article>
       <LocationVisual loc={loc} />
       <h3 className="mt-6 t-h3 text-navy">{loc.name}</h3>
       <dl className="mt-5">
         <div className="border-t border-line py-3.5">
-          <dt className="sr-only">Google rating</dt>
+          <dt className="sr-only">{t.ratingTerm}</dt>
           <dd className="flex items-center gap-1.5 font-semibold text-navy">
             <span aria-hidden="true" className="inline-flex items-center gap-1.5">
-              {loc.rating}
+              {fill("{rating}", count, locale)}
               <Star className="size-4 text-blue" />
               <span className="font-normal text-secondary">·</span>
-              {loc.reviewCount} Google reviews
+              {fill(t.reviewsCount, count, locale)}
             </span>
-            <span className="sr-only">
-              {loc.rating} out of 5 from {loc.reviewCount} Google reviews
-            </span>
+            <span className="sr-only">{fill(t.ratingSpoken, count, locale)}</span>
           </dd>
         </div>
         <div className="border-t border-line py-3.5">
-          <dt className="sr-only">Address</dt>
+          <dt className="sr-only">{t.address}</dt>
           <dd>
             <address className="not-italic text-body">{loc.address}</address>
           </dd>
         </div>
         <div className="border-y border-line py-3.5">
-          <dt className="sr-only">Opening hours</dt>
+          <dt className="sr-only">{t.hours}</dt>
           <dd className="text-body">{loc.hours}</dd>
         </div>
       </dl>
       <div className="mt-4 flex flex-wrap gap-x-8 gap-y-1">
         <TextLink href={loc.directionsUrl} external event="directions_click" placement="locations" branch={loc.id}>
-          Get Directions
+          {common.getDirections}
         </TextLink>
         <TextLink href={loc.reviewsUrl} external event="google_reviews_click" placement="locations" branch={loc.id}>
-          See Google Reviews
+          {t.seeReviews}
         </TextLink>
       </div>
     </article>
@@ -99,14 +107,14 @@ export function LocationBlock({ loc }: { loc: Location }) {
 
 export async function LocationsSection() {
   const locations = await getLocations();
+  const locale = await getLocale();
+  const t = dictionary(locale).home.locations;
   return (
     <section id="locations" aria-labelledby="locations-title" className="py-(--space-section)">
       <div className="container-page">
-        <SectionIntro id="locations-title" eyebrow="Locations" title="Built around Uttara.">
-          <p>
-            Velto serves Uttara Sectors 1–18, with locations in Sector 11 and Sector 18.
-          </p>
-          <p>Book a pickup from home or visit the outlet that works for you.</p>
+        <SectionIntro id="locations-title" eyebrow={t.eyebrow} title={t.title}>
+          <p>{t.intro1}</p>
+          <p>{t.intro2}</p>
         </SectionIntro>
         <div className="mt-(--space-intro-content) grid-page gap-y-14">
           {locations.map((loc) => (
@@ -114,7 +122,7 @@ export async function LocationsSection() {
               <LocationBlock loc={loc} />
               <div className="mt-2">
                 <TextLink href={`/locations/${loc.id}`} placement="home_locations" branch={loc.id}>
-                  {`Laundry and dry cleaning in ${loc.name}`}
+                  {t.linkTo.replace("{name}", locale === "bn" ? (dictionary("bn").locationNames[loc.id] ?? loc.name) : loc.name)}
                 </TextLink>
               </div>
             </div>

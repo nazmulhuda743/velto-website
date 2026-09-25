@@ -67,7 +67,7 @@ export function Analytics() {
 
       if (el instanceof HTMLAnchorElement) {
         const href = el.getAttribute("href");
-        if (href && /^\/(book|quote)(?:\/|\?|#|$)/.test(href)) {
+        if (href && /^(?:\/bn)?\/(book|quote)(?:\/|\?|#|$)/.test(href)) {
           try {
             el.setAttribute("href", appendAttribution(href, consentedAttribution(storedAttribution())));
           } catch {

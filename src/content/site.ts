@@ -107,24 +107,27 @@ export const SERVICES = {
  */
 export const CUSTOMER_PORTAL = { enabled: false, href: "/account", label: "My Account" } as const;
 
-const ACCOUNT_LINK = CUSTOMER_PORTAL.enabled ? [{ label: CUSTOMER_PORTAL.label, href: CUSTOMER_PORTAL.href }] : [];
+const ACCOUNT_LINK = CUSTOMER_PORTAL.enabled ? [{ key: "myAccount", label: CUSTOMER_PORTAL.label, href: CUSTOMER_PORTAL.href }] : [];
 
-export const NAV = {
+/** `key` names the label in the UI dictionary (content/i18n) so menus follow the page language. */
+export type NavItem = { key: "services" | "howItWorks" | "pricing" | "locations" | "regularLaundry" | "trackAnOrder" | "trackOrder" | "myAccount"; label: string; href: string };
+
+export const NAV: { desktop: NavItem[]; mobile: NavItem[]; utility: NavItem[] } = {
   desktop: [
-    { label: "Services", href: "/services" },
-    { label: "How It Works", href: "/how-it-works" },
-    { label: "Pricing", href: "/pricing" },
-    { label: "Locations", href: "/locations" },
+    { key: "services", label: "Services", href: "/services" },
+    { key: "howItWorks", label: "How It Works", href: "/how-it-works" },
+    { key: "pricing", label: "Pricing", href: "/pricing" },
+    { key: "locations", label: "Locations", href: "/locations" },
   ],
   mobile: [
-    { label: "Services", href: "/services" },
-    { label: "How It Works", href: "/how-it-works" },
-    { label: "Pricing", href: "/pricing" },
-    { label: "Regular Laundry", href: "/regular-laundry" },
-    { label: "Locations", href: "/locations" },
-    { label: "Track an Order", href: "/track" },
-    ...ACCOUNT_LINK,
+    { key: "services", label: "Services", href: "/services" },
+    { key: "howItWorks", label: "How It Works", href: "/how-it-works" },
+    { key: "pricing", label: "Pricing", href: "/pricing" },
+    { key: "regularLaundry", label: "Regular Laundry", href: "/regular-laundry" },
+    { key: "locations", label: "Locations", href: "/locations" },
+    { key: "trackAnOrder", label: "Track an Order", href: "/track" },
+    ...(ACCOUNT_LINK as NavItem[]),
   ],
   /** Quiet header links for returning customers (desktop, ≥1280px). */
-  utility: [{ label: "Track Order", href: "/track" }, ...ACCOUNT_LINK],
+  utility: [{ key: "trackOrder", label: "Track Order", href: "/track" }, ...(ACCOUNT_LINK as NavItem[])],
 };

@@ -1,4 +1,6 @@
 import { Stars } from "@/components/ui/icons";
+import { dictionary } from "@/content/i18n";
+import { getLocale } from "@/lib/i18n/server";
 import { getGoogleProofLabel, getLocations } from "@/lib/site-content";
 
 /**
@@ -14,6 +16,7 @@ export async function GoogleProof({
 }) {
   const [primary] = await getLocations();
   const label = await getGoogleProofLabel();
+  const t = dictionary(await getLocale()).googleProof;
   return (
     <a
       href={primary.reviewsUrl}
@@ -30,7 +33,7 @@ export async function GoogleProof({
       <span className="underline decoration-transparent underline-offset-4 transition-colors group-hover:decoration-current">
         {label}
       </span>
-      <span className="sr-only"> (opens Google reviews in a new tab)</span>
+      <span className="sr-only"> {t.opens}</span>
     </a>
   );
 }

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/i18n/Link";
 import { getSiteContent } from "@/lib/site-content";
 
 /** Optional site-wide notice, switched on and edited from the admin dashboard. */

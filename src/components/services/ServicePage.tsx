@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/i18n/Link";
 import { FAQ, FAQS, FAQ_KEYS, type FAQItem } from "@/components/home/FAQ";
 import { FinalBookingCTA } from "@/components/home/FinalBookingCTA";
 import { GoogleProof } from "@/components/home/ProofLine";

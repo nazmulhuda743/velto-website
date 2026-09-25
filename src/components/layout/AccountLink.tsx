@@ -1,8 +1,10 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/i18n/Link";
 import { useSyncExternalStore } from "react";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 import { ArrowRight } from "@/components/ui/icons";
+import { dictionary } from "@/content/i18n";
 
 const HINT = "velto_account=1";
 const subscribe = () => () => {};
@@ -50,7 +52,8 @@ export function AccountLink({
 }) {
   const signedIn = useSyncExternalStore(subscribe, signedInSnapshot, () => false);
   const href = signedIn ? "/account" : "/login";
-  const label = signedIn ? "My Account" : "Sign in";
+  const t = dictionary(useLocale()).nav;
+  const label = signedIn ? t.myAccount : t.signIn;
   const common = { href, onClick, "data-account-link": signedIn ? "account" : "signin" };
 
   if (variant === "header") {
@@ -83,7 +86,7 @@ export function AccountLink({
         <span className="min-w-0 flex-1">
           <span className="block text-[17px] font-semibold tracking-[-0.01em] text-navy">{label}</span>
           <span className="block t-small text-secondary">
-            {signedIn ? "Your orders, their status and your details" : "See your orders and where each one is"}
+            {signedIn ? t.accountSignedIn : t.accountSignedOut}
           </span>
         </span>
         <ArrowRight className="size-4 shrink-0 text-action" />
