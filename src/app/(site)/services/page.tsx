@@ -14,6 +14,7 @@ import { ResponsiveImage } from "@/components/ui/ResponsiveImage";
 import { TextLink } from "@/components/ui/TextLink";
 import { SERVICE_PAGES, type ServiceContent, type ServiceSlug } from "@/content/services";
 import { FREE_DELIVERY_THRESHOLD, bookHref, quoteHref } from "@/content/site";
+import { IMAGES } from "@/content/mock";
 
 export const revalidate = 300;
 
@@ -80,6 +81,7 @@ export default async function ServicesPage() {
     <>
       <PageHero
         path={"/services"}
+        image={IMAGES.final}
         crumbs={[{ label: "Home", href: "/" }, { label: "Services" }]}
         title="Which service do you need?"
         eyebrow="Services"

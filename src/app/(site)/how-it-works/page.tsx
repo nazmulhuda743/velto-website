@@ -9,6 +9,7 @@ import { PageHero } from "@/components/pages/PageHero";
 import { ProcessSteps } from "@/components/pages/ProcessSteps";
 import { ButtonLink, WhatsAppButton } from "@/components/ui/Button";
 import { FREE_DELIVERY_THRESHOLD, WHATSAPP_URL, bookHref } from "@/content/site";
+import { IMAGES } from "@/content/mock";
 
 export const generateMetadata = () => pageMetadata("/how-it-works");
 
@@ -17,6 +18,7 @@ export default function HowItWorksPage() {
     <>
       <PageHero
         path={"/how-it-works"}
+        image={IMAGES.hero}
         crumbs={[{ label: "Home", href: "/" }, { label: "How It Works" }]}
         title="From your door and back again."
         eyebrow="How it works"

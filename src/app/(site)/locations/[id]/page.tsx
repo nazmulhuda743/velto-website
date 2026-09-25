@@ -15,6 +15,7 @@ import { IMAGES } from "@/content/mock";
 import { FREE_DELIVERY_THRESHOLD, LOCATIONS, SERVICE_AREA, WHATSAPP_URL, bookHref } from "@/content/site";
 import { pageMetadata } from "@/lib/seo/page-metadata";
 import { getLocations, resolveImage } from "@/lib/site-content";
+import { LocationPlate } from "@/components/home/LocationsSection";
 
 // Unknown slugs 404 via notFound(). dynamicParams=false would also 404 the real pages
 // after an admin save revalidates the layout (Next.js NoFallbackError on regeneration).
@@ -48,6 +49,7 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
         highlight={`Uttara ${loc.name}`}
         // Real outlet: never stock. Show the photo only once a verified Velto one is uploaded.
         image={outletPhoto.src ? outletPhoto : undefined}
+        visual={<LocationPlate loc={loc} size="hero" />}
         eyebrow={`Velto ${loc.name}`}
         aside={
           <>
