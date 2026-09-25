@@ -2,7 +2,7 @@ import "server-only";
 
 import { parsePublicPricingRows } from "../integrations/pricing/validation";
 import type { PublicPriceItem } from "../integrations/pricing/types";
-import { supabaseFetch } from "../supabase-server";
+import { supabaseFetch, supabaseRpc } from "../supabase-server";
 
 export type WebsiteRequest = {
   id: string;
@@ -41,4 +41,23 @@ export async function getAllPrices(): Promise<PublicPriceItem[]> {
   const res = await supabaseFetch(`/rest/v1/${view}?${params}`, { cache: "no-store" });
   if (!res.ok) throw new Error(`Prices failed with HTTP ${res.status}`);
   return parsePublicPricingRows(await res.json());
+}
+
+export type LinkRequest = {
+  authUserId: string;
+  email: string;
+  fullName: string;
+  phone: string;
+  area: string | null;
+  status: "none" | "pending" | "linked" | "rejected";
+  requestedAt: string | null;
+  decidedAt: string | null;
+  decidedBy: string | null;
+  linkedCustomer: { id: string; name: string; phone: string } | null;
+  candidate: { id: string; name: string; phone: string; code: string | null; zone: string | null; orders: number; lastOrder: string | null; alreadyLinked: boolean } | null;
+};
+
+/** Customer-account link requests (service role only; never exposed to customers). */
+export async function getLinkRequests(status: "pending" | "all") {
+  return supabaseRpc<LinkRequest[]>("portal_link_requests", { p_status: status });
 }

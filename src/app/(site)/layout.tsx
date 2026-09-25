@@ -6,6 +6,7 @@ import { Header } from "@/components/layout/Header";
 import { TrackingScripts } from "@/components/layout/TrackingScripts";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Logo } from "@/components/ui/Logo";
+import { customerAccountsEnabled } from "@/lib/customer/config";
 import { ORGANIZATION_SCHEMA, WEBSITE_SCHEMA } from "@/lib/seo/schema";
 
 /** Public website chrome. The admin panel has its own layout. */
@@ -21,7 +22,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
         Skip to content
       </a>
       <AnnouncementBar />
-      <Header logo={<Logo className="h-9 lg:h-11" priority />} />
+      <Header logo={<Logo className="h-9 lg:h-11" priority />} accounts={customerAccountsEnabled()} />
       <main id="main">{children}</main>
       <Footer />
       <Analytics />

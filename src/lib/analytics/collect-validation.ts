@@ -11,6 +11,7 @@
  */
 import { CONSENT_EVENTS, isAnalyticsEvent, type AnalyticsEvent } from "./events";
 import { isDevice, type Device } from "./classify";
+import { isPrivatePath, redactPrivatePath } from "./private-paths";
 
 export const MAX_EVENTS_PER_BATCH = 20;
 
@@ -67,7 +68,7 @@ export function cleanPath(value: unknown): string | null {
   if (!path.startsWith("/") || path.startsWith("//") || path.length > 300) return null;
   if (/[\u0000-\u001f\u007f\s<>"']/.test(path)) return null;
   // A mistyped URL could carry a phone or order number: redact long digit runs and emails.
-  return path.replace(/\d{6,}/g, "#").replace(/[^/]*@[^/]*/g, "#");
+  return redactPrivatePath(path).replace(/\d{6,}/g, "#").replace(/[^/]*@[^/]*/g, "#");
 }
 
 const slug = (v: unknown) => (typeof v === "string" && SLUG.test(v.trim().toLowerCase()) ? v.trim().toLowerCase() : null);
@@ -131,7 +132,8 @@ export function validateCollectBody(input: unknown): CollectBody | null {
       const e = rec(raw);
       if (typeof e.event !== "string" || !isAnalyticsEvent(e.event) || CONSENT_EVENT_SET.has(e.event)) continue;
       const path = cleanPath(e.path);
-      if (!path) continue;
+      // Customer-account pages are never part of behavioral analytics.
+      if (!path || isPrivatePath(path)) continue;
       events.push({ event: e.event, path, service: slug(e.service), placement: slug(e.placement), detail: slug(e.detail) });
     }
     if (!events.length) return null;

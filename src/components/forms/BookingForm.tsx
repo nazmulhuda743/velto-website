@@ -283,6 +283,7 @@ export function BookingForm({
   initialService,
   presetNote,
   previewOutcome,
+  initialContact,
 }: {
   /** Page heading copy. The form owns the h1 so the success state can replace it. */
   intro: ReactNode;
@@ -291,16 +292,18 @@ export function BookingForm({
   presetNote?: string;
   /** Development-only: simulates the adapter result to QA success/error UI. Never set in production. */
   previewOutcome?: "success" | "error";
+  /** Signed-in customer: known details prefilled. The customer still reviews and submits. */
+  initialContact?: { name: string; phone: string; address: string; sector: string };
 }) {
   const [s, setS] = useState<FormState>({
     service: BOOKING_SERVICES.some((o) => o.value !== "" && o.value === initialService) ? initialService! : null,
-    sector: "",
-    address: "",
+    sector: initialContact && (SECTORS.map(String).includes(initialContact.sector) || initialContact.sector === OUTSIDE) ? initialContact.sector : "",
+    address: initialContact?.address ?? "",
     day: "",
     date: "",
     time: "",
-    name: "",
-    phone: "",
+    name: initialContact?.name ?? "",
+    phone: initialContact?.phone ?? "",
     notes: presetNote ?? "",
   });
   const [errors, setErrors] = useState<Errors>({});
