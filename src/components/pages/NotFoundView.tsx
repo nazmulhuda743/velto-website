@@ -11,7 +11,7 @@ export async function NotFoundView() {
       <NotFoundBeacon />
       <section className="container-page py-20 md:py-28">
         <div className="max-w-2xl">
-          <p className="t-label uppercase text-blue">404</p>
+          <p className="t-label uppercase text-action">404</p>
           <h1 className="mt-3 t-h1 text-navy">{t.title}</h1>
           <p className="mt-4 max-w-[52ch] t-body-lg text-body">{t.body}</p>
           <div className="mt-8 flex flex-col gap-3 md:flex-row md:flex-wrap">

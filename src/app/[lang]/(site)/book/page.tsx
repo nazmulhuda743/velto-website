@@ -79,7 +79,7 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
                 <ol className="mt-4 border-t border-navy">
                   {f.booking.nextSteps.map((step, i) => (
                     <li key={step} className="flex gap-3 border-b border-line py-3.5 t-small text-body">
-                      <span className="t-label pt-[2px] text-blue">{localDigits(String(i + 1).padStart(2, "0"), locale)}</span>
+                      <span className="t-label pt-[2px] text-action">{localDigits(String(i + 1).padStart(2, "0"), locale)}</span>
                       {step}
                     </li>
                   ))}

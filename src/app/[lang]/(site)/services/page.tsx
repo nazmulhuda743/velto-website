@@ -49,7 +49,7 @@ function DecisionRow({ service }: { service: ServiceContent }) {
           {service.whenToChoose}
         </span>
         <span className="block">
-          <span className="flex items-center gap-2 font-semibold text-blue group-hover:underline group-hover:underline-offset-4">
+          <span className="flex items-center gap-2 font-semibold text-action group-hover:underline group-hover:underline-offset-4">
             {service.name}
             <ArrowRight className="size-4 md:hidden" />
           </span>

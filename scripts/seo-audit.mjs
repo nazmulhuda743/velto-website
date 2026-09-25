@@ -220,7 +220,9 @@ for (const [, source, destination] of config.matchAll(/to\("([^"]+)",\s*"([^"]+)
   const probe = source.replace(":path*", "anything");
   const res = await get(probe);
   if (![301, 308].includes(res.status)) fail(`redirect ${source} returned ${res.status}, expected permanent`);
-  const target = await get(destination);
+  let target = await get(destination);
+  // A destination may redirect once more (e.g. /account sends signed-out visitors to /login).
+  if (target.status >= 300 && target.status < 400) target = await get(new URL(target.headers.get("location"), base).pathname);
   if (target.status !== 200) fail(`redirect ${source} → ${destination} lands on ${target.status}`);
 }
 
