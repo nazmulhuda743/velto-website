@@ -63,14 +63,17 @@ export async function ReviewCard({ review }: { review: Review }) {
   );
 }
 
-/** Below this many distinct reviews a moving strip has to repeat them, and the same review shows twice on a wide screen. */
-const MARQUEE_MIN = 6;
+/**
+ * A single review stays still (a moving strip would only repeat it). From two up the strip moves,
+ * as the owner wants, even though a short list repeats on a wide screen.
+ */
+const MARQUEE_MIN = 2;
 
 /**
  * Moving review strip. Two identical groups scroll continuously; the second is
  * hidden from assistive tech and not focusable. Stops on hover or focus, and
  * has a pause button. Reduced motion shows one static, swipeable row, and so
- * do short lists, which would otherwise repeat on screen.
+ * does a single review.
  */
 export async function ReviewCarousel({ reviews, label }: { reviews: Review[]; label?: string }) {
   label ??= dictionary(await getLocale()).home.reviews.carouselLabel;
@@ -95,7 +98,8 @@ export async function ReviewCarousel({ reviews, label }: { reviews: Review[]; la
   const seconds = group.length * 11;
   return (
     <MarqueeControl label={label}>
-      <div className="review-marquee-viewport overflow-hidden px-4 min-[360px]:px-5 md:px-6">
+      {/* relative: with reduced motion the track has no transform, so this scroller must contain the cards' sr-only text. */}
+      <div className="review-marquee-viewport relative overflow-hidden px-4 min-[360px]:px-5 md:px-6">
         <div className="review-marquee-track" style={{ ["--marquee-duration" as string]: `${seconds}s` }}>
           <ul className="flex gap-4 pr-4 md:gap-6 md:pr-6">
             {group.map((r, i) => (
