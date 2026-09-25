@@ -1,11 +1,19 @@
 import { ORDER_STAGES, stageIndex } from "@/content/order-status";
+import { accountText, orderFormat } from "@/content/i18n/account";
+import { localDigits } from "@/lib/i18n/config";
+import { getLocale } from "@/lib/i18n/server";
 
 /** Five-step progress for one order: vertical on phones, a row from tablet up. */
-export function OrderProgress({ status, compact = false }: { status: string; compact?: boolean }) {
+export async function OrderProgress({ status, compact = false }: { status: string; compact?: boolean }) {
+  const locale = await getLocale();
+  const t = accountText(locale).progress;
+  const format = orderFormat(locale);
   const current = stageIndex(status);
   return (
-    <ol className={`grid gap-0 ${compact ? "grid-cols-5 gap-1.5" : "md:grid-cols-5 md:gap-3"}`} aria-label="Order progress">
-      {ORDER_STAGES.map((stage, i) => {
+    <ol className={`grid gap-0 ${compact ? "grid-cols-5 gap-1.5" : "md:grid-cols-5 md:gap-3"}`} aria-label={t.aria}>
+      {ORDER_STAGES.map((s, i) => {
+        // The stage's text in the page language (same stages as the track page).
+        const stage = { status: s.status, ...(format.stage(s.status) ?? s) };
         const done = i <= current;
         if (compact) {
           return (
@@ -13,7 +21,7 @@ export function OrderProgress({ status, compact = false }: { status: string; com
               <span aria-hidden="true" className={`block h-1.5 rounded-full ${done ? "bg-blue" : "bg-line"}`} />
               <span className={`mt-2 block text-[12px] leading-tight md:text-[13px] ${i === current ? "font-semibold text-navy" : "text-secondary"}`}>
                 {stage.title}
-                <span className="sr-only">{done ? " (done)" : " (not yet)"}</span>
+                <span className="sr-only">{done ? t.done : t.notYet}</span>
               </span>
             </li>
           );
@@ -26,7 +34,7 @@ export function OrderProgress({ status, compact = false }: { status: string; com
                 done ? "border-blue bg-blue text-white" : "border-line-strong bg-white text-secondary"
               }`}
             >
-              {done ? "✓" : i + 1}
+              {done ? "✓" : localDigits(i + 1, locale)}
             </span>
             {i < ORDER_STAGES.length - 1 ? (
               <span
@@ -37,7 +45,7 @@ export function OrderProgress({ status, compact = false }: { status: string; com
             <span className="md:mt-3 md:block">
               <span className={`block font-semibold ${done ? "text-navy" : "text-secondary"}`}>
                 {stage.title}
-                <span className="sr-only">{done ? " (done)" : " (not yet)"}</span>
+                <span className="sr-only">{done ? t.done : t.notYet}</span>
               </span>
               <span className="block t-small text-secondary">{stage.copy}</span>
             </span>

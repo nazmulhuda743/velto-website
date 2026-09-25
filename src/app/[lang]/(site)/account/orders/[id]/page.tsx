@@ -4,7 +4,10 @@ import { Alert } from "@/components/account/Alert";
 import { OrderProgress } from "@/components/account/OrderProgress";
 import { StatusPill } from "@/components/account/OrderRow";
 import { WhatsAppButton } from "@/components/ui/Button";
-import { formatDay, formatTime, serviceLabel, statusTitle, taka } from "@/content/order-status";
+import { serviceLabel } from "@/content/order-status";
+import { accountText, orderFormat } from "@/content/i18n/account";
+import { format, localDigits } from "@/lib/i18n/config";
+import { getLocale } from "@/lib/i18n/server";
 import { WHATSAPP_URL } from "@/content/site";
 import { getPortalOrder } from "@/lib/customer/portal";
 import { validOrderNumber } from "@/lib/customer/validation";
@@ -27,35 +30,38 @@ function Fact({ label, children }: { label: string; children: React.ReactNode })
 export default async function OrderPage({ params }: { params: Params }) {
   const number = validOrderNumber((await params).id);
   if (!number) notFound();
+  const locale = await getLocale();
+  const t = accountText(locale).order;
+  const { day, time, taka, statusTitle } = orderFormat(locale);
   const order = await getPortalOrder(number);
   if (order === "error") {
-    return <Alert tone="error">We couldn&apos;t load this order just now. Please refresh in a moment.</Alert>;
+    return <Alert tone="error">{t.loadFailed}</Alert>;
   }
   if (!order) notFound();
 
   const cancelled = order.status === "Cancelled";
   const expected = order.promisedAt ?? order.deliveryDate;
-  const whatsapp = `${WHATSAPP_URL}?text=${encodeURIComponent(`Hi Velto, I have a question about order ${order.orderNumber}.`)}`;
+  const whatsapp = `${WHATSAPP_URL}?text=${encodeURIComponent(format(t.whatsapp, { n: order.orderNumber }))}`;
 
   return (
     <div className="space-y-6 md:space-y-8">
-      <nav aria-label="Breadcrumb" className="t-small">
+      <nav aria-label={t.breadcrumb} className="t-small">
         <Link href="/account/orders" className="font-semibold text-navy underline decoration-blue/50 underline-offset-4">
-          ← My orders
+          {t.back}
         </Link>
       </nav>
 
       <section aria-labelledby="order-title" className="rounded-lg border border-line bg-white p-5 md:p-8">
         <div className="flex flex-wrap items-center gap-3">
-          <p className="t-label uppercase text-secondary">Order {order.orderNumber}</p>
+          <p className="t-label uppercase text-secondary">{format(t.label, { n: order.orderNumber })}</p>
           <StatusPill status={order.status} />
-          {order.express ? <span className="t-small font-semibold text-purple">Express</span> : null}
+          {order.express ? <span className="t-small font-semibold text-purple">{t.express}</span> : null}
         </div>
         <h1 id="order-title" className="mt-3 t-h1 text-navy">
-          {cancelled ? "This order was cancelled." : statusTitle(order.status)}
+          {cancelled ? t.cancelledTitle : statusTitle(order.status)}
         </h1>
         {cancelled ? (
-          <p className="mt-3 text-body">If this doesn&apos;t look right, message Velto on WhatsApp.</p>
+          <p className="mt-3 text-body">{t.cancelledBody}</p>
         ) : (
           <div className="mt-7">
             <OrderProgress status={order.status} />
@@ -63,47 +69,48 @@ export default async function OrderPage({ params }: { params: Params }) {
         )}
 
         <dl className="mt-8 grid grid-cols-2 gap-x-6 border-t border-line pt-4 md:grid-cols-3">
-          <Fact label="Ordered">{formatDay(order.orderDate, true)}</Fact>
-          {order.pickupDate ? <Fact label="Collected">{formatDay(order.pickupDate)}</Fact> : null}
+          <Fact label={t.ordered}>{day(order.orderDate, true)}</Fact>
+          {order.pickupDate ? <Fact label={t.collected}>{day(order.pickupDate)}</Fact> : null}
           {order.deliveredAt ? (
-            <Fact label="Delivered">{formatDay(order.deliveredAt)}</Fact>
+            <Fact label={t.delivered}>{day(order.deliveredAt)}</Fact>
           ) : !cancelled ? (
-            <Fact label="Expected back">{formatDay(expected) ?? "We'll confirm"}</Fact>
+            <Fact label={t.expectedBack}>{day(expected) ?? t.weConfirm}</Fact>
           ) : null}
-          <Fact label="Service">{order.services.map(serviceLabel).join(", ") || "Laundry"}</Fact>
-          <Fact label="Items">{order.items ?? "Being counted"}</Fact>
-          {order.outlet ? <Fact label="Outlet">{order.outlet.name}</Fact> : null}
+          {/* Service, item and outlet names come from Velto Ops as they are. */}
+          <Fact label={t.service}>{order.services.map(serviceLabel).join(", ") || t.laundry}</Fact>
+          <Fact label={t.items}>{order.items === null || order.items === undefined ? t.beingCounted : localDigits(order.items, locale)}</Fact>
+          {order.outlet ? <Fact label={t.outlet}>{order.outlet.name}</Fact> : null}
         </dl>
       </section>
 
       <div className="grid gap-6 md:grid-cols-2">
         <section aria-labelledby="payment-title" className="rounded-lg border border-line bg-white p-5 md:p-6">
           <h2 id="payment-title" className="font-semibold text-navy">
-            Payment
+            {t.payment}
           </h2>
           <dl className="mt-3 divide-y divide-line">
             <div className="flex justify-between py-2.5">
-              <dt className="text-body">Order total</dt>
+              <dt className="text-body">{t.total}</dt>
               <dd className="font-semibold text-navy">{taka(order.total)}</dd>
             </div>
             <div className="flex justify-between py-2.5">
-              <dt className="text-body">Paid</dt>
+              <dt className="text-body">{t.paidRow}</dt>
               <dd className="font-semibold text-navy">{taka(order.paid)}</dd>
             </div>
             <div className="flex justify-between py-2.5">
-              <dt className="font-semibold text-navy">{cancelled ? "Status" : "Due"}</dt>
+              <dt className="font-semibold text-navy">{cancelled ? t.status : t.due}</dt>
               <dd className={`font-semibold ${!cancelled && order.due > 0 ? "text-error" : "text-success"}`}>
-                {cancelled ? "Cancelled" : order.due > 0 ? taka(order.due) : "Paid in full"}
+                {cancelled ? t.cancelled : order.due > 0 ? taka(order.due) : t.paidInFull}
               </dd>
             </div>
           </dl>
-          {order.paymentStatus && !cancelled ? <p className="mt-2 t-small text-secondary">Payment status: {order.paymentStatus}</p> : null}
+          {order.paymentStatus && !cancelled ? <p className="mt-2 t-small text-secondary">{format(t.paymentStatus, { s: t.paymentStates[order.paymentStatus] ?? order.paymentStatus })}</p> : null}
         </section>
 
         {order.lines.length ? (
           <section aria-labelledby="items-title" className="rounded-lg border border-line bg-white p-5 md:p-6">
             <h2 id="items-title" className="font-semibold text-navy">
-              What&apos;s in this order
+              {t.itemsTitle}
             </h2>
             <ul className="mt-3 divide-y divide-line">
               {order.lines.map((line, i) => (
@@ -112,7 +119,7 @@ export default async function OrderPage({ params }: { params: Params }) {
                     <span className="block font-medium text-navy">{line.item}</span>
                     <span className="block t-small text-secondary">{serviceLabel(line.service)}</span>
                   </span>
-                  <span className="shrink-0 font-semibold text-navy">× {line.quantity}</span>
+                  <span className="shrink-0 font-semibold text-navy">× {localDigits(line.quantity, locale)}</span>
                 </li>
               ))}
             </ul>
@@ -123,14 +130,14 @@ export default async function OrderPage({ params }: { params: Params }) {
       {order.timeline.length ? (
         <section aria-labelledby="history-title" className="rounded-lg border border-line bg-white p-5 md:p-6">
           <h2 id="history-title" className="font-semibold text-navy">
-            Order history
+            {t.history}
           </h2>
           <ol className="mt-3 space-y-3">
             {[...order.timeline].reverse().map((event, i) => (
               <li key={`${event.status}-${event.at}-${i}`} className="flex flex-wrap justify-between gap-x-4 t-small">
-                <span className="font-semibold text-navy">{event.label}</span>
+                <span className="font-semibold text-navy">{locale === "en" ? event.label : statusTitle(event.status)}</span>
                 <time dateTime={event.at} className="text-secondary">
-                  {formatDay(event.at)}, {formatTime(event.at)}
+                  {day(event.at)}, {time(event.at)}
                 </time>
               </li>
             ))}
@@ -141,9 +148,9 @@ export default async function OrderPage({ params }: { params: Params }) {
       <section aria-labelledby="order-help" className="flex flex-wrap items-center justify-between gap-4 rounded-lg bg-soft p-5 md:p-6">
         <div>
           <h2 id="order-help" className="font-semibold text-navy">
-            Question about this order?
+            {t.question}
           </h2>
-          <p className="mt-1 t-small text-body">We&apos;ll include the order number for you.</p>
+          <p className="mt-1 t-small text-body">{t.questionBody}</p>
         </div>
         <WhatsAppButton href={whatsapp} placement="account_order" className="!h-12 !px-5" />
       </section>

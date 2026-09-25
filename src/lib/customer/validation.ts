@@ -23,10 +23,19 @@ export function validEmail(raw: string): string | null {
 }
 
 /** Returns an error message, or null when the password is acceptable. */
+/** What is wrong with a password, if anything (the page shows it in its own language). */
+export function passwordIssue(password: string): "short" | "long" | "mix" | null {
+  if (password.length < PASSWORD_MIN) return "short";
+  if (password.length > PASSWORD_MAX) return "long";
+  if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) return "mix";
+  return null;
+}
+
 export function passwordProblem(password: string): string | null {
-  if (password.length < PASSWORD_MIN) return `Use at least ${PASSWORD_MIN} characters.`;
-  if (password.length > PASSWORD_MAX) return `Use ${PASSWORD_MAX} characters or fewer.`;
-  if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) return "Include at least one letter and one number.";
+  const issue = passwordIssue(password);
+  if (issue === "short") return `Use at least ${PASSWORD_MIN} characters.`;
+  if (issue === "long") return `Use ${PASSWORD_MAX} characters or fewer.`;
+  if (issue === "mix") return "Include at least one letter and one number.";
   return null;
 }
 

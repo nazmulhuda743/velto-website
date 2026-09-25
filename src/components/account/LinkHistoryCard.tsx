@@ -1,8 +1,10 @@
 import Link from "@/components/i18n/Link";
 import type { PortalAccount } from "@/lib/customer/portal";
 import { requestLinkAction } from "@/lib/customer/actions";
-import { formatDay } from "@/content/order-status";
 import { displayBdPhone } from "@/lib/customer/validation";
+import { accountText, orderFormat } from "@/content/i18n/account";
+import { format } from "@/lib/i18n/config";
+import { getLocale } from "@/lib/i18n/server";
 import { SubmitButton } from "./SubmitButton";
 
 type Ready = Extract<PortalAccount, { state: "ready" }>;
@@ -12,7 +14,10 @@ type Ready = Extract<PortalAccount, { state: "ready" }>;
  * Nothing links automatically from a typed phone number: Velto verifies the number on
  * the customer record first.
  */
-export function LinkHistoryCard({ account, emphasis = "quiet" }: { account: Ready; emphasis?: "quiet" | "page" }) {
+export async function LinkHistoryCard({ account, emphasis = "quiet" }: { account: Ready; emphasis?: "quiet" | "page" }) {
+  const locale = await getLocale();
+  const t = accountText(locale).link;
+  const { day } = orderFormat(locale);
   const { status, requestedAt } = account.link;
   if (status === "linked") return null;
   const phone = <strong className="font-semibold text-navy">{displayBdPhone(account.phone)}</strong>;
@@ -27,23 +32,26 @@ export function LinkHistoryCard({ account, emphasis = "quiet" }: { account: Read
       <div className={page ? "" : "md:flex md:items-start md:justify-between md:gap-6"}>
         <div className="min-w-0">
           <h2 id="link-title" className={page ? "t-h3 text-navy" : "font-semibold text-navy"}>
-            {status === "pending" ? "Verifying your number" : "Ordered from Velto before?"}
+            {status === "pending" ? t.pendingTitle : t.title}
           </h2>
           {status === "pending" ? (
             <p className="mt-1.5 max-w-[62ch] t-small text-body">
-              You asked on {formatDay(requestedAt)} to link orders made with {phone}. Velto will call that number to confirm it&apos;s yours, then your past orders appear here.
+              {format(t.pendingBefore, { date: day(requestedAt) ?? "" })}
+              {phone}
+              {t.pendingAfter}
             </p>
           ) : (
             <p className="mt-1.5 max-w-[62ch] t-small text-body">
-              Link your past orders to this account. To protect every customer&apos;s history, Velto first calls {phone} to confirm it&apos;s yours.
+              {t.bodyBefore}
+              {phone}
+              {t.bodyAfter}
               {status === "rejected" ? (
                 <>
-                  {" "}
-                  We couldn&apos;t confirm it last time; if the number is wrong,{" "}
+                  {t.rejectedBefore}
                   <Link href="/account/profile" className="font-semibold text-navy underline underline-offset-4">
-                    update it
-                  </Link>{" "}
-                  and ask again.
+                    {t.updateLink}
+                  </Link>
+                  {t.rejectedAfter}
                 </>
               ) : null}
             </p>
@@ -51,8 +59,8 @@ export function LinkHistoryCard({ account, emphasis = "quiet" }: { account: Read
         </div>
         {status !== "pending" ? (
           <form action={requestLinkAction} className={page ? "mt-5 max-w-[320px]" : "mt-4 shrink-0 md:mt-0 md:w-[220px]"}>
-            <SubmitButton pending="Sending request…" variant="secondary" className={page ? "" : "!h-11"}>
-              Link my Velto history
+            <SubmitButton pending={t.pending} variant="secondary" className={page ? "" : "!h-11"}>
+              {t.button}
             </SubmitButton>
           </form>
         ) : null}

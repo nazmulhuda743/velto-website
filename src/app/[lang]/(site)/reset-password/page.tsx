@@ -7,14 +7,12 @@ import { AccountsUnavailable } from "@/components/account/SignedInNotice";
 import { RECOVERY_COOKIE } from "@/lib/customer/config";
 import { getCustomerSession } from "@/lib/customer/portal";
 import { alternatesFor } from "@/lib/seo/page-metadata";
-
-const baseMetadata: Metadata = {
-  title: "Choose a new password — Velto Premium Laundry",
-  robots: { index: false, follow: false },
-};
+import { accountText } from "@/content/i18n/account";
+import { getLocale } from "@/lib/i18n/server";
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { ...baseMetadata, alternates: await alternatesFor("/reset-password") };
+  const title = accountText(await getLocale()).meta.reset;
+  return { title, robots: { index: false, follow: false }, alternates: await alternatesFor("/reset-password") };
 }
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -23,7 +21,8 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
   const error = (await searchParams).error;
   const session = await getCustomerSession();
   const recovering = (await cookies()).get(RECOVERY_COOKIE)?.value === "1";
-  const title = "Choose a new password";
+  const a = accountText(await getLocale());
+  const title = a.pages.resetTitle;
 
   if (session.kind === "disabled") {
     return (
@@ -35,8 +34,8 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
   if (error === "unavailable" || session.kind === "unavailable") {
     return (
       <AuthShell title={title}>
-        <Alert tone="error" title="We couldn't check your reset link just now.">
-          Please open the link from your email again in a moment.
+        <Alert tone="error" title={a.pages.resetUnavailableTitle}>
+          {a.pages.resetUnavailableBody}
         </Alert>
       </AuthShell>
     );
@@ -45,13 +44,13 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
   if (error || !recovering || (session.kind !== "customer" && session.kind !== "staff")) {
     return (
       <AuthShell title={title}>
-        <ExpiredResetLink />
+        <ExpiredResetLink t={a.forms} />
       </AuthShell>
     );
   }
   return (
-    <AuthShell title={title} intro="Choose a password you don't use anywhere else.">
-      <ResetPasswordForm />
+    <AuthShell title={title} intro={a.pages.resetIntro}>
+      <ResetPasswordForm t={a.forms} />
     </AuthShell>
   );
 }

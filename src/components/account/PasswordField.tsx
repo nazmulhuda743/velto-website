@@ -10,12 +10,15 @@ export function PasswordField({
   error,
   helper,
   autoComplete,
+  labels = { show: "Show", hide: "Hide", srPassword: " password" },
 }: {
   id: string;
   label: string;
   error?: string;
   helper?: string;
   autoComplete: "current-password" | "new-password";
+  /** The show/hide control's text, in the page language. */
+  labels?: { show: string; hide: string; srPassword: string };
 }) {
   const [visible, setVisible] = useState(false);
   const described = [helper ? `${id}-help` : null, error ? `${id}-error` : null].filter(Boolean).join(" ") || undefined;
@@ -39,8 +42,8 @@ export function PasswordField({
           aria-pressed={visible}
           className="absolute right-1.5 top-1/2 h-10 -translate-y-1/2 rounded-sm px-3 t-small font-semibold text-navy underline decoration-blue/50 underline-offset-4 hover:decoration-blue"
         >
-          {visible ? "Hide" : "Show"}
-          <span className="sr-only"> password</span>
+          {visible ? labels.hide : labels.show}
+          <span className="sr-only">{labels.srPassword}</span>
         </button>
       </div>
     </FieldShell>

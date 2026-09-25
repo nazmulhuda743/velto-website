@@ -245,9 +245,10 @@ Nothing below has been done on production.
    emails depend on it.
 6. **Custom SMTP** (Auth → SMTP) with a Velto sender. The built-in sender is rate-limited to a
    handful of emails per hour; on staging the second sign-up in an hour was refused.
-7. Email templates (Auth → Email Templates), so links work on any device:
-   - Confirm signup: `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/account`
-     (point SiteURL at the website, or hard-code `https://www.velto.com.bd`)
+7. Email templates (Auth → Email Templates), so links work on any device. Use the bilingual
+   (Bangla + English) templates in `docs/technical/email-templates/` (see its README; staff keep the
+   current template through the `{{ else }}` branch). They use these links, with `/bn` for Bangla customers:
+   - Confirm signup: `https://www.velto.com.bd/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/account`
    - Reset password: `…/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/reset-password`
 8. Review Auth rate limits and password policy (minimum length 8 matches the website).
 9. Vercel Production env: `VELTO_SUPABASE_PUBLISHABLE_KEY` (production publishable key, **no
