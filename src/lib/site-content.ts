@@ -16,12 +16,14 @@ export type LocationId = Location["id"];
 export type SiteSettings = {
   /** Digits only, with country code, e.g. 8801605162788. */
   whatsappNumber: string;
-  announcement: { enabled: boolean; text: string; href: string };
+  /** textBn is shown on Bangla pages; empty means the English text is shown there too. */
+  announcement: { enabled: boolean; text: string; textBn: string; href: string };
   outlets: Record<LocationId, { rating: string; reviewCount: number; hours: string }>;
 };
 
-export type SeoEntry = { title?: string; description?: string; ogImage?: string; noindex?: boolean };
-export type ImageOverride = { src: string; alt?: string; position?: string; updatedAt?: string };
+/** titleBn/descriptionBn override the built-in Bangla text on /bn pages. */
+export type SeoEntry = { title?: string; description?: string; titleBn?: string; descriptionBn?: string; ogImage?: string; noindex?: boolean };
+export type ImageOverride = { src: string; alt?: string; altBn?: string; position?: string; updatedAt?: string };
 export type ReviewEntry = Review & { id: string; showOnHome: boolean };
 
 export type SiteContent = {
@@ -33,7 +35,7 @@ export type SiteContent = {
 
 export const DEFAULT_SETTINGS: SiteSettings = {
   whatsappNumber: "8801605162788",
-  announcement: { enabled: false, text: "", href: "" },
+  announcement: { enabled: false, text: "", textBn: "", href: "" },
   outlets: Object.fromEntries(
     LOCATIONS.map((l) => [l.id, { rating: l.rating, reviewCount: l.reviewCount, hours: l.hours }]),
   ) as SiteSettings["outlets"],
@@ -57,6 +59,7 @@ function parseSettings(v: unknown): SiteSettings {
     announcement: {
       enabled: a.enabled === true,
       text: str(a.text, 160) ?? "",
+      textBn: str(a.textBn, 160) ?? "",
       href: str(a.href, 300) ?? "",
     },
     outlets: Object.fromEntries(
@@ -85,6 +88,8 @@ function parseSeo(v: unknown): Record<string, SeoEntry> {
     out[path] = {
       title: str(e.title, 120) || undefined,
       description: str(e.description, 320) || undefined,
+      titleBn: str(e.titleBn, 120) || undefined,
+      descriptionBn: str(e.descriptionBn, 320) || undefined,
       ogImage: str(e.ogImage, 500) || undefined,
       noindex: e.noindex === true,
     };
@@ -102,6 +107,7 @@ function parseImages(v: unknown): Record<string, ImageOverride> {
     out[id] = {
       src,
       alt: str(e.alt, 300) || undefined,
+      altBn: str(e.altBn, 300) || undefined,
       position: str(e.position, 40) || undefined,
       updatedAt: updatedAt && !Number.isNaN(Date.parse(updatedAt)) ? updatedAt : undefined,
     };

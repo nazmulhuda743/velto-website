@@ -1,5 +1,6 @@
 import { ImageFileInput } from "@/components/admin/ImageFileInput";
 import { AdminHeader, Badge, Notice, one, type SearchParams } from "@/components/admin/ui";
+import { dictionary } from "@/content/i18n";
 import { IMAGE_SLOTS } from "@/content/mock";
 import { dayLabel } from "@/lib/admin/page-helpers";
 import { getSiteContent } from "@/lib/site-content";
@@ -70,6 +71,18 @@ export default async function ImagesPage({ searchParams }: { searchParams: Searc
                   </dd>
                   <dt className="text-secondary">Alt text</dt>
                   <dd className={(override?.alt ?? slot.alt) ? "line-clamp-2 text-navy" : "font-semibold text-error"}>{override?.alt ?? slot.alt ?? "Missing"}</dd>
+                  <dt className="text-secondary">Bangla alt</dt>
+                  {/* Same rule as the website (ResponsiveImage): Bangla alt, else built-in Bangla for the built-in description. */}
+                  {(() => {
+                    const bn = override?.altBn ?? (!override?.alt || override.alt === slot.alt ? dictionary("bn").imageAlts[id] : undefined);
+                    return bn ? (
+                      <dd className="line-clamp-2 text-navy" lang="bn">
+                        {bn}
+                      </dd>
+                    ) : (
+                      <dd className="text-secondary">Uses the English alt text</dd>
+                    );
+                  })()}
                   <dt className="text-secondary">Focus point</dt>
                   <dd className="text-navy">{override?.position ?? slot.position ?? "center (default)"}</dd>
                   <dt className="text-secondary">Last changed</dt>
@@ -91,6 +104,15 @@ export default async function ImagesPage({ searchParams }: { searchParams: Searc
                     className="admin-input"
                     aria-label="Alt text"
                     placeholder="What the photo shows"
+                  />
+                  <input
+                    name="altBn"
+                    lang="bn"
+                    defaultValue={override?.altBn ?? ""}
+                    maxLength={300}
+                    className="admin-input"
+                    aria-label="Alt text in Bangla"
+                    placeholder="Alt text in Bangla (optional)"
                   />
                   <select name="position" defaultValue={override?.position ?? ""} className="admin-input" aria-label="Focus point">
                     <option value="">Focus: default</option>

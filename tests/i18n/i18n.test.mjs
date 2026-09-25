@@ -17,6 +17,7 @@ const { accountEn } = requireTs("src/content/i18n/account/en.ts");
 const { accountBn } = requireTs("src/content/i18n/account/bn.ts");
 const { SERVICE_PAGES, servicePages } = requireTs("src/content/services.ts");
 const { BANGLA_READY_PATHS } = requireTs("src/lib/i18n/config.ts");
+const { IMAGE_SLOTS } = requireTs("src/content/mock.ts");
 const { LOCATIONS } = requireTs("src/content/site.ts");
 
 /** Every key path of an object, with arrays checked element by element. */
@@ -44,6 +45,12 @@ test("form text: Bangla has exactly the English keys", () => {
 
 test("account text: Bangla has exactly the English keys", () => {
   assert.deepEqual(shape(accountBn), shape(accountEn));
+});
+
+test("every built-in photo has Bangla alt text", () => {
+  // Admin-replaced photos can add their own (Admin → Images); built-in ones must not fall back to English.
+  const missing = IMAGE_SLOTS.map((s) => s.id).filter((id) => !bn.imageAlts[id]);
+  assert.deepEqual(missing, []);
 });
 
 test("service pages: Bangla keeps every service's structure and data", () => {
