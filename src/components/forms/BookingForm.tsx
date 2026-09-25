@@ -799,7 +799,7 @@ function BookingSuccess({
       <ol className="mt-3 space-y-2.5 text-body">
         {t.nextSteps.map((step, i) => (
           <li key={step} className="flex gap-3">
-            <span className="t-label pt-[4px] text-blue">{localDigits(String(i + 1).padStart(2, "0"), locale)}</span>
+            <span className="t-label pt-[4px] text-action">{localDigits(String(i + 1).padStart(2, "0"), locale)}</span>
             {step}
           </li>
         ))}

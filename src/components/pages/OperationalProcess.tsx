@@ -35,7 +35,7 @@ export async function OperationalProcess({ title, intro }: { title: string; intr
                 aspect="aspect-[2/1] md:aspect-[16/10]"
                 sizes="(min-width: 1200px) 610px, (min-width: 768px) 50vw, 100vw"
               />
-              <p className="mt-5 t-label uppercase text-blue md:mt-6">{fill(t.stage, { n: g + 1 }, locale)}</p>
+              <p className="mt-5 t-label uppercase text-action md:mt-6">{fill(t.stage, { n: g + 1 }, locale)}</p>
               <h3 className="mt-1.5 t-h3 text-navy">{group.label}</h3>
               <ol className="mt-4 list-none border-b border-line">
                 {group.steps.map((step, i) => (

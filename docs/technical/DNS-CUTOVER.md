@@ -39,7 +39,7 @@ Project → Settings → Environment Variables → **Production**:
 
 ### A3. Old Webflow URLs
 - [x] Redirects for the old public Webflow URLs are in `next.config.ts` (contact, about-us, team, checkout, the clothing-category service pages, utility pages).
-- [ ] **Decide on the old account URLs** `/log-in`, `/sign-up`, `/reset-password`, `/update-password`, `/user-account`, `/access-denied`. They will 404 after the cutover unless the Customer Portal work redirects them.
+- [x] Old account URLs redirect too: `/log-in` → `/login`, `/sign-up` → `/signup`, `/update-password` → `/forgot-password`, `/access-denied` → `/login`, `/user-account` → `/account`. `/reset-password` is a live portal page (password-reset emails), so it stays as is. All 24 URLs in the old Webflow sitemap now land on a real page.
 - [ ] If any old URL was used in live ads, Google Business Profile or printed material, check it is covered above.
 
 ### A4. Prepare for rollback
