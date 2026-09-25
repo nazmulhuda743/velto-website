@@ -5,8 +5,8 @@ import { SERVICE_PAGES } from "@/content/services";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { dictionary, type Dictionary } from "@/content/i18n";
 import { CUSTOMER_PORTAL, WHATSAPP_URL, bookHref } from "@/content/site";
-import { getLocale } from "@/lib/i18n/server";
 import { getLocations } from "@/lib/site-content";
+import { getLocale, localLocation } from "@/lib/i18n/server";
 
 const link = "inline-block py-1.5 t-small text-white hover:text-cyan";
 
@@ -22,7 +22,8 @@ const HELP: { key: keyof Dictionary["nav"]; href: string }[] = [
 ];
 
 export async function Footer() {
-  const locations = await getLocations();
+  // Hours in the page language (built-in defaults translated, admin edits with local digits).
+  const locations = await Promise.all((await getLocations()).map(localLocation));
   const t = dictionary(await getLocale());
   return (
     <footer className="on-navy border-t border-white/15 bg-navy-deep text-white/80">

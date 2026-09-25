@@ -6,51 +6,44 @@ import { ButtonLink } from "@/components/ui/Button";
 import { WhatsAppIcon } from "@/components/ui/icons";
 import { FREE_DELIVERY_THRESHOLD, WHATSAPP_URL } from "@/content/site";
 import {
-  bookingItemsText,
   composeBookingNotes,
   MAX_BOOKING_NOTES,
+  MIXED_ITEM,
   sharedItemService,
   type BookingItem,
 } from "@/lib/booking-items";
+import { useLocale } from "@/components/i18n/LocaleProvider";
+import type { FormText } from "@/content/i18n/forms/en";
+import { fill, format, localDigits, type Locale } from "@/lib/i18n/config";
 import { BookingItems, type ItemLine } from "./BookingItems";
 import { normalisePhone, phoneOk } from "./fields";
 import { submitBooking, type BookingFormData, type SubmitResult } from "./submit";
+
+type Text = FormText["booking"];
+type Common = FormText["common"];
 
 /**
  * Book a Pickup — one compact form, grouped as what / where / when / who.
  * "What" is an optional list of item + service + quantity lines (BookingItems).
  * Values map onto the Ops `BookingSubmission` shape via BookingFormData;
  * submission stays behind the isolated adapter in ./submit (Codex wires it).
+ *
+ * Language: the customer sees the page language (`t`), but everything sent to Velto Ops
+ * (toBookingData) is English — the area label, the pickup preference and service slugs.
  */
 
-export const BOOKING_SERVICES = [
-  { value: "dry-cleaning", label: "Dry Cleaning" },
-  { value: "wash-and-iron", label: "Wash & Iron" },
-  { value: "ironing", label: "Ironing" },
-  { value: "curtain-cleaning", label: "Curtains" },
-  { value: "carpet-cleaning", label: "Carpets" },
-  { value: "blanket-comforter-cleaning", label: "Blankets & Comforters" },
-  { value: "", label: "A mix, or not sure" },
-] as const;
+/** Service values from a service page (?service=); "" is "A mix, or not sure". */
+const BOOKING_SERVICES = ["dry-cleaning", "wash-and-iron", "ironing", "curtain-cleaning", "carpet-cleaning", "blanket-comforter-cleaning"];
 
 const SECTORS = Array.from({ length: 18 }, (_, i) => i + 1);
 const OUTSIDE = "outside";
 
-const DAYS = [
-  { value: "today", label: "Today" },
-  { value: "tomorrow", label: "Tomorrow" },
-  { value: "other", label: "Another day" },
-] as const;
+const DAYS = ["today", "tomorrow", "other"] as const;
 
-/** Broad windows only: no specific slots are promised (none are verified). */
-const TIMES = [
-  { value: "Morning", label: "Morning" },
-  { value: "Afternoon", label: "Afternoon" },
-  { value: "Evening", label: "Evening" },
-  { value: "Any time", label: "Any time" },
-] as const;
+/** Broad windows only: no specific slots are promised (none are verified). These values also go to Ops. */
+const TIMES = ["Morning", "Afternoon", "Evening", "Any time"] as const;
 
-type Day = (typeof DAYS)[number]["value"] | "";
+type Day = (typeof DAYS)[number] | "";
 
 type FormState = {
   /** From a service page (?service=): the default for new item lines, and the service when no lines are added. */
@@ -85,17 +78,41 @@ const isoDate = (offsetDays = 0) => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const niceDate = (iso: string) => {
-  const d = new Date(`${iso}T00:00:00`);
-  return `${WEEKDAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+/** Words for the pickup preference: English for Ops, or the page language for the customer. */
+type PickupWords = {
+  today: string;
+  tomorrow: string;
+  weekdays: readonly string[];
+  months: readonly string[];
+  dayMonth: string;
+  timesInline: Record<string, string>;
+  locale: Locale;
 };
 
+/** What Velto Ops receives, whatever the page language. */
+const OPS_WORDS: PickupWords = {
+  today: "Today",
+  tomorrow: "Tomorrow",
+  weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+  months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+  dayMonth: "{weekday} {day} {month}",
+  timesInline: { Morning: "morning", Afternoon: "afternoon", Evening: "evening", "Any time": "any time" },
+  locale: "en",
+};
+
+const niceDate = (iso: string, w: PickupWords) => {
+  const d = new Date(`${iso}T00:00:00`);
+  return fill(w.dayMonth, { weekday: w.weekdays[d.getDay()], day: d.getDate(), month: w.months[d.getMonth()] }, w.locale);
+};
+
+/** Ops area label ("Uttara Sector 7"): the value Velto Ops matches on. Never localized. */
 const areaLabel = (sector: string) => (sector === OUTSIDE ? "Outside Uttara Sectors 1–18" : `Uttara Sector ${sector}`);
 
-const serviceLabel = (value: string | null) =>
-  value === null ? "" : (BOOKING_SERVICES.find((s) => s.value === value)?.label ?? "");
+/** The same area as the customer reads it. */
+const areaText = (sector: string, t: Text, locale: Locale) =>
+  sector === OUTSIDE ? t.areaOutside : fill(t.areaSector, { n: sector }, locale);
+
+const serviceLabel = (value: string | null, t: Text) => (value === null ? "" : (t.services[value] ?? ""));
 
 const itemsOf = (s: FormState): BookingItem[] =>
   s.items.map((l) => ({ item: l.item, quantity: l.quantity, ...(l.service ? { service: l.service } : {}) }));
@@ -103,18 +120,42 @@ const itemsOf = (s: FormState): BookingItem[] =>
 /** With item lines, the Ops service is the one they all share (none for a mix); otherwise the page's service. */
 const bookingService = (s: FormState) => (s.items.length ? sharedItemService(itemsOf(s)) : s.service || undefined);
 
-/** One line for summaries: the items, or the page's service. */
-const whatLabel = (s: FormState) => (s.items.length ? bookingItemsText(itemsOf(s)) : serviceLabel(s.service));
+/** Item lines as the customer reads them; in English exactly bookingItemsText (what Ops gets in the notes). */
+const itemsText = (items: BookingItem[], t: Text, locale: Locale) =>
+  items
+    .map(
+      (i) =>
+        `${localDigits(i.quantity, locale)} × ${i.item === MIXED_ITEM ? t.mixedItem : i.item} – ${i.service ? t.services[i.service] : t.itemNotSure}`,
+    )
+    .join("; ");
 
-/** Human-readable preference, e.g. "Tomorrow Fri 25 Sep, evening". Sent as the contract's single preferredPickup string. */
-function pickupLabel(s: FormState) {
+/** One line for summaries: the items, or the page's service. */
+const whatLabel = (s: FormState, t: Text, locale: Locale) =>
+  s.items.length ? itemsText(itemsOf(s), t, locale) : serviceLabel(s.service, t);
+
+/**
+ * Human-readable preference, e.g. "Tomorrow Fri 25 Sep, evening". With OPS_WORDS this is the
+ * contract's single preferredPickup string; with the page's words, what the customer sees.
+ */
+function pickupLabel(s: FormState, w: PickupWords = OPS_WORDS) {
   const iso = s.day === "today" ? isoDate(0) : s.day === "tomorrow" ? isoDate(1) : s.day === "other" ? s.date : "";
-  const prefix = s.day === "today" ? "Today" : s.day === "tomorrow" ? "Tomorrow" : "";
-  const day = iso ? `${prefix} ${niceDate(iso)}`.trim() : "";
-  const time = s.time && s.time !== "Any time" ? s.time.toLowerCase() : s.time === "Any time" && day ? "any time" : "";
+  const prefix = s.day === "today" ? w.today : s.day === "tomorrow" ? w.tomorrow : "";
+  const day = iso ? `${prefix} ${niceDate(iso, w)}`.trim() : "";
+  const time = s.time && s.time !== "Any time" ? w.timesInline[s.time] : s.time === "Any time" && day ? w.timesInline["Any time"] : "";
   return [day, time].filter(Boolean).join(", ");
 }
 
+const pageWords = (t: Text, c: Common, locale: Locale): PickupWords => ({
+  today: t.today,
+  tomorrow: t.tomorrow,
+  weekdays: c.weekdays,
+  months: c.months,
+  dayMonth: c.dayMonth,
+  timesInline: t.timesInline,
+  locale,
+});
+
+/** The Ops payload: English values only, identical whatever the page language. */
 function toBookingData(s: FormState): BookingFormData {
   return {
     name: s.name.trim(),
@@ -128,29 +169,35 @@ function toBookingData(s: FormState): BookingFormData {
   };
 }
 
-/** WhatsApp fallback carries what the customer already typed, so nothing is lost. */
-function whatsappHref(s: FormState) {
+/** WhatsApp fallback carries what the customer already typed (in their language), so nothing is lost. */
+function whatsappHref(s: FormState, t: Text, c: Common, locale: Locale) {
+  const w = t.whatsapp;
+  const when = pickupLabel(s, pageWords(t, c, locale));
   const lines = [
-    "Hi Velto, I'd like to book a pickup.",
-    s.items.length ? `Items: ${bookingItemsText(itemsOf(s))}` : s.service ? `Service: ${serviceLabel(s.service)}` : "",
-    s.sector ? `Area: ${areaLabel(s.sector)}` : "",
-    s.address.trim() ? `Address: ${s.address.trim()}` : "",
-    pickupLabel(s) ? `Preferred pickup: ${pickupLabel(s)}` : "",
-    s.name.trim() ? `Name: ${s.name.trim()}` : "",
-    s.notes.trim() ? `Note: ${s.notes.trim()}` : "",
+    w.greeting,
+    s.items.length
+      ? format(w.items, { v: itemsText(itemsOf(s), t, locale) })
+      : s.service
+        ? format(w.service, { v: serviceLabel(s.service, t) })
+        : "",
+    s.sector ? format(w.area, { v: areaText(s.sector, t, locale) }) : "",
+    s.address.trim() ? format(w.address, { v: s.address.trim() }) : "",
+    when ? format(w.pickup, { v: when }) : "",
+    s.name.trim() ? format(w.name, { v: s.name.trim() }) : "",
+    s.notes.trim() ? format(w.note, { v: s.notes.trim() }) : "",
   ].filter(Boolean);
   return `${WHATSAPP_URL}?text=${encodeURIComponent(lines.join("\n"))}`;
 }
 
-function validate(s: FormState): Errors {
+function validate(s: FormState, t: Text, c: Common): Errors {
   const e: Errors = {};
-  if (!s.sector) e.sector = "Choose your sector.";
-  if (!s.address.trim()) e.address = "Add your house and road so we can find you.";
-  if (!s.day) e.day = "Choose a pickup day.";
-  if (s.day === "other" && !s.date) e.date = "Pick a date, or choose Today or Tomorrow.";
-  if (!s.name.trim()) e.name = "Add your name.";
-  if (!s.phone.trim()) e.phone = "Add a number we can call or WhatsApp.";
-  else if (!phoneOk(s.phone)) e.phone = "Check the number. It should look like 01XXX XXXXXX.";
+  if (!s.sector) e.sector = t.errors.sector;
+  if (!s.address.trim()) e.address = t.errors.address;
+  if (!s.day) e.day = t.errors.day;
+  if (s.day === "other" && !s.date) e.date = t.errors.date;
+  if (!s.name.trim()) e.name = t.errors.name;
+  if (!s.phone.trim()) e.phone = c.phoneMissing;
+  else if (!phoneOk(s.phone)) e.phone = c.phoneInvalid;
   return e;
 }
 
@@ -162,37 +209,50 @@ const inputBase =
   "block w-full rounded-md border border-line-strong bg-white px-4 text-base text-navy placeholder:text-secondary/80 hover:border-navy/50 focus:border-blue focus:outline-1 focus:outline-offset-0 focus:outline-blue aria-[invalid=true]:border-error";
 const inputHeight = "h-[54px] md:h-[52px]";
 
-const STEPS = ["What", "Where", "When", "You"] as const;
-
 /** S4: the form really is four groups, so show it. Each step fills in as it's answered. */
-function StepProgress({ done }: { done: boolean[] }) {
+function StepProgress({ done, t, locale }: { done: boolean[]; t: Text; locale: Locale }) {
   return (
-    <ol aria-label="Booking steps" className="grid grid-cols-4 gap-2">
-      {STEPS.map((label, i) => (
+    <ol aria-label={t.stepsAria} className="grid grid-cols-4 gap-2">
+      {t.steps.map((label, i) => (
         <li
           key={label}
           className={`border-t-2 pt-2 t-label transition-colors duration-200 motion-reduce:transition-none ${
             done[i] ? "border-action text-navy" : "border-line text-secondary"
           }`}
         >
-          <span className="tabular-nums">{i + 1}</span> {label}
-          <span className="sr-only">{done[i] ? ", done" : ", to do"}</span>
+          <span className="tabular-nums">{localDigits(i + 1, locale)}</span> {label}
+          <span className="sr-only">{done[i] ? t.stepDone : t.stepTodo}</span>
         </li>
       ))}
     </ol>
   );
 }
 
-function Group({ step, title, hint, children }: { step: number; title: string; hint?: string; children: ReactNode }) {
+function Group({
+  step,
+  title,
+  hint,
+  stepOf,
+  locale,
+  children,
+}: {
+  step: number;
+  title: string;
+  hint?: string;
+  /** "Step {n} of 4: " in the page language. */
+  stepOf: string;
+  locale: Locale;
+  children: ReactNode;
+}) {
   return (
     <fieldset className="min-w-0 border-t border-line pt-5 first:border-t-0 first:pt-0">
       <legend className="contents">
         <span className="flex items-baseline gap-3 t-h4 text-navy">
           <span aria-hidden="true" className="w-4 shrink-0 text-action tabular-nums">
-            {step}
+            {localDigits(step, locale)}
           </span>
           <span>
-            <span className="sr-only">Step {step} of 4: </span>
+            <span className="sr-only">{fill(stepOf, { n: step }, locale)}</span>
             {title}
           </span>
         </span>
@@ -280,7 +340,20 @@ function ChoiceTiles<T extends string>({
   );
 }
 
-function WhatsAppFallback({ href, placement, label, className = "" }: { href: string; placement: string; label: string; className?: string }) {
+function WhatsAppFallback({
+  href,
+  placement,
+  label,
+  opens,
+  className = "",
+}: {
+  href: string;
+  placement: string;
+  label: string;
+  /** " (opens WhatsApp)" in the page language. */
+  opens: string;
+  className?: string;
+}) {
   return (
     <a
       href={href}
@@ -292,7 +365,7 @@ function WhatsAppFallback({ href, placement, label, className = "" }: { href: st
     >
       <WhatsAppIcon className="size-5 text-whatsapp" />
       {label}
-      <span className="sr-only"> (opens WhatsApp)</span>
+      <span className="sr-only">{opens}</span>
     </a>
   );
 }
@@ -300,12 +373,17 @@ function WhatsAppFallback({ href, placement, label, className = "" }: { href: st
 /* ---------- form ---------- */
 
 export function BookingForm({
+  t,
+  common: c,
   intro,
   initialService,
   presetNote,
   previewOutcome,
   initialContact,
 }: {
+  /** Form text in the page language (formText(locale).booking), passed by the page. */
+  t: Text;
+  common: Common;
   /** Page heading copy. The form owns the h1 so the success state can replace it. */
   intro: ReactNode;
   initialService?: string;
@@ -316,8 +394,9 @@ export function BookingForm({
   /** Signed-in customer: known details prefilled. The customer still reviews and submits. */
   initialContact?: { name: string; phone: string; address: string; sector: string };
 }) {
+  const locale = useLocale();
   const [s, setS] = useState<FormState>({
-    service: BOOKING_SERVICES.some((o) => o.value !== "" && o.value === initialService) ? initialService! : null,
+    service: initialService && BOOKING_SERVICES.includes(initialService) ? initialService : null,
     items: [],
     sector: initialContact && (SECTORS.map(String).includes(initialContact.sector) || initialContact.sector === OUTSIDE) ? initialContact.sector : "",
     address: initialContact?.address ?? "",
@@ -355,13 +434,13 @@ export function BookingForm({
 
   const checkPhoneOnBlur = () => {
     // Only nag once something has been typed.
-    if (s.phone.trim() && !phoneOk(s.phone)) setErrors((prev) => ({ ...prev, phone: validate(s).phone }));
+    if (s.phone.trim() && !phoneOk(s.phone)) setErrors((prev) => ({ ...prev, phone: validate(s, t, c).phone }));
   };
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (status.state === "submitting") return;
-    const found = validate(s);
+    const found = validate(s, t, c);
     setErrors(found);
     const first = FIELD_ORDER.find((k) => found[k]);
     if (first) {
@@ -389,7 +468,7 @@ export function BookingForm({
   };
 
   if (status.state === "success") {
-    return <BookingSuccess headingRef={successRef} state={s} reference={status.reference} />;
+    return <BookingSuccess headingRef={successRef} state={s} reference={status.reference} t={t} c={c} locale={locale} />;
   }
 
   const submitting = status.state === "submitting";
@@ -398,11 +477,13 @@ export function BookingForm({
   return (
     <>
       <h1 id="page-title" className="t-h1 text-navy">
-        Book a pickup
+        {t.title}
       </h1>
       <p className="mt-3 t-body text-body md:mt-4 md:t-body-lg">{intro}</p>
       <div className="mt-6 md:mt-8">
         <StepProgress
+          t={t}
+          locale={locale}
           done={[
             s.items.length > 0 || s.service !== null,
             Boolean(s.sector && s.address.trim()),
@@ -418,18 +499,27 @@ export function BookingForm({
           aria-labelledby="page-title"
           className="space-y-6 [&_input]:scroll-mt-32 [&_select]:scroll-mt-32 [&_textarea]:scroll-mt-32"
         >
-          <Group step={1} title="What needs cleaning?">
+          <Group step={1} title={t.whatTitle} stepOf={t.stepOf} locale={locale}>
             {s.service && !s.items.length ? (
               <p className="t-small text-navy">
-                Booking <span className="font-semibold">{serviceLabel(s.service)}</span>. Add items below if you like, or just continue.
+                {t.bookingBefore}
+                <span className="font-semibold">{serviceLabel(s.service, t)}</span>
+                {t.bookingAfter}
               </p>
             ) : null}
-            <BookingItems lines={s.items} onChange={(items) => update("items", items)} preferredService={s.service ?? undefined} />
+            <BookingItems
+              t={t.items}
+              services={t.services}
+              mixedLabel={t.mixedItem}
+              lines={s.items}
+              onChange={(items) => update("items", items)}
+              preferredService={s.service ?? undefined}
+            />
           </Group>
 
-          <Group step={2} title="Where should we collect from?">
+          <Group step={2} title={t.whereTitle} stepOf={t.stepOf} locale={locale}>
             <div>
-              <FieldLabel htmlFor="booking-sector">Sector</FieldLabel>
+              <FieldLabel htmlFor="booking-sector">{t.sectorLabel}</FieldLabel>
               <div className="relative mt-2">
                 <select
                   id="booking-sector"
@@ -441,14 +531,14 @@ export function BookingForm({
                   className={`${inputBase} ${inputHeight} appearance-none pr-11`}
                 >
                   <option value="" disabled>
-                    Choose your sector in Uttara
+                    {t.sectorPlaceholder}
                   </option>
                   {SECTORS.map((n) => (
                     <option key={n} value={String(n)}>
-                      Sector {n}
+                      {fill(t.sectorOption, { n }, locale)}
                     </option>
                   ))}
-                  <option value={OUTSIDE}>Outside Sectors 1–18</option>
+                  <option value={OUTSIDE}>{t.outsideOption}</option>
                 </select>
                 <svg viewBox="0 0 16 16" aria-hidden="true" className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-navy">
                   <path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -457,21 +547,20 @@ export function BookingForm({
               <ErrorText id="booking-sector-error">{errors.sector}</ErrorText>
               {s.sector === OUTSIDE ? (
                 <p id="booking-outside" className="mt-2 t-small text-navy">
-                  We collect across Uttara Sectors 1–18. Outside that area we need to check first, so we&apos;ll
-                  confirm before promising a pickup.
+                  {t.outsideNote}
                 </p>
               ) : null}
             </div>
 
             <div>
-              <FieldLabel htmlFor="booking-address">House and road</FieldLabel>
+              <FieldLabel htmlFor="booking-address">{t.addressLabel}</FieldLabel>
               <input
                 id="booking-address"
                 name="address"
                 type="text"
                 autoComplete="address-line1"
                 enterKeyHint="next"
-                placeholder="e.g. House 12, Road 7"
+                placeholder={t.addressPlaceholder}
                 value={s.address}
                 onChange={(e) => update("address", e.target.value)}
                 aria-invalid={errors.address ? true : undefined}
@@ -482,12 +571,12 @@ export function BookingForm({
             </div>
           </Group>
 
-          <Group step={3} title="When suits you?" hint="We'll confirm the exact time with you.">
+          <Group step={3} title={t.whenTitle} hint={t.whenHint} stepOf={t.stepOf} locale={locale}>
             <div>
               <ChoiceTiles
                 name="day"
-                label="Pickup day"
-                options={DAYS}
+                label={t.dayLabel}
+                options={DAYS.map((value) => ({ value, label: t.days[value] }))}
                 value={s.day || null}
                 onChange={(v) => update("day", v)}
                 columns="grid-cols-3"
@@ -499,7 +588,7 @@ export function BookingForm({
               <ErrorText id="booking-day-error">{errors.day}</ErrorText>
               {s.day === "other" ? (
                 <div className="mt-3">
-                  <FieldLabel htmlFor="booking-date">Date</FieldLabel>
+                  <FieldLabel htmlFor="booking-date">{t.dateLabel}</FieldLabel>
                   <input
                     id="booking-date"
                     name="date"
@@ -517,8 +606,8 @@ export function BookingForm({
             </div>
             <ChoiceTiles
               name="time"
-              label="Pickup time"
-              options={TIMES}
+              label={t.timeLabel}
+              options={TIMES.map((value) => ({ value, label: t.times[value] }))}
               value={s.time || null}
               onChange={(v) => update("time", v)}
               columns="grid-cols-4"
@@ -526,9 +615,9 @@ export function BookingForm({
             />
           </Group>
 
-          <Group step={4} title="Your details">
+          <Group step={4} title={t.youTitle} stepOf={t.stepOf} locale={locale}>
             <div>
-              <FieldLabel htmlFor="booking-name">Name</FieldLabel>
+              <FieldLabel htmlFor="booking-name">{t.nameLabel}</FieldLabel>
               <input
                 id="booking-name"
                 name="name"
@@ -546,9 +635,9 @@ export function BookingForm({
             </div>
 
             <div>
-              <FieldLabel htmlFor="booking-phone">Phone or WhatsApp</FieldLabel>
+              <FieldLabel htmlFor="booking-phone">{t.phoneLabel}</FieldLabel>
               <p id="booking-phone-help" className="mt-1 t-small text-secondary">
-                We&apos;ll use this to confirm your pickup.
+                {t.phoneHelp}
               </p>
               <input
                 id="booking-phone"
@@ -571,7 +660,8 @@ export function BookingForm({
             {notesOpen ? (
               <div>
                 <FieldLabel htmlFor="booking-notes">
-                  Note for Velto<span className="font-normal text-secondary">, optional</span>
+                  {t.notesLabel}
+                  <span className="font-normal text-secondary">{c.optional}</span>
                 </FieldLabel>
                 <textarea
                   id="booking-notes"
@@ -579,7 +669,7 @@ export function BookingForm({
                   rows={3}
                   // Items and the note share the Ops notes field.
                   maxLength={Math.max(0, MAX_BOOKING_NOTES - (composeBookingNotes(itemsOf(s), "x")?.length ?? 0))}
-                  placeholder="e.g. a saree with a stain, or call when you arrive"
+                  placeholder={t.notesPlaceholder}
                   value={s.notes}
                   onChange={(e) => update("notes", e.target.value)}
                   className={`${inputBase} mt-2 min-h-[96px] py-3 leading-[1.4]`}
@@ -595,7 +685,7 @@ export function BookingForm({
                 <span aria-hidden="true" className="text-blue no-underline">
                   +
                 </span>
-                Add a note
+                {t.addNote}
               </button>
             )}
           </Group>
@@ -605,20 +695,24 @@ export function BookingForm({
             {status.state === "failed" ? (
               <div ref={statusRef} tabIndex={-1} role="alert" className="mb-5 rounded-md border border-line-strong bg-soft p-4 focus:outline-2 focus:outline-blue">
                 <p className="font-semibold text-navy">
-                  {status.code === "not_connected" ? "Online booking isn't switched on yet." : "We couldn't send your booking just now."}
+                  {status.code === "not_connected" ? t.failedNotConnectedTitle : t.failedTitle}
                 </p>
                 <p className="mt-1 t-small text-body">
-                  {status.code === "not_connected"
-                    ? "Nothing was sent. Send the same details on WhatsApp instead. They're already filled in."
-                    : "Nothing is lost. Try again, or send the same details on WhatsApp."}
+                  {status.code === "not_connected" ? t.failedNotConnectedBody : t.failedBody}
                 </p>
-                <WhatsAppFallback href={whatsappHref(s)} placement="booking_error" label="Send on WhatsApp" className="mt-3 w-full md:w-auto" />
+                <WhatsAppFallback
+                  href={whatsappHref(s, t, c, locale)}
+                  placement="booking_error"
+                  label={c.sendOnWhatsApp}
+                  opens={c.opensWhatsApp}
+                  className="mt-3 w-full md:w-auto"
+                />
               </div>
             ) : null}
 
             {errorCount > 0 ? (
               <p role="status" className="mb-4 t-small font-medium text-error">
-                {errorCount === 1 ? "One thing needs checking above." : `${errorCount} things need checking above.`}
+                {errorCount === 1 ? t.errorsOne : fill(t.errorsMany, { n: errorCount }, locale)}
               </p>
             ) : null}
 
@@ -631,16 +725,16 @@ export function BookingForm({
               {submitting ? (
                 <>
                   <span aria-hidden="true" className="size-4 animate-spin rounded-full border-2 border-white/40 border-t-white motion-reduce:animate-none" />
-                  Sending…
+                  {c.sending}
                 </>
               ) : (
-                "Send Pickup Request"
+                t.submit
               )}
             </button>
 
             <ul className="mt-4 space-y-1.5 t-small text-secondary">
-              <li>Nothing to pay now. We call or WhatsApp you to confirm the time before we come.</li>
-              <li>Free pickup &amp; delivery on orders of {FREE_DELIVERY_THRESHOLD}+.</li>
+              <li>{t.reassureTime}</li>
+              <li>{fill(t.reassureFree, { amount: FREE_DELIVERY_THRESHOLD }, locale)}</li>
             </ul>
           </div>
         </form>
@@ -655,28 +749,33 @@ function BookingSuccess({
   headingRef,
   state,
   reference,
+  t,
+  c,
+  locale,
 }: {
   headingRef: Ref<HTMLHeadingElement>;
   state: FormState;
   reference?: string;
+  t: Text;
+  c: Common;
+  locale: Locale;
 }) {
-  const when = pickupLabel(state);
+  const when = pickupLabel(state, pageWords(t, c, locale));
   const firstName = state.name.trim().split(/\s+/)[0];
   const rows = [
-    { label: state.items.length ? "Items" : "Service", value: whatLabel(state) || "Not specified" },
-    { label: "Pickup from", value: `${state.address.trim()}, ${areaLabel(state.sector)}` },
-    { label: "Preferred time", value: when ? when.charAt(0).toUpperCase() + when.slice(1) : "No preference" },
-    { label: "We'll contact", value: displayPhone(state.phone) },
+    { label: state.items.length ? t.rowItems : t.rowService, value: whatLabel(state, t, locale) || t.notSpecified },
+    { label: t.rowPickupFrom, value: `${state.address.trim()}, ${areaText(state.sector, t, locale)}` },
+    { label: t.rowPreferredTime, value: when ? when.charAt(0).toUpperCase() + when.slice(1) : t.noPreference },
+    // Phone numbers keep their digits.
+    { label: t.rowContact, value: displayPhone(state.phone) },
   ];
 
   return (
     <div data-booking-success>
       <h1 id="page-title" ref={headingRef} tabIndex={-1} className="scroll-mt-32 t-h1 text-navy focus:outline-none">
-        Pickup request received
+        {t.successTitle}
       </h1>
-      <p className="mt-3 t-body text-body md:mt-4 md:t-body-lg">
-        Thanks, {firstName}. We&apos;ll call or WhatsApp you to confirm the pickup time. Your pickup is booked once we&apos;ve confirmed it with you.
-      </p>
+      <p className="mt-3 t-body text-body md:mt-4 md:t-body-lg">{format(t.successBody, { name: firstName })}</p>
 
       <dl className="mt-7 border-t border-navy">
         {rows.map((r) => (
@@ -687,33 +786,34 @@ function BookingSuccess({
         ))}
         {reference ? (
           <div className="grid grid-cols-[7.5rem_1fr] gap-4 border-b border-line py-3.5 md:grid-cols-[10rem_1fr]">
-            <dt className="t-small font-semibold text-navy">Reference</dt>
+            <dt className="t-small font-semibold text-navy">{t.rowReference}</dt>
             <dd className="t-small text-body">
               <span className="font-semibold text-navy">{reference}</span>
-              <span className="mt-0.5 block text-secondary">Mention this if you contact us about the pickup.</span>
+              <span className="mt-0.5 block text-secondary">{t.referenceNote}</span>
             </dd>
           </div>
         ) : null}
       </dl>
 
-      <h2 className="mt-8 t-label uppercase text-navy">What happens next</h2>
+      <h2 className="mt-8 t-label uppercase text-navy">{t.nextTitle}</h2>
       <ol className="mt-3 space-y-2.5 text-body">
-        {[
-          "We call or WhatsApp you to confirm the pickup time.",
-          "We collect from your door.",
-          "Your order comes back cleaned, finished, checked and packed.",
-        ].map((step, i) => (
+        {t.nextSteps.map((step, i) => (
           <li key={step} className="flex gap-3">
-            <span className="t-label pt-[4px] text-blue">{String(i + 1).padStart(2, "0")}</span>
+            <span className="t-label pt-[4px] text-blue">{localDigits(String(i + 1).padStart(2, "0"), locale)}</span>
             {step}
           </li>
         ))}
       </ol>
 
       <div className="mt-8 flex flex-col gap-3 border-t border-line pt-6 md:flex-row md:flex-wrap md:items-center">
-        <WhatsAppFallback href={whatsappHref(state)} placement="booking_success" label="Change something on WhatsApp" />
+        <WhatsAppFallback
+          href={whatsappHref(state, t, c, locale)}
+          placement="booking_success"
+          label={t.changeOnWhatsApp}
+          opens={c.opensWhatsApp}
+        />
         <ButtonLink href="/" variant="secondary">
-          Back to the homepage
+          {c.backHome}
         </ButtonLink>
       </div>
     </div>
