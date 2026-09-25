@@ -13,6 +13,8 @@ const { pagesEn } = requireTs("src/content/i18n/pages/en.ts");
 const { pagesBn } = requireTs("src/content/i18n/pages/bn.ts");
 const { formsEn } = requireTs("src/content/i18n/forms/en.ts");
 const { formsBn } = requireTs("src/content/i18n/forms/bn.ts");
+const { accountEn } = requireTs("src/content/i18n/account/en.ts");
+const { accountBn } = requireTs("src/content/i18n/account/bn.ts");
 const { SERVICE_PAGES, servicePages } = requireTs("src/content/services.ts");
 const { BANGLA_READY_PATHS } = requireTs("src/lib/i18n/config.ts");
 const { LOCATIONS } = requireTs("src/content/site.ts");
@@ -38,6 +40,10 @@ test("page text: Bangla has exactly the English keys", () => {
 
 test("form text: Bangla has exactly the English keys", () => {
   assert.deepEqual(shape(formsBn), shape(formsEn));
+});
+
+test("account text: Bangla has exactly the English keys", () => {
+  assert.deepEqual(shape(accountBn), shape(accountEn));
 });
 
 test("service pages: Bangla keeps every service's structure and data", () => {
@@ -119,6 +125,7 @@ test("Bangla copy has no untranslated English left in it", () => {
       ...untranslated(en, bn),
       ...untranslated(pagesEn, pagesBn),
       ...untranslated(formsEn, formsBn),
+      ...untranslated(accountEn, accountBn),
       ...untranslated(SERVICE_PAGES, services, "services"),
     ],
     [],

@@ -5,14 +5,12 @@ import { AccountsUnavailable, SignedInNotice, StaffAccountNotice } from "@/compo
 import { getCustomerSession } from "@/lib/customer/portal";
 import { safeNextPath } from "@/lib/customer/validation";
 import { alternatesFor } from "@/lib/seo/page-metadata";
-
-const baseMetadata: Metadata = {
-  title: "Create an account — Velto Premium Laundry",
-  robots: { index: false, follow: false },
-};
+import { accountText } from "@/content/i18n/account";
+import { getLocale } from "@/lib/i18n/server";
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { ...baseMetadata, alternates: await alternatesFor("/signup") };
+  const title = accountText(await getLocale()).meta.signUp;
+  return { title, robots: { index: false, follow: false }, alternates: await alternatesFor("/signup") };
 }
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -21,7 +19,8 @@ const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 export default async function SignUpPage({ searchParams }: { searchParams: SearchParams }) {
   const next = safeNextPath(one((await searchParams).next));
   const session = await getCustomerSession();
-  const title = "Create your Velto account";
+  const a = accountText(await getLocale());
+  const title = a.pages.signUpTitle;
 
   if (session.kind === "disabled") {
     return (
@@ -38,8 +37,8 @@ export default async function SignUpPage({ searchParams }: { searchParams: Searc
     );
   }
   return (
-    <AuthShell title={title} intro="Keep your orders in one place and book pickups with your details already filled in.">
-      <SignUpForm next={next} />
+    <AuthShell title={title} intro={a.pages.signUpIntro}>
+      <SignUpForm t={a.forms} next={next} />
     </AuthShell>
   );
 }

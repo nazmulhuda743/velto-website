@@ -44,12 +44,12 @@ for (const file of files) {
   }
 
   // Account features never depend on a cookie-consent choice.
-  if (/^src\/(lib\/customer|components\/account|app\/\(site\)\/account)\//.test(file)) {
+  if (/^src\/(lib\/customer|components\/account|app\/\[lang\]\/\(site\)\/account)\//.test(file)) {
     expect(!/@\/lib\/consent|@\/lib\/analytics\/client|readConsent/.test(src), `${file}: account code must not read consent`);
   }
 
   // 3. Customer-facing code reaches Ops data only through the portal_* functions.
-  if (/^src\/(lib\/customer|components\/account|app\/\(site\)\/account)\//.test(file)) {
+  if (/^src\/(lib\/customer|components\/account|app\/\[lang\]\/\(site\)\/account)\//.test(file)) {
     expect(!/\.from\(\s*["']/.test(src), `${file}: customer code must not query tables directly (use portal_* RPCs)`);
     for (const m of src.matchAll(/\.rpc\(\s*["']([a-z_]+)["']/g)) {
       expect(m[1].startsWith("portal_") && !["portal_link_decide", "portal_link_requests"].includes(m[1]), `${file}: customer code calls ${m[1]}`);

@@ -4,20 +4,19 @@ import { ForgotPasswordForm } from "@/components/account/forms";
 import { AccountsUnavailable } from "@/components/account/SignedInNotice";
 import { customerAccountsEnabled } from "@/lib/customer/config";
 import { alternatesFor } from "@/lib/seo/page-metadata";
-
-const baseMetadata: Metadata = {
-  title: "Reset your password — Velto Premium Laundry",
-  robots: { index: false, follow: false },
-};
+import { accountText } from "@/content/i18n/account";
+import { getLocale } from "@/lib/i18n/server";
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { ...baseMetadata, alternates: await alternatesFor("/forgot-password") };
+  const title = accountText(await getLocale()).meta.forgot;
+  return { title, robots: { index: false, follow: false }, alternates: await alternatesFor("/forgot-password") };
 }
 
-export default function ForgotPasswordPage() {
+export default async function ForgotPasswordPage() {
+  const a = accountText(await getLocale());
   return (
-    <AuthShell title="Reset your password" intro="Enter the email you signed up with and we'll send you a link to choose a new password.">
-      {customerAccountsEnabled() ? <ForgotPasswordForm /> : <AccountsUnavailable />}
+    <AuthShell title={a.pages.forgotTitle} intro={a.pages.forgotIntro}>
+      {customerAccountsEnabled() ? <ForgotPasswordForm t={a.forms} /> : <AccountsUnavailable />}
     </AuthShell>
   );
 }

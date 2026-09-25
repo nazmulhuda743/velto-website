@@ -1,0 +1,51 @@
+{{/*
+  Supabase Auth → Email Templates → "Confirm signup". Bilingual (Bangla + English) for
+  website customers; every other user (Velto Ops staff) keeps the project's current email.
+  Customers are the accounts created on the website: only they have terms_version in their
+  metadata. .Data.locale ("bn" or "en") is set by the website at sign-up and only chooses
+  which language comes first and which language the link opens; it is never printed.
+  See README.md before applying. Staging first.
+*/}}
+{{ if .Data.terms_version }}{{ $bn := eq (printf "%v" .Data.locale) "bn" }}{{ $link := printf "https://www.velto.com.bd/auth/confirm?token_hash=%s&type=email&next=%s" .TokenHash (or (and $bn "/bn/account") "/account") }}<!doctype html>
+<html>
+<body style="margin:0;background:#fafaf8;font-family:'Noto Sans Bengali',Arial,Helvetica,sans-serif;color:#30373d;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fafaf8;padding:32px 16px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border:1px solid #d9e0e4;border-radius:8px;">
+        <tr><td style="padding:28px 28px 8px;">
+          <p style="margin:0;font-size:18px;font-weight:700;color:#002b4e;">Velto Premium Laundry</p>
+        </td></tr>
+        {{ if $bn }}
+        <tr><td lang="bn" style="padding:12px 28px 4px;">
+          <h1 style="margin:0 0 12px;font-size:20px;line-height:1.4;color:#002b4e;">আপনার Velto অ্যাকাউন্ট নিশ্চিত করুন</h1>
+          <p style="margin:0 0 20px;font-size:15px;line-height:1.7;">আপনার ইমেইল ঠিকানা নিশ্চিত করে অ্যাকাউন্ট খোলা শেষ করতে নিচের বোতামে চাপ দিন।</p>
+        </td></tr>
+        <tr><td style="padding:0 28px 8px;">
+          <a href="{{ $link }}" style="display:inline-block;background:#0078bc;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 22px;border-radius:6px;">ইমেইল নিশ্চিত করুন · Confirm email</a>
+        </td></tr>
+        <tr><td lang="en" style="padding:20px 28px 4px;border-top:1px solid #d9e0e4;">
+          <p style="margin:12px 0 0;font-size:15px;line-height:1.6;"><strong style="color:#002b4e;">Confirm your Velto account.</strong> Tap the button above to confirm your email address and finish setting up your account.</p>
+        </td></tr>
+        {{ else }}
+        <tr><td lang="en" style="padding:12px 28px 4px;">
+          <h1 style="margin:0 0 12px;font-size:20px;line-height:1.4;color:#002b4e;">Confirm your Velto account</h1>
+          <p style="margin:0 0 20px;font-size:15px;line-height:1.6;">Tap the button below to confirm your email address and finish setting up your account.</p>
+        </td></tr>
+        <tr><td style="padding:0 28px 8px;">
+          <a href="{{ $link }}" style="display:inline-block;background:#0078bc;color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;padding:12px 22px;border-radius:6px;">Confirm email · ইমেইল নিশ্চিত করুন</a>
+        </td></tr>
+        <tr><td lang="bn" style="padding:20px 28px 4px;border-top:1px solid #d9e0e4;">
+          <p style="margin:12px 0 0;font-size:15px;line-height:1.7;"><strong style="color:#002b4e;">আপনার Velto অ্যাকাউন্ট নিশ্চিত করুন।</strong> আপনার ইমেইল ঠিকানা নিশ্চিত করে অ্যাকাউন্ট খোলা শেষ করতে ওপরের বোতামে চাপ দিন।</p>
+        </td></tr>
+        {{ end }}
+        <tr><td style="padding:20px 28px 28px;">
+          <p style="margin:0 0 6px;font-size:13px;line-height:1.6;color:#596168;">Open the link on the phone or computer you'll use to sign in. If you didn't create a Velto account, you can ignore this email.</p>
+          <p lang="bn" style="margin:0;font-size:13px;line-height:1.7;color:#596168;">যে ফোন বা কম্পিউটারে সাইন ইন করবেন, সেখানেই লিংকটি খুলুন। আপনি Velto অ্যাকাউন্ট না খুলে থাকলে এই ইমেইলটি উপেক্ষা করুন।</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+{{ else }}{{/* ↓ PASTE THE PROJECT'S CURRENT "Confirm signup" TEMPLATE HERE, unchanged (staff and other users). */}}
+{{ end }}

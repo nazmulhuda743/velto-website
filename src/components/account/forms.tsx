@@ -13,11 +13,17 @@ import {
   type AuthFormState,
 } from "@/lib/customer/actions";
 import { OUTSIDE_AREA, PASSWORD_MIN, UTTARA_SECTORS, displayBdPhone } from "@/lib/customer/validation";
+import { useLocale } from "@/components/i18n/LocaleProvider";
+import type { AccountText } from "@/content/i18n/account/en";
+import { fill } from "@/lib/i18n/config";
 import { Alert } from "./Alert";
 import { PasswordField } from "./PasswordField";
 import { SubmitButton } from "./SubmitButton";
 
 const IDLE: AuthFormState = { status: "idle" };
+
+/** Form text in the page language (accountText(locale).forms), passed by the server page. */
+type Text = AccountText["forms"];
 
 const errorsOf = (s: AuthFormState) => (s.status === "invalid" ? s.errors : {});
 const valueOf = (s: AuthFormState, key: string) => ("values" in s && s.values ? s.values[key] : undefined);
@@ -32,24 +38,24 @@ function useFocusFirstError(state: AuthFormState, formRef: React.RefObject<HTMLF
   }, [state, formRef]);
 }
 
-function Unavailable() {
+function Unavailable({ t }: { t: Text }) {
   return (
-    <Alert tone="error" title="We can't reach Velto accounts right now.">
-      Check your connection and try again in a moment. You can still{" "}
+    <Alert tone="error" title={t.unavailableTitle}>
+      {t.unavailableBefore}
       <Link href="/book" className="font-semibold text-navy underline underline-offset-4">
-        book a pickup
-      </Link>{" "}
-      or{" "}
+        {t.bookLink}
+      </Link>
+      {t.or}
       <Link href="/track" className="font-semibold text-navy underline underline-offset-4">
-        track an order
-      </Link>{" "}
-      without signing in.
+        {t.trackLink}
+      </Link>
+      {t.unavailableAfter}
     </Alert>
   );
 }
 
-function StateMessage({ state }: { state: AuthFormState }) {
-  if (state.status === "unavailable") return <Unavailable />;
+function StateMessage({ state, t }: { state: AuthFormState; t: Text }) {
+  if (state.status === "unavailable") return <Unavailable t={t} />;
   if (state.status === "error") return <Alert tone="error">{state.message}</Alert>;
   if (state.status === "invalid" && state.message) return <Alert tone="error">{state.message}</Alert>;
   return null;
@@ -57,31 +63,34 @@ function StateMessage({ state }: { state: AuthFormState }) {
 
 /* ---------- Sign in ---------- */
 
-export function SignInForm({ next, notice }: { next: string; notice?: React.ReactNode }) {
+/** Show/hide labels for PasswordField, in the page language. */
+const toggleLabels = (t: Text) => ({ show: t.show, hide: t.hide, srPassword: t.srPassword });
+
+export function SignInForm({ t, next, notice }: { t: Text; next: string; notice?: React.ReactNode }) {
   const [state, action] = useActionState(signInAction, IDLE);
   const formRef = useRef<HTMLFormElement>(null);
   useFocusFirstError(state, formRef);
   const errors = errorsOf(state);
 
-  if (state.status === "verify-required") return <VerifyEmail email={state.email} />;
+  if (state.status === "verify-required") return <VerifyEmail t={t} email={state.email} />;
 
   return (
     <form ref={formRef} action={action} noValidate className="space-y-5">
       {notice}
-      <StateMessage state={state} />
+      <StateMessage state={state} t={t} />
       <input type="hidden" name="next" value={next} />
-      <TextField id="email" label="Email" type="email" autoComplete="email" inputMode="email" required maxLength={254} defaultValue={valueOf(state, "email")} error={errors.email} />
-      <PasswordField id="password" label="Password" autoComplete="current-password" error={errors.password} />
+      <TextField id="email" label={t.emailLabel} type="email" autoComplete="email" inputMode="email" required maxLength={254} defaultValue={valueOf(state, "email")} error={errors.email} />
+      <PasswordField id="password" label={t.passwordLabel} autoComplete="current-password" error={errors.password} labels={toggleLabels(t)} />
       <div className="-mt-1 flex justify-end">
         <Link href="/forgot-password" className="t-small font-semibold text-navy underline decoration-blue/50 underline-offset-4 hover:decoration-blue">
-          Forgot password?
+          {t.forgot}
         </Link>
       </div>
-      <SubmitButton pending="Signing in…">Sign in</SubmitButton>
+      <SubmitButton pending={t.signInPending}>{t.signInSubmit}</SubmitButton>
       <p className="border-t border-line pt-5 text-center t-small text-secondary">
-        New to Velto accounts?{" "}
+        {t.newTo}
         <Link href={`/signup${next !== "/account" ? `?next=${encodeURIComponent(next)}` : ""}`} className="font-semibold text-navy underline decoration-blue/50 underline-offset-4 hover:decoration-blue">
-          Create an account
+          {t.createLink}
         </Link>
       </p>
     </form>
@@ -90,27 +99,29 @@ export function SignInForm({ next, notice }: { next: string; notice?: React.Reac
 
 /* ---------- Verification required / resend ---------- */
 
-export function VerifyEmail({ email }: { email: string }) {
+export function VerifyEmail({ t, email }: { t: Text; email: string }) {
   const [state, action] = useActionState(resendVerificationAction, IDLE);
   return (
     <div className="space-y-5">
-      <Alert tone="info" title="Please confirm your email first.">
-        We sent a confirmation link to <strong className="text-navy">{email}</strong>. Open it on this phone or computer, then sign in.
+      <Alert tone="info" title={t.verifyTitle}>
+        {t.verifyBefore}
+        <strong className="text-navy">{email}</strong>
+        {t.verifyAfter}
       </Alert>
       {state.status === "sent" ? (
-        <Alert tone="success">If that address needs confirming, a new link is on its way. It can take a few minutes; check spam too.</Alert>
+        <Alert tone="success">{t.resent}</Alert>
       ) : (
         <form action={action}>
           <input type="hidden" name="email" value={email} />
-          <StateMessage state={state} />
-          <SubmitButton pending="Sending…" variant="secondary" className={state.status === "idle" ? "" : "mt-4"}>
-            Send the link again
+          <StateMessage state={state} t={t} />
+          <SubmitButton pending={t.sending} variant="secondary" className={state.status === "idle" ? "" : "mt-4"}>
+            {t.resend}
           </SubmitButton>
         </form>
       )}
       <p className="text-center t-small">
         <Link href="/login" className="font-semibold text-navy underline decoration-blue/50 underline-offset-4">
-          Back to sign in
+          {t.backToSignIn}
         </Link>
       </p>
     </div>
@@ -119,7 +130,8 @@ export function VerifyEmail({ email }: { email: string }) {
 
 /* ---------- Sign up ---------- */
 
-export function SignUpForm({ next }: { next: string }) {
+export function SignUpForm({ t, next }: { t: Text; next: string }) {
+  const locale = useLocale();
   const [state, action] = useActionState(signUpAction, IDLE);
   const formRef = useRef<HTMLFormElement>(null);
   useFocusFirstError(state, formRef);
@@ -128,19 +140,21 @@ export function SignUpForm({ next }: { next: string }) {
   if (state.status === "check-email") {
     return (
       <div className="space-y-5" data-signup-sent>
-        <Alert tone="success" title="Check your email.">
-          We&apos;ve sent a link to <strong className="text-navy">{state.email}</strong>. Open it to confirm your address and finish setting up your account.
+        <Alert tone="success" title={t.checkTitle}>
+          {t.checkBefore}
+          <strong className="text-navy">{state.email}</strong>
+          {t.checkAfter}
         </Alert>
         <p className="t-small text-secondary">
-          Already have an account with this email? Just{" "}
+          {t.alreadyBefore}
           <Link href="/login" className="font-semibold text-navy underline underline-offset-4">
-            sign in
-          </Link>{" "}
-          or{" "}
-          <Link href="/forgot-password" className="font-semibold text-navy underline underline-offset-4">
-            reset your password
+            {t.alreadySignIn}
           </Link>
-          .
+          {t.or}
+          <Link href="/forgot-password" className="font-semibold text-navy underline underline-offset-4">
+            {t.alreadyReset}
+          </Link>
+          {t.alreadyAfter}
         </p>
       </div>
     );
@@ -148,24 +162,31 @@ export function SignUpForm({ next }: { next: string }) {
 
   return (
     <form ref={formRef} action={action} noValidate className="space-y-5">
-      <StateMessage state={state} />
-      <TextField id="fullName" label="Full name" autoComplete="name" required maxLength={80} defaultValue={valueOf(state, "fullName")} error={errors.fullName} />
-      <TextField id="email" label="Email" type="email" autoComplete="email" inputMode="email" required maxLength={254} defaultValue={valueOf(state, "email")} error={errors.email} />
+      <StateMessage state={state} t={t} />
+      <TextField id="fullName" label={t.fullNameLabel} autoComplete="name" required maxLength={80} defaultValue={valueOf(state, "fullName")} error={errors.fullName} />
+      <TextField id="email" label={t.emailLabel} type="email" autoComplete="email" inputMode="email" required maxLength={254} defaultValue={valueOf(state, "email")} error={errors.email} />
       <TextField
         id="phone"
-        label="Mobile number"
+        label={t.phoneLabel}
         type="tel"
         autoComplete="tel"
         inputMode="tel"
         required
         maxLength={20}
         placeholder="01712 345678"
-        helper="We use it to confirm pickups. It doesn't unlock past orders by itself."
+        helper={t.phoneHelp}
         defaultValue={valueOf(state, "phone")}
         error={errors.phone}
       />
-      <PasswordField id="password" label="Password" autoComplete="new-password" helper={`At least ${PASSWORD_MIN} characters, with a letter and a number.`} error={errors.password} />
-      <PasswordField id="confirm" label="Confirm password" autoComplete="new-password" error={errors.confirm} />
+      <PasswordField
+        id="password"
+        label={t.passwordLabel}
+        autoComplete="new-password"
+        helper={fill(t.passwordHelp, { n: PASSWORD_MIN }, locale)}
+        error={errors.password}
+        labels={toggleLabels(t)}
+      />
+      <PasswordField id="confirm" label={t.confirmLabel} autoComplete="new-password" error={errors.confirm} labels={toggleLabels(t)} />
       <div>
         <label className="flex items-start gap-3 t-small text-body">
           <input
@@ -177,15 +198,15 @@ export function SignUpForm({ next }: { next: string }) {
             className="mt-0.5 size-5 shrink-0 accent-[var(--color-action)]"
           />
           <span>
-            I agree to the{" "}
+            {t.agreeBefore}
             <Link href="/terms" target="_blank" className="font-semibold text-navy underline underline-offset-4">
-              Terms
-            </Link>{" "}
-            and{" "}
-            <Link href="/privacy" target="_blank" className="font-semibold text-navy underline underline-offset-4">
-              Privacy Policy
+              {t.termsLink}
             </Link>
-            .
+            {t.and}
+            <Link href="/privacy" target="_blank" className="font-semibold text-navy underline underline-offset-4">
+              {t.privacyLink}
+            </Link>
+            {t.agreeAfter}
           </span>
         </label>
         {errors.terms ? (
@@ -195,11 +216,11 @@ export function SignUpForm({ next }: { next: string }) {
           </p>
         ) : null}
       </div>
-      <SubmitButton pending="Creating your account…">Create account</SubmitButton>
+      <SubmitButton pending={t.signUpPending}>{t.signUpSubmit}</SubmitButton>
       <p className="border-t border-line pt-5 text-center t-small text-secondary">
-        Already have an account?{" "}
+        {t.haveAccount}
         <Link href={`/login${next !== "/account" ? `?next=${encodeURIComponent(next)}` : ""}`} className="font-semibold text-navy underline decoration-blue/50 underline-offset-4 hover:decoration-blue">
-          Sign in
+          {t.signInLink}
         </Link>
       </p>
     </form>
@@ -208,7 +229,7 @@ export function SignUpForm({ next }: { next: string }) {
 
 /* ---------- Forgot password ---------- */
 
-export function ForgotPasswordForm() {
+export function ForgotPasswordForm({ t }: { t: Text }) {
   const [state, action] = useActionState(forgotPasswordAction, IDLE);
   const formRef = useRef<HTMLFormElement>(null);
   useFocusFirstError(state, formRef);
@@ -216,12 +237,12 @@ export function ForgotPasswordForm() {
   if (state.status === "sent") {
     return (
       <div className="space-y-5" data-reset-sent>
-        <Alert tone="success" title="Check your email.">
-          If there&apos;s a Velto account for that address, we&apos;ve sent a link to reset the password. It works once and expires soon, so use it shortly.
+        <Alert tone="success" title={t.checkTitle}>
+          {t.forgotSent}
         </Alert>
         <p className="text-center t-small">
           <Link href="/login" className="font-semibold text-navy underline decoration-blue/50 underline-offset-4">
-            Back to sign in
+            {t.backToSignIn}
           </Link>
         </p>
       </div>
@@ -229,12 +250,12 @@ export function ForgotPasswordForm() {
   }
   return (
     <form ref={formRef} action={action} noValidate className="space-y-5">
-      <StateMessage state={state} />
-      <TextField id="email" label="Email" type="email" autoComplete="email" inputMode="email" required maxLength={254} error={errorsOf(state).email} />
-      <SubmitButton pending="Sending…">Send reset link</SubmitButton>
+      <StateMessage state={state} t={t} />
+      <TextField id="email" label={t.emailLabel} type="email" autoComplete="email" inputMode="email" required maxLength={254} error={errorsOf(state).email} />
+      <SubmitButton pending={t.sending}>{t.forgotSubmit}</SubmitButton>
       <p className="text-center t-small">
         <Link href="/login" className="font-semibold text-navy underline decoration-blue/50 underline-offset-4">
-          Back to sign in
+          {t.backToSignIn}
         </Link>
       </p>
     </form>
@@ -243,31 +264,39 @@ export function ForgotPasswordForm() {
 
 /* ---------- Reset password ---------- */
 
-export function ExpiredResetLink() {
+export function ExpiredResetLink({ t }: { t: Text }) {
   return (
     <div className="space-y-5" data-reset-expired>
-      <Alert tone="error" title="This reset link has expired or was already used.">
-        For your security, each link works once and only for a short time. Request a new one below.
+      <Alert tone="error" title={t.expiredTitle}>
+        {t.expiredBody}
       </Alert>
       <Link href="/forgot-password" className="inline-flex h-[52px] w-full items-center justify-center rounded-md bg-action px-6 font-semibold text-white hover:bg-action-hover lg:h-12">
-        Send a new link
+        {t.expiredButton}
       </Link>
     </div>
   );
 }
 
-export function ResetPasswordForm() {
+export function ResetPasswordForm({ t }: { t: Text }) {
+  const locale = useLocale();
   const [state, action] = useActionState(resetPasswordAction, IDLE);
   const formRef = useRef<HTMLFormElement>(null);
   useFocusFirstError(state, formRef);
   const errors = errorsOf(state);
-  if (state.status === "expired") return <ExpiredResetLink />;
+  if (state.status === "expired") return <ExpiredResetLink t={t} />;
   return (
     <form ref={formRef} action={action} noValidate className="space-y-5">
-      <StateMessage state={state} />
-      <PasswordField id="password" label="New password" autoComplete="new-password" helper={`At least ${PASSWORD_MIN} characters, with a letter and a number.`} error={errors.password} />
-      <PasswordField id="confirm" label="Confirm new password" autoComplete="new-password" error={errors.confirm} />
-      <SubmitButton pending="Saving…">Save new password</SubmitButton>
+      <StateMessage state={state} t={t} />
+      <PasswordField
+        id="password"
+        label={t.newPasswordLabel}
+        autoComplete="new-password"
+        helper={fill(t.passwordHelp, { n: PASSWORD_MIN }, locale)}
+        error={errors.password}
+        labels={toggleLabels(t)}
+      />
+      <PasswordField id="confirm" label={t.confirmNewLabel} autoComplete="new-password" error={errors.confirm} labels={toggleLabels(t)} />
+      <SubmitButton pending={t.saving}>{t.savePassword}</SubmitButton>
     </form>
   );
 }
@@ -275,10 +304,12 @@ export function ResetPasswordForm() {
 /* ---------- Profile ---------- */
 
 export function ProfileForm({
+  t,
   initial,
   phoneLocked,
   completing = false,
 }: {
+  t: Text;
   initial: { fullName: string; phone: string; address: string; area: string };
   phoneLocked: "linked" | "pending" | null;
   completing?: boolean;
@@ -288,55 +319,65 @@ export function ProfileForm({
   useFocusFirstError(state, formRef);
   const errors = errorsOf(state);
   const v = (key: keyof typeof initial) => valueOf(state, key) ?? initial[key];
+  const locale = useLocale();
 
   return (
     <form ref={formRef} action={action} noValidate className="space-y-5">
-      {state.status === "saved" ? <Alert tone="success">Saved. We&apos;ll use these details next time you book.</Alert> : null}
-      <StateMessage state={state} />
+      {state.status === "saved" ? <Alert tone="success">{t.saved}</Alert> : null}
+      <StateMessage state={state} t={t} />
       {completing ? <input type="hidden" name="completing" value="1" /> : null}
-      <TextField id="fullName" label="Full name" autoComplete="name" required maxLength={80} defaultValue={v("fullName")} error={errors.fullName} />
+      <TextField id="fullName" label={t.fullNameLabel} autoComplete="name" required maxLength={80} defaultValue={v("fullName")} error={errors.fullName} />
       {phoneLocked ? (
         <div>
-          <p className="block text-[15px] font-semibold text-navy">Mobile number</p>
+          <p className="block text-[15px] font-semibold text-navy">{t.phoneLabel}</p>
           <input type="hidden" name="phone" value={initial.phone} />
           <p className="mt-2 flex h-[54px] items-center rounded-md border border-line bg-soft px-4 text-navy md:h-[52px]">{displayBdPhone(initial.phone)}</p>
           <p className="mt-2 t-small text-secondary">
-            {phoneLocked === "linked"
-              ? "This number is verified with your Velto history. To change it, message Velto so we can verify the new number."
-              : "This number is waiting for Velto to verify it, so it can't be changed right now."}
+            {phoneLocked === "linked" ? t.lockedLinked : t.lockedPending}
           </p>
         </div>
       ) : (
-        <TextField id="phone" label="Mobile number" type="tel" autoComplete="tel" inputMode="tel" required maxLength={20} defaultValue={v("phone")} error={errors.phone} />
+        <TextField id="phone" label={t.phoneLabel} type="tel" autoComplete="tel" inputMode="tel" required maxLength={20} defaultValue={v("phone")} error={errors.phone} />
       )}
-      <SelectField id="area" label="Area" optional defaultValue={v("area")} error={errors.area}>
-        <option value="">Not set</option>
+      <SelectField id="area" label={t.areaLabel} optional optionalText={t.optional} defaultValue={v("area")} error={errors.area}>
+        <option value="">{t.areaNotSet}</option>
         {UTTARA_SECTORS.map((n) => (
           <option key={n} value={n}>
-            Uttara Sector {n}
+            {fill(t.areaSector, { n }, locale)}
           </option>
         ))}
-        <option value={OUTSIDE_AREA}>Outside Sectors 1–18</option>
+        <option value={OUTSIDE_AREA}>{t.areaOutside}</option>
       </SelectField>
-      <TextField id="address" label="Pickup address" optional autoComplete="street-address" maxLength={300} helper="House, road and any landmark our rider should know." defaultValue={v("address")} error={errors.address} />
+      <TextField
+        id="address"
+        label={t.addressLabel}
+        optional
+        optionalText={t.optional}
+        autoComplete="street-address"
+        maxLength={300}
+        helper={t.addressHelp}
+        defaultValue={v("address")}
+        error={errors.address}
+      />
       {completing ? (
         <label className="flex items-start gap-3 t-small text-body">
           <input type="checkbox" name="terms" required aria-invalid={errors.terms ? true : undefined} className="mt-0.5 size-5 shrink-0 accent-[var(--color-action)]" />
           <span>
-            I agree to the{" "}
+            {t.agreeBefore}
             <Link href="/terms" target="_blank" className="font-semibold text-navy underline underline-offset-4">
-              Terms
-            </Link>{" "}
-            and{" "}
-            <Link href="/privacy" target="_blank" className="font-semibold text-navy underline underline-offset-4">
-              Privacy Policy
+              {t.termsLink}
             </Link>
-            .{errors.terms ? <span className="mt-1 block font-medium text-error">{errors.terms}</span> : null}
+            {t.and}
+            <Link href="/privacy" target="_blank" className="font-semibold text-navy underline underline-offset-4">
+              {t.privacyLink}
+            </Link>
+            {t.agreeAfter}
+            {errors.terms ? <span className="mt-1 block font-medium text-error">{errors.terms}</span> : null}
           </span>
         </label>
       ) : null}
-      <SubmitButton pending="Saving…" className="md:w-auto">
-        {completing ? "Continue" : "Save details"}
+      <SubmitButton pending={t.saving} className="md:w-auto">
+        {completing ? t.continue : t.saveDetails}
       </SubmitButton>
     </form>
   );

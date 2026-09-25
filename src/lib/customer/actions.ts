@@ -3,14 +3,18 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { localHref, loginRedirectPath } from "@/lib/i18n/server";
+import { getLocale, localHref, loginRedirectPath } from "@/lib/i18n/server";
+import { accountText } from "@/content/i18n/account";
+import { fill } from "@/lib/i18n/config";
 import { SITE_URL } from "@/lib/site-url";
 import { ACCOUNT_HINT_COOKIE, RECOVERY_COOKIE } from "./config";
 import { AUTH_COOKIE_OPTIONS, customerSupabase } from "./supabase";
 import {
+  PASSWORD_MAX,
+  PASSWORD_MIN,
   TERMS_VERSION,
   normaliseBdPhone,
-  passwordProblem,
+  passwordIssue,
   safeNextPath,
   validArea,
   validEmail,
@@ -31,7 +35,25 @@ export type AuthFormState =
   | { status: "saved" };
 
 const UNAVAILABLE: AuthFormState = { status: "unavailable" };
-const DISABLED: AuthFormState = { status: "error", message: "Customer accounts aren't available yet." };
+
+/** Messages in the language of the page the form was sent from (the proxy's locale header). */
+async function messages() {
+  const locale = await getLocale();
+  const t = accountText(locale).actions;
+  const password = (value: string) => {
+    const issue = passwordIssue(value);
+    if (issue === "short") return fill(t.passwordShort, { n: PASSWORD_MIN }, locale);
+    if (issue === "long") return fill(t.passwordLong, { n: PASSWORD_MAX }, locale);
+    if (issue === "mix") return t.passwordMix;
+    return null;
+  };
+  return {
+    t,
+    password,
+    disabled: { status: "error", message: t.disabled } as AuthFormState,
+    tooMany: { status: "error", message: t.tooMany } as AuthFormState,
+  };
+}
 
 const str = (form: FormData, key: string, max = 300) => String(form.get(key) ?? "").slice(0, max);
 
@@ -52,12 +74,10 @@ async function throttled(kind: keyof typeof WINDOWS) {
   return recent.length > max;
 }
 
-const TOO_MANY: AuthFormState = { status: "error", message: "Too many attempts. Please wait a few minutes and try again." };
-
 /** Supabase auth error → customer-facing state. Never echoes raw provider messages. */
-function authFailure(error: { name?: string; code?: string; status?: number }): AuthFormState | null {
+function authFailure(error: { name?: string; code?: string; status?: number }, tooMany: AuthFormState): AuthFormState | null {
   if (error.name === "AuthRetryableFetchError" || !error.status) return UNAVAILABLE;
-  if (error.status === 429 || error.code?.startsWith("over_")) return TOO_MANY;
+  if (error.status === 429 || error.code?.startsWith("over_")) return tooMany;
   return null;
 }
 
@@ -85,40 +105,48 @@ export async function signUpAction(_prev: AuthFormState, form: FormData): Promis
   const values = { fullName: str(form, "fullName", 120), email: str(form, "email", 254), phone: str(form, "phone", 30) };
   const password = str(form, "password", 200);
   const errors: FieldErrors = {};
+  const m = await messages();
 
   const fullName = validName(values.fullName);
   const email = validEmail(values.email);
   const phone = normaliseBdPhone(values.phone);
-  if (!fullName) errors.fullName = "Enter your name.";
-  if (!email) errors.email = "Enter a valid email address.";
-  if (!phone) errors.phone = "Enter a Bangladeshi mobile number, like 01712 345678.";
-  const pwProblem = passwordProblem(password);
+  if (!fullName) errors.fullName = m.t.name;
+  if (!email) errors.email = m.t.email;
+  if (!phone) errors.phone = m.t.phone;
+  const pwProblem = m.password(password);
   if (pwProblem) errors.password = pwProblem;
-  if (password !== str(form, "confirm", 200)) errors.confirm = "The passwords don't match.";
-  if (form.get("terms") !== "on") errors.terms = "Please agree to the Terms and Privacy Policy to continue.";
+  if (password !== str(form, "confirm", 200)) errors.confirm = m.t.confirm;
+  if (form.get("terms") !== "on") errors.terms = m.t.terms;
   if (Object.keys(errors).length) return { status: "invalid", errors, values };
 
   const supabase = await customerSupabase();
-  if (!supabase) return DISABLED;
-  if (await throttled("signup")) return TOO_MANY;
+  if (!supabase) return m.disabled;
+  if (await throttled("signup")) return m.tooMany;
 
   const { data, error } = await supabase.auth.signUp({
     email: email!,
     password,
     options: {
       emailRedirectTo: await redirectTo("/account"),
-      // Used once, to create the customer's own portal profile. Grants nothing.
-      data: { full_name: fullName, phone, terms_version: TERMS_VERSION, terms_accepted_at: new Date().toISOString() },
+      // Used once, to create the customer's own portal profile. Grants nothing. `locale` only
+      // picks the language of the pages the emailed links open (see docs/technical/email-templates).
+      data: {
+        full_name: fullName,
+        phone,
+        terms_version: TERMS_VERSION,
+        terms_accepted_at: new Date().toISOString(),
+        locale: await getLocale(),
+      },
     },
   });
   if (error) {
-    const mapped = authFailure(error);
+    const mapped = authFailure(error, m.tooMany);
     if (mapped) return mapped;
-    if (error.code === "weak_password") return { status: "invalid", errors: { password: "Choose a stronger password." }, values };
-    if (error.code === "email_address_invalid") return { status: "invalid", errors: { email: "Enter a valid email address." }, values };
+    if (error.code === "weak_password") return { status: "invalid", errors: { password: m.t.weakPassword }, values };
+    if (error.code === "email_address_invalid") return { status: "invalid", errors: { email: m.t.email }, values };
     if (error.code === "user_already_exists" || error.code === "email_exists") return { status: "check-email", email: email! };
     console.error("customer_signup_failed", error.code ?? error.status);
-    return { status: "error", message: "We couldn't create your account. Please try again.", values };
+    return { status: "error", message: m.t.signUpFailed, values };
   }
   if (data.session) {
     // Projects without email confirmation sign the customer straight in.
@@ -131,14 +159,15 @@ export async function signUpAction(_prev: AuthFormState, form: FormData): Promis
 }
 
 export async function resendVerificationAction(_prev: AuthFormState, form: FormData): Promise<AuthFormState> {
+  const m = await messages();
   const email = validEmail(str(form, "email", 254));
-  if (!email) return { status: "invalid", errors: { email: "Enter a valid email address." } };
+  if (!email) return { status: "invalid", errors: { email: m.t.email } };
   const supabase = await customerSupabase();
-  if (!supabase) return DISABLED;
-  if (await throttled("resend")) return TOO_MANY;
+  if (!supabase) return m.disabled;
+  if (await throttled("resend")) return m.tooMany;
   const { error } = await supabase.auth.resend({ type: "signup", email, options: { emailRedirectTo: await redirectTo("/account") } });
   if (error) {
-    const mapped = authFailure(error);
+    const mapped = authFailure(error, m.tooMany);
     if (mapped) return mapped;
   }
   return { status: "sent" };
@@ -150,22 +179,25 @@ export async function signInAction(_prev: AuthFormState, form: FormData): Promis
   const values = { email: str(form, "email", 254) };
   const email = validEmail(values.email);
   const password = str(form, "password", 200);
-  const next = safeNextPath(str(form, "next", 300), await localHref("/account"));
+  // The form's language wins: /bn/login with next=/account continues to /bn/account.
+  const next = await localHref(safeNextPath(str(form, "next", 300)));
   const errors: FieldErrors = {};
-  if (!email) errors.email = "Enter the email address you signed up with.";
-  if (!password) errors.password = "Enter your password.";
+  const m = await messages();
+  if (!email) errors.email = m.t.signInEmail;
+  if (!password) errors.password = m.t.signInPassword;
   if (Object.keys(errors).length) return { status: "invalid", errors, values };
 
   const supabase = await customerSupabase();
-  if (!supabase) return DISABLED;
-  if (await throttled("signin")) return TOO_MANY;
+  if (!supabase) return m.disabled;
+  if (await throttled("signin")) return m.tooMany;
 
   const { error } = await supabase.auth.signInWithPassword({ email: email!, password });
   if (error) {
-    const mapped = authFailure(error);
+    const mapped = authFailure(error, m.tooMany);
     if (mapped) return mapped;
     if (error.code === "email_not_confirmed") return { status: "verify-required", email: email! };
-    return { status: "error", message: "Email or password is incorrect.", values };
+    // One message for an unknown email and a wrong password, in either language.
+    return { status: "error", message: m.t.wrongCredentials, values };
   }
   await supabase.rpc("portal_touch_login");
   await setAccountHint(true);
@@ -182,11 +214,12 @@ export async function signOutAction() {
 /* ---------- Forgot / reset password ---------- */
 
 export async function forgotPasswordAction(_prev: AuthFormState, form: FormData): Promise<AuthFormState> {
+  const m = await messages();
   const email = validEmail(str(form, "email", 254));
-  if (!email) return { status: "invalid", errors: { email: "Enter a valid email address." } };
+  if (!email) return { status: "invalid", errors: { email: m.t.email } };
   const supabase = await customerSupabase();
-  if (!supabase) return DISABLED;
-  if (await throttled("recover")) return TOO_MANY;
+  if (!supabase) return m.disabled;
+  if (await throttled("recover")) return m.tooMany;
   const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: await redirectTo("/reset-password") });
   if (error && (error.name === "AuthRetryableFetchError" || !error.status)) return UNAVAILABLE;
   // Same answer whether or not the address has an account.
@@ -196,13 +229,14 @@ export async function forgotPasswordAction(_prev: AuthFormState, form: FormData)
 export async function resetPasswordAction(_prev: AuthFormState, form: FormData): Promise<AuthFormState> {
   const password = str(form, "password", 200);
   const errors: FieldErrors = {};
-  const pwProblem = passwordProblem(password);
+  const m = await messages();
+  const pwProblem = m.password(password);
   if (pwProblem) errors.password = pwProblem;
-  if (password !== str(form, "confirm", 200)) errors.confirm = "The passwords don't match.";
+  if (password !== str(form, "confirm", 200)) errors.confirm = m.t.confirm;
   if (Object.keys(errors).length) return { status: "invalid", errors };
 
   const supabase = await customerSupabase();
-  if (!supabase) return DISABLED;
+  if (!supabase) return m.disabled;
   const store = await cookies();
   // Only a session that arrived through a recovery link may set a new password here.
   if (store.get(RECOVERY_COOKIE)?.value !== "1") return { status: "expired" };
@@ -211,13 +245,13 @@ export async function resetPasswordAction(_prev: AuthFormState, form: FormData):
 
   const { error } = await supabase.auth.updateUser({ password });
   if (error) {
-    const mapped = authFailure(error);
+    const mapped = authFailure(error, m.tooMany);
     if (mapped) return mapped;
-    if (error.code === "same_password") return { status: "invalid", errors: { password: "Choose a password you haven't used here before." } };
-    if (error.code === "weak_password") return { status: "invalid", errors: { password: "Choose a stronger password." } };
+    if (error.code === "same_password") return { status: "invalid", errors: { password: m.t.samePassword } };
+    if (error.code === "weak_password") return { status: "invalid", errors: { password: m.t.weakPassword } };
     if (error.status === 401 || error.status === 403) return { status: "expired" };
     console.error("customer_reset_failed", error.code ?? error.status);
-    return { status: "error", message: "We couldn't update your password. Please try again." };
+    return { status: "error", message: m.t.resetFailed };
   }
   store.delete(RECOVERY_COOKIE);
   // Anyone else holding an old session is signed out.
@@ -232,18 +266,19 @@ export async function saveProfileAction(_prev: AuthFormState, form: FormData): P
   const values = { fullName: str(form, "fullName", 120), phone: str(form, "phone", 30), address: str(form, "address", 400), area: str(form, "area", 20) };
   const completing = form.get("completing") === "1";
   const errors: FieldErrors = {};
+  const m = await messages();
   const fullName = validName(values.fullName);
   const phone = normaliseBdPhone(values.phone);
   const area = validArea(values.area);
-  if (!fullName) errors.fullName = "Enter your name.";
-  if (!phone) errors.phone = "Enter a Bangladeshi mobile number, like 01712 345678.";
-  if (values.address.trim().length > 300) errors.address = "Keep the address under 300 characters.";
-  if (area === null) errors.area = "Choose your area.";
-  if (completing && form.get("terms") !== "on") errors.terms = "Please agree to the Terms and Privacy Policy to continue.";
+  if (!fullName) errors.fullName = m.t.name;
+  if (!phone) errors.phone = m.t.phone;
+  if (values.address.trim().length > 300) errors.address = m.t.addressLong;
+  if (area === null) errors.area = m.t.area;
+  if (completing && form.get("terms") !== "on") errors.terms = m.t.terms;
   if (Object.keys(errors).length) return { status: "invalid", errors, values };
 
   const supabase = await customerSupabase();
-  if (!supabase) return DISABLED;
+  if (!supabase) return m.disabled;
   const { error } = await supabase.rpc("portal_profile_save", {
     p_full_name: fullName,
     p_phone: phone,
@@ -253,11 +288,11 @@ export async function saveProfileAction(_prev: AuthFormState, form: FormData): P
   });
   if (error) {
     if (error.message?.includes("phone locked")) {
-      return { status: "invalid", errors: { phone: "Your phone number is verified. To change it, contact Velto so we can verify the new number." }, values };
+      return { status: "invalid", errors: { phone: m.t.phoneLocked }, values };
     }
     if (error.code === "PGRST301" || error.message?.includes("authentication required")) redirect(await loginRedirectPath("/account/profile"));
     console.error("portal_profile_save_failed", error.code);
-    return { status: "error", message: "We couldn't save your details. Please try again.", values };
+    return { status: "error", message: m.t.saveFailed, values };
   }
   revalidatePath("/account", "layout");
   return { status: "saved" };

@@ -4,18 +4,21 @@ import Link from "@/components/i18n/Link";
 import { usePathname } from "next/navigation";
 import { pathWithoutLocale } from "@/lib/i18n/config";
 
-const TABS = [
-  { href: "/account", label: "Overview", match: (p: string) => p === "/account" },
-  { href: "/account/orders", label: "My Orders", match: (p: string) => p.startsWith("/account/orders") },
-  { href: "/account/profile", label: "Profile", match: (p: string) => p.startsWith("/account/profile") },
+type Labels = { overview: string; orders: string; profile: string; aria: string };
+
+const tabs = (l: Labels) => [
+  { href: "/account", label: l.overview, match: (p: string) => p === "/account" },
+  { href: "/account/orders", label: l.orders, match: (p: string) => p.startsWith("/account/orders") },
+  { href: "/account/profile", label: l.profile, match: (p: string) => p.startsWith("/account/profile") },
 ];
 
 /** Account sections. Desktop: a quiet side list. Phones: three equal tabs under the header. */
-export function AccountNav({ variant }: { variant: "side" | "tabs" }) {
+export function AccountNav({ variant, labels }: { variant: "side" | "tabs"; labels: Labels }) {
   const path = pathWithoutLocale(usePathname());
+  const TABS = tabs(labels);
   if (variant === "tabs") {
     return (
-      <nav aria-label="Account" className="border-b border-line bg-white xl:hidden">
+      <nav aria-label={labels.aria} className="border-b border-line bg-white xl:hidden">
         <ul className="container-page grid grid-cols-3">
           {TABS.map((t) => {
             const active = t.match(path);
@@ -36,7 +39,7 @@ export function AccountNav({ variant }: { variant: "side" | "tabs" }) {
     );
   }
   return (
-    <nav aria-label="Account">
+    <nav aria-label={labels.aria}>
       <ul className="space-y-1">
         {TABS.map((t) => {
           const active = t.match(path);
