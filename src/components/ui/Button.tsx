@@ -1,5 +1,6 @@
-import Link from "next/link";
+import Link from "@/components/i18n/Link";
 import type { ComponentProps, ReactNode } from "react";
+import { T } from "@/components/i18n/T";
 import { WhatsAppIcon } from "./icons";
 
 type Variant = "primary" | "secondary" | "secondary-inverse";
@@ -50,7 +51,7 @@ export function WhatsAppButton({
   placement,
   inverse = false,
   className = "",
-  children = "WhatsApp Velto",
+  children = <T k="common.whatsappVelto" />,
 }: {
   href: string;
   placement: string;

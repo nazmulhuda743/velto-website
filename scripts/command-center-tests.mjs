@@ -14,6 +14,7 @@ execFileSync(
     "tsc", "--ignoreConfig", "--outDir", out, "--rootDir", "src", "--module", "node16", "--moduleResolution", "node16",
     "--target", "es2022", "--esModuleInterop", "--skipLibCheck", "--types", "node",
     "src/lib/consent.ts",
+    "src/lib/i18n/config.ts",
     "src/lib/analytics/collect-validation.ts",
     "src/lib/admin/insights.ts",
     "src/lib/admin/request-intel.ts",

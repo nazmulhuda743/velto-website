@@ -1,40 +1,42 @@
-import Link from "next/link";
+import Link from "@/components/i18n/Link";
 import { CookieSettingsButton } from "@/components/consent/CookieSettingsButton";
 import { Logo } from "@/components/ui/Logo";
 import { SERVICE_PAGES } from "@/content/services";
-import { CUSTOMER_PORTAL, SERVICE_AREA, WHATSAPP_URL, bookHref } from "@/content/site";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
+import { dictionary, type Dictionary } from "@/content/i18n";
+import { CUSTOMER_PORTAL, WHATSAPP_URL, bookHref } from "@/content/site";
+import { getLocale } from "@/lib/i18n/server";
 import { getLocations } from "@/lib/site-content";
 
 const link = "inline-block py-1.5 t-small text-white hover:text-cyan";
 
 /** Everything a customer might look for after the page ends; the header stays short. */
-const HELP = [
-  { label: "Pricing", href: "/pricing" },
-  { label: "How It Works", href: "/how-it-works" },
-  { label: "Regular Laundry", href: "/regular-laundry" },
-  { label: "Request a Quote", href: "/quote" },
-  { label: "Track an Order", href: "/track" },
-  ...(CUSTOMER_PORTAL.enabled ? [{ label: CUSTOMER_PORTAL.label, href: CUSTOMER_PORTAL.href }] : []),
-  { label: "About Velto", href: "/about" },
+const HELP: { key: keyof Dictionary["nav"]; href: string }[] = [
+  { key: "pricing", href: "/pricing" },
+  { key: "howItWorks", href: "/how-it-works" },
+  { key: "regularLaundry", href: "/regular-laundry" },
+  { key: "requestQuote", href: "/quote" },
+  { key: "trackAnOrder", href: "/track" },
+  ...(CUSTOMER_PORTAL.enabled ? [{ key: "myAccount" as const, href: CUSTOMER_PORTAL.href }] : []),
+  { key: "about", href: "/about" },
 ];
 
 export async function Footer() {
   const locations = await getLocations();
+  const t = dictionary(await getLocale());
   return (
     <footer className="on-navy border-t border-white/15 bg-navy-deep text-white/80">
       <div className="container-page pb-10 pt-16 md:pt-20">
         <div className="grid-page gap-y-12">
           <div className="col-span-4 md:col-span-8 xl:col-span-3">
-            <Link href="/" aria-label="Velto home" className="inline-flex">
+            <Link href="/" aria-label={t.common.homeAria} className="inline-flex">
               <Logo inverse className="h-11" />
             </Link>
-            <p className="mt-5 max-w-[30ch] t-small">
-              Laundry and dry cleaning with pickup across {SERVICE_AREA}.
-            </p>
+            <p className="mt-5 max-w-[30ch] t-small">{t.footer.tagline}</p>
             <ul className="mt-5 space-y-1">
               <li>
                 <Link href={bookHref("footer")} className={`${link} font-semibold`} data-analytics="book_pickup_click" data-placement="footer">
-                  Book a Pickup
+                  {t.common.bookPickup}
                 </Link>
               </li>
               <li>
@@ -46,7 +48,8 @@ export async function Footer() {
                   data-analytics="whatsapp_click"
                   data-placement="footer"
                 >
-                  WhatsApp Velto<span className="sr-only"> (opens in a new tab)</span>
+                  {t.common.whatsappVelto}
+                  <span className="sr-only"> {t.common.opensNewTab}</span>
                 </a>
               </li>
             </ul>
@@ -54,18 +57,18 @@ export async function Footer() {
 
           <nav aria-labelledby="footer-services" className="col-span-2 md:col-span-3 xl:col-span-2">
             <h2 id="footer-services" className="t-label uppercase text-white/60">
-              Services
+              {t.footer.services}
             </h2>
             <ul className="mt-4 space-y-1">
               <li>
                 <Link href="/services" className={link}>
-                  All services
+                  {t.footer.allServices}
                 </Link>
               </li>
               {SERVICE_PAGES.map((s) => (
                 <li key={s.slug}>
                   <Link href={`/services/${s.slug}`} className={link}>
-                    {s.name}
+                    {t.serviceNames[s.slug] ?? s.name}
                   </Link>
                 </li>
               ))}
@@ -74,13 +77,13 @@ export async function Footer() {
 
           <nav aria-labelledby="footer-help" className="col-span-2 md:col-span-3 xl:col-span-2">
             <h2 id="footer-help" className="t-label uppercase text-white/60">
-              Help
+              {t.footer.help}
             </h2>
             <ul className="mt-4 space-y-1">
               {HELP.map((item) => (
                 <li key={item.href}>
                   <Link href={item.href} className={link}>
-                    {item.label}
+                    {t.nav[item.key]}
                   </Link>
                 </li>
               ))}
@@ -91,7 +94,7 @@ export async function Footer() {
             <div key={loc.id} className={`col-span-4 md:col-span-4 xl:col-span-2 ${i === 0 ? "xl:col-start-9" : ""}`}>
               <h2 className="t-label uppercase text-white/60">
                 <Link href={`/locations/${loc.id}`} className="hover:text-cyan">
-                  Velto {loc.name}
+                  Velto {t.locationNames[loc.id] ?? loc.name}
                 </Link>
               </h2>
               <address className="mt-4 t-small not-italic text-white">{loc.address}</address>
@@ -105,7 +108,10 @@ export async function Footer() {
                 data-placement="footer"
                 data-branch={loc.id}
               >
-                Get Directions<span className="sr-only"> to Velto {loc.name} (opens in a new tab)</span>
+                {t.common.getDirections}
+                <span className="sr-only">
+                  {` ${t.footer.directionsTo.replace("{name}", t.locationNames[loc.id] ?? loc.name)} ${t.common.opensNewTab}`}
+                </span>
               </a>
             </div>
           ))}
@@ -116,21 +122,24 @@ export async function Footer() {
           <ul className="flex flex-wrap gap-x-4">
             <li>
               <Link href="/privacy" className="inline-block py-1.5 hover:text-white">
-                Privacy
+                {t.footer.privacy}
               </Link>
             </li>
             <li>
               <Link href="/terms" className="inline-block py-1.5 hover:text-white">
-                Terms
+                {t.footer.terms}
               </Link>
             </li>
             <li>
               <Link href="/cookies" className="inline-block py-1.5 hover:text-white">
-                Cookies
+                {t.footer.cookies}
               </Link>
             </li>
             <li>
-              <CookieSettingsButton className="inline-block py-1.5 hover:text-white">Cookie settings</CookieSettingsButton>
+              <CookieSettingsButton className="inline-block py-1.5 hover:text-white">{t.footer.cookieSettings}</CookieSettingsButton>
+            </li>
+            <li>
+              <LanguageSwitcher className="inline-block py-1.5 font-semibold text-white hover:text-cyan" />
             </li>
           </ul>
         </div>

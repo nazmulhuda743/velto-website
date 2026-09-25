@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { useLocale } from "@/components/i18n/LocaleProvider";
+import { dictionary } from "@/content/i18n";
 
 /**
  * Wraps the review track. Motion stops on hover and keyboard focus (CSS); this
@@ -8,6 +10,7 @@ import { useState, type ReactNode } from "react";
  */
 export function MarqueeControl({ label, children }: { label: string; children: ReactNode }) {
   const [paused, setPaused] = useState(false);
+  const t = dictionary(useLocale()).reviewBlock;
   return (
     <div className="review-marquee relative" data-paused={paused} role="region" aria-label={label}>
       {children}
@@ -25,7 +28,7 @@ export function MarqueeControl({ label, children }: { label: string; children: R
               <svg viewBox="0 0 16 16" className="size-3.5" fill="currentColor"><path d="M4 2.5h3v11H4zM9 2.5h3v11H9z" /></svg>
             )}
           </span>
-          {paused ? "Play reviews" : "Pause reviews"}
+          {paused ? t.play : t.pause}
         </button>
       </div>
     </div>

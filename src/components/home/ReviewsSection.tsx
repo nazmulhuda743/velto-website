@@ -5,6 +5,9 @@ import { Eyebrow } from "./SectionIntro";
 import type { Review } from "@/content/mock";
 import { ReviewCarousel } from "@/components/reviews/ReviewCarousel";
 import { getHomeReviews } from "@/lib/reviews";
+import { dictionary } from "@/content/i18n";
+import { fill, type Locale } from "@/lib/i18n/config";
+import { getLocale } from "@/lib/i18n/server";
 
 const Paragraph = ({ text }: { text: string }) => (
   <p>
@@ -21,7 +24,7 @@ const Paragraph = ({ text }: { text: string }) => (
 const COLLAPSE_OVER_CHARS = 600;
 const PREVIEW_CHARS = 300;
 
-function ReviewText({ text, plain = false }: { text: string; plain?: boolean }) {
+function ReviewText({ text, plain = false, readFull }: { text: string; plain?: boolean; readFull: string }) {
   const paragraphs = text.split("\n\n");
   if (plain) return paragraphs.map((p, i) => <Paragraph key={i} text={p} />);
   const limit = text.length > COLLAPSE_OVER_CHARS ? PREVIEW_CHARS : Infinity;
@@ -42,7 +45,7 @@ function ReviewText({ text, plain = false }: { text: string; plain?: boolean }) 
       {rest.length ? (
         <details className="group/review mt-4">
           <summary className="inline-flex min-h-11 cursor-pointer items-center font-sans text-base font-semibold text-navy underline decoration-blue/60 underline-offset-[6px] group-open/review:hidden">
-            Read the full review
+            {readFull}
           </summary>
           <div className="space-y-4">
             {rest.map((p, i) => (
@@ -56,8 +59,9 @@ function ReviewText({ text, plain = false }: { text: string; plain?: boolean }) 
 }
 
 /** Where the review came from, stated before the words: platform · outlet, then rating. */
-function ReviewSource({ review }: { review: Review }) {
-  const outlet = LOCATIONS.find((l) => l.id === review.branch)?.name;
+function ReviewSource({ review, locale }: { review: Review; locale: Locale }) {
+  const d = dictionary(locale);
+  const outlet = review.branch ? (d.locationNames[review.branch] ?? LOCATIONS.find((l) => l.id === review.branch)?.name) : undefined;
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
       <span className="t-label uppercase text-navy">
@@ -67,10 +71,10 @@ function ReviewSource({ review }: { review: Review }) {
       {typeof review.rating === "number" ? (
         <span className="inline-flex items-center">
           <Stars />
-          <span className="sr-only">{review.rating} out of 5</span>
+          <span className="sr-only">{fill(d.reviewBlock.outOf5, { rating: review.rating }, locale)}</span>
         </span>
       ) : review.rating === "recommends" ? (
-        <span className="t-small text-secondary">Recommends Velto</span>
+        <span className="t-small text-secondary">{d.reviewBlock.recommends}</span>
       ) : null}
     </div>
   );
@@ -80,16 +84,18 @@ function ReviewSource({ review }: { review: Review }) {
  * Editorial review: source first, then the customer's own words. With a
  * verified pull line, that line leads and the full text is one tap away.
  */
-export function ReviewBlock({ review, size = "default" }: { review: Review; size?: "default" | "compact" }) {
+export async function ReviewBlock({ review, size = "default" }: { review: Review; size?: "default" | "compact" }) {
+  const locale = await getLocale();
+  const t = dictionary(locale).reviewBlock;
   const pending = review.text === null;
   const highlight = review.text && review.highlight && review.text.includes(review.highlight) ? review.highlight : null;
-  const platformLabel = review.platform === "Google" ? "See it on Google" : "See it on Facebook";
+  const platformLabel = review.platform === "Google" ? t.seeOnGoogle : t.seeOnFacebook;
   return (
     <figure className="flex h-full flex-col border-t border-navy pt-5" data-mock={pending ? "review" : undefined}>
-      <ReviewSource review={review} />
+      <ReviewSource review={review} locale={locale} />
       <blockquote className={`mt-5 ${pending ? "t-quote text-secondary" : "text-navy"}`}>
         {review.text === null ? (
-          <p>Verified review will appear here</p>
+          <p>{t.pending}</p>
         ) : highlight ? (
           <>
             <p className={size === "compact" ? "t-quote" : "font-serif text-[22px] leading-[1.35] md:text-[26px]"}>
@@ -97,10 +103,10 @@ export function ReviewBlock({ review, size = "default" }: { review: Review; size
             </p>
             <details className="group/review mt-4">
               <summary className="inline-flex min-h-11 cursor-pointer items-center t-small font-semibold text-navy underline decoration-blue/60 underline-offset-[6px] group-open/review:hidden">
-                Read the full review
+                {t.readFull}
               </summary>
               <div className="space-y-3 t-body text-body">
-                <ReviewText text={review.text} plain />
+                <ReviewText text={review.text} plain readFull={t.readFull} />
               </div>
             </details>
           </>
@@ -109,13 +115,13 @@ export function ReviewBlock({ review, size = "default" }: { review: Review; size
           <p className="t-quote">&ldquo;{review.text}&rdquo;</p>
         ) : (
           <div className="t-quote">
-            <ReviewText text={review.text} />
+            <ReviewText text={review.text} readFull={t.readFull} />
           </div>
         )}
       </blockquote>
       <figcaption className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 pt-6 t-small">
         {review.name ? <span className="font-semibold text-navy">{review.name}</span> : null}
-        <ReviewSourceLink review={review} label={platformLabel} className="inline-block py-1 text-secondary underline decoration-blue/50 underline-offset-4 hover:text-navy" />
+        <ReviewSourceLink review={review} label={platformLabel} opens={fill(t.opensPlatform, { platform: review.platform }, locale)} className="inline-block py-1 text-secondary underline decoration-blue/50 underline-offset-4 hover:text-navy" />
       </figcaption>
     </figure>
   );
@@ -125,7 +131,7 @@ export function ReviewBlock({ review, size = "default" }: { review: Review; size
 const reviewHref = (review: Review) =>
   review.sourceUrl ?? LOCATIONS.find((l) => l.id === review.branch)?.reviewsUrl ?? null;
 
-function ReviewSourceLink({ review, label, className }: { review: Review; label: string; className: string }) {
+function ReviewSourceLink({ review, label, opens, className }: { review: Review; label: string; opens: string; className: string }) {
   const href = reviewHref(review);
   if (!href) return <span className="text-secondary">{review.platform}</span>;
   return (
@@ -139,7 +145,7 @@ function ReviewSourceLink({ review, label, className }: { review: Review; label:
       data-branch={review.branch}
     >
       {label}
-      <span className="sr-only"> (opens in a new tab)</span>
+      <span className="sr-only"> {opens}</span>
     </a>
   );
 }
@@ -151,19 +157,20 @@ function ReviewSourceLink({ review, label, className }: { review: Review; label:
 export async function ReviewsSection() {
   const reviews = await getHomeReviews();
   if (!reviews.length) return null;
+  const t = dictionary(await getLocale()).home.reviews;
   return (
     <section id="reviews" aria-labelledby="reviews-title" className="bg-warm py-(--space-section)">
       <div className="container-page flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <Eyebrow>Customer proof</Eyebrow>
+          <Eyebrow>{t.eyebrow}</Eyebrow>
           <h2 id="reviews-title" className="t-h2 text-navy">
-            What customers noticed
+            {t.title}
           </h2>
         </div>
         <GoogleProof placement="reviews" />
       </div>
       <div className="mt-(--space-intro-content)">
-        <ReviewCarousel reviews={reviews} label="Customer reviews" />
+        <ReviewCarousel reviews={reviews} label={t.carouselLabel} />
       </div>
     </section>
   );

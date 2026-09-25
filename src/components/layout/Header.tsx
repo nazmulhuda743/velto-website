@@ -1,10 +1,13 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/i18n/Link";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { ButtonLink } from "@/components/ui/Button";
 import { CloseIcon, MenuIcon, WhatsAppIcon } from "@/components/ui/icons";
+import { dictionary } from "@/content/i18n";
 import { NAV, WHATSAPP_URL, bookHref } from "@/content/site";
+import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 import { AccountLink } from "./AccountLink";
 import { MobileMenu } from "./MobileMenu";
 
@@ -12,6 +15,7 @@ export function Header({ logo, accounts = false }: { logo: ReactNode; accounts?:
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const t = dictionary(useLocale());
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -43,12 +47,12 @@ export function Header({ logo, accounts = false }: { logo: ReactNode; accounts?:
           className={`-m-1 flex shrink-0 origin-left items-center p-1 transition-transform duration-200 motion-reduce:transition-none ${
             scrolled ? "lg:scale-[0.86]" : ""
           }`}
-          aria-label="Velto home"
+          aria-label={t.common.homeAria}
         >
           {logo}
         </Link>
 
-        <nav aria-label="Main" className="hidden lg:block">
+        <nav aria-label={t.nav.main} className="hidden lg:block">
           <ul className="flex items-center gap-1">
             {NAV.desktop.map((item) => (
               <li key={item.href}>
@@ -56,7 +60,7 @@ export function Header({ logo, accounts = false }: { logo: ReactNode; accounts?:
                   href={item.href}
                   className="rounded-sm px-3 py-2 text-[15px] font-medium text-navy transition-colors hover:text-blue"
                 >
-                  {item.label}
+                  {t.nav[item.key]}
                 </Link>
               </li>
             ))}
@@ -70,9 +74,10 @@ export function Header({ logo, accounts = false }: { logo: ReactNode; accounts?:
               href={item.href}
               className="hidden rounded-sm px-1 py-2 text-[14px] font-medium text-secondary transition-colors hover:text-blue xl:inline-flex"
             >
-              {item.label}
+              {t.nav[item.key]}
             </Link>
           ))}
+          <LanguageSwitcher className="hidden rounded-sm px-1 py-2 text-[15px] font-semibold text-navy transition-colors hover:text-blue lg:inline-flex" />
           <a
             href={WHATSAPP_URL}
             target="_blank"
@@ -83,7 +88,7 @@ export function Header({ logo, accounts = false }: { logo: ReactNode; accounts?:
           >
             <WhatsAppIcon className="size-[18px] text-whatsapp" />
             {/* With the account control present, WhatsApp is icon-only until there is room (1280px+). */}
-            <span className={accounts ? "max-xl:sr-only" : undefined}>WhatsApp</span>
+            <span className={accounts ? "max-xl:sr-only" : undefined}>{t.common.whatsapp}</span>
           </a>
           {accounts ? (
             <span className="hidden lg:inline-flex">
@@ -97,7 +102,7 @@ export function Header({ logo, accounts = false }: { logo: ReactNode; accounts?:
               placement="header"
               className={`!h-11 !px-5 transition-[height] duration-200 ${scrolled ? "lg:!h-10" : "lg:!h-11"}`}
             >
-              Book a Pickup
+              {t.common.bookPickup}
             </ButtonLink>
           </div>
           {accounts ? (
@@ -114,7 +119,7 @@ export function Header({ logo, accounts = false }: { logo: ReactNode; accounts?:
             onClick={() => (menuOpen ? closeMenu() : setMenuOpen(true))}
           >
             {menuOpen ? <CloseIcon /> : <MenuIcon />}
-            <span className="sr-only">{menuOpen ? "Close menu" : "Open menu"}</span>
+            <span className="sr-only">{menuOpen ? t.nav.closeMenu : t.nav.openMenu}</span>
           </button>
         </div>
       </div>

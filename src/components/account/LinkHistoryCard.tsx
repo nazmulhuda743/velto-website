@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/i18n/Link";
 import type { PortalAccount } from "@/lib/customer/portal";
 import { requestLinkAction } from "@/lib/customer/actions";
 import { formatDay } from "@/content/order-status";

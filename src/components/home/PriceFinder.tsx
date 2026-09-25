@@ -4,7 +4,9 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { WhatsAppButton } from "@/components/ui/Button";
 import { SearchIcon } from "@/components/ui/icons";
 import { track } from "@/components/layout/Analytics";
-import { SERVICE_SUMMARY } from "@/content/service-summaries";
+import { useLocale } from "@/components/i18n/LocaleProvider";
+import { dictionary, type Dictionary } from "@/content/i18n";
+import { fill, localDigits, localizeHref, type Locale } from "@/lib/i18n/config";
 import { WHATSAPP_URL } from "@/content/site";
 import { formatAmount } from "@/lib/format-price";
 
@@ -30,7 +32,6 @@ const BOOKABLE = new Set(["dry-cleaning", "wash-and-iron", "ironing", "curtain-c
 
 type Status = "idle" | "loading" | "ready" | "empty" | "error";
 
-const EXAMPLES = ["Shirt", "Blazer", "Saree"];
 
 /** Development-only preview hook: ?mockPricing=slow|error (spec §29 states). */
 function mockParam() {
@@ -55,6 +56,10 @@ export function PriceFinder({
   const listId = `${uid}-list`;
   const helpId = `${uid}-help`;
 
+  const locale = useLocale();
+  const d = dictionary(locale);
+  const t = d.priceFinder;
+  const EXAMPLES = t.examples;
   const [query, setQuery] = useState(initialQuery.slice(0, 64));
   const [status, setStatus] = useState<Status>("idle");
   const [items, setItems] = useState<PriceItem[]>([]);
@@ -168,7 +173,7 @@ export function PriceFinder({
     <div>
       <form role="search" onSubmit={(e) => e.preventDefault()}>
         <label htmlFor={inputId} className="t-label uppercase text-navy">
-          Search an item
+          {t.label}
         </label>
         <div className="relative mt-3">
           <SearchIcon className="pointer-events-none absolute left-5 top-1/2 size-5 -translate-y-1/2 text-secondary" />
@@ -197,7 +202,7 @@ export function PriceFinder({
           <ul
             id={listId}
             role="listbox"
-            aria-label="Matching items"
+            aria-label={t.matching}
             hidden={!open}
             className="absolute inset-x-0 top-full z-20 mt-2 overflow-hidden rounded-md border border-line bg-white py-1 shadow-[0_12px_32px_-12px_rgba(0,43,78,0.25)]"
           >
@@ -220,7 +225,7 @@ export function PriceFinder({
           </ul>
         </div>
         <p id={helpId} className="mt-3 t-small text-secondary">
-          Try:{" "}
+          {t.tryLabel}{" "}
           {EXAMPLES.map((name, i) => (
             <span key={name}>
               <button
@@ -238,7 +243,7 @@ export function PriceFinder({
 
       <div aria-live="polite" className="mt-8 empty:hidden">
         {status === "loading" ? (
-          <div aria-label="Loading prices" role="status" className="rounded-md border border-line bg-white">
+          <div aria-label={t.loading} role="status" className="rounded-md border border-line bg-white">
             {[0, 1, 2].map((i) => (
               <div key={i} className="flex items-center justify-between border-t border-line px-5 py-[18px] first:border-t-0">
                 <span className="skeleton h-4 w-32" />
@@ -248,46 +253,42 @@ export function PriceFinder({
           </div>
         ) : null}
 
-        {showResult ? <PriceResult item={selected} source={source} bookFromResult={bookFromResult} /> : null}
+        {showResult ? <PriceResult item={selected} source={source} bookFromResult={bookFromResult} locale={locale} d={d} /> : null}
 
         {status === "empty" ? (
           <div className="border-t border-line pt-6">
-            <p className="t-h4 text-navy">We couldn&apos;t find that item.</p>
-            <p className="mt-2 max-w-[46ch] text-secondary">
-              Try another name or WhatsApp Velto and tell us what you need cleaned.
-            </p>
+            <p className="t-h4 text-navy">{t.notFoundTitle}</p>
+            <p className="mt-2 max-w-[46ch] text-secondary">{t.notFoundBody}</p>
             <WhatsAppButton href={WHATSAPP_URL} placement="pricing_no_result" className="mt-5" />
           </div>
         ) : null}
 
         {status === "error" ? (
           <div className="border-t border-line pt-6">
-            <p className="t-h4 text-navy">Prices couldn&apos;t load right now.</p>
-            <p className="mt-2 max-w-[46ch] text-secondary">
-              You can still book a pickup or ask Velto on WhatsApp.
-            </p>
+            <p className="t-h4 text-navy">{t.errorTitle}</p>
+            <p className="mt-2 max-w-[46ch] text-secondary">{t.errorBody}</p>
             <div className="mt-5 flex flex-col gap-3 md:flex-row">
               <button
                 type="button"
                 onClick={() => search(query)}
                 className="inline-flex h-[52px] items-center justify-center rounded-md border border-line-strong bg-white px-6 font-semibold text-navy hover:border-navy lg:h-12"
               >
-                Try Again
+                {t.tryAgain}
               </button>
               <WhatsAppButton href={WHATSAPP_URL} placement="pricing_error" />
             </div>
             {bookFromResult ? (
               <p className="mt-4 t-small text-secondary">
-                Or{" "}
+                {t.errorBookBefore}
                 <a
-                  href={`/book?${new URLSearchParams({ source: `${bookFromResult.source}-error` }).toString()}`}
+                  href={localizeHref(`/book?${new URLSearchParams({ source: `${bookFromResult.source}-error` }).toString()}`, locale)}
                   data-analytics="book_pickup_click"
                   data-placement="pricing_error"
                   className="font-semibold text-navy underline decoration-blue/60 underline-offset-4 hover:decoration-blue"
                 >
-                  book a pickup
+                  {t.errorBookLink}
                 </a>
-                . We can go through prices when we call to confirm.
+                {t.errorBookAfter}
               </p>
             ) : null}
           </div>
@@ -301,41 +302,48 @@ function PriceResult({
   item,
   source,
   bookFromResult,
+  locale,
+  d,
 }: {
   item: PriceItem;
   source: Source;
   bookFromResult?: { source: string };
+  locale: Locale;
+  d: Dictionary;
 }) {
+  const t = d.priceFinder;
+  // Item names come from the Ops price list and stay as they are; service names follow the page.
+  const serviceName = (s: PriceService) => d.serviceNames[s.slug] ?? s.name;
   return (
     <div className="rounded-md border border-line bg-white">
       <h3 className="px-5 pb-1 pt-5 t-h4 text-navy md:px-6">{item.name}</h3>
-      <p className="px-5 pb-4 t-small text-secondary md:px-6">Current Velto price for each service</p>
+      <p className="px-5 pb-4 t-small text-secondary md:px-6">{t.currentPrice}</p>
       <dl>
         {item.services.map((s) => {
           const canBook = bookFromResult && BOOKABLE.has(s.slug);
-          const summary = SERVICE_SUMMARY[s.slug];
+          const summary = t.summaries[s.slug];
           return (
             <div key={s.slug} className="flex items-start justify-between gap-4 border-t border-line px-5 py-4 md:px-6">
               <dt className="min-w-0">
                 {/* Internal link from a price to the service it belongs to. */}
                 {BOOKABLE.has(s.slug) ? (
-                  <a href={`/services/${s.slug}`} className="block font-semibold text-navy hover:text-blue">
-                    {s.name}
+                  <a href={localizeHref(`/services/${s.slug}`, locale)} className="block font-semibold text-navy hover:text-blue">
+                    {serviceName(s)}
                   </a>
                 ) : (
-                  <span className="block font-semibold text-navy">{s.name}</span>
+                  <span className="block font-semibold text-navy">{serviceName(s)}</span>
                 )}
                 {summary ? <span className="mt-0.5 block t-small text-secondary">{summary}</span> : null}
                 {canBook ? (
                   <a
-                    href={`/book?${new URLSearchParams({ service: s.slug, source: bookFromResult.source }).toString()}`}
+                    href={localizeHref(`/book?${new URLSearchParams({ service: s.slug, source: bookFromResult.source }).toString()}`, locale)}
                     data-analytics="book_pickup_click"
                     data-placement="pricing_result"
                     data-service={s.slug}
                     className="mt-1 inline-flex min-h-11 items-center gap-1.5 rounded-sm t-small font-semibold text-navy underline decoration-blue/60 underline-offset-4 hover:decoration-blue"
                   >
-                    Book {s.name}
-                    <span className="sr-only"> for {item.name}</span>
+                    {fill(t.book, { service: serviceName(s) }, "en")}
+                    <span className="sr-only">{fill(t.bookFor, { item: item.name }, "en")}</span>
                     <span aria-hidden="true" className="text-blue no-underline">
                       →
                     </span>
@@ -346,14 +354,14 @@ function PriceResult({
                 {s.amountMinor !== null ? (
                   <>
                     <span className="block text-[26px] font-semibold leading-none tracking-[-0.02em] text-navy tabular-nums md:text-[30px]">
-                      {formatAmount(s.amountMinor)}
+                      {localDigits(formatAmount(s.amountMinor), locale)}
                     </span>
                     {s.unitLabel ? <span className="mt-1 block t-caption text-secondary">{s.unitLabel}</span> : null}
                   </>
                 ) : (
                   // Adapter contract: null amount = price needs confirmation (MOCK source never shows a number either).
                   <span data-mock={source === "mock" ? "price" : undefined} className="block pt-0.5 font-semibold text-secondary">
-                    After assessment
+                    {t.afterAssessment}
                   </span>
                 )}
               </dd>
@@ -363,8 +371,7 @@ function PriceResult({
       </dl>
       {item.services.some((s) => s.amountMinor === null) ? (
         <p className="border-t border-line px-5 py-3 t-small text-secondary md:px-6">
-          &ldquo;After assessment&rdquo; means the price is confirmed once Velto has seen the item. You can still add it to a
-          pickup, or send a photo on WhatsApp first.
+          {t.afterAssessmentNote}
         </p>
       ) : null}
     </div>

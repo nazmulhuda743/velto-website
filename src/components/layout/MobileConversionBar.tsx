@@ -1,8 +1,10 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/i18n/Link";
 import { useEffect, useState } from "react";
 import { WhatsAppIcon } from "@/components/ui/icons";
+import { useLocale } from "@/components/i18n/LocaleProvider";
+import { dictionary } from "@/content/i18n";
 import { WHATSAPP_URL, bookHref } from "@/content/site";
 
 const TEXT_ENTRY = "input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]), textarea, select";
@@ -23,6 +25,7 @@ export function MobileConversionBar({
   /** Overrides the primary action (quote-first service pages). */
   primary?: { href: string; label: string };
 }) {
+  const t = dictionary(useLocale()).common;
   const [typing, setTyping] = useState(false);
   const [finalInView, setFinalInView] = useState(false);
 
@@ -70,19 +73,19 @@ export function MobileConversionBar({
           data-analytics={primary ? undefined : "book_pickup_click"}
           data-placement="mobile_sticky"
         >
-          {primary?.label ?? "Book a Pickup"}
+          {primary?.label ?? t.bookPickup}
         </Link>
         <a
           href={WHATSAPP_URL}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="WhatsApp Velto (opens in a new tab)"
+          aria-label={`${t.whatsappVelto} ${t.opensNewTab}`}
           className="inline-flex h-11 min-w-0 flex-[3] items-center justify-center gap-1.5 rounded-md border border-line px-1 text-[14px] font-semibold text-navy active:bg-soft"
           data-analytics="whatsapp_click"
           data-placement="mobile_sticky"
         >
           <WhatsAppIcon className="size-4 shrink-0 text-whatsapp" />
-          <span className="max-[374px]:sr-only">WhatsApp</span>
+          <span className="max-[374px]:sr-only">{t.whatsapp}</span>
         </a>
       </div>
     </div>

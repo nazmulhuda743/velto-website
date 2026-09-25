@@ -36,9 +36,9 @@ export default async function HealthPage() {
         title="Website health"
         intro={`Live checks, run when this page loads. Checked ${dayLabel(checkedAt)} (Dhaka time).`}
         actions={
-          <a href="/admin/health" className="admin-btn-secondary">
+          <Link href="/admin/health" className="admin-btn-secondary">
             Run checks again
-          </a>
+          </Link>
         }
       />
 

@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/i18n/Link";
 import { usePathname } from "next/navigation";
+import { pathWithoutLocale } from "@/lib/i18n/config";
 
 const TABS = [
   { href: "/account", label: "Overview", match: (p: string) => p === "/account" },
@@ -11,7 +12,7 @@ const TABS = [
 
 /** Account sections. Desktop: a quiet side list. Phones: three equal tabs under the header. */
 export function AccountNav({ variant }: { variant: "side" | "tabs" }) {
-  const path = usePathname();
+  const path = pathWithoutLocale(usePathname());
   if (variant === "tabs") {
     return (
       <nav aria-label="Account" className="border-b border-line bg-white xl:hidden">

@@ -177,3 +177,42 @@ test("customer-account pages stay out of analytics and order numbers are redacte
   assert.equal(validateCollectBody(body("/book")).events[0].path, "/book");
   assert.equal(validateCollectBody({ type: "not_found", path: "/account/orders/VEL-99999" }).path, "/account/orders/[order]");
 });
+
+test("language paths: English keeps its URLs, Bangla lives under /bn", () => {
+  const { localizeHref, splitLocale, pathWithoutLocale, toBanglaDigits, fill, isLocale } = require(`${build}/lib/i18n/config.js`);
+  assert.equal(localizeHref("/pricing", "en"), "/pricing");
+  assert.equal(localizeHref("/pricing", "bn"), "/bn/pricing");
+  assert.equal(localizeHref("/", "bn"), "/bn");
+  assert.equal(localizeHref("/?source=x", "bn"), "/bn?source=x");
+  assert.equal(localizeHref("/book?service=ironing", "bn"), "/bn/book?service=ironing");
+  assert.equal(localizeHref("/bn/pricing", "en"), "/pricing");
+  assert.equal(localizeHref("/bn/pricing", "bn"), "/bn/pricing");
+  // One-language paths and external links pass through.
+  for (const href of ["/api/prices", "/go/whatsapp", "/admin", "/auth/confirm", "/icon.png", "https://wa.me/1", "#faq", "//evil.example"]) {
+    assert.equal(localizeHref(href, "bn"), href);
+  }
+  assert.deepEqual(splitLocale("/bn/account/orders"), { locale: "bn", path: "/account/orders" });
+  assert.deepEqual(splitLocale("/bn"), { locale: "bn", path: "/" });
+  assert.deepEqual(splitLocale("/bnx"), { locale: "en", path: "/bnx" });
+  assert.deepEqual(splitLocale("/en/pricing"), { locale: "en", path: "/pricing" });
+  assert.equal(pathWithoutLocale("/bn/login"), "/login");
+  assert.equal(toBanglaDigits("৳499+ 1–18"), "৳৪৯৯+ ১–১৮");
+  assert.equal(fill("{rating} on Google · {reviews} reviews", { rating: "5.0", reviews: "100+" }, "bn"), "৫.০ on Google · ১০০+ reviews");
+  assert.equal(fill("{n} items", { n: 3 }, "en"), "3 items");
+  assert.equal(isLocale("bn"), true);
+  assert.equal(isLocale("fr"), false);
+});
+
+test("Bangla account and sign-in pages are as private as the English ones", () => {
+  const { isPrivatePath, redactPrivatePath } = require(`${build}/lib/analytics/private-paths.js`);
+  for (const p of ["/bn/account", "/bn/account/orders/VEL-00001", "/bn/login", "/bn/signup", "/bn/forgot-password", "/bn/reset-password", "/bn/auth/confirm"]) {
+    assert.equal(isPrivatePath(p), true, p);
+  }
+  for (const p of ["/bn", "/bn/book", "/bn/pricing", "/bnaccount"]) assert.equal(isPrivatePath(p), false, p);
+  assert.equal(redactPrivatePath("/bn/account/orders/VEL-00001"), "/bn/account/orders/[order]");
+  assert.equal(cleanPath("/bn/account/orders/VEL-00001"), "/bn/account/orders/[order]");
+  const body = (path) => ({ type: "events", visitorId: V, sessionId: S, device: "mobile", isNew: false, attribution: {}, events: [{ event: "page_view", path }] });
+  assert.equal(validateCollectBody(body("/bn/account/orders/VEL-00001")), null);
+  assert.equal(validateCollectBody(body("/bn/login")), null);
+  assert.equal(validateCollectBody(body("/bn/book")).events[0].path, "/bn/book");
+});

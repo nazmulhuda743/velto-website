@@ -4,6 +4,8 @@ import { ResponsiveImage } from "@/components/ui/ResponsiveImage";
 import type { ImageSlot } from "@/content/mock";
 import { WHATSAPP_URL, bookHref } from "@/content/site";
 import { getGoogleProofLabel } from "@/lib/site-content";
+import { dictionary } from "@/content/i18n";
+import { getLocale } from "@/lib/i18n/server";
 import { SectionIntro } from "./SectionIntro";
 
 type FinalBookingCTAProps = {
@@ -23,22 +25,24 @@ type FinalBookingCTAProps = {
   primary?: { href: string; label: string; helper?: string; event?: string };
 };
 
-const DEFAULT_BODY = (
-  <>
-    <p>Tell us where to collect from, what you need cleaned and your preferred pickup time.</p>
-    <p>That&apos;s enough to get the booking started.</p>
-  </>
-);
-
 export async function FinalBookingCTA({
   id,
-  title = "Ready to send it?",
-  body = DEFAULT_BODY,
+  title,
+  body,
   source = "home_final",
   service,
   image,
   primary,
 }: FinalBookingCTAProps) {
+  const d = dictionary(await getLocale());
+  const t = d.home.final;
+  title ??= t.title;
+  body ??= (
+    <>
+      <p>{t.body1}</p>
+      <p>{t.body2}</p>
+    </>
+  );
   const actions = (
     <>
       {/* One decisive action; WhatsApp stays available but visibly secondary. */}
@@ -48,10 +52,10 @@ export async function FinalBookingCTA({
         placement="final"
         className="w-full !h-14 !px-8 !text-[17px] md:w-auto"
       >
-        {primary ? primary.label : "Book a Pickup"}
+        {primary ? primary.label : d.common.bookPickup}
       </ButtonLink>
       <p className="mt-3 t-small text-white/80">
-        {primary?.helper ?? "Send the request. We’ll confirm the pickup time with you."}
+        {primary?.helper ?? t.helper}
       </p>
       <a
         href={WHATSAPP_URL}
@@ -62,8 +66,8 @@ export async function FinalBookingCTA({
         data-placement="final"
       >
         <WhatsAppIcon className="size-5 text-white" />
-        Or message Velto on WhatsApp
-        <span className="sr-only"> (opens in a new tab)</span>
+        {t.whatsapp}
+        <span className="sr-only"> {d.common.opensNewTab}</span>
       </a>
     </>
   );

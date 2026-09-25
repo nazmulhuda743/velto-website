@@ -1,10 +1,13 @@
-import Link from "next/link";
+import Link from "@/components/i18n/Link";
 import type { ReactNode } from "react";
 import { ArrowRight } from "@/components/ui/icons";
 import { ResponsiveImage } from "@/components/ui/ResponsiveImage";
 import { TextLink } from "@/components/ui/TextLink";
 import { IMAGES } from "@/content/mock";
 import { SERVICES, quoteHref } from "@/content/site";
+import { dictionary } from "@/content/i18n";
+import { fill } from "@/lib/i18n/config";
+import { getLocale } from "@/lib/i18n/server";
 import { SectionIntro } from "./SectionIntro";
 
 function ServiceItem({
@@ -33,39 +36,22 @@ function ServiceItem({
   );
 }
 
-const household = [
-  {
-    title: "Curtain Cleaning",
-    copy: "Tell us roughly how many curtains you have and their size. We'll help you work out the price.",
-    link: "View Curtain Cleaning",
-    image: IMAGES.household,
-    ...SERVICES.curtains,
-  },
-  {
-    title: "Carpet Cleaning",
-    copy: "Share the approximate dimensions. The material and condition may affect the final price.",
-    link: "View Carpet Cleaning",
-    image: IMAGES.carpet,
-    ...SERVICES.carpets,
-  },
-  {
-    title: "Blankets & Comforters",
-    copy: "Pricing depends mainly on the item, type and size.",
-    link: "View Blanket Cleaning",
-    image: IMAGES.blankets,
-    ...SERVICES.blankets,
-  },
-];
-
-export function ServiceChooser() {
+export async function ServiceChooser() {
+  const locale = await getLocale();
+  const d = dictionary(locale);
+  const t = d.home.services;
+  const name = (slug: string) => d.serviceNames[slug];
+  const view = (slug: string) => fill(t.view, { service: name(slug) }, locale);
+  const household = [
+    { title: name(SERVICES.curtains.slug), copy: t.curtainsCopy, link: view(SERVICES.curtains.slug), image: IMAGES.household, ...SERVICES.curtains },
+    { title: name(SERVICES.carpets.slug), copy: t.carpetsCopy, link: view(SERVICES.carpets.slug), image: IMAGES.carpet, ...SERVICES.carpets },
+    { title: name(SERVICES.blankets.slug), copy: t.blanketsCopy, link: t.viewBlankets, image: IMAGES.blankets, ...SERVICES.blankets },
+  ];
   return (
     <section id="services" aria-labelledby="services-title" className="bg-warm py-(--space-section)">
       <div className="container-page">
-        <SectionIntro id="services-title" eyebrow="Services" title="What do you need cleaned?">
-          <p>
-            Choose the service you need. If you are unsure, send us a photo or message Velto on
-            WhatsApp.
-          </p>
+        <SectionIntro id="services-title" eyebrow={t.eyebrow} title={t.title}>
+          <p>{t.intro}</p>
         </SectionIntro>
 
         <div className="mt-(--space-intro-content) grid-page gap-y-12 md:gap-y-16 xl:gap-y-20">
@@ -79,12 +65,11 @@ export function ServiceChooser() {
             <div className="mt-6">
               <ServiceItem
                 large
-                title="Dry Cleaning"
+                title={name(SERVICES.dryCleaning.slug)}
                 href={SERVICES.dryCleaning.href}
-                linkLabel="View Dry Cleaning"
+                linkLabel={view(SERVICES.dryCleaning.slug)}
               >
-                For suits, blazers, sarees, sherwanis and garments that need a closer look before
-                cleaning.
+                {t.dryCleaningCopy}
               </ServiceItem>
             </div>
           </article>
@@ -98,11 +83,11 @@ export function ServiceChooser() {
             <div className="mt-6">
               <ServiceItem
                 large
-                title="Wash & Iron"
+                title={name(SERVICES.washAndIron.slug)}
                 href={SERVICES.washAndIron.href}
-                linkLabel="View Wash & Iron"
+                linkLabel={view(SERVICES.washAndIron.slug)}
               >
-                We collect your laundry, wash and finish it, then return it ready to wear.
+                {t.washAndIronCopy}
               </ServiceItem>
             </div>
           </article>
@@ -114,19 +99,16 @@ export function ServiceChooser() {
               sizes="(min-width: 1200px) 500px, (min-width: 768px) 40vw, 100vw"
             />
             <div className="mt-6">
-              <ServiceItem large title="Ironing" href={SERVICES.ironing.href} linkLabel="View Ironing">
-                Already washed? Send it to Velto for ironing and finishing.
+              <ServiceItem large title={name(SERVICES.ironing.slug)} href={SERVICES.ironing.href} linkLabel={view(SERVICES.ironing.slug)}>
+                {t.ironingCopy}
               </ServiceItem>
             </div>
           </article>
 
           {/* Household group — one panel of clickable rows, not cards */}
           <div className="col-span-4 border-t border-line pt-8 md:col-span-5 xl:col-span-7">
-            <h3 className="t-h3 text-navy">Curtains, carpets &amp; bedding</h3>
-            <p className="mt-3 max-w-[52ch] t-body-lg text-secondary">
-              Priced by size or by item. Where measurement or condition matters, we confirm the
-              amount before pickup.
-            </p>
+            <h3 className="t-h3 text-navy">{t.householdTitle}</h3>
+            <p className="mt-3 max-w-[52ch] t-body-lg text-secondary">{t.householdCopy}</p>
             <ul className="mt-6 border-t border-navy">
               {household.map((item) => (
                 <li key={item.slug} className="border-b border-line">
@@ -148,7 +130,7 @@ export function ServiceChooser() {
             </ul>
             <div className="mt-5">
               <TextLink href={quoteHref(undefined, "home_services")} placement="service_chooser">
-                Request a Quote
+                {t.requestQuote}
               </TextLink>
             </div>
           </div>

@@ -7,11 +7,14 @@
  */
 const PRIVATE_PATH = /^\/(?:account|auth)(?:\/|$)|^\/(?:login|signup|forgot-password|reset-password)\/?$/;
 
+/** Language prefix ("/bn/account" is as private as "/account"). Kept local: this module is runtime-neutral. */
+const LOCALE_PREFIX = /^\/(?:en|bn)(?=\/|$)/;
+
 export function isPrivatePath(pathname: string): boolean {
-  return PRIVATE_PATH.test(pathname);
+  return PRIVATE_PATH.test(pathname.replace(LOCALE_PREFIX, "") || "/");
 }
 
 /** Order numbers in account URLs are not analytics data. */
 export function redactPrivatePath(pathname: string): string {
-  return pathname.replace(/^\/account\/orders\/[^/]+/, "/account/orders/[order]");
+  return pathname.replace(/^((?:\/(?:en|bn))?\/account\/orders\/)[^/]+/, "$1[order]");
 }

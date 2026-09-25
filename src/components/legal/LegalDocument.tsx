@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/i18n/Link";
 import type { ReactNode } from "react";
 import { LEGAL } from "@/content/legal";
 import { WHATSAPP_URL } from "@/content/site";

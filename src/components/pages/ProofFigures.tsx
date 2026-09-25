@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Star } from "@/components/ui/icons";
+import { T } from "@/components/i18n/T";
 
 export type Figure = {
   /** The large figure, e.g. "1–18" or "~72h". */
@@ -57,7 +58,10 @@ export function ProofFigures({ figures, wide = 4 }: { figures: Figure[]; wide?: 
                   data-branch={f.analytics?.branch}
                 >
                   {value}
-                  <span className="sr-only"> (opens in a new tab)</span>
+                  <span className="sr-only">
+          {" "}
+          <T k="common.opensNewTab" />
+        </span>
                 </a>
               ) : (
                 value

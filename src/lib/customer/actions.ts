@@ -3,6 +3,7 @@
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { localHref, loginRedirectPath } from "@/lib/i18n/server";
 import { SITE_URL } from "@/lib/site-url";
 import { ACCOUNT_HINT_COOKIE, RECOVERY_COOKIE } from "./config";
 import { AUTH_COOKIE_OPTIONS, customerSupabase } from "./supabase";
@@ -60,7 +61,8 @@ function authFailure(error: { name?: string; code?: string; status?: number }): 
   return null;
 }
 
-const redirectTo = (next: string) => `${SITE_URL}/auth/confirm?next=${encodeURIComponent(next)}`;
+/** Email links land on /auth/confirm, then continue to `next` in the language the form was used in. */
+const redirectTo = async (next: string) => `${SITE_URL}/auth/confirm?next=${encodeURIComponent(await localHref(next))}`;
 
 async function setAccountHint(signedIn: boolean) {
   const store = await cookies();
@@ -104,7 +106,7 @@ export async function signUpAction(_prev: AuthFormState, form: FormData): Promis
     email: email!,
     password,
     options: {
-      emailRedirectTo: redirectTo("/account"),
+      emailRedirectTo: await redirectTo("/account"),
       // Used once, to create the customer's own portal profile. Grants nothing.
       data: { full_name: fullName, phone, terms_version: TERMS_VERSION, terms_accepted_at: new Date().toISOString() },
     },
@@ -121,7 +123,7 @@ export async function signUpAction(_prev: AuthFormState, form: FormData): Promis
   if (data.session) {
     // Projects without email confirmation sign the customer straight in.
     await setAccountHint(true);
-    redirect("/account");
+    redirect(await localHref("/account"));
   }
   // An existing address gets the same answer as a new one, so sign-up can't be used to
   // discover who has an account.
@@ -134,7 +136,7 @@ export async function resendVerificationAction(_prev: AuthFormState, form: FormD
   const supabase = await customerSupabase();
   if (!supabase) return DISABLED;
   if (await throttled("resend")) return TOO_MANY;
-  const { error } = await supabase.auth.resend({ type: "signup", email, options: { emailRedirectTo: redirectTo("/account") } });
+  const { error } = await supabase.auth.resend({ type: "signup", email, options: { emailRedirectTo: await redirectTo("/account") } });
   if (error) {
     const mapped = authFailure(error);
     if (mapped) return mapped;
@@ -148,7 +150,7 @@ export async function signInAction(_prev: AuthFormState, form: FormData): Promis
   const values = { email: str(form, "email", 254) };
   const email = validEmail(values.email);
   const password = str(form, "password", 200);
-  const next = safeNextPath(str(form, "next", 300));
+  const next = safeNextPath(str(form, "next", 300), await localHref("/account"));
   const errors: FieldErrors = {};
   if (!email) errors.email = "Enter the email address you signed up with.";
   if (!password) errors.password = "Enter your password.";
@@ -174,7 +176,7 @@ export async function signOutAction() {
   const supabase = await customerSupabase();
   await supabase?.auth.signOut({ scope: "local" });
   await setAccountHint(false);
-  redirect("/");
+  redirect(await localHref("/"));
 }
 
 /* ---------- Forgot / reset password ---------- */
@@ -185,7 +187,7 @@ export async function forgotPasswordAction(_prev: AuthFormState, form: FormData)
   const supabase = await customerSupabase();
   if (!supabase) return DISABLED;
   if (await throttled("recover")) return TOO_MANY;
-  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: redirectTo("/reset-password") });
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: await redirectTo("/reset-password") });
   if (error && (error.name === "AuthRetryableFetchError" || !error.status)) return UNAVAILABLE;
   // Same answer whether or not the address has an account.
   return { status: "sent" };
@@ -221,7 +223,7 @@ export async function resetPasswordAction(_prev: AuthFormState, form: FormData):
   // Anyone else holding an old session is signed out.
   await supabase.auth.signOut({ scope: "others" });
   await setAccountHint(true);
-  redirect("/account?password=updated");
+  redirect(await localHref("/account?password=updated"));
 }
 
 /* ---------- Profile & history link ---------- */
@@ -253,7 +255,7 @@ export async function saveProfileAction(_prev: AuthFormState, form: FormData): P
     if (error.message?.includes("phone locked")) {
       return { status: "invalid", errors: { phone: "Your phone number is verified. To change it, contact Velto so we can verify the new number." }, values };
     }
-    if (error.code === "PGRST301" || error.message?.includes("authentication required")) redirect("/login?next=/account/profile");
+    if (error.code === "PGRST301" || error.message?.includes("authentication required")) redirect(await loginRedirectPath("/account/profile"));
     console.error("portal_profile_save_failed", error.code);
     return { status: "error", message: "We couldn't save your details. Please try again.", values };
   }

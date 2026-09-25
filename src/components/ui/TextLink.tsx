@@ -1,6 +1,7 @@
-import Link from "next/link";
+import Link from "@/components/i18n/Link";
 import type { ReactNode } from "react";
 import { ArrowRight, ArrowUpRight } from "./icons";
+import { T } from "@/components/i18n/T";
 
 type TextLinkProps = {
   href: string;
@@ -64,7 +65,10 @@ export function TextLink({
         data-branch={branch}
       >
         {inner}
-        <span className="sr-only"> (opens in a new tab)</span>
+        <span className="sr-only">
+          {" "}
+          <T k="common.opensNewTab" />
+        </span>
       </a>
     );
   }

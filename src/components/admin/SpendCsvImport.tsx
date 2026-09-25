@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useActionState } from "react";
 import { csvSpendAction, type CsvState } from "@/app/admin/revenue-actions";
 
@@ -54,9 +56,9 @@ export function SpendCsvImport() {
           <button type="submit" className="admin-btn" disabled={pending || preview.valid.length === 0}>
             {pending ? "Importing…" : `Import ${preview.valid.length} row${preview.valid.length === 1 ? "" : "s"}`}
           </button>
-          <a href="/admin/revenue/spend" className="admin-btn-secondary">
+          <Link href="/admin/revenue/spend" className="admin-btn-secondary">
             Cancel
-          </a>
+          </Link>
         </form>
       </div>
     );
