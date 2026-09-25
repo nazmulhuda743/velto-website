@@ -6,8 +6,7 @@ import { ProcessSteps } from "@/components/pages/ProcessSteps";
 import { ResponsiveImage } from "@/components/ui/ResponsiveImage";
 import { TextLink } from "@/components/ui/TextLink";
 import type { ServiceBlock } from "@/content/services";
-import { SERVICE_AREA } from "@/content/site";
-import { getLocations, getSiteContent } from "@/lib/site-content";
+import { getSiteContent } from "@/lib/site-content";
 import { ServiceCompare } from "./ServiceCompare";
 import { ServicePriceTable, ServicePriceTableSkeleton } from "./ServicePriceTable";
 
@@ -211,41 +210,5 @@ export async function ServiceBlockView({
       );
     }
 
-    case "area":
-      return (
-        <Section id={id} tone={tone}>
-          <div className={LEFT}>
-            <SectionIntro id={id} title={block.title} titleClassName="max-w-[14ch]">
-              <p>
-                Pickup and delivery across {SERVICE_AREA}. Outside that area? Ask before booking.
-              </p>
-            </SectionIntro>
-          </div>
-          <div className={`${RIGHT} grid gap-y-8 md:grid-cols-2 md:gap-x-10`}>
-            {(await getLocations()).map((loc) => (
-              <div key={loc.id} className="border-t border-navy pt-4">
-                <h3 className="t-h4 text-navy">{loc.name}</h3>
-                <address className="mt-2 not-italic text-body">{loc.address}</address>
-                <p className="mt-1 t-small text-secondary">{loc.hours}</p>
-                <TextLink
-                  href={loc.directionsUrl}
-                  external
-                  className="mt-2"
-                  event="directions_click"
-                  placement="service_area"
-                  branch={loc.id}
-                >
-                  Get Directions
-                </TextLink>
-              </div>
-            ))}
-            <div className="md:col-span-2">
-              <TextLink href="/locations" placement="service_area">
-                About the two locations
-              </TextLink>
-            </div>
-          </div>
-        </Section>
-      );
   }
 }
