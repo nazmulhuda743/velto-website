@@ -173,7 +173,15 @@ export const IMAGES = {
   carpetMeasured: slot("A carpet being measured for a quote.", 1600, 1200),
   /** Real Velto outlets: never substituted with stock storefronts. MOCK until supplied. */
   locations: {
-    "sector-11": slot("The Velto outlet at House 2, Road 14, Sector 11, Uttara.", 1500, 1000),
+    // Real outlet photo supplied by the owner (2026-09-25). Focal point keeps the Velto sign in crop.
+    "sector-11": {
+      src: "/images/locations/sector-11.webp",
+      alt: "The Velto Sector 11 outlet at night: the lit Velto sign above the entrance, with service posters in the window.",
+      width: 1112,
+      height: 1280,
+      position: "center top",
+      source: { platform: "Supplied by Velto" },
+    },
     "sector-18": slot("The Velto outlet at Poncoboti Bazar, Sector 18, Uttara.", 1500, 1000),
   },
   regular: supplied(

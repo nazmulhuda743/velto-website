@@ -18,7 +18,7 @@ Upload through the admin dashboard, under Images, using the slot id shown. Alter
 
 | # | Shot | Slot id | Where it shows | Notes |
 |---|---|---|---|---|
-| 1 | Sector 11 outlet: street-level frontage with the Velto sign readable | `locations.sector-11` | Homepage locations, /locations, /locations/sector-11 hero | 3:2. Daytime, sign legible, entrance visible. |
+| 1 | ~~Sector 11 outlet: street-level frontage with the Velto sign readable~~ **Done (2026-09-25)** | `locations.sector-11` | Homepage locations, /locations, /locations/sector-11 hero | 3:2. Daytime, sign legible, entrance visible. |
 | 2 | Sector 18 outlet at Poncoboti Bazar: frontage or counter with signage | `locations.sector-18` | Homepage locations, /locations, /locations/sector-18 hero | 3:2. Include the RUAP gate context if it helps people find it. |
 
 ## Priority 2: process claims (currently illustrated with stock)
