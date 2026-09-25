@@ -153,3 +153,14 @@ export function formatAge(hours: number) {
   if (hours < 48) return `${Math.round(hours)} h`;
   return `${Math.round(hours / 24)} days`;
 }
+
+/** Right-now counts for the overview "Today" strip (independent of any date range). */
+export function todaySummary(requests: WebsiteRequest[], now = Date.now()) {
+  const insights = requests.map((r) => analyseRequest(r, now));
+  const summary = requestSummary(insights, now);
+  return {
+    newOpen: insights.filter((i) => matchesQuickFilter(i, "new", now)).length,
+    openOver24h: summary.openOver24h,
+    oldestOpenHours: summary.oldestOpenHours,
+  };
+}
