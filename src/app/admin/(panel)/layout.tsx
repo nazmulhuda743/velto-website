@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { Logo } from "@/components/ui/Logo";
+import { getRequests } from "@/lib/admin/analytics-data";
 import { getNotifications } from "@/lib/admin/notifications";
 import { isAdminPreview } from "@/lib/admin/preview";
 import { requireAdmin } from "@/lib/admin/session";
@@ -28,9 +29,11 @@ function Bell({ unread }: { unread: number }) {
 
 export default async function AdminPanelLayout({ children }: { children: React.ReactNode }) {
   const admin = await requireAdmin();
-  const { unread } = await getNotifications();
+  const [{ unread }, requests] = await Promise.all([getNotifications(), getRequests(500)]);
+  // Live count next to "Bookings & quotes": requests still open in Velto Ops.
+  const openRequests = requests.state === "ok" ? requests.data.filter((r) => r.status !== "done").length : 0;
   return (
-    <div className="lg:grid lg:min-h-dvh lg:grid-cols-[248px_1fr]">
+    <div className="lg:grid lg:min-h-dvh lg:grid-cols-[280px_1fr]">
       <aside className="bg-navy px-4 py-3 text-white lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:overflow-y-auto lg:px-5 lg:py-6">
         <div className="flex items-center justify-between gap-3">
           <Link href="/admin" aria-label="Command center home" className="inline-flex">
@@ -42,7 +45,7 @@ export default async function AdminPanelLayout({ children }: { children: React.R
         </div>
         <p className="mt-3 hidden t-caption uppercase tracking-[0.08em] text-white/50 lg:block">Website Command Center</p>
         <div className="mt-3 lg:mt-7">
-          <AdminNav />
+          <AdminNav badges={{ "/admin/requests": openRequests }} />
         </div>
         <div className="mt-4 hidden border-t border-white/15 pt-4 lg:mt-auto lg:block">
           <Link href="/" target="_blank" className="t-small text-white/70 underline underline-offset-4 hover:text-white">

@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
 
-export function AdminHeader({ title, intro, actions }: { title: string; intro?: ReactNode; actions?: ReactNode }) {
+export function AdminHeader({ title, intro, actions, level = 1 }: { title: string; intro?: ReactNode; actions?: ReactNode; level?: 1 | 2 }) {
+  const Heading = level === 1 ? "h1" : "h2";
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
       <div>
-        <h1 className="t-h3 text-navy">{title}</h1>
+        <Heading className="t-h3 text-navy">{title}</Heading>
         {intro ? <p className="mt-2 max-w-[70ch] text-secondary">{intro}</p> : null}
       </div>
       {actions ? <div className="flex gap-2">{actions}</div> : null}

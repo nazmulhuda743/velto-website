@@ -7,7 +7,7 @@ const { parseConsent, serializeConsent, consentModeSignals, CONSENT_POLICY_VERSI
 const { validateCollectBody, cleanPath, cleanCampaignValue } = require(`${build}/lib/analytics/collect-validation.js`);
 const { classifyChannel, deviceFromWidth, referrerHost } = require(`${build}/lib/analytics/classify.js`);
 const insights = require(`${build}/lib/admin/insights.js`);
-const { analyseRequest, parseCampaignLine, matchesQuickFilter } = require(`${build}/lib/admin/request-intel.js`);
+const { analyseRequest, parseCampaignLine, matchesQuickFilter, todaySummary } = require(`${build}/lib/admin/request-intel.js`);
 
 const V = "11111111-1111-4111-8111-111111111111";
 const S = "22222222-2222-4222-8222-222222222222";
@@ -215,4 +215,20 @@ test("Bangla account and sign-in pages are as private as the English ones", () =
   assert.equal(validateCollectBody(body("/bn/account/orders/VEL-00001")), null);
   assert.equal(validateCollectBody(body("/bn/login")), null);
   assert.equal(validateCollectBody(body("/bn/book")).events[0].path, "/bn/book");
+});
+
+test("overview Today strip counts new open, waiting over 24 h and oldest open request", () => {
+  const now = Date.parse("2026-09-25T12:00:00Z");
+  const base = { title: "t", type: "pickup", source: "website_booking", outlet_code: "S11", description: "Name: A", done_at: null, done_by_name: null };
+  const rows = [
+    { ...base, id: "a", status: "open", created_at: "2026-09-25T10:00:00Z" }, // 2 h, new
+    { ...base, id: "b", status: "open", created_at: "2026-09-24T06:00:00Z" }, // 30 h, waiting
+    { ...base, id: "c", status: "open", created_at: "2026-09-22T12:00:00Z" }, // 72 h, waiting (oldest)
+    { ...base, id: "d", status: "done", created_at: "2026-09-25T11:00:00Z" }, // done: never counted
+  ];
+  const t = todaySummary(rows, now);
+  assert.equal(t.newOpen, 1);
+  assert.equal(t.openOver24h, 2);
+  assert.equal(Math.round(t.oldestOpenHours), 72);
+  assert.deepEqual(todaySummary([], now), { newOpen: 0, openOver24h: 0, oldestOpenHours: null });
 });

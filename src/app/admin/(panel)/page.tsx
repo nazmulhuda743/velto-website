@@ -10,7 +10,34 @@ import { consentRates, dailySeries, delta, funnel, overview, pageLabel, pct, typ
 import { getNotifications } from "@/lib/admin/notifications";
 import { dayLabel, readDashboardParams, serviceName } from "@/lib/admin/page-helpers";
 import { requestDate, requestDetails } from "@/lib/admin/request-details";
+import { formatAge, todaySummary } from "@/lib/admin/request-intel";
+import { requireAdmin } from "@/lib/admin/session";
 import { getSiteContent } from "@/lib/site-content";
+
+/** Dhaka-time greeting for the person signed in. */
+function greeting(name: string, now = new Date()) {
+  const hour = (now.getUTCHours() + 6) % 24;
+  const part = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const first = name.trim().split(/\s+/)[0];
+  return first ? `${part}, ${first}` : part;
+}
+
+/** One "what needs doing" tile: big number, plain label, one clear next step. */
+function TodayTile({ href, value, label, detail, cta, urgent = false }: { href: string; value: number; label: string; detail: string; cta: string; urgent?: boolean }) {
+  return (
+    <Link
+      href={href}
+      className={`group grid grid-cols-[3.25rem_1fr] items-start gap-x-3 rounded-lg border p-4 transition-colors sm:flex sm:flex-col md:p-5 ${
+        urgent ? "border-error/40 bg-error-soft hover:border-error" : "border-line bg-white hover:border-navy"
+      }`}
+    >
+      <span className={`row-span-3 text-[32px] font-semibold leading-none tracking-[-0.02em] tabular-nums sm:text-[36px] ${urgent ? "text-error" : "text-navy"}`}>{value}</span>
+      <span className="text-[15px] font-semibold text-navy sm:mt-2">{label}</span>
+      <span className="mt-0.5 t-small text-secondary">{detail}</span>
+      <span className="mt-2 t-small font-semibold text-blue group-hover:underline group-hover:underline-offset-4 sm:mt-3">{cta} →</span>
+    </Link>
+  );
+}
 
 function Metric({ label, value, change, sub }: { label: string; value: string; change: number | null; sub?: string }) {
   return (
@@ -27,6 +54,7 @@ function Metric({ label, value, change, sub }: { label: string; value: string; c
 
 export default async function CommandCenter({ searchParams }: { searchParams: SearchParams }) {
   const { flat, range } = readDashboardParams(await searchParams);
+  const admin = await requireAdmin();
   const [current, previous, consent, requests, content, notes] = await Promise.all([
     sessionsFor(range),
     sessionsFor({ from: range.prevFrom, to: range.prevTo }),
@@ -49,14 +77,53 @@ export default async function CommandCenter({ searchParams }: { searchParams: Se
   const opsBookings = inRange.filter((r) => r.source === "website_booking").length;
   const opsQuotes = inRange.length - opsBookings;
 
+  // "Today" strip: independent of the date range above, always about right now.
+  const req = todaySummary(requests.state === "ok" ? requests.data : []);
+  const newOpen = req.newOpen;
+  const alerts = notes.items.filter((n) => n.tone === "error" || n.tone === "warning").length;
+
   return (
     <>
       <NotificationRefresher />
-      <AdminHeader
-        title="Velto Website Command Center"
-        intro={`Visitors, conversions, campaigns and website health · ${range.label} (Dhaka time)`}
-        actions={<RangePicker basePath="/admin" params={flat} active={range.key} from={flat.from} to={flat.to} />}
-      />
+      <p className="t-small font-medium text-secondary">{greeting(admin.name)}</p>
+      <h1 className="mt-1 t-h3 text-navy">Here&apos;s what needs you today</h1>
+
+      {requests.state === "ok" ? (
+        <section aria-label="Today" className="mt-5 grid gap-3 sm:grid-cols-3">
+          <TodayTile
+            href="/admin/requests?filter=new"
+            value={newOpen}
+            label={newOpen === 1 ? "New request" : "New requests"}
+            detail="Sent in the last 24 hours and still open in Ops."
+            cta={newOpen ? "Review them" : "See all requests"}
+          />
+          <TodayTile
+            href="/admin/requests?filter=open"
+            value={req.openOver24h}
+            label="Waiting over 24 hours"
+            detail={req.oldestOpenHours !== null ? `Oldest open request: ${formatAge(req.oldestOpenHours)}.` : "Nothing is open right now."}
+            cta={req.openOver24h ? "Follow up" : "See open requests"}
+            urgent={req.openOver24h > 0}
+          />
+          <TodayTile
+            href="/admin/notifications"
+            value={alerts}
+            label={alerts === 1 ? "Website alert" : "Website alerts"}
+            detail={alerts ? "Errors or warnings to check." : "No errors or warnings."}
+            cta={alerts ? "Check alerts" : "All notifications"}
+            urgent={notes.items.some((n) => n.tone === "error")}
+          />
+        </section>
+      ) : null}
+
+      <div className="mt-10 border-t border-line pt-8">
+        <AdminHeader
+          title="Website performance"
+          level={2}
+          intro={`Visitors, conversions, campaigns and website health · ${range.label} (Dhaka time)`}
+          actions={<RangePicker basePath="/admin" params={flat} active={range.key} from={flat.from} to={flat.to} />}
+        />
+      </div>
 
       {current.state === "not_configured" ? <DataNotice state="not_configured" /> : null}
       {current.state === "error" ? <DataNotice state="error" message={current.message} /> : null}
