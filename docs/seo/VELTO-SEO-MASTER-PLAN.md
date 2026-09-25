@@ -147,7 +147,7 @@ One primary intent per page. The full table is in [KEYWORD-MAP](KEYWORD-MAP.md).
 |---|---|
 | `Organization` site-wide **and** a second `DryCleaningOrLaundry` "#business" on service pages (two entities for one brand) | One `Organization` (#organization) with `location` pointing to both outlets |
 | `LaundryService`: **not a schema.org type** (unused helper) | `DryCleaningOrLaundry` per outlet (#business on each location URL), with `parentOrganization`, a split `PostalAddress`, `hasMap`, `areaServed` |
-| `Service` with `provider` → the duplicate entity | `Service` → `provider` #organization, `areaServed` Uttara Sectors 1–18, `availableChannel` pickup + drop-off at each outlet |
+| `Service` with `provider` → the duplicate entity | `Service` → `provider` #organization, `areaServed` Uttara Sectors 1–18, `availableChannel` pickup and delivery (drop-off per outlet left out until the owner confirms which services each outlet accepts) |
 | Breadcrumbs on service pages only | `BreadcrumbList` on every indexable page |
 | `WebSite` | Adds `publisher`, `inLanguage: en-BD`, `alternateName` |
 
@@ -164,8 +164,8 @@ One primary intent per page. The full table is in [KEYWORD-MAP](KEYWORD-MAP.md).
 ## 6. Internal-link graph
 
 ```
-Home ──► 6 service pages (chooser) · /pricing (#find-a-price, View Full Pricing) · /locations/* · /regular-laundry · /book
-Header ──► Services · How It Works · Pricing · Locations · Track Order · Book
+Home ──► 6 service pages (chooser) · /pricing (#find-a-price, View Full Pricing) · both outlet pages (NEW) · /regular-laundry ("How regular pickup works", NEW after red-team review) · /book
+Header ──► Services · How It Works · Pricing · Locations · Book (Track Order from 1280px; the mobile menu is client-rendered, so crawl discovery relies on the desktop nav, body links and footer)
 Footer ──► all 7 services · pricing · how it works · regular · quote · track · about · both outlets + directions
 Service page ──► /pricing (price table "Search the price list") · compare block → sibling services
              ──► /how-it-works ("See how every order is handled") · /locations ("Or drop off at Sector 11 or 18")

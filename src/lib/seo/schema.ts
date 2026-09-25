@@ -98,9 +98,7 @@ export function buildServiceSchema({ name, description, path }: { name: string; 
     url: absoluteUrl(path),
     provider: { "@id": ORGANIZATION_ID },
     areaServed: SERVICE_AREA_SCHEMA,
-    availableChannel: [
-      { "@type": "ServiceChannel", name: "Pickup and delivery", serviceUrl: absoluteUrl("/book") },
-      ...LOCATIONS.map((l) => ({ "@type": "ServiceChannel", name: `Drop off at Velto ${l.name}`, serviceLocation: { "@id": locationId(l) } })),
-    ],
+    // Pickup only: which services each outlet accepts over the counter isn't confirmed (red-team review, PR #34).
+    availableChannel: { "@type": "ServiceChannel", name: "Pickup and delivery", serviceUrl: absoluteUrl("/book") },
   };
 }

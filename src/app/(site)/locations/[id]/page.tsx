@@ -155,8 +155,8 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
           <div className="col-span-4 md:col-span-8 xl:col-span-5">
             <SectionIntro id="outlet-services-title" eyebrow="Services" title={`What you can send from ${loc.name}`}>
               <p>
-                Every Velto service is available whether you drop off here or book a pickup. Check the price of an item before
-                you send it.
+                Book a pickup for any of these from anywhere in Uttara Sectors 1–18, or visit the outlet. Check the price of an
+                item before you send it.
               </p>
             </SectionIntro>
             <div className="mt-6">
