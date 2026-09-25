@@ -1,20 +1,23 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CookieSettingsButton } from "@/components/consent/CookieSettingsButton";
+import { LegalContact, LegalDocument, type LegalSection } from "@/components/legal/LegalDocument";
 
 export const metadata: Metadata = {
-  title: "Cookies | Velto Premium Laundry",
-  description: "Which cookies and browser storage the Velto website uses, and how to change your choice.",
+  title: "Cookie Policy | Velto Premium Laundry",
+  description: "Which cookies and browser storage the Velto website uses, what each one does, how long it lasts and how to change your choice.",
   alternates: { canonical: "/cookies" },
   robots: { index: false, follow: true },
 };
 
 type Row = { name: string; purpose: string; duration: string; setBy: string };
 
+/* Keep in step with src/lib/consent.ts, src/lib/analytics/client.ts, src/lib/attribution-client.ts and src/lib/admin. */
 const ESSENTIAL: Row[] = [
   {
     name: "velto_consent_v1",
-    purpose: "Remembers your cookie choice so the banner does not appear on every page.",
+    purpose:
+      "Remembers your cookie choice (Analytics on or off, Marketing on or off, and when you chose) so the banner doesn't appear on every page. Holds no identifier and no personal information.",
     duration: "6 months",
     setBy: "Velto",
   },
@@ -26,9 +29,9 @@ const ESSENTIAL: Row[] = [
     setBy: "Velto",
   },
   {
-    name: "velto_admin",
-    purpose: "Signs Velto staff into the website dashboard. Not set for customers.",
-    duration: "12 hours",
+    name: "velto_admin, velto_admin_seen",
+    purpose: "Sign Velto staff into the website dashboard and remember which dashboard notifications they have seen. Never set for customers.",
+    duration: "12 hours / 90 days",
     setBy: "Velto",
   },
 ];
@@ -49,7 +52,7 @@ const ANALYTICS: Row[] = [
   {
     name: "_ga, _ga_*",
     purpose: "Google Analytics, when Velto has it switched on, to measure website use.",
-    duration: "Set by Google",
+    duration: "Up to 2 years, set by Google",
     setBy: "Google",
   },
 ];
@@ -58,99 +61,222 @@ const MARKETING: Row[] = [
   {
     name: "_fbp, _fbc",
     purpose: "Meta Pixel, when Velto has it switched on, to measure which Facebook and Instagram ads lead to bookings.",
-    duration: "Set by Meta",
+    duration: "Up to 3 months, set by Meta",
     setBy: "Meta",
   },
 ];
 
-function CookieTable({ rows }: { rows: Row[] }) {
+function CookieTable({ rows, caption }: { rows: Row[]; caption: string }) {
   return (
-    <div className="mt-4 border-t border-line">
-      {rows.map((r) => (
-        <div key={r.name} className="grid gap-1 border-b border-line py-4 md:grid-cols-[220px_1fr] md:gap-6">
-          <p className="font-semibold text-navy [overflow-wrap:anywhere]">{r.name}</p>
-          <div>
-            <p>{r.purpose}</p>
-            <p className="mt-1 t-small text-secondary">
-              {r.duration} · {r.setBy}
-            </p>
-          </div>
-        </div>
-      ))}
-    </div>
+    <table className="mt-5 w-full border-collapse text-left">
+      <caption className="sr-only">{caption}</caption>
+      <thead className="hidden md:table-header-group">
+        <tr className="border-b border-navy">
+          <th scope="col" className="w-[220px] pb-3 pr-6 t-label uppercase text-navy">
+            Name
+          </th>
+          <th scope="col" className="pb-3 t-label uppercase text-navy">
+            Purpose, duration and provider
+          </th>
+        </tr>
+      </thead>
+      <tbody className="border-t border-line md:border-t-0">
+        {rows.map((r) => (
+          <tr key={r.name} className="block border-b border-line py-4 md:table-row md:py-0">
+            <th scope="row" className="block pb-1 text-left font-semibold text-navy [overflow-wrap:anywhere] md:table-cell md:py-4 md:pr-6 md:align-top">
+              {r.name}
+            </th>
+            <td className="block md:table-cell md:py-4 md:align-top">
+              <p>{r.purpose}</p>
+              <p className="mt-1 t-small text-secondary">
+                {r.duration} · {r.setBy}
+              </p>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
+const SECTIONS: LegalSection[] = [
+  {
+    id: "what",
+    title: "What cookies are",
+    body: (
+      <>
+        <p>
+          Cookies are small text files that a website stores in your browser. &ldquo;Tab storage&rdquo; (session storage)
+          is similar, but is kept only for the browser tab you are using and is removed when you close it. In this policy,
+          &ldquo;cookies&rdquo; covers both.
+        </p>
+        <p>
+          Cookies set by Velto are <strong>first-party</strong> cookies. Cookies set by Google or Meta are{" "}
+          <strong>third-party</strong> cookies. They are used only in the categories you allow.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "choice",
+    title: "Your choice comes first",
+    body: (
+      <>
+        <p>
+          On your first visit the website asks before it uses anything that isn&apos;t essential. Until you choose, only
+          essential cookies are used. Google Tag Manager, Google Analytics and Meta Pixel are not loaded, and Velto&apos;s
+          own website measurement records nothing about your visit.
+        </p>
+        <p>
+          You can accept all, reject everything that isn&apos;t essential, or choose Analytics and Marketing separately in
+          Manage preferences. Rejecting is as easy as accepting, and rejecting doesn&apos;t stop you using any part of the
+          website.
+        </p>
+        <p>
+          Your choice is kept for six months, or until we change what the categories cover. After that, you are asked
+          again.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "essential",
+    title: "Essential cookies",
+    body: (
+      <>
+        <p>
+          Always on. The website needs these for security, for its forms and to remember your choice. They are not used to
+          track you.
+        </p>
+        <CookieTable rows={ESSENTIAL} caption="Essential cookies" />
+      </>
+    ),
+  },
+  {
+    id: "analytics",
+    title: "Analytics cookies",
+    body: (
+      <>
+        <p>
+          Only with your permission. Velto measures which pages and services are viewed, price searches, where visits
+          start and end, and whether a booking or quote was completed. This measurement uses random identifiers. It does
+          not record your name, phone number, address, what you type into forms, or your IP address. Raw measurement
+          events are deleted after 90 days.
+        </p>
+        <CookieTable rows={ANALYTICS} caption="Analytics cookies" />
+      </>
+    ),
+  },
+  {
+    id: "marketing",
+    title: "Marketing cookies",
+    body: (
+      <>
+        <p>
+          Only with your permission. Advertising measurement shows Velto which Facebook and Instagram ads lead to real
+          enquiries, and may be used to show you relevant Velto ads. With Marketing allowed, an advertising click
+          identifier from the ad you clicked can also travel with your booking or quote. Meta handles this information under
+          its own terms.
+        </p>
+        <CookieTable rows={MARKETING} caption="Marketing cookies" />
+      </>
+    ),
+  },
+  {
+    id: "consent-mode",
+    title: "How Google and Meta tools respect your choice",
+    body: (
+      <>
+        <p>
+          Velto uses Google Tag Manager to manage Google Analytics and Meta Pixel. Tag Manager itself is loaded only after
+          you allow Analytics or Marketing.
+        </p>
+        <p>
+          The website also sends Google Consent Mode signals: before you choose, analytics and advertising storage are set
+          to &ldquo;denied&rdquo;, and they change to &ldquo;granted&rdquo; only for the categories you allow. For example,
+          if you allow Analytics but not Marketing, advertising storage stays denied.
+        </p>
+        <p>
+          How Google and Meta use information is set out in their own policies:{" "}
+          <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">
+            Google Privacy Policy
+          </a>{" "}
+          and{" "}
+          <a href="https://www.facebook.com/privacy/policy" target="_blank" rel="noopener noreferrer">
+            Meta Privacy Policy
+          </a>
+          .
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "change",
+    title: "Changing your mind",
+    body: (
+      <>
+        <p>
+          Use <strong>Cookie settings</strong> in the website footer, or the button at the top of this page, at any time.
+          If you switch Analytics or Marketing off, the website stops using them straight away and removes the cookies it
+          can remove from this site.
+        </p>
+        <p>
+          You can also block or delete cookies in your browser settings. Blocking essential cookies may stop the forms
+          from working properly, and the website will ask for your choice again.
+        </p>
+      </>
+    ),
+  },
+  {
+    id: "records",
+    title: "Records of your choice",
+    body: (
+      <p>
+        To show that the banner works fairly, Velto counts how many visitors accept, reject or save custom choices. These
+        counts are anonymous, with no visitor identifier attached, and are kept for 13 months.
+      </p>
+    ),
+  },
+  {
+    id: "updates",
+    title: "Changes to this policy",
+    body: (
+      <p>
+        We update this policy when the website starts or stops using a cookie. If we change what a category covers, we ask
+        for your choice again. The &ldquo;Last updated&rdquo; date at the top shows the latest version. For how booking and
+        quote details are handled, see our <Link href="/privacy">Privacy Policy</Link>.
+      </p>
+    ),
+  },
+  {
+    id: "contact",
+    title: "Contact us",
+    body: <LegalContact />,
+  },
+];
+
 export default function CookiesPage() {
   return (
-    <article className="container-page py-16 md:py-24">
-      <div className="max-w-3xl">
-        <p className="t-label uppercase text-blue">Cookies</p>
-        <h1 className="mt-3 t-h1 text-navy">Cookies on the Velto website</h1>
-        <p className="mt-4 t-body-lg text-body">Last updated: 24 September 2026</p>
-
-        <div className="mt-10 space-y-12 text-body">
-          <section>
-            <h2 className="t-h3 text-navy">Your choice</h2>
-            <p className="mt-3">
-              When you first visit, the website asks before it uses anything that isn&apos;t essential. Until you choose,
-              only essential cookies are used: Google Tag Manager, Google Analytics and Meta Pixel are not loaded, and
-              Velto&apos;s own website measurement records nothing about your visit.
-            </p>
-            <p className="mt-3">
-              You can accept all, reject everything that isn&apos;t essential, or choose category by category. Your
-              choice is kept for six months, or until Velto changes what the categories cover, and then you are asked
-              again.
-            </p>
-            <CookieSettingsButton className="mt-5 inline-flex h-12 items-center justify-center rounded-md border border-navy bg-white px-6 font-semibold text-navy hover:bg-soft">
-              Change cookie settings
-            </CookieSettingsButton>
-          </section>
-
-          <section>
-            <h2 className="t-h3 text-navy">Essential</h2>
-            <p className="mt-3">Always on. The website needs these for security, its forms and remembering your choice.</p>
-            <CookieTable rows={ESSENTIAL} />
-          </section>
-
-          <section>
-            <h2 className="t-h3 text-navy">Analytics</h2>
-            <p className="mt-3">
-              Only with your permission. Velto measures which pages and services are viewed, price searches, where
-              visits start and end, and whether a booking or quote was completed. This measurement uses random
-              identifiers. It does not record your name, phone number, address, what you type into forms, or your IP
-              address.
-            </p>
-            <CookieTable rows={ANALYTICS} />
-          </section>
-
-          <section>
-            <h2 className="t-h3 text-navy">Marketing</h2>
-            <p className="mt-3">
-              Only with your permission. Advertising measurement shows Velto which Facebook and Instagram ads lead to
-              real enquiries, and may be used to show you relevant Velto ads. Meta handles this information under its
-              own terms.
-            </p>
-            <CookieTable rows={MARKETING} />
-          </section>
-
-          <section>
-            <h2 className="t-h3 text-navy">Changing your mind</h2>
-            <p className="mt-3">
-              Use Cookie settings in the website footer at any time. If you switch Analytics or Marketing off, the
-              website stops using them straight away and removes the cookies it can remove from this site. You can also
-              clear cookies in your browser settings.
-            </p>
-            <p className="mt-3">
-              For how booking and quote details are handled, see the{" "}
-              <Link href="/privacy" className="font-medium text-navy underline underline-offset-4">
-                privacy page
-              </Link>
-              .
-            </p>
-          </section>
-        </div>
-      </div>
-    </article>
+    <LegalDocument
+      label="Legal"
+      title="Cookie Policy"
+      intro={
+        <p>
+          This policy lists every cookie and similar storage the Velto website uses, what each one does and how long it
+          lasts, and how to change your choice at any time.
+        </p>
+      }
+      summary={[
+        <>Only essential cookies run until you make a choice.</>,
+        <>Analytics and Marketing are separate choices, and rejecting them never limits what you can do on the site.</>,
+        <>Velto&apos;s own measurement never records your name, phone number, form answers or IP address.</>,
+        <>You can change your choice at any time from Cookie settings in the footer.</>,
+      ]}
+      sections={SECTIONS}
+    >
+      <CookieSettingsButton className="inline-flex h-12 items-center justify-center rounded-md border border-navy bg-white px-6 font-semibold text-navy hover:bg-soft">
+        Change cookie settings
+      </CookieSettingsButton>
+    </LegalDocument>
   );
 }
