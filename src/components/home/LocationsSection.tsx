@@ -1,33 +1,12 @@
-import { ResponsiveImage } from "@/components/ui/ResponsiveImage";
 import { Star } from "@/components/ui/icons";
 import { TextLink } from "@/components/ui/TextLink";
-import { IMAGES } from "@/content/mock";
-import type { Location } from "@/content/site";
-import { getLocations, resolveImage } from "@/lib/site-content";
+import { mapEmbedUrl, type Location } from "@/content/site";
+import { getLocations } from "@/lib/site-content";
 import { dictionary } from "@/content/i18n";
 import { fill } from "@/lib/i18n/config";
 import { getLocale, localLocation } from "@/lib/i18n/server";
+import { OutletMap } from "./OutletMap";
 import { SectionIntro } from "./SectionIntro";
-
-/**
- * Real outlets are never shown with stock photography. Until a verified Velto
- * photo is uploaded for the slot, the block opens with a quiet typographic
- * plate (decorative; the same facts are in the text below) instead of an
- * empty 3:2 placeholder.
- */
-async function LocationVisual({ loc }: { loc: Location }) {
-  const image = await resolveImage(IMAGES.locations[loc.id]);
-  if (image.src) {
-    return (
-      <ResponsiveImage
-        image={image}
-        aspect="aspect-[3/2]"
-        sizes="(min-width: 1200px) 610px, (min-width: 768px) 50vw, 100vw"
-      />
-    );
-  }
-  return <LocationPlate loc={loc} />;
-}
 
 /**
  * Typographic stand-in for an outlet photo: the sector number set large.
@@ -67,7 +46,13 @@ export async function LocationBlock({ loc: source }: { loc: Location }) {
   const count = { rating: loc.rating, count: loc.reviewCount };
   return (
     <article>
-      <LocationVisual loc={loc} />
+      {/* The outlet's own Google Business Profile, as an interactive map (the photo lives on its location page). */}
+      <OutletMap
+        src={mapEmbedUrl(source.mapCid, locale)}
+        title={fill(t.mapTitle, { name: loc.name }, locale)}
+        showLabel={t.mapShow}
+        note={t.mapNote}
+      />
       <h3 className="mt-6 t-h3 text-navy">{loc.name}</h3>
       <dl className="mt-5">
         <div className="border-t border-line py-3.5">

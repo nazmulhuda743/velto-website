@@ -69,6 +69,13 @@ const MARKETING: Row[] = [
     duration: "Up to 3 months, set by Meta",
     setBy: "Meta",
   },
+  {
+    name: "Google Maps (NID and similar)",
+    purpose:
+      "The outlet maps on the homepage and Locations page. The map loads from Google only when you choose Show map, or automatically if you allow Marketing.",
+    duration: "Set by Google",
+    setBy: "Google",
+  },
 ];
 
 function CookieTable({ rows, caption }: { rows: Row[]; caption: string }) {

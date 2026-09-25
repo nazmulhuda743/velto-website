@@ -45,7 +45,17 @@ export type Location = {
   directionsUrl: string;
   /** TODO_VERIFY: final Google review source links (§36). */
   reviewsUrl: string;
+  /**
+   * Google Maps place id (CID) of this outlet's own Business Profile, verified
+   * 2026-09-25 against the listing's address and review count. The embedded map
+   * uses it so the pin is the real listing, never a text-search guess.
+   */
+  mapCid: string;
 };
+
+/** Google Maps embed for an outlet's Business Profile, in the page language. */
+export const mapEmbedUrl = (cid: string, lang: "en" | "bn" = "en") =>
+  `https://maps.google.com/maps?cid=${cid}&hl=${lang}&output=embed`;
 
 const mapsQuery = (q: string) =>
   `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
@@ -60,6 +70,8 @@ export const LOCATIONS: Location[] = [
     hours: "9:00 AM–10:00 PM",
     directionsUrl: mapsQuery("Velto Premium Laundry, House 2, Road 14, Sector 11, Uttara, Dhaka"),
     reviewsUrl: mapsQuery("Velto Premium Laundry Sector 11 Uttara"),
+    // "Velto, House 2 Road No 14, Dhaka 1230", 5.0 (102)
+    mapCid: "2437782877757474605",
   },
   {
     id: "sector-18",
@@ -70,6 +82,8 @@ export const LOCATIONS: Location[] = [
     hours: "10:00 AM–9:00 PM",
     directionsUrl: mapsQuery("Velto Premium Laundry, RUAP, Poncoboti Bazar, Sector 18, Uttara, Dhaka"),
     reviewsUrl: mapsQuery("Velto Premium Laundry Sector 18 Uttara"),
+    // "Velto, RUAP, North Side of Gate 1, Poncoboti Bazar, Dhaka 1230", 4.9 (8)
+    mapCid: "17437996881917531211",
   },
 ];
 
