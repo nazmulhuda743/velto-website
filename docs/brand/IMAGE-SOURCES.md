@@ -61,7 +61,9 @@ Added in the public visual pass (2026-09-25). They are licensed Pexels stock und
 
 The photographer names come from the Pexels search listing. Confirm them on each source page before relying on the credit.
 
-Still intentionally image-free (no suitable honest image): the Sector 11 and Sector 18 outlets (they show a typographic plate until a real outlet photo is uploaded), the curtain quote-process block, and the closing CTA on internal pages. See `docs/brand/REAL-PHOTO-SHOT-LIST.md`.
+Real outlet photos: `public/images/locations/sector-11.webp` is the Sector 11 storefront, supplied by the owner on 2026-09-25 (black edge bars cropped). Sector 18 is still image-free.
+
+Still intentionally image-free (no suitable honest image): the Sector 18 outlet (they show a typographic plate until a real outlet photo is uploaded), the curtain quote-process block, and the closing CTA on internal pages. See `docs/brand/REAL-PHOTO-SHOT-LIST.md`.
 
 ² Supplied directly by the Velto owner in September 2026 to replace the Pexels photos in these five slots. The owner should confirm where each image came from and that Velto may use it commercially. Several look AI-generated; if so, record the tool and its licence terms here.
 

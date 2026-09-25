@@ -42,13 +42,13 @@ export async function LocationPlate({ loc, size = "block" }: { loc: Location; si
       className={`flex flex-col justify-between rounded-md border-t-2 border-navy bg-soft ${
         hero
           ? "aspect-[16/10] px-6 py-5 md:aspect-[4/5] md:px-8 md:py-7 xl:aspect-[4/3]"
-          : "h-[124px] px-5 py-4 md:h-[150px] md:px-6 md:py-5 xl:h-[190px]"
+          : "h-[124px] px-5 py-4 md:aspect-[3/2] md:h-auto md:px-6 md:py-5"
       }`}
     >
       <span className="t-label uppercase text-secondary">{plate}</span>
       <span
         className={`font-semibold leading-[0.85] tracking-[-0.03em] text-navy ${
-          hero ? "text-[120px] md:text-[160px] xl:text-[200px]" : "text-[56px] md:text-[72px]"
+          hero ? "text-[120px] md:text-[160px] xl:text-[200px]" : "text-[56px] md:text-[88px] xl:text-[120px]"
         }`}
       >
         {/* Western or Bangla digits, whichever the (localized) name uses. */}
