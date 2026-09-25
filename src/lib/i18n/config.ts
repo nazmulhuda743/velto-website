@@ -88,3 +88,20 @@ export const localDigits = (value: string | number, locale: Locale) =>
 export function fill(template: string, vars: Record<string, string | number>, locale: Locale): string {
   return template.replace(/\{(\w+)\}/g, (match, key: string) => (key in vars ? localDigits(vars[key], locale) : match));
 }
+
+/**
+ * Bangla attaches case endings to a word with a hyphen ("সেক্টর ১১-এ", "Velto-র"). Browsers may
+ * break a line after the hyphen and strand the ending on the next line, so a word joiner (U+2060,
+ * invisible) is added after every hyphen that runs into a Bangla letter. Applied to Bangla copy
+ * where it is served; search titles and descriptions (keys in `skip`) are left as written.
+ */
+export function keepBanglaSuffixes<T>(value: T, skip: readonly string[] = ["seo", "meta"]): T {
+  if (typeof value === "string") return value.replace(/-(?=[\u0980-\u09FF])/g, "-\u2060") as T;
+  if (Array.isArray(value)) return value.map((v) => keepBanglaSuffixes(v, skip)) as T;
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([k, v]) => [k, skip.includes(k) ? v : keepBanglaSuffixes(v, skip)]),
+    ) as T;
+  }
+  return value;
+}
