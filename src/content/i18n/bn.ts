@@ -309,7 +309,7 @@ export const bn: Dictionary = {
     hours: "খোলার সময়",
     seeReviews: "Google রিভিউ দেখুন",
     mapShow: "ম্যাপ দেখুন",
-    mapNote: "Google Maps লোড হবে, যা নিজস্ব কুকি ব্যবহার করতে পারে।",
+    mapNote: "Google ম্যাপ লোড হবে, যা নিজস্ব কুকি ব্যবহার করতে পারে।",
     mapTitle: "Velto {name}-এর ম্যাপ",
   },
   googleProof: {
