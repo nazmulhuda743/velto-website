@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
-import { NextResponse, type NextRequest } from "next/server";
+import { after, NextResponse, type NextRequest } from "next/server";
+import { logServerEvent } from "@/lib/analytics/store";
 import { readBoundedJson } from "@/lib/security/json-request";
 import { isSupabaseConfigured, supabaseRpc } from "@/lib/supabase-server";
 
@@ -120,6 +121,7 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error("track_failed", error instanceof Error ? error.message : "unknown");
+    after(() => logServerEvent("tracking_error", "/api/track", "unavailable"));
     return NextResponse.json(
       { error: "unavailable" },
       { status: 503, headers: { "Cache-Control": "no-store" } },

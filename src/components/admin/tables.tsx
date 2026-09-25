@@ -5,7 +5,8 @@ import { fmt } from "./charts";
 /** Scrollable data table; the first column stays readable on phones. */
 export function DataTable({ head, children, caption, leftCols = 1, minWidth = "min-w-[640px]" }: { head: ReactNode[]; children: ReactNode; caption?: string; leftCols?: number; minWidth?: string }) {
   return (
-    <div className="-mx-5 overflow-x-auto md:-mx-6">
+    // Focusable so keyboard users can scroll a wide table (WCAG 2.1.1).
+    <div className="-mx-5 overflow-x-auto md:-mx-6" tabIndex={0} role="region" aria-label={caption ?? "Table"}>
       <table className={`w-full ${minWidth} border-collapse text-left`}>
         {caption ? <caption className="sr-only">{caption}</caption> : null}
         <thead>

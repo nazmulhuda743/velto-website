@@ -112,7 +112,7 @@ function Links({ path, badges, onNavigate }: { path: string; badges: Record<stri
     <div className="flex flex-col gap-6">
       {GROUPS.map((group) => (
         <div key={group.label} className="flex flex-col gap-0.5">
-          <p className="px-3 pb-1 t-caption font-semibold uppercase tracking-[0.08em] text-white/45">{group.label}</p>
+          <p className="px-3 pb-1 t-caption font-semibold uppercase tracking-[0.08em] text-white/65">{group.label}</p>
           {group.items.map((item) => {
             const active = isActive(item.href, path);
             const count = badges[item.href] ?? 0;

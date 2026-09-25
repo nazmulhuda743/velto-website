@@ -34,7 +34,7 @@ function TodayTile({ href, value, label, detail, cta, urgent = false }: { href: 
       <span className={`row-span-3 text-[32px] font-semibold leading-none tracking-[-0.02em] tabular-nums sm:text-[36px] ${urgent ? "text-error" : "text-navy"}`}>{value}</span>
       <span className="text-[15px] font-semibold text-navy sm:mt-2">{label}</span>
       <span className="mt-0.5 t-small text-secondary">{detail}</span>
-      <span className="mt-2 t-small font-semibold text-blue group-hover:underline group-hover:underline-offset-4 sm:mt-3">{cta} →</span>
+      <span className="mt-2 t-small font-semibold text-action-hover group-hover:underline group-hover:underline-offset-4 sm:mt-3">{cta} →</span>
     </Link>
   );
 }
@@ -244,8 +244,11 @@ export default async function CommandCenter({ searchParams }: { searchParams: Se
                     <Badge tone={r.source === "website_booking" ? "blue" : "amber"}>{r.source === "website_booking" ? "Booking" : "Quote"}</Badge>
                     <span className="font-semibold text-navy">{d.Name ?? r.title}</span>
                     <span className="t-small text-secondary">{d.Service ?? ""}</span>
-                    <span className="ml-auto t-small text-secondary">{requestDate(r.created_at)}</span>
-                    <Badge tone={r.status === "done" ? "green" : "neutral"}>{r.status}</Badge>
+                    {/* Date and status stay together so a long name never splits them across lines. */}
+                    <span className="ml-auto flex items-center gap-3">
+                      <span className="t-small text-secondary">{requestDate(r.created_at)}</span>
+                      <Badge tone={r.status === "done" ? "green" : "neutral"}>{r.status}</Badge>
+                    </span>
                   </li>
                 );
               })}

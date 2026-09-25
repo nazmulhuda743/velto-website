@@ -34,7 +34,7 @@ export default async function PricesPage({ searchParams }: { searchParams: Searc
       <p className="mt-4 t-small text-secondary">
         {shown.length} of {items.length} items
       </p>
-      <div className="admin-card mt-2 overflow-x-auto">
+      <div className="admin-card mt-2 overflow-x-auto" tabIndex={0} role="region" aria-label="Price list">
         <table className="w-full min-w-[560px] text-left">
           <thead>
             <tr className="border-b border-line">
