@@ -75,7 +75,6 @@ export type ServiceBlock =
       footnote?: string;
       steps?: { title: string; steps: Step[] };
     }
-  | { type: "area"; title: string }
   | { type: "review"; title: string; review: Review };
 
 export type ServiceContent = {
@@ -108,13 +107,6 @@ const RETURN_STEPS: Step[] = [
   { title: "Packed and returned", copy: "Your order is packed and delivered back to your address." },
 ];
 
-const IRONING_VS_WASH: CustomFAQ = {
-  q: "What is the difference between Wash & Iron and Ironing?",
-  a: [
-    "Wash & Iron covers washing, drying and ironing.",
-    "Ironing is for clothes already washed at home: we iron, finish and pack them.",
-  ],
-};
 
 export const SERVICE_PAGES: ServiceContent[] = [
   {
@@ -194,7 +186,6 @@ export const SERVICE_PAGES: ServiceContent[] = [
           },
         ],
       },
-      { type: "area", title: "Collected from your door, or drop it off" },
     ],
     faq: {
       title: "Questions people ask before sending a garment.",
@@ -284,11 +275,10 @@ export const SERVICE_PAGES: ServiceContent[] = [
           },
         ],
       },
-      { type: "area", title: "Where Velto collects from" },
     ],
     faq: {
       title: "Questions about Wash & Iron.",
-      items: ["turnaround", IRONING_VS_WASH, "freeDelivery", "area"],
+      items: ["turnaround", "freeDelivery", "area"],
     },
     final: {
       title: "Send this week's laundry.",
@@ -347,7 +337,6 @@ export const SERVICE_PAGES: ServiceContent[] = [
     faq: {
       title: "Questions about ironing.",
       items: [
-        IRONING_VS_WASH,
         {
           q: "Can everything be sent for ironing only?",
           a: [
@@ -583,7 +572,6 @@ export const SERVICE_PAGES: ServiceContent[] = [
           ...RETURN_STEPS,
         ],
       },
-      { type: "area", title: "Where Velto collects from" },
     ],
     faq: {
       title: "Bedding questions.",

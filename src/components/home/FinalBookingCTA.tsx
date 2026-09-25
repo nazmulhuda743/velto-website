@@ -2,7 +2,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { WhatsAppIcon } from "@/components/ui/icons";
 import { ResponsiveImage } from "@/components/ui/ResponsiveImage";
 import { IMAGES, type ImageSlot } from "@/content/mock";
-import { FREE_DELIVERY_THRESHOLD, WHATSAPP_URL, bookHref } from "@/content/site";
+import { WHATSAPP_URL, bookHref } from "@/content/site";
 import { getGoogleProofLabel } from "@/lib/site-content";
 import { SectionIntro } from "./SectionIntro";
 
@@ -15,7 +15,7 @@ type FinalBookingCTAProps = {
   service?: string;
   image?: ImageSlot;
   /** Overrides the primary action (e.g. Request a Quote on quote-first pages). */
-  primary?: { href: string; label: string; helper?: string };
+  primary?: { href: string; label: string; helper?: string; event?: string };
 };
 
 const DEFAULT_BODY = (
@@ -45,7 +45,7 @@ export async function FinalBookingCTA({
           <div className="mt-8 xl:mt-10">
             <ButtonLink
               href={primary ? primary.href : bookHref(source, service)}
-              event={primary ? undefined : "book_pickup_click"}
+              event={primary ? primary.event : "book_pickup_click"}
               placement="final"
               className="w-full !h-14 !px-8 !text-[17px] md:w-auto"
             >
@@ -68,7 +68,8 @@ export async function FinalBookingCTA({
             </a>
           </div>
           <p className="mt-10 border-t border-white/20 pt-4 t-small text-white/75">
-            {await getGoogleProofLabel()} · Free pickup &amp; delivery on orders of {FREE_DELIVERY_THRESHOLD}+
+            {/* Google proof only: the delivery threshold differs by page (৳499 general, ৳300 regular) and each page states its own. */}
+            {await getGoogleProofLabel()}
           </p>
         </div>
         <div className="col-span-4 md:col-span-4 md:col-start-1 md:row-start-1 xl:col-span-7">

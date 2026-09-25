@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { FAQ, FAQS, FAQ_KEYS, type FAQItem } from "@/components/home/FAQ";
 import { FinalBookingCTA } from "@/components/home/FinalBookingCTA";
 import { GoogleProof } from "@/components/home/ProofLine";
@@ -33,7 +34,7 @@ function AtAGlance({ service }: { service: ServiceContent }) {
   const rows = [
     { label: "Pricing", value: service.glance.pricing },
     { label: "Turnaround", value: service.glance.turnaround },
-    { label: "Pickup", value: `${SERVICE_AREA}. Free on orders of ${FREE_DELIVERY_THRESHOLD}+` },
+    { label: "Pickup", value: `${SERVICE_AREA}. Free on orders of ${FREE_DELIVERY_THRESHOLD}+`, dropOff: true },
     { label: "Best for", value: service.glance.bestFor },
   ];
   return (
@@ -51,7 +52,18 @@ function AtAGlance({ service }: { service: ServiceContent }) {
               } ${i === 2 ? "xl:border-l xl:pl-6" : ""}`}
             >
               <dt className="t-label uppercase text-secondary">{r.label}</dt>
-              <dd className="text-[16px] font-semibold leading-snug text-navy md:mt-2 md:text-[17px]">{noStop(r.value)}</dd>
+              <dd className="text-[16px] font-semibold leading-snug text-navy md:mt-2 md:text-[17px]">
+                {noStop(r.value)}
+                {"dropOff" in r ? (
+                  // Pickup stays the default; the outlets are an option, not a requirement.
+                  <Link
+                    href="/locations"
+                    className="mt-1 block t-small font-normal text-secondary underline decoration-blue/50 underline-offset-4 hover:text-navy"
+                  >
+                    Or drop off at Sector 11 or 18
+                  </Link>
+                ) : null}
+              </dd>
             </div>
           ))}
         </dl>

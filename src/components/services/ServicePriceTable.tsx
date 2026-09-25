@@ -26,7 +26,7 @@ function Price({ service }: { service: PublicPriceService | undefined }) {
     );
   }
   if (service.amountMinor === null) {
-    return <span className="t-small font-medium text-secondary">On request</span>;
+    return <span className="t-small font-medium text-secondary">After assessment</span>;
   }
   return (
     <span className="whitespace-nowrap font-semibold tabular-nums text-navy">
@@ -60,7 +60,8 @@ export async function ServicePriceTable({
       <div role="status" className="border-t border-navy pt-6">
         <p className="t-h4 text-navy">Prices couldn&apos;t load right now.</p>
         <p className="mt-2 max-w-[46ch] text-secondary">
-          You can still book a pickup, search the full price list or ask Velto on WhatsApp.
+          Search the full price list or ask Velto on WhatsApp. You can also book a pickup: we go
+          through prices when we call to confirm.
         </p>
         <div className="mt-5 flex flex-col items-start gap-3 md:flex-row md:items-center md:gap-6">
           <TextLink href="/pricing" placement="service_prices_error">
@@ -134,6 +135,11 @@ export async function ServicePriceTable({
           );
         })}
       </table>
+      {prices.items.some((item) => item.services.some((sv) => columns.includes(sv.slug as PriceColumn) && sv.amountMinor === null)) ? (
+        <p className="mt-4 t-small text-secondary">
+          &ldquo;After assessment&rdquo; means the price is confirmed once Velto has seen the item.
+        </p>
+      ) : null}
       {footer}
     </>
   );

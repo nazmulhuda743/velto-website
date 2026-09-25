@@ -59,7 +59,7 @@ function DecisionRow({ service }: { service: ServiceContent }) {
 const PRICING_MODELS = [
   {
     title: "Clothes are priced per item",
-    copy: "Every garment has its own price for each service it can have, so you can check before you send it.",
+    copy: "Every garment has its own price for each service it can have, so you can check before you send it. A few items are priced after assessment, once Velto has seen them.",
     link: { href: "/pricing", label: "Search the price list" },
   },
   {
@@ -98,8 +98,8 @@ export default function ServicesPage() {
         aside={<GoogleProof placement="services_hero" />}
       >
         <p>
-          Start with what you&apos;re sending. Every service begins with a pickup from your door in
-          Uttara Sectors 1–18. Still not sure? Send a photo on WhatsApp and we&apos;ll tell you.
+          Every service begins with a pickup from your door in Uttara Sectors 1–18. Not sure which one
+          fits? Send a photo on WhatsApp and we&apos;ll tell you.
         </p>
       </PageHero>
 
