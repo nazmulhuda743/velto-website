@@ -155,7 +155,7 @@ One primary intent per page. The full table is in [KEYWORD-MAP](KEYWORD-MAP.md).
 
 - **telephone**: the confirmed number is a WhatsApp line, and calls aren't verified.
 - **openingHoursSpecification**: the hours are verified, but the days are not.
-- **geo**: no verified coordinates.
+- ~~**geo**: no verified coordinates.~~ Added 2026-09-25: `geo`, `postalCode` and a `hasMap` link to each outlet's own Google Business Profile (by place id), read from the verified listings (Sector 11: 5.0/102, Sector 18: 4.9/8). Sector 11 also uses its real storefront photo as `image`.
 - **priceRange / Offer**: prices live in Ops and change.
 - **AggregateRating / Review**: self-serving review markup isn't eligible for rich results, and counts need re-verification.
 - **FAQPage**: Google limits FAQ rich results to authoritative government and health sites.

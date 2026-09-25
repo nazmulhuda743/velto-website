@@ -1,5 +1,6 @@
+import { IMAGES } from "@/content/mock";
 import type { Location } from "@/content/site";
-import { LOCATIONS } from "@/content/site";
+import { LOCATIONS, mapListingUrl } from "@/content/site";
 import { absoluteUrl, SITE_NAME, SITE_URL } from "@/lib/seo/site";
 
 /**
@@ -11,9 +12,10 @@ import { absoluteUrl, SITE_NAME, SITE_URL } from "@/lib/seo/site";
  *   Service        per service page, provided by #organization
  *   BreadcrumbList per page
  *
- * Only verified facts from docs/PROJECT-BUILD-SPEC.md: no telephone, opening
- * hours, coordinates, prices or ratings (see docs/seo/VELTO-SEO-MASTER-PLAN.md
- * §Schema for what is deliberately left out and why).
+ * Only verified facts: no telephone, opening hours, prices or ratings (see
+ * docs/seo/VELTO-SEO-MASTER-PLAN.md §Schema for what is deliberately left out
+ * and why). Coordinates, postcode and map link come from each outlet's own
+ * Google Business Profile, verified 2026-09-25.
  */
 
 export const ORGANIZATION_ID = `${SITE_URL}/#organization`;
@@ -59,7 +61,8 @@ export function buildLaundryLocationSchema(location: Location) {
     "@id": locationId(location),
     name: `${SITE_NAME}, ${location.name}`,
     url: absoluteUrl(`/locations/${location.id}`),
-    image: absoluteUrl("/brand/velto-logo.png"),
+    // The real storefront photo where one exists, otherwise the logo.
+    image: absoluteUrl(IMAGES.locations[location.id].src ?? "/brand/velto-logo.png"),
     logo: absoluteUrl("/brand/velto-logo.png"),
     parentOrganization: { "@id": ORGANIZATION_ID },
     address: {
@@ -67,9 +70,11 @@ export function buildLaundryLocationSchema(location: Location) {
       streetAddress: location.address.replace(/, Uttara, Dhaka$/, ""),
       addressLocality: "Uttara",
       addressRegion: "Dhaka",
+      postalCode: location.postalCode,
       addressCountry: "BD",
     },
-    hasMap: location.directionsUrl,
+    geo: { "@type": "GeoCoordinates", latitude: location.geo.latitude, longitude: location.geo.longitude },
+    hasMap: mapListingUrl(location.mapCid),
     areaServed: SERVICE_AREA_SCHEMA,
   };
 }

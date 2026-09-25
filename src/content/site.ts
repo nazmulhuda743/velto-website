@@ -51,7 +51,13 @@ export type Location = {
    * uses it so the pin is the real listing, never a text-search guess.
    */
   mapCid: string;
+  /** The listing's pin and postcode, read from the same Business Profile (2026-09-25). */
+  geo: { latitude: number; longitude: number };
+  postalCode: string;
 };
+
+/** Link that opens the outlet's own Google Business Profile (not a text search). */
+export const mapListingUrl = (cid: string) => `https://maps.google.com/?cid=${cid}`;
 
 /** Google Maps embed for an outlet's Business Profile, in the page language. */
 export const mapEmbedUrl = (cid: string, lang: "en" | "bn" = "en") =>
@@ -72,6 +78,8 @@ export const LOCATIONS: Location[] = [
     reviewsUrl: mapsQuery("Velto Premium Laundry Sector 11 Uttara"),
     // "Velto, House 2 Road No 14, Dhaka 1230", 5.0 (102)
     mapCid: "2437782877757474605",
+    geo: { latitude: 23.8773552, longitude: 90.3899795 },
+    postalCode: "1230",
   },
   {
     id: "sector-18",
@@ -84,6 +92,8 @@ export const LOCATIONS: Location[] = [
     reviewsUrl: mapsQuery("Velto Premium Laundry Sector 18 Uttara"),
     // "Velto, RUAP, North Side of Gate 1, Poncoboti Bazar, Dhaka 1230", 4.9 (8)
     mapCid: "17437996881917531211",
+    geo: { latitude: 23.856438, longitude: 90.3559709 },
+    postalCode: "1230",
   },
 ];
 
