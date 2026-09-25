@@ -16,6 +16,8 @@ export type BookingFormData = {
   address: string;
   preferredPickup?: string;
   service?: string;
+  /** Optional item lines; the server validates them and writes them into the Ops notes. */
+  items?: { item: string; service?: string; quantity: number }[];
   notes?: string;
 };
 
