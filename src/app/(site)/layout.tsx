@@ -1,3 +1,4 @@
+import { ConsentManager } from "@/components/consent/ConsentManager";
 import { Analytics } from "@/components/layout/Analytics";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Footer } from "@/components/layout/Footer";
@@ -24,6 +25,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
       <main id="main">{children}</main>
       <Footer />
       <Analytics />
+      <ConsentManager />
     </>
   );
 }

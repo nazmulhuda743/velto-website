@@ -25,6 +25,14 @@ export type Attribution = Partial<Record<AttributionKey, string>> & {
   content?: string;
   ad?: string;
   service?: string;
+  /** Coarse device class (mobile / tablet / desktop). */
+  device?: string;
+  /** Consent categories granted at submission: essential | analytics | marketing | analytics+marketing | none. */
+  consent?: string;
+  /** Anonymous first-party analytics session id, present only with Analytics consent. */
+  analytics_session?: string;
+  /** Host of the external site the visitor arrived from (never the full URL). */
+  referrer?: string;
 };
 
 const MAX_VALUE_LENGTH = 256;
@@ -60,6 +68,10 @@ export function readAttribution(
     "content",
     "ad",
     "service",
+    "device",
+    "consent",
+    "analytics_session",
+    "referrer",
   ] as const;
   for (const key of directKeys) {
     const value = clean(params.get(key));

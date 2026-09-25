@@ -1,6 +1,7 @@
 import { ImageFileInput } from "@/components/admin/ImageFileInput";
 import { AdminHeader, Badge, Notice, one, type SearchParams } from "@/components/admin/ui";
 import { IMAGE_SLOTS } from "@/content/mock";
+import { dayLabel } from "@/lib/admin/page-helpers";
 import { getSiteContent } from "@/lib/site-content";
 import { saveImageAction } from "../../actions";
 
@@ -62,6 +63,22 @@ export default async function ImagesPage({ searchParams }: { searchParams: Searc
                   <h2 className="font-semibold text-navy">{label(id)}</h2>
                   {override ? <Badge tone="green">Your photo</Badge> : slot.src ? <Badge>Stock</Badge> : <Badge tone="amber">Missing</Badge>}
                 </div>
+                <dl className="mt-3 grid grid-cols-[6.5rem_1fr] gap-x-3 gap-y-1 t-small">
+                  <dt className="text-secondary">Source</dt>
+                  <dd className="text-navy">
+                    {override ? "Your upload" : slot.source ? [slot.source.platform, slot.source.photographer].filter(Boolean).join(" · ") : "None yet"}
+                  </dd>
+                  <dt className="text-secondary">Alt text</dt>
+                  <dd className={(override?.alt ?? slot.alt) ? "line-clamp-2 text-navy" : "font-semibold text-error"}>{override?.alt ?? slot.alt ?? "Missing"}</dd>
+                  <dt className="text-secondary">Focus point</dt>
+                  <dd className="text-navy">{override?.position ?? slot.position ?? "center (default)"}</dd>
+                  <dt className="text-secondary">Last changed</dt>
+                  <dd className="text-navy">{override?.updatedAt ? dayLabel(override.updatedAt) : override ? "Before change tracking" : "Never (built-in)"}</dd>
+                  <dt className="text-secondary">Fallback</dt>
+                  <dd className="text-navy">
+                    {override ? (slot.src ? "Reset returns to the stock photo" : "Reset returns to the placeholder") : slot.src ? "Showing licensed stock" : "Showing a placeholder"}
+                  </dd>
+                </dl>
                 {one(params.saved) === id ? <p className="mt-2 t-small font-medium text-success">Saved.</p> : null}
                 {errorSlot === id ? <p className="mt-2 t-small font-medium text-error">{one(params.error)}</p> : null}
                 <form action={saveImageAction} className="mt-3 space-y-3">

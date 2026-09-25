@@ -1,22 +1,20 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useEffect } from "react";
+import { sendAnalyticsEvent } from "@/lib/analytics/client";
 import { isAnalyticsEvent } from "@/lib/analytics/events";
 import { appendAttribution } from "@/lib/attribution";
-import { captureAttributionFromUrl, storedAttribution } from "@/lib/attribution-client";
+import { captureAttributionFromUrl, consentedAttribution, storedAttribution } from "@/lib/attribution-client";
 
 type Payload = Record<string, string | undefined>;
-
-declare global {
-  interface Window {
-    dataLayer?: unknown[];
-  }
-}
 
 /**
  * Emits approved UI events into one browser-side data layer. GTM can consume
  * these events when configured, while the custom event remains available to
- * local QA without requiring a production analytics ID.
+ * local QA without requiring a production analytics ID. The same event goes to
+ * Velto's first-party analytics, which drops it unless Analytics consent was
+ * granted (GTM itself is not loaded before consent).
  */
 export function track(event: string, context: Payload = {}) {
   if (process.env.NODE_ENV !== "production" && !isAnalyticsEvent(event)) {
@@ -37,6 +35,7 @@ export function track(event: string, context: Payload = {}) {
   window.dataLayer ??= [];
   window.dataLayer.push(payload);
   window.dispatchEvent(new CustomEvent("velto:analytics", { detail: payload }));
+  sendAnalyticsEvent(event, context);
 }
 
 /**
@@ -46,6 +45,12 @@ export function track(event: string, context: Payload = {}) {
  * parameters always win.
  */
 export function Analytics() {
+  const pathname = usePathname();
+
+  useEffect(() => {
+    track("page_view");
+  }, [pathname]);
+
   useEffect(() => {
     captureAttributionFromUrl();
 
@@ -59,7 +64,7 @@ export function Analytics() {
         const href = el.getAttribute("href");
         if (href && /^\/(book|quote)(?:\/|\?|#|$)/.test(href)) {
           try {
-            el.setAttribute("href", appendAttribution(href, storedAttribution()));
+            el.setAttribute("href", appendAttribution(href, consentedAttribution(storedAttribution())));
           } catch {
             /* keep the original href */
           }

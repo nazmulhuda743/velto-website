@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { track } from "@/components/layout/Analytics";
 import { WhatsAppButton } from "@/components/ui/Button";
 import { WHATSAPP_URL } from "@/content/site";
 import { formatAmount } from "@/lib/format-price";
@@ -158,6 +159,10 @@ export function TrackOrder() {
   const [state, setState] = useState<State>({ kind: "idle" });
   const [errors, setErrors] = useState<{ orderNumber?: string; phone?: string }>({});
   const resultRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    track("track_order_open");
+  }, []);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();

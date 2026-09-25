@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Privacy | Velto Premium Laundry",
@@ -33,6 +34,13 @@ export default function PrivacyPage() {
             </p>
             <p className="mt-3">
               When analytics or advertising measurement is enabled, those tools may also collect normal website usage information and may use cookies or similar identifiers according to their own operation.
+            </p>
+            <p className="mt-3">
+              Analytics and advertising measurement only run if you allow them in the cookie banner. Advertising click identifiers are only sent with a booking or quote if you allowed Marketing. Velto&apos;s own website measurement uses random identifiers and does not record names, phone numbers, form answers or IP addresses. The{" "}
+              <Link href="/cookies" className="font-medium text-navy underline underline-offset-4">
+                cookie policy
+              </Link>{" "}
+              lists each cookie and how to change your choice.
             </p>
           </section>
 

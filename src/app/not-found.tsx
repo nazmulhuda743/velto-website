@@ -1,9 +1,11 @@
+import { NotFoundBeacon } from "@/components/consent/NotFoundBeacon";
 import { ButtonLink } from "@/components/ui/Button";
 import SiteLayout from "./(site)/layout";
 
 export default function NotFound() {
   return (
     <SiteLayout>
+      <NotFoundBeacon />
       <section className="container-page py-20 md:py-28">
         <div className="max-w-2xl">
           <p className="t-label uppercase text-blue">404</p>

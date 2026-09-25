@@ -18,7 +18,7 @@ export type SiteSettings = {
 };
 
 export type SeoEntry = { title?: string; description?: string; ogImage?: string; noindex?: boolean };
-export type ImageOverride = { src: string; alt?: string; position?: string };
+export type ImageOverride = { src: string; alt?: string; position?: string; updatedAt?: string };
 export type ReviewEntry = Review & { id: string; showOnHome: boolean };
 
 export type SiteContent = {
@@ -95,7 +95,13 @@ function parseImages(v: unknown): Record<string, ImageOverride> {
     const e = rec(entry);
     const src = str(e.src, 500);
     if (!src || !/^https:\/\//.test(src)) continue;
-    out[id] = { src, alt: str(e.alt, 300) || undefined, position: str(e.position, 40) || undefined };
+    const updatedAt = str(e.updatedAt, 40);
+    out[id] = {
+      src,
+      alt: str(e.alt, 300) || undefined,
+      position: str(e.position, 40) || undefined,
+      updatedAt: updatedAt && !Number.isNaN(Date.parse(updatedAt)) ? updatedAt : undefined,
+    };
   }
   return out;
 }

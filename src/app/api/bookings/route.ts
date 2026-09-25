@@ -1,4 +1,5 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { after, NextResponse, type NextRequest } from "next/server";
+import { logServerEvent } from "@/lib/analytics/store";
 import {
   IntegrationError,
   integrationLogContext,
@@ -59,6 +60,9 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("booking_failed", integrationLogContext(error, "booking", requestId));
     const safe = toSafeIntegrationError(error, requestId, "booking_unavailable");
+    if (!(error instanceof IntegrationError && error.code === "duplicate_submission")) {
+      after(() => logServerEvent("booking_error", "/api/bookings", safe.error.code));
+    }
     const status =
       error instanceof IntegrationError && error.code === "duplicate_submission"
         ? 409
