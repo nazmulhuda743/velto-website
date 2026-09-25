@@ -11,6 +11,8 @@ const { en } = requireTs("src/content/i18n/en.ts");
 const { bn } = requireTs("src/content/i18n/bn.ts");
 const { pagesEn } = requireTs("src/content/i18n/pages/en.ts");
 const { pagesBn } = requireTs("src/content/i18n/pages/bn.ts");
+const { formsEn } = requireTs("src/content/i18n/forms/en.ts");
+const { formsBn } = requireTs("src/content/i18n/forms/bn.ts");
 const { SERVICE_PAGES, servicePages } = requireTs("src/content/services.ts");
 const { BANGLA_READY_PATHS } = requireTs("src/lib/i18n/config.ts");
 const { LOCATIONS } = requireTs("src/content/site.ts");
@@ -32,6 +34,10 @@ test("UI dictionary: Bangla has exactly the English keys", () => {
 
 test("page text: Bangla has exactly the English keys", () => {
   assert.deepEqual(shape(pagesBn), shape(pagesEn));
+});
+
+test("form text: Bangla has exactly the English keys", () => {
+  assert.deepEqual(shape(formsBn), shape(formsEn));
 });
 
 test("service pages: Bangla keeps every service's structure and data", () => {
@@ -83,9 +89,12 @@ test("service pages: Bangla keeps every service's structure and data", () => {
 });
 
 /** Words that stay in Latin script on Bangla pages (brands, platforms, addresses). */
-const LATIN_OK = /\b(?:Velto|Premium|Laundry|WhatsApp|Google|Facebook|Instagram|Meta|Pixel|Analytics|RUAP|House|Road|Poncoboti|Bazar|English)\b/g;
+const LATIN_OK =
+  /\b(?:Velto|Premium|Laundry|WhatsApp|Google|Facebook|Instagram|Meta|Pixel|Analytics|RUAP|House|Road|Poncoboti|Bazar|English)\b|\b01X+\b|\bX{3,}\b|\bVEL-\d+/g;
 /** Keys that hold data, not copy (price-list item names, search terms, slugs). */
-const DATA_KEYS = /(?:^|\.)(?:names|searchHint|slug|primary|secondary|current|columns|type)(?:\[|\.|$)|faq\.items\[\d+\]$|priceFinder\.examples|meta\.siteName|language\.switchTo/;
+// booking.items.placeholder: example searches, in English because the price list is (they must match it).
+const DATA_KEYS =
+  /(?:^|\.)(?:names|searchHint|slug|primary|secondary|current|columns|type)(?:\[|\.|$)|faq\.items\[\d+\]$|priceFinder\.examples|meta\.siteName|language\.switchTo|booking\.items\.placeholder$/;
 
 function untranslated(english, bangla, path = "", found = []) {
   if (typeof bangla === "string") {
@@ -106,7 +115,12 @@ test("Bangla copy has no untranslated English left in it", () => {
     blocks: page.blocks.map((block) => omit(block, ["review", "image"])),
   }));
   assert.deepEqual(
-    [...untranslated(en, bn), ...untranslated(pagesEn, pagesBn), ...untranslated(SERVICE_PAGES, services, "services")],
+    [
+      ...untranslated(en, bn),
+      ...untranslated(pagesEn, pagesBn),
+      ...untranslated(formsEn, formsBn),
+      ...untranslated(SERVICE_PAGES, services, "services"),
+    ],
     [],
   );
 });

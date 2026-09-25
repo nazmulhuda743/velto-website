@@ -2,6 +2,8 @@
 
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { SearchIcon } from "@/components/ui/icons";
+import type { FormText } from "@/content/i18n/forms/en";
+import { format } from "@/lib/i18n/config";
 import {
   cleanItemName,
   ITEM_SERVICES,
@@ -42,10 +44,19 @@ const control =
  * not listed can be added as typed, and "A mix, or not sure" adds a catch-all line.
  */
 export function BookingItems({
+  t,
+  services,
+  mixedLabel,
   lines,
   onChange,
   preferredService,
 }: {
+  /** Text in the page language. Item names stay as the price list has them (they match Ops). */
+  t: FormText["booking"]["items"];
+  /** Service names by slug, in the page language. */
+  services: Record<string, string>;
+  /** "Mixed items" in the page language (the line itself stays MIXED_ITEM for Ops). */
+  mixedLabel: string;
   lines: ItemLine[];
   onChange: (lines: ItemLine[]) => void;
   /** Arrived from a service page: new lines start on that service when the item has it. */
@@ -64,6 +75,8 @@ export function BookingItems({
     clearTimeout(closeTimer.current);
     setOpen(true);
   };
+  // The catch-all line is stored (and sent to Ops) as MIXED_ITEM; show it in the page language.
+  const itemName = (item: string) => (item === MIXED_ITEM ? mixedLabel : item);
   const full = lines.length >= MAX_BOOKING_ITEMS;
   const typed = cleanItemName(query);
 
@@ -103,7 +116,7 @@ export function BookingItems({
       add: () => add(r.name.slice(0, MAX_ITEM_NAME), r.services.map((s) => s.slug).filter(isItemService)),
     })),
     ...(typed && !exact
-      ? [{ key: "typed", label: `Add “${typed}”`, add: () => add(typed, ALL_SERVICES) }]
+      ? [{ key: "typed", label: format(t.addTyped, { typed }), add: () => add(typed, ALL_SERVICES) }]
       : []),
   ];
   const listOpen = open && searching && choices.length > 0;
@@ -149,14 +162,14 @@ export function BookingItems({
   return (
     <div data-booking-items>
       <p id={`${listId}-help`} className="t-small text-secondary">
-        Add what you&apos;re sending, with a service and how many. Not sure? Skip this, or add a mix.
+        {t.help}
       </p>
 
       {lines.length ? (
-        <ul aria-label="Items in this pickup" className="mt-3 divide-y divide-line border-y border-line">
+        <ul aria-label={t.listAria} className="mt-3 divide-y divide-line border-y border-line">
           {lines.map((l) => (
             <li key={l.id} data-item-line className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-2 py-3 md:grid-cols-[minmax(0,1fr)_12rem_auto_auto]">
-              <span className="min-w-0 break-words font-semibold text-navy md:order-1">{l.item}</span>
+              <span className="min-w-0 break-words font-semibold text-navy md:order-1">{itemName(l.item)}</span>
               <button
                 type="button"
                 onClick={() => removeLine(l.id)}
@@ -165,19 +178,19 @@ export function BookingItems({
                 <svg viewBox="0 0 20 20" aria-hidden="true" className="size-4">
                   <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                 </svg>
-                <span className="sr-only">Remove {l.item}</span>
+                <span className="sr-only">{format(t.remove, { item: itemName(l.item) })}</span>
               </button>
               <div className="relative md:order-2">
                 <select
-                  aria-label={`Service for ${l.item}`}
+                  aria-label={format(t.serviceFor, { item: itemName(l.item) })}
                   value={l.service}
                   onChange={(e) => updateLine(l.id, { service: e.target.value as ItemService | "" })}
                   className={`${control} h-11 w-full appearance-none pl-3 pr-9 text-[15px]`}
                 >
-                  <option value="">Not sure</option>
+                  <option value="">{t.notSure}</option>
                   {l.options.map((slug) => (
                     <option key={slug} value={slug}>
-                      {ITEM_SERVICES[slug]}
+                      {services[slug] ?? ITEM_SERVICES[slug]}
                     </option>
                   ))}
                 </select>
@@ -185,7 +198,7 @@ export function BookingItems({
                   <path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
-              <div className="flex items-center justify-self-end md:order-3" role="group" aria-label={`How many ${l.item}`}>
+              <div className="flex items-center justify-self-end md:order-3" role="group" aria-label={format(t.howMany, { item: itemName(l.item) })}>
                 <button
                   type="button"
                   onClick={() => setQuantity(l.id, l.quantity - 1)}
@@ -193,14 +206,14 @@ export function BookingItems({
                   className={`${control} inline-flex size-11 items-center justify-center rounded-r-none text-lg disabled:opacity-40`}
                 >
                   <span aria-hidden="true">−</span>
-                  <span className="sr-only">One fewer</span>
+                  <span className="sr-only">{t.fewer}</span>
                 </button>
                 <input
                   type="number"
                   inputMode="numeric"
                   min={1}
                   max={MAX_ITEM_QUANTITY}
-                  aria-label={`Number of ${l.item}`}
+                  aria-label={format(t.numberOf, { item: itemName(l.item) })}
                   value={l.quantity}
                   onChange={(e) => setQuantity(l.id, Number(e.target.value))}
                   className={`${control} -mx-px h-11 w-14 rounded-none text-center tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
@@ -212,7 +225,7 @@ export function BookingItems({
                   className={`${control} inline-flex size-11 items-center justify-center rounded-l-none text-lg disabled:opacity-40`}
                 >
                   <span aria-hidden="true">+</span>
-                  <span className="sr-only">One more</span>
+                  <span className="sr-only">{t.more}</span>
                 </button>
               </div>
             </li>
@@ -221,11 +234,11 @@ export function BookingItems({
       ) : null}
 
       {full ? (
-        <p className="mt-3 t-small text-secondary">That&apos;s the most items for one request. Add anything else in a note.</p>
+        <p className="mt-3 t-small text-secondary">{t.full}</p>
       ) : (
         <div className="mt-3">
           <label htmlFor={`${listId}-input`} className="block text-[15px] font-semibold text-navy">
-            {lines.length ? "Add another item" : "Add an item"}
+            {lines.length ? t.addAnother : t.add}
           </label>
           <div className="relative mt-2">
             <SearchIcon className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-secondary" />
@@ -236,7 +249,7 @@ export function BookingItems({
               autoComplete="off"
               enterKeyHint="search"
               maxLength={MAX_ITEM_NAME}
-              placeholder="e.g. shirt, pant, saree, blanket"
+              placeholder={t.placeholder}
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
@@ -256,7 +269,7 @@ export function BookingItems({
               className={`${control} h-[54px] w-full pl-12 pr-4 placeholder:text-secondary/80 md:h-[52px]`}
             />
             {listOpen ? (
-              <ul id={listId} role="listbox" aria-label="Matching items" className="absolute inset-x-0 top-full z-20 mt-1 max-h-72 overflow-y-auto rounded-md border border-line-strong bg-white py-1 shadow-[0_12px_32px_rgba(0,49,83,0.14)]">
+              <ul id={listId} role="listbox" aria-label={t.matching} className="absolute inset-x-0 top-full z-20 mt-1 max-h-72 overflow-y-auto rounded-md border border-line-strong bg-white py-1 shadow-[0_12px_32px_rgba(0,49,83,0.14)]">
                 {choices.map((c, i) => (
                   <li
                     key={c.key}
@@ -277,11 +290,11 @@ export function BookingItems({
             {!searching
               ? ""
               : status === "loading"
-              ? "Searching the price list…"
+              ? t.searching
               : status === "error"
-                ? "The item list isn't loading right now. Type the item and add it as written."
+                ? t.error
                 : status === "ready" && results.q === q && !shown.length && typed
-                  ? "Not on the price list? Add it as written."
+                  ? t.notListed
                   : ""}
           </p>
           <button
@@ -290,7 +303,7 @@ export function BookingItems({
             className="mt-1 inline-flex min-h-11 items-center gap-2 rounded-md border border-line-strong px-4 text-[15px] font-semibold text-navy hover:border-navy/50"
           >
             <span aria-hidden="true" className="text-blue">+</span>
-            A mix, or not sure
+            {t.mix}
           </button>
         </div>
       )}

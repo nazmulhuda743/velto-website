@@ -11,17 +11,19 @@ type FieldShellProps = {
   id: string;
   label: string;
   optional?: boolean;
+  /** Text after an optional field's label, in the page language. */
+  optionalText?: string;
   helper?: ReactNode;
   error?: string;
   children: ReactNode;
 };
 
-export function FieldShell({ id, label, optional, helper, error, children }: FieldShellProps) {
+export function FieldShell({ id, label, optional, optionalText = ", optional", helper, error, children }: FieldShellProps) {
   return (
     <div>
       <label htmlFor={id} className="block text-[15px] font-semibold text-navy">
         {label}
-        {optional ? <span className="font-normal text-secondary">, optional</span> : null}
+        {optional ? <span className="font-normal text-secondary">{optionalText}</span> : null}
       </label>
       {helper ? (
         <p id={`${id}-help`} className="mt-1 t-small text-secondary">
@@ -42,11 +44,11 @@ export function FieldShell({ id, label, optional, helper, error, children }: Fie
 const describedBy = (id: string, helper?: ReactNode, error?: string) =>
   [helper ? `${id}-help` : null, error ? `${id}-error` : null].filter(Boolean).join(" ") || undefined;
 
-type Common = { id: string; label: string; optional?: boolean; helper?: ReactNode; error?: string };
+type Common = { id: string; label: string; optional?: boolean; optionalText?: string; helper?: ReactNode; error?: string };
 
-export function TextField({ id, label, optional, helper, error, ...rest }: Common & InputHTMLAttributes<HTMLInputElement>) {
+export function TextField({ id, label, optional, optionalText, helper, error, ...rest }: Common & InputHTMLAttributes<HTMLInputElement>) {
   return (
-    <FieldShell id={id} label={label} optional={optional} helper={helper} error={error}>
+    <FieldShell id={id} label={label} optional={optional} optionalText={optionalText} helper={helper} error={error}>
       <input
         id={id}
         name={id}
@@ -63,13 +65,14 @@ export function SelectField({
   id,
   label,
   optional,
+  optionalText,
   helper,
   error,
   children,
   ...rest
 }: Common & SelectHTMLAttributes<HTMLSelectElement>) {
   return (
-    <FieldShell id={id} label={label} optional={optional} helper={helper} error={error}>
+    <FieldShell id={id} label={label} optional={optional} optionalText={optionalText} helper={helper} error={error}>
       <div className="relative">
         <select
           id={id}
@@ -89,9 +92,9 @@ export function SelectField({
   );
 }
 
-export function TextAreaField({ id, label, optional, helper, error, ...rest }: Common & TextareaHTMLAttributes<HTMLTextAreaElement>) {
+export function TextAreaField({ id, label, optional, optionalText, helper, error, ...rest }: Common & TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
-    <FieldShell id={id} label={label} optional={optional} helper={helper} error={error}>
+    <FieldShell id={id} label={label} optional={optional} optionalText={optionalText} helper={helper} error={error}>
       <textarea
         id={id}
         name={id}

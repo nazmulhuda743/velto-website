@@ -84,6 +84,13 @@ export const toBanglaDigits = (value: string | number) => String(value).replace(
 export const localDigits = (value: string | number, locale: Locale) =>
   locale === "bn" ? toBanglaDigits(value) : String(value);
 
+/**
+ * "Remove {item}" + { item: "Shirt" } → "Remove Shirt", values inserted as they are. For
+ * values that must keep their digits (phone and order numbers, references, typed text).
+ */
+export const format = (template: string, vars: Record<string, string | number>) =>
+  template.replace(/\{(\w+)\}/g, (match, key: string) => (key in vars ? String(vars[key]) : match));
+
 /** "{rating} on Google" + { rating: "5.0" } → "5.0 on Google"; Bangla digits on Bangla pages. */
 export function fill(template: string, vars: Record<string, string | number>, locale: Locale): string {
   return template.replace(/\{(\w+)\}/g, (match, key: string) => (key in vars ? localDigits(vars[key], locale) : match));
