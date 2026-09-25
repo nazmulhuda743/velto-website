@@ -64,10 +64,13 @@ export function cleanBookingItems(value: unknown): BookingItem[] | null {
   return items;
 }
 
-/** "10 × Pant (Dry Cleaning); 1 × Mixed items (service not sure)" */
+/**
+ * "10 × Pant – Dry Cleaning; 5 × Sari (Cotton) – Ironing; 1 × Mixed items – service not sure".
+ * A dash, not brackets, because many price-list names already end in brackets.
+ */
 export function bookingItemsText(items: BookingItem[]): string {
   return items
-    .map((i) => `${i.quantity} × ${i.item} (${i.service ? ITEM_SERVICES[i.service] : "service not sure"})`)
+    .map((i) => `${i.quantity} × ${i.item} – ${i.service ? ITEM_SERVICES[i.service] : "service not sure"}`)
     .join("; ");
 }
 
