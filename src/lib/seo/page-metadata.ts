@@ -3,7 +3,7 @@ import "server-only";
 import type { Metadata } from "next";
 import { getSeoRoute } from "@/content/seo-routes";
 import { dictionary } from "@/content/i18n";
-import { banglaEnabled, localizeHref } from "@/lib/i18n/config";
+import { banglaIndexable, localizeHref } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
 import { getSiteContent } from "../site-content";
 
@@ -14,7 +14,7 @@ const DEFAULT_SHARE_IMAGE = { url: "/opengraph-image", width: 1200, height: 630 
  * Page metadata in the page's language. English: registry defaults, overridden by anything
  * saved in the admin dashboard. Bangla: the Bangla dictionary's title/description (falling
  * back to English), with the admin's share image and noindex choices applied to both.
- * Each language is canonical at its own URL, and the two point at each other (hreflang).
+ * Translated pages are canonical in each language and point at each other (hreflang).
  */
 export async function pageMetadata(path: string, options: { noindex?: boolean } = {}): Promise<Metadata> {
   const locale = await getLocale();
@@ -23,7 +23,7 @@ export async function pageMetadata(path: string, options: { noindex?: boolean } 
   const local = locale === "bn" ? dictionary("bn").seo[path] : undefined;
   const title = local?.title ?? override.title ?? route?.title;
   const description = local?.description ?? override.description ?? route?.description;
-  const canonical = localizeHref(path, locale);
+  const canonical = banglaIndexable(path) ? localizeHref(path, locale) : path;
   return {
     title,
     description,
@@ -48,11 +48,14 @@ export async function pageMetadata(path: string, options: { noindex?: boolean } 
   };
 }
 
-/** Canonical URL for the current language, plus hreflang links while Bangla is on. */
+/**
+ * Canonical URL for the current language, plus hreflang links, for pages with a finished
+ * Bangla version. A /bn page that is not translated yet canonicalises to its English page.
+ */
 export async function alternatesFor(path: string): Promise<NonNullable<Metadata["alternates"]>> {
-  const locale = await getLocale();
+  if (!banglaIndexable(path)) return { canonical: path };
   return {
-    canonical: localizeHref(path, locale),
-    ...(banglaEnabled() ? { languages: { en: path, bn: localizeHref(path, "bn"), "x-default": path } } : {}),
+    canonical: localizeHref(path, await getLocale()),
+    languages: { en: path, bn: localizeHref(path, "bn"), "x-default": path },
   };
 }

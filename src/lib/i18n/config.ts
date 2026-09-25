@@ -24,6 +24,14 @@ export const LANG_COOKIE = "velto_lang";
  */
 export const banglaEnabled = () => process.env.NEXT_PUBLIC_BANGLA_ENABLED === "true";
 
+/**
+ * Pages whose Bangla version is fully translated (English paths). Only these get
+ * hreflang, a self-canonical /bn URL and a Bangla sitemap entry; any other /bn page
+ * still works but canonicalises to its English page until its phase ships.
+ */
+export const BANGLA_READY_PATHS: readonly string[] = ["/"];
+export const banglaIndexable = (path: string) => banglaEnabled() && BANGLA_READY_PATHS.includes(path);
+
 /** Paths that exist in one language only (APIs, admin, redirects, files). */
 const UNLOCALIZED = /^\/(?:api|admin|go|auth|_next)(?:\/|$)|^\/[^?#]*\.[a-z0-9]{2,5}(?:[?#]|$)/i;
 

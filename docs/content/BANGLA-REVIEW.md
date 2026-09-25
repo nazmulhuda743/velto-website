@@ -12,9 +12,10 @@ Status: **DRAFT, awaiting owner review.** Generated from `src/content/i18n/bn.ts
 | --- | --- | --- |
 | **meta** | | |
 | `meta.siteName` | Velto Premium Laundry | Velto Premium Laundry |
-| `meta.title` | Velto Premium Laundry — Laundry & dry cleaning in Uttara | Velto Premium Laundry — উত্তরায় লন্ড্রি ও ড্রাই ক্লিনিং |
-| `meta.description` | Laundry and dry cleaning in Uttara, with pickup from your door. We collect across Uttara Sectors 1–18. | উত্তরায় লন্ড্রি ও ড্রাই ক্লিনিং, আপনার দরজা থেকে পিকআপসহ। আমরা উত্তরা সেক্টর ১–১৮ জুড়ে কাপড় সংগ্রহ করি। |
+| `meta.title` | Laundry & Dry Cleaning in Uttara with Pickup \| Velto | উত্তরায় পিকআপসহ লন্ড্রি ও ড্রাই ক্লিনিং \| Velto |
+| `meta.description` | Laundry, dry cleaning and ironing in Uttara, Dhaka. Pickup from your door across Sectors 1–18, every item tagged and checked. Free pickup on ৳499+. | উত্তরা, ঢাকায় লন্ড্রি, ড্রাই ক্লিনিং ও আয়রন। সেক্টর ১–১৮ জুড়ে আপনার দরজা থেকে পিকআপ, প্রতিটি আইটেম ট্যাগ ও যাচাই করা হয়। ৳৪৯৯+ অর্ডারে ফ্রি পিকআপ। |
 | `meta.ogLocale` | en_BD | bn_BD |
+| `meta.shareImageAlt` | Velto Premium Laundry: laundry and dry cleaning in Uttara, with pickup from your door. | Velto Premium Laundry: উত্তরায় আপনার দরজা থেকে পিকআপসহ লন্ড্রি ও ড্রাই ক্লিনিং। |
 | **common** | | |
 | `common.skipToContent` | Skip to content | মূল অংশে যান |
 | `common.home` | Home | হোম |
@@ -188,6 +189,7 @@ Status: **DRAFT, awaiting owner review.** Generated from `src/content/i18n/bn.ts
 | `home.locations.title` | Built around Uttara. | উত্তরাকে ঘিরেই আমাদের কাজ। |
 | `home.locations.intro1` | Velto serves Uttara Sectors 1–18, with locations in Sector 11 and Sector 18. | Velto উত্তরা সেক্টর ১–১৮-তে সার্ভিস দেয়, আর আমাদের শাখা আছে সেক্টর ১১ ও সেক্টর ১৮-তে। |
 | `home.locations.intro2` | Book a pickup from home or visit the outlet that works for you. | বাসা থেকে পিকআপ বুক করুন, অথবা আপনার সুবিধামতো শাখায় আসুন। |
+| `home.locations.linkTo` | Laundry and dry cleaning in {name} | {name}-এ লন্ড্রি ও ড্রাই ক্লিনিং |
 | `home.findPrice.eyebrow` | Pricing | দাম |
 | `home.findPrice.title` | Check the price before you send it. | পাঠানোর আগেই দাম দেখে নিন। |
 | `home.findPrice.intro` | Search for an item such as a shirt, blazer or saree to see the services available and the current Velto price. | শার্ট, ব্লেজার বা শাড়ির মতো কোনো আইটেম খুঁজে দেখুন কোন কোন সার্ভিস আছে এবং Velto-র বর্তমান দাম কত। |
@@ -217,6 +219,7 @@ Status: **DRAFT, awaiting owner review.** Generated from `src/content/i18n/bn.ts
 | `home.regular.intro1` | Regular laundry and ironing can be arranged as recurring pickups, so you don't need to book from scratch every time. | নিয়মিত লন্ড্রি ও আয়রনের জন্য নির্দিষ্ট দিনে বারবার পিকআপের ব্যবস্থা করা যায়, তাই প্রতিবার নতুন করে বুক করতে হয় না। |
 | `home.regular.intro2` | On a fixed weekly or fortnightly pickup, regular orders of {amount}+ qualify for free pickup and delivery. | সাপ্তাহিক বা পাক্ষিক নির্দিষ্ট পিকআপে {amount} বা তার বেশি নিয়মিত অর্ডারে পিকআপ ও ডেলিভারি ফ্রি। |
 | `home.regular.setUp` | Set Up Regular Pickup | নিয়মিত পিকআপ ঠিক করুন |
+| `home.regular.howItWorks` | How regular pickup works | নিয়মিত পিকআপ কীভাবে কাজ করে |
 | `home.faq.eyebrow` | Questions | প্রশ্ন |
 | `home.faq.title` | A few things worth knowing before you book. | বুক করার আগে কয়েকটি জরুরি কথা। |
 | `home.final.title` | Ready to send it? | পাঠাতে প্রস্তুত? |
@@ -296,8 +299,8 @@ Status: **DRAFT, awaiting owner review.** Generated from `src/content/i18n/bn.ts
 | `googleProof.fallback` | 100+ Google reviews | ১০০+ Google রিভিউ |
 | `googleProof.opens` | (opens Google reviews in a new tab) | (Google রিভিউ নতুন ট্যাবে খুলবে) |
 | **seo** | | |
-| `seo./.title` |  | Velto Premium Laundry — উত্তরায় লন্ড্রি ও ড্রাই ক্লিনিং |
-| `seo./.description` |  | উত্তরায় লন্ড্রি ও ড্রাই ক্লিনিং, আপনার দরজা থেকে পিকআপসহ। আমরা উত্তরা সেক্টর ১–১৮ জুড়ে কাপড় সংগ্রহ করি। |
+| `seo./.title` |  | উত্তরায় পিকআপসহ লন্ড্রি ও ড্রাই ক্লিনিং \| Velto |
+| `seo./.description` |  | উত্তরা, ঢাকায় লন্ড্রি, ড্রাই ক্লিনিং ও আয়রন। সেক্টর ১–১৮ জুড়ে আপনার দরজা থেকে পিকআপ, প্রতিটি আইটেম ট্যাগ ও যাচাই করা হয়। ৳৪৯৯+ অর্ডারে ফ্রি পিকআপ। |
 | **notFound** | | |
 | `notFound.title` | We can’t find that page. | পাতাটি খুঁজে পাওয়া যাচ্ছে না। |
 | `notFound.body` | The link may be old, or the page may have moved. You can still book a pickup, look through Velto’s services or go back to the homepage. | লিংকটি হয়তো পুরোনো, অথবা পাতাটি সরানো হয়েছে। আপনি চাইলে পিকআপ বুক করতে পারেন, Velto-র সার্ভিসগুলো দেখতে পারেন, অথবা হোমপেজে ফিরে যেতে পারেন। |

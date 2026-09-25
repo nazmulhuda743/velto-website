@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { banglaEnabled, localizeHref } from "@/lib/i18n/config";
+import { banglaIndexable, localizeHref } from "@/lib/i18n/config";
 import { absoluteUrl, INDEXABLE_ROUTES } from "@/lib/seo/site";
 
 /**
@@ -8,12 +8,14 @@ import { absoluteUrl, INDEXABLE_ROUTES } from "@/lib/seo/site";
  * changefreq/priority are ignored by Google and left out.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const bangla = banglaEnabled();
-  // With Bangla on, each page is listed in both languages and names its counterpart.
-  const languages = (path: string) =>
-    bangla ? { alternates: { languages: { en: absoluteUrl(path), bn: absoluteUrl(localizeHref(path, "bn")) } } } : {};
+  // A page with a finished Bangla version is listed in both languages and names its counterpart.
+  const languages = (path: string) => ({
+    alternates: { languages: { en: absoluteUrl(path), bn: absoluteUrl(localizeHref(path, "bn")) } },
+  });
 
   return INDEXABLE_ROUTES.flatMap((path) =>
-    (bangla ? [path, localizeHref(path, "bn")] : [path]).map((url) => ({ url: absoluteUrl(url), ...languages(path) })),
+    banglaIndexable(path)
+      ? [path, localizeHref(path, "bn")].map((url) => ({ url: absoluteUrl(url), ...languages(path) }))
+      : [{ url: absoluteUrl(path) }],
   );
 }
