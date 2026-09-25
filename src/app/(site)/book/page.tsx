@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { pageMetadata } from "@/lib/seo/page-metadata";
+import { getCustomerSession } from "@/lib/customer/portal";
 import { BookingForm } from "@/components/forms/BookingForm";
 import { Breadcrumbs } from "@/components/pages/Breadcrumbs";
 import { WhatsAppButton } from "@/components/ui/Button";
@@ -29,6 +31,9 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
   // Development-only QA hook: simulate the adapter result without any backend.
   const preview = process.env.NODE_ENV !== "production" ? one(params.preview) : undefined;
   const previewOutcome = preview === "success" || preview === "error" ? preview : undefined;
+  const session = await getCustomerSession();
+  const account = session.kind === "customer" && session.account.state === "ready" ? session.account : null;
+  const returnTo = `/book${service ? `?service=${encodeURIComponent(service)}` : ""}`;
 
   return (
     <section aria-labelledby="page-title" className="group/book pb-(--space-section) pt-7 md:pt-10 xl:pt-12">
@@ -40,10 +45,32 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
           <div className="col-span-4 md:col-span-8 xl:col-span-7">
             <div className="max-w-[640px]">
               <BookingForm
-                intro="Tell us what you're sending and where to collect it. We'll confirm the time with you before we come."
+                intro={
+                  <>
+                    Tell us what you&apos;re sending and where to collect it. We&apos;ll confirm the time with you before we come.
+                    {account ? (
+                      <span className="mt-3 block t-small text-secondary" data-prefilled>
+                        Signed in as {account.fullName}. Your details are filled in; check them before you send.
+                      </span>
+                    ) : session.kind === "anonymous" ? (
+                      <span className="mt-3 block t-small text-secondary">
+                        Have a Velto account?{" "}
+                        <Link href={`/login?next=${encodeURIComponent(returnTo)}`} className="font-semibold text-navy underline decoration-blue/50 underline-offset-4">
+                          Sign in to fill in your details
+                        </Link>
+                        .
+                      </span>
+                    ) : null}
+                  </>
+                }
                 initialService={service}
                 presetNote={PRESET_NOTES[service ?? ""]}
                 previewOutcome={previewOutcome}
+                initialContact={
+                  account
+                    ? { name: account.fullName, phone: account.phone, address: account.address ?? "", sector: account.area ?? "" }
+                    : undefined
+                }
               />
             </div>
           </div>

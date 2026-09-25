@@ -5,8 +5,9 @@ import { useEffect, useRef } from "react";
 import { ButtonLink, WhatsAppButton } from "@/components/ui/Button";
 import { ArrowRight } from "@/components/ui/icons";
 import { NAV, WHATSAPP_URL, bookHref } from "@/content/site";
+import { AccountLink } from "./AccountLink";
 
-export function MobileMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function MobileMenu({ open, onClose, accounts = false }: { open: boolean; onClose: () => void; accounts?: boolean }) {
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -62,6 +63,14 @@ export function MobileMenu({ open, onClose }: { open: boolean; onClose: () => vo
               </Link>
             </li>
           ))}
+          {accounts ? (
+            <li className="border-b border-line">
+              <AccountLink
+                onClick={onClose}
+                className="flex min-h-[52px] items-center justify-between py-3 text-[17px] font-medium tracking-[-0.01em] text-navy"
+              />
+            </li>
+          ) : null}
         </ul>
         <div className="mt-8 flex gap-2.5">
           <ButtonLink

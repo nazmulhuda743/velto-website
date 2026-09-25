@@ -8,12 +8,16 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test:foundation": "tsc --ignoreConfig --outDir .foundation-test-build --module node16 --moduleResolution node16 --target es2022 --esModuleInterop --skipLibCheck src/lib/attribution.ts src/lib/integrations/errors.ts src/lib/integrations/ops/validation.ts src/lib/integrations/pricing/validation.ts && node --test tests/*.test.cjs",
-    "test:security": "node scripts/security-static-check.mjs",
+    "test:foundation": "tsc --ignoreConfig --outDir .foundation-test-build --module node16 --moduleResolution node16 --target es2022 --esModuleInterop --skipLibCheck src/lib/attribution.ts src/lib/integrations/errors.ts src/lib/integrations/ops/validation.ts src/lib/integrations/pricing/validation.ts src/lib/customer/validation.ts && node --test tests/*.test.cjs",
+    "test:security": "node scripts/security-static-check.mjs && node scripts/customer-portal-tests.mjs",
+    "test:portal": "node scripts/customer-portal-tests.mjs",
     "test:launch": "node scripts/launch-smoke.mjs",
+    "test:portal-smoke": "node scripts/customer-portal-smoke.mjs",
     "verify:production-readiness": "node scripts/production-readiness.mjs"
   },
   "dependencies": {
+    "@supabase/ssr": "0.12.7",
+    "@supabase/supabase-js": "2.117.0",
     "next": "^16.3.6",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",

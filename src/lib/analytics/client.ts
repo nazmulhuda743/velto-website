@@ -21,6 +21,7 @@ import {
 } from "@/lib/consent";
 import { deviceFromWidth, referrerHost, type Device } from "./classify";
 import { CONSENT_EVENTS } from "./events";
+import { isPrivatePath } from "./private-paths";
 
 export const CONSENT_CHANGE_EVENT = "velto:consent";
 export const CONSENT_OPEN_EVENT = "velto:consent-open";
@@ -241,9 +242,9 @@ function flush() {
   });
 }
 
-/** Queue a first-party event. Dropped silently without analytics consent. */
+/** Queue a first-party event. Dropped silently without analytics consent and on account pages. */
 export function sendAnalyticsEvent(event: string, context: Record<string, string | undefined> = {}) {
-  if (CONSENT_EVENT_SET.has(event) || !readConsent()?.analytics) return;
+  if (CONSENT_EVENT_SET.has(event) || !readConsent()?.analytics || isPrivatePath(window.location.pathname)) return;
   queue.push({
     event,
     path: window.location.pathname,

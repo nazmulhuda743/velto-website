@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { track } from "@/components/layout/Analytics";
 import { WhatsAppButton } from "@/components/ui/Button";
 import { WHATSAPP_URL } from "@/content/site";
+import { ORDER_STAGES as STAGES } from "@/content/order-status";
 import { formatAmount } from "@/lib/format-price";
 import { TextField } from "./fields";
 
@@ -29,15 +30,6 @@ type State =
   | { kind: "found"; order: Order }
   | { kind: "not_found" }
   | { kind: "error"; message: string };
-
-/** Ops status → customer-facing stage. */
-const STAGES = [
-  { status: "New", title: "Booked", copy: "Your order is booked." },
-  { status: "Picked", title: "Collected", copy: "We've collected it from your address." },
-  { status: "In Velto Facility", title: "Being cleaned", copy: "Checked in, tagged and being cleaned." },
-  { status: "Ready", title: "Ready", copy: "Cleaned, checked and packed for return." },
-  { status: "Delivered", title: "Delivered", copy: "Returned to you." },
-];
 
 const date = (value: string | null) =>
   value

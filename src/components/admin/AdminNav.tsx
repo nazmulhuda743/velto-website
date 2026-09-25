@@ -18,6 +18,7 @@ const GROUPS = [
     label: "Operations",
     items: [
       { href: "/admin/requests", label: "Bookings & quotes" },
+      { href: "/admin/accounts", label: "Customer accounts" },
       { href: "/admin/health", label: "Website health" },
     ],
   },

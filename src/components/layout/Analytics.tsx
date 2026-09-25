@@ -4,12 +4,15 @@ import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { sendAnalyticsEvent } from "@/lib/analytics/client";
 import { isAnalyticsEvent } from "@/lib/analytics/events";
+import { isPrivatePath } from "@/lib/analytics/private-paths";
 import { appendAttribution } from "@/lib/attribution";
 import { captureAttributionFromUrl, consentedAttribution, storedAttribution } from "@/lib/attribution-client";
 
 type Payload = Record<string, string | undefined>;
 
 /**
+ * Customer-account pages emit nothing: no data-layer entry, no first-party event.
+ *
  * Emits approved UI events into one browser-side data layer. GTM can consume
  * these events when configured, while the custom event remains available to
  * local QA without requiring a production analytics ID. The same event goes to
@@ -20,6 +23,8 @@ export function track(event: string, context: Payload = {}) {
   if (process.env.NODE_ENV !== "production" && !isAnalyticsEvent(event)) {
     console.warn(`[analytics] "${event}" is not in the approved event taxonomy`);
   }
+
+  if (isPrivatePath(window.location.pathname)) return;
 
   const attribution = storedAttribution();
   const payload = {

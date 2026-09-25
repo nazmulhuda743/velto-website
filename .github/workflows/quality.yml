@@ -76,3 +76,4 @@ jobs:
           fi
 
           npm run test:launch
+          npm run test:portal-smoke

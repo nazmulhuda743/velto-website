@@ -5,9 +5,10 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { ButtonLink } from "@/components/ui/Button";
 import { CloseIcon, MenuIcon, WhatsAppIcon } from "@/components/ui/icons";
 import { NAV, WHATSAPP_URL, bookHref } from "@/content/site";
+import { AccountLink } from "./AccountLink";
 import { MobileMenu } from "./MobileMenu";
 
-export function Header({ logo }: { logo: ReactNode }) {
+export function Header({ logo, accounts = false }: { logo: ReactNode; accounts?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -83,6 +84,9 @@ export function Header({ logo }: { logo: ReactNode }) {
             <WhatsAppIcon className="size-[18px] text-whatsapp" />
             WhatsApp
           </a>
+          {accounts ? (
+            <AccountLink className="hidden rounded-sm px-1 py-2 text-[15px] font-medium text-navy transition-colors hover:text-blue lg:inline-flex" />
+          ) : null}
           <div className="hidden md:block">
             <ButtonLink
               href={bookHref("header")}
@@ -107,7 +111,7 @@ export function Header({ logo }: { logo: ReactNode }) {
         </div>
       </div>
 
-      <MobileMenu open={menuOpen} onClose={closeMenu} />
+      <MobileMenu open={menuOpen} onClose={closeMenu} accounts={accounts} />
     </header>
   );
 }

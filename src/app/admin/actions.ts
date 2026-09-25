@@ -8,6 +8,7 @@ import { saveContent, uploadImage } from "@/lib/admin/content-store";
 import { SEEN_COOKIE } from "@/lib/admin/notifications";
 import { logServerEvent } from "@/lib/analytics/store";
 import { requireAdmin, signIn, signOut } from "@/lib/admin/session";
+import { supabaseFetch } from "@/lib/supabase-server";
 import { getSiteContent, type ReviewEntry, type SiteSettings } from "@/lib/site-content";
 
 const text = (form: FormData, key: string, max: number) => String(form.get(key) ?? "").trim().slice(0, max);
@@ -215,4 +216,34 @@ export async function markNotificationsReadAction() {
     maxAge: 60 * 60 * 24 * 90,
   });
   redirect("/admin/notifications");
+}
+
+/* ---------- customer account links ---------- */
+
+const LINK_DECISIONS = new Set(["approve", "reject", "unlink"]);
+
+/**
+ * Staff verification of "Link my Velto history": approve only after calling the phone on
+ * the Ops customer record. The database re-checks the phone match and one-account rule.
+ */
+export async function decideLinkAction(form: FormData) {
+  const admin = await requireAdmin();
+  const target = "/admin/accounts";
+  const userId = text(form, "authUserId", 40);
+  const decision = text(form, "decision", 10);
+  if (!/^[0-9a-f-]{36}$/i.test(userId) || !LINK_DECISIONS.has(decision)) back(target, { error: "Unknown request." });
+  if (decision === "approve" && form.get("confirmed") !== "on") {
+    back(target, { error: "Tick the box to confirm you verified the number by phone before approving." });
+  }
+  const res = await supabaseFetch("/rest/v1/rpc/portal_link_decide", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ p_auth_user_id: userId, p_decision: decision, p_decided_by: admin.name, p_method: "staff_callback" }),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => null)) as { message?: string } | null;
+    back(target, { error: (body?.message ?? `Failed with HTTP ${res.status}`).slice(0, 160) });
+  }
+  back(target, { saved: decision });
 }
