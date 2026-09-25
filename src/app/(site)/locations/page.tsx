@@ -9,6 +9,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { TextLink } from "@/components/ui/TextLink";
 import { FREE_DELIVERY_THRESHOLD, bookHref } from "@/content/site";
 import { getLocations } from "@/lib/site-content";
+import { IMAGES } from "@/content/mock";
 
 export const generateMetadata = () => pageMetadata("/locations");
 
@@ -18,6 +19,7 @@ export default async function LocationsPage() {
     <>
       <PageHero
         path={"/locations"}
+        image={IMAGES.process[0]}
         crumbs={[{ label: "Home", href: "/" }, { label: "Locations" }]}
         title="Two outlets in Uttara. Pickup across Sectors 1–18."
         eyebrow="Locations"

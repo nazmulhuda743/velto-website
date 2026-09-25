@@ -34,6 +34,7 @@ export function PageHero({
   actions,
   aside,
   image,
+  visual,
   priority = true,
   stackActionsOnMobile = false,
 }: {
@@ -50,10 +51,13 @@ export function PageHero({
   /** Content under the actions (proof lines, facts). */
   aside?: ReactNode;
   image?: ImageSlot;
+  /** Right-column content when there is no photo (e.g. a location plate). Ignored if `image` is set. */
+  visual?: ReactNode;
   priority?: boolean;
   /** Stack the two actions on mobile when both are text buttons that won't fit side by side. */
   stackActionsOnMobile?: boolean;
 }) {
+  const hasVisual = Boolean(image || visual);
   return (
     <section aria-labelledby="page-title" className="pb-14 pt-6 md:pb-20 md:pt-10 xl:pb-24 xl:pt-12">
       <div className="container-page">
@@ -62,7 +66,7 @@ export function PageHero({
           <JsonLd data={buildBreadcrumbSchema(crumbs.map((c) => ({ label: c.label, path: c.href ?? path })))} />
         ) : null}
         <div className="mt-6 grid-page gap-y-8 md:mt-8">
-          <div className={image ? "col-span-4 md:col-span-4 xl:col-span-6" : "col-span-4 md:col-span-8 xl:col-span-9"}>
+          <div className={hasVisual ? "col-span-4 md:col-span-4 xl:col-span-6" : "col-span-4 md:col-span-8 xl:col-span-9"}>
             {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
             <h1 id="page-title" className="t-h1 max-w-[20ch] text-navy">
               {emphasise(title, highlight)}
@@ -86,6 +90,8 @@ export function PageHero({
                 priority={priority}
               />
             </div>
+          ) : visual ? (
+            <div className="col-span-4 md:col-span-4 md:col-start-5 xl:col-span-6 xl:col-start-7">{visual}</div>
           ) : null}
         </div>
       </div>

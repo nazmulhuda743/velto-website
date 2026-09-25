@@ -23,15 +23,33 @@ async function LocationVisual({ loc }: { loc: Location }) {
       />
     );
   }
+  return <LocationPlate loc={loc} />;
+}
+
+/**
+ * Typographic stand-in for an outlet photo: the sector number set large.
+ * `hero` fills an internal-page hero column; the default is a short block header.
+ */
+export function LocationPlate({ loc, size = "block" }: { loc: Location; size?: "block" | "hero" }) {
+  const hero = size === "hero";
   return (
     <div
       aria-hidden="true"
-      className="flex h-[124px] flex-col md:h-[150px] xl:h-[190px] justify-between rounded-md border-t-2 border-navy bg-soft px-5 py-4 md:px-6 md:py-5"
+      className={`flex flex-col justify-between rounded-md border-t-2 border-navy bg-soft ${
+        hero
+          ? "aspect-[16/10] px-6 py-5 md:aspect-[4/5] md:px-8 md:py-7 xl:aspect-[4/3]"
+          : "h-[124px] px-5 py-4 md:h-[150px] md:px-6 md:py-5 xl:h-[190px]"
+      }`}
     >
       <span className="t-label uppercase text-secondary">Velto outlet · Uttara Sector</span>
-      <span className="text-[56px] font-semibold leading-[0.85] tracking-[-0.03em] text-navy md:text-[72px]">
+      <span
+        className={`font-semibold leading-[0.85] tracking-[-0.03em] text-navy ${
+          hero ? "text-[120px] md:text-[160px] xl:text-[200px]" : "text-[56px] md:text-[72px]"
+        }`}
+      >
         {loc.name.replace(/\D/g, "")}
       </span>
+      {hero ? <span className="t-small text-secondary">{loc.hours}</span> : null}
     </div>
   );
 }

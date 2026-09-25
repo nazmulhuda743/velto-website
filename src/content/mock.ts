@@ -101,7 +101,7 @@ export const IMAGES = {
   hero: supplied(
     "hero",
     "A courier in a navy cap handing a bundle of garments in clear covers to a smiling woman at her front door.",
-    1086, 1448, "center 30%",
+    1030, 1448, "center 30%",
   ),
   dryCleaning: supplied(
     "dry-cleaning",
