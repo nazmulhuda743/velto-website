@@ -3,10 +3,10 @@ import { pct, type ConversionRow } from "@/lib/admin/insights";
 import { fmt } from "./charts";
 
 /** Scrollable data table; the first column stays readable on phones. */
-export function DataTable({ head, children, caption, leftCols = 1 }: { head: ReactNode[]; children: ReactNode; caption?: string; leftCols?: number }) {
+export function DataTable({ head, children, caption, leftCols = 1, minWidth = "min-w-[640px]" }: { head: ReactNode[]; children: ReactNode; caption?: string; leftCols?: number; minWidth?: string }) {
   return (
     <div className="-mx-5 overflow-x-auto md:-mx-6">
-      <table className="w-full min-w-[640px] border-collapse text-left">
+      <table className={`w-full ${minWidth} border-collapse text-left`}>
         {caption ? <caption className="sr-only">{caption}</caption> : null}
         <thead>
           <tr className="border-b border-line">
@@ -23,9 +23,9 @@ export function DataTable({ head, children, caption, leftCols = 1 }: { head: Rea
   );
 }
 
-export const Td = ({ children, first = false, left = false, className = "" }: { children: ReactNode; first?: boolean; left?: boolean; className?: string }) =>
+export const Td = ({ children, first = false, left = false, wrap = false, className = "" }: { children: ReactNode; first?: boolean; left?: boolean; wrap?: boolean; className?: string }) =>
   first ? (
-    <th scope="row" className={`whitespace-nowrap px-3 py-2.5 pl-5 text-left text-[15px] font-semibold text-navy md:pl-6 ${className}`}>
+    <th scope="row" className={`${wrap ? "min-w-[11rem]" : "whitespace-nowrap"} px-3 py-2.5 pl-5 text-left text-[15px] font-semibold text-navy md:pl-6 ${className}`}>
       {children}
     </th>
   ) : (

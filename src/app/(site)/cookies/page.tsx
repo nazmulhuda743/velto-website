@@ -39,7 +39,8 @@ const ESSENTIAL: Row[] = [
 const ANALYTICS: Row[] = [
   {
     name: "velto_vid",
-    purpose: "A random identifier that lets Velto count returning visitors in its own anonymous website measurement.",
+    purpose:
+      "A random identifier that lets Velto count returning visitors in its own anonymous website measurement. If you later book or request a quote, the visit is connected to that request so Velto can see which campaigns bring customers.",
     duration: "13 months",
     setBy: "Velto",
   },

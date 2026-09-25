@@ -68,6 +68,14 @@ const SECTIONS: LegalSection[] = [
           included <strong>only if you allowed Marketing cookies</strong>.
         </p>
         <p>
+          <strong>Connecting campaigns to orders:</strong> to understand which campaigns bring customers, we connect a
+          website booking or quote to our own customer and order records using the phone number you give in the form,
+          the same number we already use to serve you. If you allowed Analytics, the anonymous record of that website
+          visit is connected to the booking too. This is used only for aggregate marketing reporting, such as how many
+          customers a campaign brought and what their orders were worth. It is not sold or shared with advertisers, and
+          it does not use your name, IP address or device to identify you.
+        </p>
+        <p>
           <strong>Website use, only with your permission:</strong> if you allow Analytics, we measure which pages and
           services are viewed, price searches, clicks on buttons such as Book a Pickup, and whether a booking or quote was
           completed. This uses random identifiers and the type of device (mobile, tablet or desktop). It does{" "}

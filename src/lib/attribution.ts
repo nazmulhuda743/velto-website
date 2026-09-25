@@ -1,7 +1,18 @@
 /**
- * Campaign fields approved by the project specification (§9 and §22).
- * This module is runtime-neutral so it can be used by browser capture and
- * server-side booking/quote validation without importing either environment.
+ * Canonical attribution contract (Revenue Attribution V1), shared by browser
+ * capture, booking/quote validation, website_create_request
+ * (public.website_clean_attribution) and the lead snapshot. Runtime-neutral.
+ *
+ *   URL keys (captured from a landing URL):
+ *     utm_source utm_medium utm_campaign utm_content utm_term
+ *     source medium campaign content ad service landing_page
+ *     fbclid fbc fbp gclid            ← advertising ids: Marketing consent only
+ *   Site keys (set by the website at submission, never read from a URL):
+ *     referrer (external host only)  device (mobile|tablet|desktop)
+ *     consent  (none|essential|analytics|marketing|analytics+marketing)
+ *     analytics_session (UUID v4)     ← Analytics consent only
+ *
+ * Anything else is dropped. The same rules are enforced again in SQL.
  */
 export const ATTRIBUTION_KEYS = [
   "utm_source",
@@ -31,6 +42,8 @@ export type Attribution = Partial<Record<AttributionKey, string>> & {
   consent?: string;
   /** Anonymous first-party analytics session id, present only with Analytics consent. */
   analytics_session?: string;
+  /** Click-id presence only ("fbclid" | "gclid"), set by legacyOpsAttribution. Never a raw value. */
+  click_id?: string;
   /** Host of the external site the visitor arrived from (never the full URL). */
   referrer?: string;
 };
@@ -61,18 +74,7 @@ export function readAttribution(
     if (value) attribution[key] = value;
   }
 
-  const directKeys = [
-    "source",
-    "medium",
-    "campaign",
-    "content",
-    "ad",
-    "service",
-    "device",
-    "consent",
-    "analytics_session",
-    "referrer",
-  ] as const;
+  const directKeys = ["source", "medium", "campaign", "content", "ad", "service"] as const;
   for (const key of directKeys) {
     const value = clean(params.get(key));
     if (value) attribution[key] = value;
@@ -80,6 +82,43 @@ export function readAttribution(
   const landing = cleanPath(landingPage ?? params.get("landing_page"));
 
   if (landing) attribution.landing_page = landing;
+
+  const referrer = params.get("referrer")?.trim().toLowerCase();
+  if (referrer && REFERRER_HOST.test(referrer)) attribution.referrer = referrer;
+
+  return attribution;
+}
+
+const REFERRER_HOST = /^[a-z0-9.-]{1,120}$/;
+const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+export const CONSENT_VALUES = ["none", "essential", "analytics", "marketing", "analytics+marketing"] as const;
+export type ConsentValue = (typeof CONSENT_VALUES)[number];
+export const MARKETING_ATTRIBUTION_KEYS = ["fbclid", "fbc", "fbp", "gclid"] as const;
+
+/**
+ * Attribution accepted with a booking or quote submission. Applies the
+ * canonical allowlist plus the consent gates, whatever the client sent.
+ */
+export function readSubmissionAttribution(data: Record<string, unknown> | null | undefined): Attribution {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(data ?? {})) {
+    if (typeof value === "string") params.set(key, value);
+  }
+  const attribution = readAttribution(params);
+
+  const consentRaw = params.get("consent")?.trim();
+  const consent: ConsentValue = (CONSENT_VALUES as readonly string[]).includes(consentRaw ?? "") ? (consentRaw as ConsentValue) : "none";
+  attribution.consent = consent;
+  const analytics = consent === "analytics" || consent === "analytics+marketing";
+  const marketing = consent === "marketing" || consent === "analytics+marketing";
+
+  if (!marketing) for (const key of MARKETING_ATTRIBUTION_KEYS) delete attribution[key];
+
+  const device = params.get("device")?.trim();
+  if (device === "mobile" || device === "tablet" || device === "desktop") attribution.device = device;
+
+  const session = params.get("analytics_session")?.trim().toLowerCase();
+  if (analytics && session && UUID_V4.test(session)) attribution.analytics_session = session;
 
   return attribution;
 }
@@ -108,4 +147,23 @@ export function appendAttribution(href: string, attribution: Attribution) {
   }
 
   return `${url.pathname}${url.search}${url.hash}`;
+}
+
+/**
+ * Guard for the pre-attribution Ops intake (VELTO_ATTRIBUTION_SQL_LIVE unset).
+ *
+ * The production website_create_request that predates Revenue Attribution V1
+ * copies every attribution key=value into the staff-visible task text. Until
+ * website_revenue_attribution.sql and the new website_create_request.sql are
+ * live, strip what must never sit next to a customer's name and phone:
+ * the analytics session id and raw advertising ids. A click id survives only
+ * as presence ("click_id=fbclid"), which is what the new SQL writes anyway.
+ */
+export function legacyOpsAttribution(attribution: Attribution): Attribution {
+  const out: Attribution = { ...attribution };
+  const clickId = out.fbclid ? "fbclid" : out.gclid ? "gclid" : undefined;
+  delete out.analytics_session;
+  for (const key of MARKETING_ATTRIBUTION_KEYS) delete out[key];
+  if (clickId) out.click_id = clickId;
+  return out;
 }

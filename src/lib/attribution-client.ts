@@ -5,10 +5,7 @@
  */
 import { analyticsSessionId, currentDevice, readConsent } from "@/lib/analytics/client";
 import { referrerHost } from "@/lib/analytics/classify";
-import { ATTRIBUTION_KEYS, readAttribution, type Attribution } from "@/lib/attribution";
-
-/** Advertising click identifiers: carried onward only with Marketing consent. */
-const MARKETING_KEYS = ["fbclid", "fbc", "fbp", "gclid"] as const;
+import { ATTRIBUTION_KEYS, MARKETING_ATTRIBUTION_KEYS as MARKETING_KEYS, readAttribution, type Attribution } from "@/lib/attribution";
 
 /** Drop advertising identifiers unless the visitor granted Marketing consent. */
 export function consentedAttribution(attribution: Attribution): Attribution {

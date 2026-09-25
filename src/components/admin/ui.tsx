@@ -114,18 +114,22 @@ export function RangePicker({
   active,
   from,
   to,
+  options = RANGE_OPTIONS,
+  maxNote = "Up to the last 90 days (raw event retention).",
 }: {
   basePath: string;
   params: Record<string, string | undefined>;
   active: string;
   from?: string;
   to?: string;
+  options?: readonly { key: string; label: string }[];
+  maxNote?: string;
 }) {
   const keep = Object.fromEntries(Object.entries(params).filter(([k, v]) => v && !["range", "from", "to"].includes(k))) as Record<string, string>;
   return (
     <div className="flex flex-wrap items-center gap-2">
       <div className="inline-flex rounded-md border border-line bg-white p-0.5" role="group" aria-label="Date range">
-        {RANGE_OPTIONS.map((o) => (
+        {options.map((o) => (
           <a
             key={o.key}
             href={`${basePath}?${new URLSearchParams({ ...keep, range: o.key })}`}
@@ -155,7 +159,7 @@ export function RangePicker({
             To
             <input type="date" name="to" defaultValue={to} required className="admin-input mt-1" />
           </label>
-          <p className="t-caption text-secondary">Up to the last 90 days (raw event retention).</p>
+          <p className="t-caption text-secondary">{maxNote}</p>
           <button type="submit" className="admin-btn w-full">
             Apply
           </button>
