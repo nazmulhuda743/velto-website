@@ -217,7 +217,7 @@ begin
   values (d - 40, 'facebook', 'paid_social', 'curtain_sep26', 2000, 2000, 'test');
   begin
     insert into website_marketing_spend (spend_date, platform, medium, campaign_name, spend, spend_bdt, created_by)
-    values (d - 40, 'Facebook', 'paid_social', 'Curtain_Sep26', 2000, 2000, 'test');
+    values (d - 40, 'facebook', 'paid_social', 'Curtain_Sep26', 2000, 2000, 'test');
     insert into t_result (name, pass, detail) values ('duplicate spend row rejected', false, 'inserted twice');
   exception when unique_violation then
     insert into t_result (name, pass, detail) values ('duplicate spend row rejected', true, 'unique_violation');
