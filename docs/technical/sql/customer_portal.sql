@@ -120,6 +120,23 @@ revoke all on table public.customer_accounts from public, anon, authenticated;
 -------------------------------------------------------------------------------
 
 -- Internal helpers; never granted to API roles.
+
+-- 01XXXXXXXXX from any Bangladeshi mobile format, else null. Portal-owned copy of the Ops v2
+-- helper (velto_v2_local_phone), which exists on staging but not on production.
+create or replace function public.portal_local_phone(p_raw text)
+returns text
+language sql
+immutable
+set search_path = ''
+as $$
+  select case
+    when d ~ '^01[0-9]{9}$' then d
+    when d ~ '^8801[0-9]{9}$' then substr(d, 3)
+    when d ~ '^008801[0-9]{9}$' then substr(d, 5)
+    else null end
+  from (select regexp_replace(coalesce(p_raw, ''), '\D', '', 'g') as d) x;
+$$;
+
 create or replace function public.portal_status_label(p_status text)
 returns text
 language sql
@@ -152,7 +169,8 @@ as $$
     'orderDate', o.order_date,
     'pickupDate', o.pickup_date,
     'deliveryDate', o.delivery_date,
-    'promisedAt', o.v2_promised_at,
+    -- v2_promised_at exists on staging only; read it through JSON so production works too.
+    'promisedAt', to_jsonb(o) -> 'v2_promised_at',
     'deliveredAt', o.delivered_at,
     'services', to_jsonb(o.service_category),
     'items', o.total_items,
@@ -211,7 +229,7 @@ begin
   if v_acc.auth_user_id is null then
     -- Metadata is user-editable: use it only to prefill the customer's own profile.
     v_name := btrim(coalesce(v_meta ->> 'full_name', ''));
-    v_phone := public.velto_v2_local_phone(v_meta ->> 'phone');
+    v_phone := public.portal_local_phone(v_meta ->> 'phone');
     v_terms := case when (v_meta ->> 'terms_version') ~ '^[0-9]{1,3}$' then (v_meta ->> 'terms_version')::smallint end;
     if char_length(v_name) between 2 and 80 and v_phone ~ '^01[3-9][0-9]{8}$' and v_terms is not null then
       insert into public.customer_accounts (auth_user_id, full_name, phone, terms_version, terms_accepted_at, last_login_at)
@@ -264,7 +282,7 @@ declare
   v_uid uuid := (select auth.uid());
   v_acc public.customer_accounts;
   v_name text := btrim(coalesce(p_full_name, ''));
-  v_phone text := public.velto_v2_local_phone(p_phone);
+  v_phone text := public.portal_local_phone(p_phone);
   v_address text := nullif(btrim(coalesce(p_address, '')), '');
   v_area text := nullif(btrim(coalesce(p_area, '')), '');
 begin
@@ -398,7 +416,8 @@ begin
     'timeline', coalesce((
       select jsonb_agg(jsonb_build_object('status', h.new_status, 'label', public.portal_status_label(h.new_status), 'at', h.changed_at) order by h.changed_at)
       from public.order_status_history h
-      where h.order_id = o.id and h.v2_corrected_by_event_id is null
+      -- v2_corrected_by_event_id exists on staging only (same JSON read as promisedAt).
+      where h.order_id = o.id and (to_jsonb(h) ->> 'v2_corrected_by_event_id') is null
     ), '[]'::jsonb)
   );
 end;
@@ -505,6 +524,7 @@ $$;
 -- 5. Grants: customers call only their own functions; staff linking is server-only.
 -------------------------------------------------------------------------------
 
+revoke all on function public.portal_local_phone(text) from public, anon, authenticated;
 revoke all on function public.portal_status_label(text) from public, anon, authenticated;
 revoke all on function public.portal_order_json(public.orders) from public, anon, authenticated;
 revoke all on function public.portal_caller() from public, anon, authenticated;
