@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import { ResponsiveImage } from "@/components/ui/ResponsiveImage";
 import type { ImageSlot } from "@/content/mock";
 import { Eyebrow } from "@/components/home/SectionIntro";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { buildBreadcrumbSchema } from "@/lib/seo/schema";
 import { Breadcrumbs, type Crumb } from "./Breadcrumbs";
 
 /** Sets one phrase of the title in Velto blue: the page's single highlighted idea. */
@@ -24,6 +26,7 @@ function emphasise(title: ReactNode, phrase?: string) {
  */
 export function PageHero({
   crumbs,
+  path,
   title,
   eyebrow,
   highlight,
@@ -35,6 +38,8 @@ export function PageHero({
   stackActionsOnMobile = false,
 }: {
   crumbs: Crumb[];
+  /** This page's path. When set, the breadcrumb trail is also emitted as BreadcrumbList JSON-LD. */
+  path?: string;
   title: ReactNode;
   /** Small blue label above the H1 (the site-wide section label system). */
   eyebrow?: string;
@@ -53,6 +58,9 @@ export function PageHero({
     <section aria-labelledby="page-title" className="pb-14 pt-6 md:pb-20 md:pt-10 xl:pb-24 xl:pt-12">
       <div className="container-page">
         <Breadcrumbs items={crumbs} />
+        {path ? (
+          <JsonLd data={buildBreadcrumbSchema(crumbs.map((c) => ({ label: c.label, path: c.href ?? path })))} />
+        ) : null}
         <div className="mt-6 grid-page gap-y-8 md:mt-8">
           <div className={image ? "col-span-4 md:col-span-4 xl:col-span-6" : "col-span-4 md:col-span-8 xl:col-span-9"}>
             {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}

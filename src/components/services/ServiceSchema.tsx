@@ -1,22 +1,11 @@
-import { LOCATIONS } from "@/content/site";
-import { SITE_URL, absoluteUrl } from "@/lib/site-url";
-
-const BUSINESS_ID = `${SITE_URL}/#business`;
-
-const outlet = (loc: (typeof LOCATIONS)[number]) => ({
-  "@type": "DryCleaningOrLaundry",
-  name: `Velto Premium Laundry, ${loc.name}`,
-  address: {
-    "@type": "PostalAddress",
-    streetAddress: loc.address.replace(/, Uttara, Dhaka$/, ""),
-    addressLocality: "Uttara, Dhaka",
-    addressCountry: "BD",
-  },
-});
+import { JsonLd } from "@/components/seo/JsonLd";
+import { buildBreadcrumbSchema, buildServiceSchema } from "@/lib/seo/schema";
 
 /**
- * Service + breadcrumb structured data. Only verified, non-volatile facts:
- * no prices (they change in Ops) and no ratings (counts need re-verification).
+ * Service + breadcrumb structured data. The provider is the site-wide
+ * Organization; outlets are referenced by id. No prices (they change in Ops)
+ * and no ratings (counts need re-verification, and self-serving review markup
+ * isn't eligible for rich results).
  */
 export function ServiceSchema({
   name,
@@ -29,41 +18,5 @@ export function ServiceSchema({
   path: string;
   crumbs: { label: string; path: string }[];
 }) {
-  const data = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "Service",
-        name,
-        serviceType: name,
-        description,
-        url: absoluteUrl(path),
-        areaServed: { "@type": "Place", name: "Uttara, Dhaka" },
-        provider: { "@id": BUSINESS_ID },
-      },
-      {
-        ...outlet(LOCATIONS[0]),
-        "@id": BUSINESS_ID,
-        name: "Velto Premium Laundry",
-        url: SITE_URL,
-        department: LOCATIONS.slice(1).map(outlet),
-      },
-      {
-        "@type": "BreadcrumbList",
-        itemListElement: crumbs.map((c, i) => ({
-          "@type": "ListItem",
-          position: i + 1,
-          name: c.label,
-          item: absoluteUrl(c.path),
-        })),
-      },
-    ],
-  };
-  return (
-    <script
-      type="application/ld+json"
-      // JSON.stringify output with "<" escaped cannot break out of the script element.
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }}
-    />
-  );
+  return <JsonLd data={[buildServiceSchema({ name, description, path }), buildBreadcrumbSchema(crumbs)]} />;
 }

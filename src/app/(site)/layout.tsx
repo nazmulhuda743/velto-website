@@ -7,14 +7,15 @@ import { TrackingScripts } from "@/components/layout/TrackingScripts";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Logo } from "@/components/ui/Logo";
 import { customerAccountsEnabled } from "@/lib/customer/config";
-import { ORGANIZATION_SCHEMA, WEBSITE_SCHEMA } from "@/lib/seo/schema";
+import { LOCATIONS } from "@/content/site";
+import { ORGANIZATION_SCHEMA, WEBSITE_SCHEMA, buildLaundryLocationSchema } from "@/lib/seo/schema";
 
 /** Public website chrome. The admin panel has its own layout. */
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <TrackingScripts />
-      <JsonLd data={[WEBSITE_SCHEMA, ORGANIZATION_SCHEMA]} />
+      <JsonLd data={[WEBSITE_SCHEMA, ORGANIZATION_SCHEMA, ...LOCATIONS.map(buildLaundryLocationSchema)]} />
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-md focus:bg-navy focus:px-4 focus:py-3 focus:text-white"

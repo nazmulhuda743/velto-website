@@ -4,6 +4,8 @@ import { FinalBookingCTA } from "@/components/home/FinalBookingCTA";
 import { PriceFinder } from "@/components/home/PriceFinder";
 import { Eyebrow, SectionIntro } from "@/components/home/SectionIntro";
 import { Breadcrumbs } from "@/components/pages/Breadcrumbs";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { buildBreadcrumbSchema } from "@/lib/seo/schema";
 import { FactRows } from "@/components/pages/FactRows";
 import { ServiceCompare } from "@/components/services/ServiceCompare";
 import { TextLink } from "@/components/ui/TextLink";
@@ -47,6 +49,7 @@ export default async function PricingPage({ searchParams }: { searchParams: Sear
       <section aria-labelledby="page-title" className="bg-soft pb-(--space-section) pt-6 md:pt-10 xl:pt-12">
         <div className="container-page">
           <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Pricing" }]} />
+          <JsonLd data={buildBreadcrumbSchema([{ label: "Home", path: "/" }, { label: "Pricing", path: "/pricing" }])} />
           <div className="mt-6 grid-page gap-y-12 md:mt-8">
             <div className="col-span-4 md:col-span-8 xl:col-span-7">
               <Eyebrow>Pricing</Eyebrow>

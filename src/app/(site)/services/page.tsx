@@ -79,6 +79,7 @@ export default async function ServicesPage() {
   return (
     <>
       <PageHero
+        path={"/services"}
         crumbs={[{ label: "Home", href: "/" }, { label: "Services" }]}
         title="Which service do you need?"
         eyebrow="Services"

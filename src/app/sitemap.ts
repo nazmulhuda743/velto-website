@@ -1,20 +1,11 @@
 import type { MetadataRoute } from "next";
 import { absoluteUrl, INDEXABLE_ROUTES } from "@/lib/seo/site";
 
-const HIGH_VALUE_ROUTES = new Set([
-  "/",
-  "/services",
-  "/pricing",
-  "/locations",
-]);
-
+/**
+ * Only the search-facing pages (INDEXABLE_ROUTES). No lastModified: a build
+ * timestamp on every URL would tell Google everything changed on every deploy.
+ * changefreq/priority are ignored by Google and left out.
+ */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const now = new Date();
-
-  return INDEXABLE_ROUTES.map((path) => ({
-    url: absoluteUrl(path),
-    lastModified: now,
-    changeFrequency: path === "/" ? "weekly" : "monthly",
-    priority: path === "/" ? 1 : HIGH_VALUE_ROUTES.has(path) ? 0.9 : 0.8,
-  }));
+  return INDEXABLE_ROUTES.map((path) => ({ url: absoluteUrl(path) }));
 }

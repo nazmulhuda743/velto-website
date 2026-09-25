@@ -2,7 +2,11 @@ import { TrackOrder } from "@/components/forms/TrackOrder";
 import { Breadcrumbs } from "@/components/pages/Breadcrumbs";
 import { pageMetadata } from "@/lib/seo/page-metadata";
 
-export const generateMetadata = () => pageMetadata("/track");
+/**
+ * Not indexed: a utility for existing customers (they arrive from the receipt, menu or footer),
+ * with no content a searcher needs. Order data is only ever returned to a matching POST.
+ */
+export const generateMetadata = () => pageMetadata("/track", { noindex: true });
 
 export default function TrackPage() {
   return (

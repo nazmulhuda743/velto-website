@@ -7,7 +7,7 @@ import { SectionIntro } from "@/components/home/SectionIntro";
 import { PageHero } from "@/components/pages/PageHero";
 import { ButtonLink } from "@/components/ui/Button";
 import { TextLink } from "@/components/ui/TextLink";
-import { bookHref } from "@/content/site";
+import { FREE_DELIVERY_THRESHOLD, bookHref } from "@/content/site";
 import { getLocations } from "@/lib/site-content";
 
 export const generateMetadata = () => pageMetadata("/locations");
@@ -17,6 +17,7 @@ export default async function LocationsPage() {
   return (
     <>
       <PageHero
+        path={"/locations"}
         crumbs={[{ label: "Home", href: "/" }, { label: "Locations" }]}
         title="Two outlets in Uttara. Pickup across Sectors 1–18."
         eyebrow="Locations"
@@ -52,14 +53,31 @@ export default async function LocationsPage() {
         </div>
       </section>
 
+      {/* One honest service-area block instead of eighteen thin sector pages. */}
       <section aria-labelledby="area-title" className="py-(--space-section)">
-        <div className="container-page grid-page gap-y-6">
+        <div className="container-page grid-page gap-y-8">
           <div className="col-span-4 md:col-span-8 xl:col-span-5">
-            <SectionIntro id="area-title" eyebrow="Pickup" title="Pickup and delivery area" />
+            <SectionIntro id="area-title" eyebrow="Pickup" title="Pickup and delivery across Uttara">
+              <p>
+                We collect from your door and deliver back in every one of these Uttara sectors. You don&apos;t need to
+                live near an outlet. Orders of {FREE_DELIVERY_THRESHOLD}+ are picked up and delivered free.
+              </p>
+              <p>Outside Sectors 1–18? Ask us on WhatsApp before booking and we&apos;ll tell you what&apos;s possible.</p>
+            </SectionIntro>
           </div>
-          <div className="col-span-4 space-y-4 t-body-lg text-body md:col-span-8 xl:col-span-6 xl:col-start-7">
-            <p>Velto&apos;s confirmed core service area is Uttara, Sectors 1–18.</p>
-            <p>If you are outside that area, ask us before booking.</p>
+          <div className="col-span-4 md:col-span-8 xl:col-span-6 xl:col-start-7">
+            <h3 className="t-label uppercase text-navy">Sectors we collect from</h3>
+            <ul className="mt-3 grid grid-cols-3 border-l border-t border-line md:grid-cols-6">
+              {Array.from({ length: 18 }, (_, i) => i + 1).map((n) => (
+                <li key={n} className="border-b border-r border-line px-3 py-3 text-center">
+                  <span className="block t-caption text-secondary">Sector</span>
+                  <span className="block text-[20px] font-semibold tabular-nums text-navy">{n}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-4 t-small text-secondary">
+              Outlets in Sector 11 (House 2, Road 14) and Sector 18 (RUAP, Poncoboti Bazar) for drop-off.
+            </p>
           </div>
         </div>
       </section>

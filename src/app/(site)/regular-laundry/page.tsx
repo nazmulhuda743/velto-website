@@ -42,6 +42,7 @@ export default function RegularLaundryPage() {
   return (
     <>
       <PageHero
+        path={"/regular-laundry"}
         crumbs={[{ label: "Home", href: "/" }, { label: "Regular Laundry" }]}
         title="A regular laundry pickup, so the week takes care of itself."
         eyebrow="Regular laundry"

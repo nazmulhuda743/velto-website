@@ -94,6 +94,11 @@ export async function LocationsSection() {
           {locations.map((loc) => (
             <div key={loc.id} className="col-span-4 md:col-span-4 xl:col-span-6">
               <LocationBlock loc={loc} />
+              <div className="mt-2">
+                <TextLink href={`/locations/${loc.id}`} placement="home_locations" branch={loc.id}>
+                  {`Laundry and dry cleaning in ${loc.name}`}
+                </TextLink>
+              </div>
             </div>
           ))}
         </div>
