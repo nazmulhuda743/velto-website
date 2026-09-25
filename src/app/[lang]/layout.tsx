@@ -19,6 +19,10 @@ export const generateStaticParams = () => LOCALES.map((lang) => ({ lang }));
 export async function generateMetadata({ params }: Omit<Props, "children">): Promise<Metadata> {
   const { lang } = await params;
   const t = dictionary(isLocale(lang) ? lang : "en").meta;
+  // The brand cards live at the app root (opengraph-image.tsx, twitter-image.tsx), outside this
+  // root layout, so Next.js doesn't attach them here: name them explicitly for every page that
+  // doesn't set its own (pageMetadata() does).
+  const card = { width: 1200, height: 630, type: "image/png", alt: t.shareImageAlt };
   return {
     metadataBase: new URL(SITE_URL),
     applicationName: t.siteName,
@@ -31,8 +35,14 @@ export async function generateMetadata({ params }: Omit<Props, "children">): Pro
       siteName: t.siteName,
       title: t.title,
       description: t.description,
+      images: [{ url: "/opengraph-image", ...card }],
     },
-    twitter: { card: "summary_large_image", title: t.title, description: t.description },
+    twitter: {
+      card: "summary_large_image",
+      title: t.title,
+      description: t.description,
+      images: [{ url: "/twitter-image", ...card }],
+    },
   };
 }
 

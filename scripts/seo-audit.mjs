@@ -46,6 +46,7 @@ function head(html) {
     descriptions: meta("name", "description"),
     robots: meta("name", "robots").join(",").toLowerCase(),
     ogImage: meta("property", "og:image"),
+    twitterImage: meta("name", "twitter:image"),
     ogUrl: meta("property", "og:url"),
     canonicals: [...html.matchAll(/<link\b[^>]*rel="canonical"[^>]*>/gi)].map((m) => attr(m[0], "href")),
     h1s: (html.match(/<h1\b/gi) ?? []).length,
@@ -97,6 +98,7 @@ for (const path of indexable) {
   else seenDescriptions.set(h.descriptions[0], path);
   if (h.h1s !== 1) fail(`${path} has ${h.h1s} <h1> elements`);
   if (!h.ogImage.length) fail(`${path} has no og:image`);
+  if (!h.twitterImage.length) fail(`${path} has no twitter:image`);
   for (const u of [...h.ogUrl, ...h.canonicals, ...h.ogImage]) {
     if (/localhost|127\.0\.0\.1|vercel\.app/.test(u)) fail(`${path} metadata points to a non-production host: ${u}`);
   }
@@ -116,6 +118,8 @@ for (const path of [...PRIVATE, "/admin"]) {
   const res = await get(path);
   if (res.status >= 300 && res.status < 400) continue; // redirects to sign-in: not indexable content
   const h = head(await res.text());
+  // Shared links to these pages still show the brand card.
+  if (res.status === 200 && (!h.ogImage.length || !h.twitterImage.length)) fail(`${path} has no share image (og:image / twitter:image)`);
   const disallowed = disallows(path);
   if (!h.robots.includes("noindex") && !disallowed) fail(`${path} is indexable (no noindex, not disallowed)`);
 }
