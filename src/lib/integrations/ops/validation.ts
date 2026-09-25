@@ -35,9 +35,18 @@ function text(
   input: Record<string, unknown>,
   field: string,
   issues: ValidationIssue[],
-  options: { required?: boolean; min?: number; max: number },
+  options: { required?: boolean; min?: number; max: number; multiline?: boolean },
 ) {
-  const value = input[field];
+  const raw = input[field];
+  // Textareas: line breaks become " / ". The Ops task text is one line per field, so a
+  // customer's line break must not start a new line there (or look like another field).
+  const value =
+    options.multiline && typeof raw === "string"
+      ? raw
+          .trim()
+          .replace(/(?:[ \t]*(?:\r\n|[\r\n\u2028\u2029]))+[ \t]*/g, " / ")
+          .replace(/\t/g, " ")
+      : raw;
   if (value === undefined || value === null || value === "") {
     if (options.required) issues.push({ field, code: "required" });
     return undefined;
@@ -90,7 +99,7 @@ export function validateBookingSubmission(
   const area = text(input, "area", issues, { required: true, min: 2, max: 120 });
   const address = text(input, "address", issues, { required: true, min: 5, max: 500 });
   const preferredPickup = text(input, "preferredPickup", issues, { max: 120 });
-  const note = text(input, "notes", issues, { max: MAX_BOOKING_NOTES });
+  const note = text(input, "notes", issues, { max: MAX_BOOKING_NOTES, multiline: true });
   const rawService = input.service;
   const chosenService =
     typeof rawService === "string" && isServiceSlug(rawService)
@@ -132,8 +141,8 @@ export function validateQuoteSubmission(
   const name = text(input, "name", issues, { required: true, min: 2, max: 100 });
   const phone = text(input, "phone", issues, { required: true, max: 32 });
   const area = text(input, "area", issues, { required: true, min: 2, max: 120 });
-  const approximateDetails = text(input, "approximateDetails", issues, { max: 1_000 });
-  const notes = text(input, "notes", issues, { max: 1_000 });
+  const approximateDetails = text(input, "approximateDetails", issues, { max: 1_000, multiline: true });
+  const notes = text(input, "notes", issues, { max: 1_000, multiline: true });
   const rawService = input.service;
   const service =
     typeof rawService === "string" &&

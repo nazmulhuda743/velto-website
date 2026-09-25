@@ -177,3 +177,23 @@ test("items plus a long note cannot exceed the Ops notes limit", () => {
   assert.equal(result.ok, false);
   assert.ok(result.issues.some((issue) => issue.field === "notes" && issue.code === "too_long"));
 });
+
+test("line breaks in notes are kept as ' / ' instead of rejecting the booking", () => {
+  const result = validateBookingSubmission({ ...base, notes: "\r\nCall first\r\n\r\n  Gate code 12\nThanks\n" });
+  assert.equal(result.ok, true);
+  assert.equal(result.value.notes, "Call first / Gate code 12 / Thanks");
+  const withItems = validateBookingSubmission({ ...base, items: [{ item: "Shirt", service: "ironing", quantity: 2 }], notes: "a\nb" });
+  assert.equal(withItems.value.notes, "Items: 2 × Shirt (Ironing). Note: a / b");
+  const quote = validateQuoteSubmission({ ...base, service: "curtain-cleaning", approximateDetails: "4 panels\n2 m each", notes: "x\ty", photoReferences: [] });
+  assert.equal(quote.ok, true);
+  assert.equal(quote.value.approximateDetails, "4 panels / 2 m each");
+  assert.equal(quote.value.notes, "x y");
+});
+
+test("other control characters in notes are still rejected", () => {
+  const result = validateBookingSubmission({ ...base, notes: "Call first\u0000" });
+  assert.equal(result.ok, false);
+  assert.ok(result.issues.some((issue) => issue.field === "notes"));
+  // Single-line fields still refuse line breaks.
+  assert.equal(validateBookingSubmission({ ...base, address: "House 2\nRoad 14" }).ok, false);
+});
