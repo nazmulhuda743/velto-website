@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath, updateTag } from "next/cache";
 import { SITE_CONTENT_TAG } from "../site-content";
 import { supabaseFetch, supabaseOrigin } from "../supabase-server";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from "./upload-limits";
 
 export type ContentKey = "settings" | "seo" | "images" | "reviews";
 
@@ -21,7 +22,6 @@ export async function saveContent(key: ContentKey, value: unknown, updatedBy: st
 }
 
 const BUCKET = "website-media";
-const MAX_BYTES = 8 * 1024 * 1024;
 const TYPES: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
@@ -29,17 +29,29 @@ const TYPES: Record<string, string> = {
   "image/avif": "avif",
 };
 
+/** The real image type from the file's first bytes; the browser's type only reflects the file name. */
+function sniffImageType(head: Buffer): string | null {
+  const ascii = (from: number, to: number) => head.subarray(from, to).toString("latin1");
+  if (head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff) return "image/jpeg";
+  if (ascii(0, 8) === "\x89PNG\r\n\x1a\n") return "image/png";
+  if (ascii(0, 4) === "RIFF" && ascii(8, 12) === "WEBP") return "image/webp";
+  if (ascii(4, 8) === "ftyp" && ["avif", "avis"].includes(ascii(8, 12))) return "image/avif";
+  return null;
+}
+
 /** Upload an admin image to public Storage and return its URL. */
 export async function uploadImage(file: File, folder: string): Promise<string> {
-  const ext = TYPES[file.type];
-  if (!ext) throw new Error("Use a JPG, PNG, WebP or AVIF image.");
-  if (file.size === 0 || file.size > MAX_BYTES) throw new Error("Images must be smaller than 8 MB.");
+  if (file.size === 0 || file.size > MAX_UPLOAD_BYTES) throw new Error(`Images must be smaller than ${MAX_UPLOAD_LABEL}.`);
+  const bytes = Buffer.from(await file.arrayBuffer());
+  const type = sniffImageType(bytes);
+  const ext = type && TYPES[type];
+  if (!type || !ext) throw new Error("Use a JPG, PNG, WebP or AVIF image.");
   const safeFolder = folder.replace(/[^a-z0-9-]/gi, "-").toLowerCase().slice(0, 40) || "misc";
   const path = `${safeFolder}/${new Date().toISOString().slice(0, 10)}-${randomUUID().slice(0, 8)}.${ext}`;
   const res = await supabaseFetch(`/storage/v1/object/${BUCKET}/${path}`, {
     method: "POST",
-    headers: { "Content-Type": file.type, "Cache-Control": "31536000" },
-    body: Buffer.from(await file.arrayBuffer()),
+    headers: { "Content-Type": type, "Cache-Control": "31536000" },
+    body: bytes,
     cache: "no-store",
     signal: AbortSignal.timeout(30_000),
   });
