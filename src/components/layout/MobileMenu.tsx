@@ -50,6 +50,7 @@ export function MobileMenu({ open, onClose, accounts = false }: { open: boolean;
       className="fixed inset-x-0 bottom-0 top-16 z-50 overflow-y-auto border-t border-line bg-white lg:hidden"
     >
       <nav aria-label="Mobile" className="container-page pb-[calc(24px+env(safe-area-inset-bottom))] pt-3">
+        {accounts ? <AccountLink variant="menu" onClick={onClose} className="mb-3 mt-1" /> : null}
         <ul>
           {NAV.mobile.map((item) => (
             <li key={item.href} className="border-b border-line">
@@ -63,14 +64,7 @@ export function MobileMenu({ open, onClose, accounts = false }: { open: boolean;
               </Link>
             </li>
           ))}
-          {accounts ? (
-            <li className="border-b border-line">
-              <AccountLink
-                onClick={onClose}
-                className="flex min-h-[52px] items-center justify-between py-3 text-[17px] font-medium tracking-[-0.01em] text-navy"
-              />
-            </li>
-          ) : null}
+
         </ul>
         <div className="mt-8 flex gap-2.5">
           <ButtonLink

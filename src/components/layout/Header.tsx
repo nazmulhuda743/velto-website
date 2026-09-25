@@ -82,10 +82,13 @@ export function Header({ logo, accounts = false }: { logo: ReactNode; accounts?:
             data-placement="header"
           >
             <WhatsAppIcon className="size-[18px] text-whatsapp" />
-            WhatsApp
+            {/* With the account control present, WhatsApp is icon-only until there is room (1280px+). */}
+            <span className={accounts ? "max-xl:sr-only" : undefined}>WhatsApp</span>
           </a>
           {accounts ? (
-            <AccountLink className="hidden rounded-sm px-1 py-2 text-[15px] font-medium text-navy transition-colors hover:text-blue lg:inline-flex" />
+            <span className="hidden lg:inline-flex">
+              <AccountLink variant="header" />
+            </span>
           ) : null}
           <div className="hidden md:block">
             <ButtonLink
@@ -97,6 +100,11 @@ export function Header({ logo, accounts = false }: { logo: ReactNode; accounts?:
               Book a Pickup
             </ButtonLink>
           </div>
+          {accounts ? (
+            <span className="inline-flex lg:hidden">
+              <AccountLink variant="icon" />
+            </span>
+          ) : null}
           <button
             ref={triggerRef}
             type="button"

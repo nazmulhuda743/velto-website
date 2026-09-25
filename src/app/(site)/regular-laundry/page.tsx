@@ -1,7 +1,10 @@
 import { pageMetadata } from "@/lib/seo/page-metadata";
 import { FAQ, faqItems } from "@/components/home/FAQ";
 import { FinalBookingCTA } from "@/components/home/FinalBookingCTA";
-import { SectionIntro } from "@/components/home/SectionIntro";
+import { GoogleProof } from "@/components/home/ProofLine";
+import { Eyebrow, SectionIntro } from "@/components/home/SectionIntro";
+import { ReviewCarousel } from "@/components/reviews/ReviewCarousel";
+import { getServiceReviews } from "@/lib/reviews";
 import { PageHero } from "@/components/pages/PageHero";
 import { ProcessSteps } from "@/components/pages/ProcessSteps";
 import { ButtonLink, WhatsAppButton } from "@/components/ui/Button";
@@ -13,12 +16,36 @@ export const generateMetadata = () => pageMetadata("/regular-laundry");
 
 const setUpHref = (source: string) => bookHref(source, "regular-laundry");
 
+/** Reviews from customers who come back week after week, moving like the homepage strip. */
+async function RegularReviews() {
+  const { reviews, specific } = await getServiceReviews("regular-laundry");
+  if (!reviews.length) return null;
+  return (
+    <section aria-labelledby="regular-reviews-title" className="bg-warm py-(--space-section)">
+      <div className="container-page flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <Eyebrow>Customer proof</Eyebrow>
+          <h2 id="regular-reviews-title" className="t-h2 max-w-[20ch] text-navy">
+            {specific ? "From customers who keep coming back" : "What Velto customers say"}
+          </h2>
+        </div>
+        <GoogleProof placement="regular_reviews" />
+      </div>
+      <div className="mt-(--space-intro-content)">
+        <ReviewCarousel reviews={reviews} label="Customer reviews" />
+      </div>
+    </section>
+  );
+}
+
 export default function RegularLaundryPage() {
   return (
     <>
       <PageHero
         crumbs={[{ label: "Home", href: "/" }, { label: "Regular Laundry" }]}
         title="A regular laundry pickup, so the week takes care of itself."
+        eyebrow="Regular laundry"
+        highlight="the week takes care of itself"
         image={IMAGES.regular}
         aside={
           // The one reason to choose a routine over one-off orders, stated where the decision is made.
@@ -59,7 +86,7 @@ export default function RegularLaundryPage() {
       <section aria-labelledby="regular-how-title" className="bg-warm py-(--space-section)">
         <div className="container-page grid-page gap-y-10">
           <div className="col-span-4 md:col-span-8 xl:col-span-5">
-            <SectionIntro id="regular-how-title" title="How it works">
+            <SectionIntro id="regular-how-title" eyebrow="The routine" title="How it works">
               <p>
                 {/* TODO_VERIFY: recurring pickup rules beyond confirmed availability (spec §36). */}
                 The details of your schedule are agreed with you when you set it up.
@@ -81,7 +108,7 @@ export default function RegularLaundryPage() {
       <section aria-labelledby="regular-save-title" className="py-(--space-section)">
         <div className="container-page grid-page gap-y-8">
           <div className="col-span-4 md:col-span-8 xl:col-span-5">
-            <SectionIntro id="regular-save-title" title="Put the week together.">
+            <SectionIntro id="regular-save-title" eyebrow="Free pickup" title="Put the week together.">
               <p>
                 Laundry and ironing can go in the same pickup, so the week&apos;s clothes travel together
                 and it&apos;s easier to reach {REGULAR_FREE_DELIVERY_THRESHOLD}+.
@@ -101,6 +128,8 @@ export default function RegularLaundryPage() {
           </div>
         </div>
       </section>
+
+      <RegularReviews />
 
       <FAQ items={faqItems("turnaround", "freeDelivery", "area")} className="bg-soft" />
 

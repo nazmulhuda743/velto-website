@@ -1,4 +1,6 @@
 import { pageMetadata } from "@/lib/seo/page-metadata";
+import { ProofFigures } from "@/components/pages/ProofFigures";
+import { freeDeliveryFigure, sectorsFigure, turnaroundFigure } from "@/components/pages/figures";
 import { FAQ, faqItems } from "@/components/home/FAQ";
 import { FinalBookingCTA } from "@/components/home/FinalBookingCTA";
 import { SectionIntro } from "@/components/home/SectionIntro";
@@ -16,6 +18,9 @@ export default function HowItWorksPage() {
       <PageHero
         crumbs={[{ label: "Home", href: "/" }, { label: "How It Works" }]}
         title="From your door and back again."
+        eyebrow="How it works"
+        highlight="back again"
+        aside={<ProofFigures wide={3} figures={[sectorsFigure, turnaroundFigure, freeDeliveryFigure]} />}
         actions={
           <>
             <ButtonLink
@@ -41,7 +46,7 @@ export default function HowItWorksPage() {
       <section aria-labelledby="booking-steps-title" className="bg-warm py-(--space-section)">
         <div className="container-page grid-page gap-y-10">
           <div className="col-span-4 md:col-span-8 xl:col-span-5">
-            <SectionIntro id="booking-steps-title" title="Before and after we have it">
+            <SectionIntro id="booking-steps-title" eyebrow="Your side" title="Before and after we have it">
               <p>
                 Pickup and delivery cover Uttara Sectors 1–18. Orders of {FREE_DELIVERY_THRESHOLD}+
                 qualify for free pickup and delivery.

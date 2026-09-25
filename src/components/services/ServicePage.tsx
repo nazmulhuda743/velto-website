@@ -2,6 +2,9 @@ import Link from "next/link";
 import { FAQ, FAQS, FAQ_KEYS, type FAQItem } from "@/components/home/FAQ";
 import { FinalBookingCTA } from "@/components/home/FinalBookingCTA";
 import { GoogleProof } from "@/components/home/ProofLine";
+import { Eyebrow } from "@/components/home/SectionIntro";
+import { ReviewCarousel } from "@/components/reviews/ReviewCarousel";
+import { getServiceReviews } from "@/lib/reviews";
 import { MobileConversionBar } from "@/components/layout/MobileConversionBar";
 import { PageHero } from "@/components/pages/PageHero";
 import { ButtonLink, WhatsAppButton } from "@/components/ui/Button";
@@ -73,6 +76,33 @@ function AtAGlance({ service }: { service: ServiceContent }) {
 }
 
 /**
+ * Reviews for this service, moving like the homepage strip. Reviews already
+ * featured on the page are not repeated. If no review mentions this service,
+ * the heading says these are reviews of Velto in general.
+ */
+async function ServiceReviews({ service, tone }: { service: ServiceContent; tone: (typeof TONES)[number] }) {
+  const featured = service.blocks.flatMap((b) => (b.type === "review" ? [b.review] : []));
+  const { reviews, specific } = await getServiceReviews(service.slug, featured);
+  if (!reviews.length) return null;
+  return (
+    <section aria-labelledby="service-reviews-title" className={`py-(--space-section) ${tone === "warm" ? "bg-warm" : ""}`}>
+      <div className="container-page flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <Eyebrow>Customer proof</Eyebrow>
+          <h2 id="service-reviews-title" className="t-h2 max-w-[20ch] text-navy">
+            {specific ? `What customers say about ${service.name}` : "What Velto customers say"}
+          </h2>
+        </div>
+        <GoogleProof placement="service_reviews" />
+      </div>
+      <div className="mt-(--space-intro-content)">
+        <ReviewCarousel reviews={reviews} label={`Customer reviews${specific ? ` of ${service.name}` : ""}`} />
+      </div>
+    </section>
+  );
+}
+
+/**
  * Service page: shared hero, typed content blocks in the order each service
  * needs, FAQ, and the conversion that fits how the service is priced.
  */
@@ -135,6 +165,8 @@ export function ServicePage({ service }: { service: ServiceContent }) {
       <PageHero
         crumbs={[{ label: "Home", href: "/" }, { label: "Services", href: "/services" }, { label: service.name }]}
         title={service.h1}
+        eyebrow={service.name}
+        highlight={service.h1Highlight}
         image={service.image}
         stackActionsOnMobile={stacked}
         actions={
@@ -162,10 +194,12 @@ export function ServicePage({ service }: { service: ServiceContent }) {
         />
       ))}
 
+      <ServiceReviews service={service} tone={TONES[service.blocks.length % 2]} />
+
       <FAQ
         title={service.faq.title}
         items={service.faq.items.map(toFAQ)}
-        className={TONES[(service.blocks.length - 1) % 2] === "warm" ? "" : "bg-warm"}
+        className={TONES[service.blocks.length % 2] === "warm" ? "" : "bg-warm"}
       />
 
       <FinalBookingCTA

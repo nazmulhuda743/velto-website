@@ -3,7 +3,8 @@ import { LOCATIONS } from "@/content/site";
 import { GoogleProof } from "./ProofLine";
 import { Eyebrow } from "./SectionIntro";
 import type { Review } from "@/content/mock";
-import { getSiteContent } from "@/lib/site-content";
+import { ReviewCarousel } from "@/components/reviews/ReviewCarousel";
+import { getHomeReviews } from "@/lib/reviews";
 
 const Paragraph = ({ text }: { text: string }) => (
   <p>
@@ -143,27 +144,26 @@ function ReviewSourceLink({ review, label, className }: { review: Review; label:
   );
 }
 
-/** Spec §20/§21: three or four reviews, editorial, no carousel. */
+/**
+ * "What customers noticed": a moving strip of every review Velto can show
+ * (owner-verified, plus live Google reviews when configured). Pauses on hover.
+ */
 export async function ReviewsSection() {
-  const reviews = (await getSiteContent()).reviews.filter((r) => r.showOnHome && r.text && r.name).slice(0, 4);
+  const reviews = await getHomeReviews();
   if (!reviews.length) return null;
   return (
     <section id="reviews" aria-labelledby="reviews-title" className="bg-warm py-(--space-section)">
-      <div className="container-page">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
-            <Eyebrow>Customer proof</Eyebrow>
-            <h2 id="reviews-title" className="t-h2 text-navy">
-              What customers noticed
-            </h2>
-          </div>
-          <GoogleProof placement="reviews" />
+      <div className="container-page flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <Eyebrow>Customer proof</Eyebrow>
+          <h2 id="reviews-title" className="t-h2 text-navy">
+            What customers noticed
+          </h2>
         </div>
-        <div className="mt-(--space-intro-content) grid gap-x-6 gap-y-12 md:grid-cols-2 xl:grid-cols-3">
-          {reviews.map((review) => (
-            <ReviewBlock key={review.id} review={review} />
-          ))}
-        </div>
+        <GoogleProof placement="reviews" />
+      </div>
+      <div className="mt-(--space-intro-content)">
+        <ReviewCarousel reviews={reviews} label="Customer reviews" />
       </div>
     </section>
   );

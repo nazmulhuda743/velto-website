@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { FinalBookingCTA } from "@/components/home/FinalBookingCTA";
-import { ProofList } from "@/components/home/ProofLine";
+import { ProofFigures, RatingValue } from "@/components/pages/ProofFigures";
+import { freeDeliveryFigure, sectorsFigure } from "@/components/pages/figures";
 import { SectionIntro } from "@/components/home/SectionIntro";
 import { FactRows } from "@/components/pages/FactRows";
 import { PageHero } from "@/components/pages/PageHero";
@@ -42,7 +43,27 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
         title={`Velto ${loc.name}`}
         // Real outlet: never stock. Show the photo only once a verified Velto one is uploaded.
         image={outletPhoto.src ? outletPhoto : undefined}
-        aside={<ProofList items={[`Open ${loc.hours}`, `${loc.rating} on Google · ${loc.reviewCount} reviews for ${loc.name}`]} />}
+        eyebrow="Velto location"
+        aside={
+          <>
+            {/* This outlet's own rating: never blended with the other outlet (§21). */}
+            <ProofFigures
+              wide={3}
+              figures={[
+                {
+                  value: <RatingValue rating={loc.rating} />,
+                  spoken: `${loc.rating} out of 5`,
+                  label: `Google rating, ${loc.reviewCount} reviews for ${loc.name}`,
+                  href: loc.reviewsUrl,
+                  analytics: { event: "google_reviews_click", placement: "location_hero", branch: loc.id },
+                },
+                sectorsFigure,
+                freeDeliveryFigure,
+              ]}
+            />
+            <p className="mt-4 t-small text-secondary">Open {loc.hours}</p>
+          </>
+        }
         actions={
           // Pickup is the default way to use Velto; the outlet is an option.
           <>
@@ -78,7 +99,7 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
       <section aria-labelledby="visit-title" className="bg-warm py-(--space-section)">
         <div className="container-page grid-page gap-y-10">
           <div className="col-span-4 md:col-span-8 xl:col-span-5">
-            <SectionIntro id="visit-title" title="Visiting the outlet">
+            <SectionIntro id="visit-title" eyebrow="Visit or get a pickup" title="Visiting the outlet">
               <p>Visit in person, or book a pickup from anywhere in Uttara Sectors 1–18.</p>
             </SectionIntro>
           </div>
