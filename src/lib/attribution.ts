@@ -42,6 +42,8 @@ export type Attribution = Partial<Record<AttributionKey, string>> & {
   consent?: string;
   /** Anonymous first-party analytics session id, present only with Analytics consent. */
   analytics_session?: string;
+  /** Click-id presence only ("fbclid" | "gclid"), set by legacyOpsAttribution. Never a raw value. */
+  click_id?: string;
   /** Host of the external site the visitor arrived from (never the full URL). */
   referrer?: string;
 };
@@ -145,4 +147,23 @@ export function appendAttribution(href: string, attribution: Attribution) {
   }
 
   return `${url.pathname}${url.search}${url.hash}`;
+}
+
+/**
+ * Guard for the pre-attribution Ops intake (VELTO_ATTRIBUTION_SQL_LIVE unset).
+ *
+ * The production website_create_request that predates Revenue Attribution V1
+ * copies every attribution key=value into the staff-visible task text. Until
+ * website_revenue_attribution.sql and the new website_create_request.sql are
+ * live, strip what must never sit next to a customer's name and phone:
+ * the analytics session id and raw advertising ids. A click id survives only
+ * as presence ("click_id=fbclid"), which is what the new SQL writes anyway.
+ */
+export function legacyOpsAttribution(attribution: Attribution): Attribution {
+  const out: Attribution = { ...attribution };
+  const clickId = out.fbclid ? "fbclid" : out.gclid ? "gclid" : undefined;
+  delete out.analytics_session;
+  for (const key of MARKETING_ATTRIBUTION_KEYS) delete out[key];
+  if (clickId) out.click_id = clickId;
+  return out;
 }

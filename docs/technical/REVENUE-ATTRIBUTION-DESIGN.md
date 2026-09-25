@@ -223,9 +223,13 @@ Next architecture, not built:
 
 ## 13. Production activation
 
-1. Merge PR #19, then this branch (rebased onto `main`), after review.
+1. Merge PR #19, then this branch (rebased onto `main`). Safe before step 2: the guard below is on by default.
 2. In a maintenance window, apply in order: `website_analytics.sql`, `website_revenue_attribution.sql`,
    `website_create_request.sql`. Each checks its schema contract first.
+   Only then set `VELTO_ATTRIBUTION_SQL_LIVE=true` in Vercel and redeploy. Until it is set, the
+   website strips `analytics_session`, `fbc` and `fbp` from bookings and quotes, and sends click ids
+   only as presence (`click_id=fbclid|gclid`). The pre-V1 intake copies every attribution key into
+   the staff-visible task text, so these must not reach it.
 3. Schedule `website_match_leads()` nightly (pg_cron, 03:30 Dhaka) alongside `website_analytics_purge()`.
 4. Brief staff: when a website pickup becomes an order, type the order number on the Ops task.
 5. Start recording spend (manual or CSV), with campaign names equal to the `utm_campaign` from the

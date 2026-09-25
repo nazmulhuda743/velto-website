@@ -1,4 +1,4 @@
-import { readSubmissionAttribution } from "../../attribution";
+import { legacyOpsAttribution, readSubmissionAttribution } from "../../attribution";
 import type {
   BookingSubmission,
   QuoteSubmission,
@@ -61,10 +61,21 @@ function text(
   return normalized;
 }
 
-/** Canonical submission contract: allowlist + consent gates (src/lib/attribution.ts). */
+/**
+ * Canonical submission contract: allowlist + consent gates (src/lib/attribution.ts).
+ * Until the Revenue Attribution SQL is live in the Ops database, the legacy
+ * intake would print every key into the task text, so the session id and raw
+ * click ids are stripped first (legacyOpsAttribution).
+ */
 function attribution(value: unknown) {
-  return readSubmissionAttribution(record(value));
+  const clean = readSubmissionAttribution(record(value));
+  return attributionSqlLive() ? clean : legacyOpsAttribution(clean);
 }
+
+/** Server env flag, read without Node typings so this module stays runtime-neutral. */
+const attributionSqlLive = () =>
+  (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env
+    ?.VELTO_ATTRIBUTION_SQL_LIVE === "true";
 
 export function validateBookingSubmission(
   value: unknown,
