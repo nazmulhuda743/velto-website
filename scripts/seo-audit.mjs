@@ -8,11 +8,18 @@
  *  - malformed JSON-LD, missing share image
  *  - private routes (auth, account, admin, forms, legal) that are indexable
  *  - internal links and old-URL redirects that end in a 404
+ *  - languages: hreflang en / bn / x-default and self-canonicals on translated pages, Bangla
+ *    sitemap entries exactly matching BANGLA_READY_PATHS, untranslated /bn pages noindex with an
+ *    English canonical and no hreflang, and (Bangla off) no /bn anywhere and /bn redirecting
  *
  * Usage: SEO_BASE_URL=http://127.0.0.1:3000 node scripts/seo-audit.mjs
- * The build must use NEXT_PUBLIC_SITE_URL=https://www.velto.com.bd (as in CI).
+ * The build must use NEXT_PUBLIC_SITE_URL=https://www.velto.com.bd (as in CI). Whether Bangla is on
+ * is read from the running site; if NEXT_PUBLIC_BANGLA_ENABLED is set here, the site must match it.
  */
 import { readFile } from "node:fs/promises";
+import { requireTs } from "./lib/ts-require.mjs";
+
+const { BANGLA_READY_PATHS, localizeHref } = requireTs("src/lib/i18n/config.ts");
 
 const base = process.env.SEO_BASE_URL || process.env.LAUNCH_BASE_URL || "http://127.0.0.1:3000";
 const origin = process.env.SEO_EXPECTED_ORIGIN || "https://www.velto.com.bd";
@@ -44,6 +51,11 @@ function head(html) {
     h1s: (html.match(/<h1\b/gi) ?? []).length,
     jsonLd: [...html.matchAll(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/gi)].map((m) => m[1]),
     links: [...html.matchAll(/<a\b[^>]*href="(\/[^"#]*)[^"]*"/gi)].map((m) => m[1].split("?")[0] || "/"),
+    hreflang: [...html.matchAll(/<link\b[^>]*rel="alternate"[^>]*>/gi)]
+      .map((m) => ({ lang: attr(m[0], "hreflang"), href: attr(m[0], "href") }))
+      .filter((l) => l.lang),
+    htmlLang: html.match(/<html\b[^>]*\blang="([^"]*)"/i)?.[1],
+    ogLocale: meta("property", "og:locale"),
   };
 }
 
@@ -116,6 +128,88 @@ for (const path of internal) {
   if (res.status === 404) fail(`internal link to ${path} is a 404`);
 }
 
+// languages
+const abs = (path) => (path === "/" ? origin : `${origin}${path}`);
+const bnProbe = await get("/bn");
+const banglaOn = bnProbe.status === 200;
+const expectedFlag = process.env.NEXT_PUBLIC_BANGLA_ENABLED;
+if (expectedFlag !== undefined && banglaOn !== (expectedFlag === "true")) {
+  fail(`Bangla is ${banglaOn ? "on" : "off"} on the site but NEXT_PUBLIC_BANGLA_ENABLED=${expectedFlag} here`);
+}
+const englishPages = indexable.filter((p) => !/^\/bn(\/|$)/.test(p));
+const bnInSitemap = indexable.filter((p) => /^\/bn(\/|$)/.test(p));
+const hreflangOf = (h, lang) => h.hreflang.filter((l) => l.lang.toLowerCase() === lang).map((l) => l.href);
+for (const path of indexable) {
+  const h = head(await (await get(path)).text());
+  for (const l of h.hreflang) {
+    if (!l.href?.startsWith(origin)) fail(`${path} hreflang ${l.lang} points off the production host: ${l.href}`);
+  }
+}
+let languageChecks = 0;
+if (!banglaOn) {
+  if (![301, 302, 307, 308].includes(bnProbe.status)) fail(`/bn returned ${bnProbe.status} with Bangla off (expected a redirect)`);
+  if (bnInSitemap.length) fail(`Bangla is off but the sitemap lists ${bnInSitemap.join(", ")}`);
+  for (const path of englishPages) {
+    const h = head(await (await get(path)).text());
+    if (h.hreflang.length) fail(`${path} has hreflang links while Bangla is off`);
+    const bn = await get(localizeHref(path, "bn"));
+    const to = bn.headers.get("location") && new URL(bn.headers.get("location"), base).pathname.replace(/\/$/, "") || "/";
+    if (![307, 308].includes(bn.status) || to !== path) fail(`${localizeHref(path, "bn")} returned ${bn.status} → ${to} with Bangla off (expected a redirect to ${path})`);
+    languageChecks++;
+  }
+} else {
+  const ready = englishPages.filter((p) => BANGLA_READY_PATHS.includes(p));
+  const expectedBn = ready.map((p) => localizeHref(p, "bn")).sort();
+  const listed = [...bnInSitemap].sort();
+  for (const p of listed) if (!expectedBn.includes(p)) fail(`unexpected Bangla sitemap entry ${p} (not in BANGLA_READY_PATHS)`);
+  for (const p of expectedBn) if (!listed.includes(p)) fail(`Bangla-ready page ${p} is missing from the sitemap`);
+  for (const path of englishPages) {
+    const bnPath = localizeHref(path, "bn");
+    const enRes = await get(path);
+    const bnRes = await get(bnPath);
+    const en = head(await enRes.text());
+    const bn = head(await bnRes.text());
+    if (bnRes.status !== 200) {
+      fail(`${bnPath} returned ${bnRes.status}`);
+      continue;
+    }
+    if (bn.htmlLang !== "bn") fail(`${bnPath} has <html lang="${bn.htmlLang}">`);
+    if (en.htmlLang !== "en") fail(`${path} has <html lang="${en.htmlLang}">`);
+    if (BANGLA_READY_PATHS.includes(path)) {
+      // Translated: both pages name each other and English as the default.
+      for (const [page, h] of [[path, en], [bnPath, bn]]) {
+        const want = { en: abs(path), bn: abs(bnPath), "x-default": abs(path) };
+        for (const [lang, href] of Object.entries(want)) {
+          const got = hreflangOf(h, lang);
+          if (got.length !== 1 || got[0].replace(/\/$/, "") !== href.replace(/\/$/, "")) {
+            fail(`${page} hreflang ${lang} is ${JSON.stringify(got)}, expected ${href}`);
+          }
+        }
+        if (h.hreflang.length !== 3) fail(`${page} has ${h.hreflang.length} hreflang links (expected en, bn, x-default)`);
+      }
+      if (bn.canonicals.length !== 1 || bn.canonicals[0] !== abs(bnPath)) fail(`${bnPath} canonical is ${bn.canonicals[0]}, expected ${abs(bnPath)}`);
+      if (bn.robots.includes("noindex") || /noindex/i.test(bnRes.headers.get("x-robots-tag") ?? "")) fail(`${bnPath} is translated but noindex`);
+      if (bn.ogLocale[0] !== "bn_BD") fail(`${bnPath} og:locale is ${bn.ogLocale[0]}, expected bn_BD`);
+    } else {
+      // Not translated yet: must not be indexable as a duplicate of the English page.
+      if (!bn.robots.includes("noindex")) fail(`${bnPath} is untranslated but has no noindex robots meta`);
+      if (!/noindex/i.test(bnRes.headers.get("x-robots-tag") ?? "")) fail(`${bnPath} is untranslated but has no X-Robots-Tag: noindex`);
+      if (bn.canonicals.length !== 1 || bn.canonicals[0] !== abs(path)) fail(`${bnPath} canonical is ${bn.canonicals[0]}, expected the English ${abs(path)}`);
+      if (bn.hreflang.length) fail(`${bnPath} is untranslated but has hreflang links`);
+      if (en.hreflang.length) fail(`${path} advertises a Bangla version that isn't translated (hreflang)`);
+    }
+    languageChecks++;
+  }
+  // Private pages stay private in Bangla too.
+  for (const path of PRIVATE) {
+    const bnPath = localizeHref(path, "bn");
+    const res = await get(bnPath);
+    if (res.status >= 300 && res.status < 400) continue;
+    const h = head(await res.text());
+    if (!h.robots.includes("noindex") && !/noindex/i.test(res.headers.get("x-robots-tag") ?? "")) fail(`${bnPath} is indexable`);
+  }
+}
+
 // old-URL redirects must land on a real page
 const config = await readFile(new URL("../next.config.ts", import.meta.url), "utf8");
 for (const [, source, destination] of config.matchAll(/to\("([^"]+)",\s*"([^"]+)"\)/g)) {
@@ -131,5 +225,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `SEO audit passed: ${indexable.length} sitemap pages (canonical, title, description, H1, JSON-LD, og:image), ${internal.size} internal links, ${PRIVATE.length + 1} private routes and all old-URL redirects.`,
+  `SEO audit passed: ${indexable.length} sitemap pages (canonical, title, description, H1, JSON-LD, og:image), ${internal.size} internal links, ${PRIVATE.length + 1} private routes and all old-URL redirects. Languages (Bangla ${banglaOn ? "on" : "off"}): ${languageChecks} pages checked for hreflang, canonicals, indexing and ${banglaOn ? "sitemap entries" : "/bn redirects"}.`,
 );

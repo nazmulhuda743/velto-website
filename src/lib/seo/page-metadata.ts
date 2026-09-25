@@ -14,7 +14,8 @@ const DEFAULT_SHARE_IMAGE = { url: "/opengraph-image", width: 1200, height: 630 
  * Page metadata in the page's language. English: registry defaults, overridden by anything
  * saved in the admin dashboard. Bangla: the Bangla dictionary's title/description (falling
  * back to English), with the admin's share image and noindex choices applied to both.
- * Translated pages are canonical in each language and point at each other (hreflang).
+ * Translated pages are canonical in each language and point at each other (hreflang). A /bn
+ * page that isn't translated yet is noindex (follow), canonicalises to English and has no hreflang.
  */
 export async function pageMetadata(path: string, options: { noindex?: boolean } = {}): Promise<Metadata> {
   const locale = await getLocale();
@@ -24,6 +25,7 @@ export async function pageMetadata(path: string, options: { noindex?: boolean } 
   const title = local?.title ?? override.title ?? route?.title;
   const description = local?.description ?? override.description ?? route?.description;
   const canonical = banglaIndexable(path) ? localizeHref(path, locale) : path;
+  const untranslated = locale === "bn" && !banglaIndexable(path);
   return {
     title,
     description,
@@ -44,7 +46,7 @@ export async function pageMetadata(path: string, options: { noindex?: boolean } 
       description,
       images: [override.ogImage ?? DEFAULT_SHARE_IMAGE.url],
     },
-    ...(override.noindex || options.noindex ? { robots: { index: false, follow: true } } : {}),
+    ...(override.noindex || options.noindex || untranslated ? { robots: { index: false, follow: true } } : {}),
   };
 }
 

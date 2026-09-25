@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { ACCOUNT_HINT_COOKIE, customerAuthConfig } from "@/lib/customer/config";
-import { banglaEnabled, LANG_COOKIE, LOCALE_HEADER, localizeHref, splitLocale } from "@/lib/i18n/config";
+import { banglaEnabled, banglaIndexable, LANG_COOKIE, LOCALE_HEADER, localizeHref, splitLocale } from "@/lib/i18n/config";
 
 const AUTH_COOKIE_OPTIONS = {
   path: "/",
@@ -18,6 +18,7 @@ const AUTH_PATH = /^\/(?:account(?:\/|$)|login$|signup$|forgot-password$|reset-p
  *    from /en/pricing by rewrite); Bangla is "/bn/pricing". "/en/..." redirects to the plain
  *    URL so each page has one English address. While Bangla is off, "/bn/..." redirects too.
  *    A visitor who chose Bangla in the switcher (velto_lang=bn) is sent to the Bangla page.
+ *    Untranslated Bangla pages are sent with X-Robots-Tag: noindex (see BANGLA_READY_PATHS).
  * 2. Customer sessions (unchanged): refreshes the Supabase session cookies, sends signed-out
  *    visitors from /account to /login (and back afterwards), and keeps the header's
  *    "signed in" hint accurate.
@@ -39,7 +40,13 @@ export async function proxy(request: NextRequest) {
   const pass = () => {
     const headers = new Headers(request.headers);
     headers.set(LOCALE_HEADER, locale);
-    if (locale === "bn") return NextResponse.next({ request: { headers } });
+    if (locale === "bn") {
+      const response = NextResponse.next({ request: { headers } });
+      // A Bangla page that isn't translated yet (English body in Bangla chrome) must never be
+      // indexed. pageMetadata() also says so in <meta name="robots">; this covers every /bn URL.
+      if (!banglaIndexable(path)) response.headers.set("X-Robots-Tag", "noindex, follow");
+      return response;
+    }
     const target = url.clone();
     target.pathname = `/en${path === "/" ? "" : path}`;
     return NextResponse.rewrite(target, { request: { headers } });
