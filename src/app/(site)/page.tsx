@@ -10,6 +10,7 @@ import { ProcessStory } from "@/components/home/ProcessStory";
 import { RegularLaundrySection } from "@/components/home/RegularLaundrySection";
 import { ReviewsSection } from "@/components/home/ReviewsSection";
 import { ServiceChooser } from "@/components/home/ServiceChooser";
+import { IMAGES } from "@/content/mock";
 
 const FINAL_ID = "book";
 
@@ -28,7 +29,7 @@ export default function HomePage() {
       <HouseholdSection />
       <RegularLaundrySection />
       <FAQ />
-      <FinalBookingCTA id={FINAL_ID} />
+      <FinalBookingCTA id={FINAL_ID} image={IMAGES.final} />
       <MobileConversionBar finalSectionId={FINAL_ID} />
     </>
   );

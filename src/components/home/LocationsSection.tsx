@@ -3,17 +3,43 @@ import { Star } from "@/components/ui/icons";
 import { TextLink } from "@/components/ui/TextLink";
 import { IMAGES } from "@/content/mock";
 import type { Location } from "@/content/site";
-import { getLocations } from "@/lib/site-content";
+import { getLocations, resolveImage } from "@/lib/site-content";
 import { SectionIntro } from "./SectionIntro";
+
+/**
+ * Real outlets are never shown with stock photography. Until a verified Velto
+ * photo is uploaded for the slot, the block opens with a quiet typographic
+ * plate (decorative; the same facts are in the text below) instead of an
+ * empty 3:2 placeholder.
+ */
+async function LocationVisual({ loc }: { loc: Location }) {
+  const image = await resolveImage(IMAGES.locations[loc.id]);
+  if (image.src) {
+    return (
+      <ResponsiveImage
+        image={image}
+        aspect="aspect-[3/2]"
+        sizes="(min-width: 1200px) 610px, (min-width: 768px) 50vw, 100vw"
+      />
+    );
+  }
+  return (
+    <div
+      aria-hidden="true"
+      className="flex h-[124px] flex-col md:h-[150px] xl:h-[190px] justify-between rounded-md border-t-2 border-navy bg-soft px-5 py-4 md:px-6 md:py-5"
+    >
+      <span className="t-label uppercase text-secondary">Velto outlet · Uttara Sector</span>
+      <span className="text-[56px] font-semibold leading-[0.85] tracking-[-0.03em] text-navy md:text-[72px]">
+        {loc.name.replace(/\D/g, "")}
+      </span>
+    </div>
+  );
+}
 
 export function LocationBlock({ loc }: { loc: Location }) {
   return (
     <article>
-      <ResponsiveImage
-        image={IMAGES.locations[loc.id]}
-        aspect="aspect-[3/2]"
-        sizes="(min-width: 1200px) 610px, (min-width: 768px) 50vw, 100vw"
-      />
+      <LocationVisual loc={loc} />
       <h3 className="mt-6 t-h3 text-navy">{loc.name}</h3>
       <dl className="mt-5">
         <div className="border-t border-line py-3.5">

@@ -47,6 +47,22 @@ Where possible the set was drawn from a few coherent shoots, so colour temperatu
 | `public/images/home/regular.webp` | Regular laundry | — | Supplied by Velto (2026-09-25) | Origin/licence to confirm ² |
 | `public/images/home/final.jpg` | Final booking | https://www.pexels.com/photo/4440572/ | Pexels | Polina Tankilevitch ¹ |
 
+## Internal-page images (public/images/pages)
+
+Added in the public visual pass (2026-09-25). They are licensed Pexels stock under the same licence and trust rule, downloaded once from the Pexels CDN and optimised to WebP. Nothing is hotlinked. Data and alt text live in `src/content/mock.ts` (`pageStock`).
+
+| File | Used for | Source URL | Photographer |
+|---|---|---|---|
+| `public/images/pages/bedding-folded.webp` | Blankets & Comforters hero, homepage household row | https://www.pexels.com/photo/11125918/ | Qiana Zhang |
+| `public/images/pages/bedding-linen-stack.webp` | Blankets & Comforters, "How a bedding order is handled" | https://www.pexels.com/photo/31902663/ | chikawaztla |
+| `public/images/pages/carpet-woven.webp` | Carpet Cleaning hero, homepage household row | https://www.pexels.com/photo/35964344/ | Thomas Parker |
+| `public/images/pages/express-shirt-hanger.webp` | Express hero | https://www.pexels.com/photo/9594952/ | Ron Lach |
+| `public/images/pages/finished-shirts-rail.webp` | About hero | https://www.pexels.com/photo/17293343/ | nguyendesigner |
+
+The photographer names come from the Pexels search listing. Confirm them on each source page before relying on the credit.
+
+Still intentionally image-free (no suitable honest image): the Sector 11 and Sector 18 outlets (they show a typographic plate until a real outlet photo is uploaded), the curtain quote-process block, and the closing CTA on internal pages. See `docs/brand/REAL-PHOTO-SHOT-LIST.md`.
+
 ² Supplied directly by the Velto owner in September 2026 to replace the Pexels photos in these five slots. The owner should confirm where each image came from and that Velto may use it commercially. Several look AI-generated; if so, record the tool and its licence terms here.
 
 ¹ The photographer is inferred from the rest of the same Pexels shoot (neighbouring photo IDs whose credit was confirmed in search results). Confirm it on the source page before relying on the credit.

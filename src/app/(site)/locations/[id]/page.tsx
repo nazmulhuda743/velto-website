@@ -11,7 +11,7 @@ import { TextLink } from "@/components/ui/TextLink";
 import { IMAGES } from "@/content/mock";
 import { FREE_DELIVERY_THRESHOLD, LOCATIONS, SERVICE_AREA, WHATSAPP_URL, bookHref } from "@/content/site";
 import { pageMetadata } from "@/lib/seo/page-metadata";
-import { getLocations } from "@/lib/site-content";
+import { getLocations, resolveImage } from "@/lib/site-content";
 
 // Unknown slugs 404 via notFound(). dynamicParams=false would also 404 the real pages
 // after an admin save revalidates the layout (Next.js NoFallbackError on regeneration).
@@ -34,13 +34,14 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
   const loc = locations.find((l) => l.id === id);
   if (!loc) notFound();
   const other = locations.find((l) => l.id !== loc.id)!;
+  const outletPhoto = await resolveImage(IMAGES.locations[loc.id]);
   return (
     <>
       <PageHero
         crumbs={[{ label: "Home", href: "/" }, { label: "Locations", href: "/locations" }, { label: loc.name }]}
         title={`Velto ${loc.name}`}
-        // Real outlet: MOCK placeholder until verified Velto photography exists (never stock).
-        image={IMAGES.locations[loc.id]}
+        // Real outlet: never stock. Show the photo only once a verified Velto one is uploaded.
+        image={outletPhoto.src ? outletPhoto : undefined}
         aside={<ProofList items={[`Open ${loc.hours}`, `${loc.rating} on Google · ${loc.reviewCount} reviews for ${loc.name}`]} />}
         actions={
           <>

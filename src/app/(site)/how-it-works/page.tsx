@@ -1,8 +1,8 @@
 import { pageMetadata } from "@/lib/seo/page-metadata";
 import { FAQ, faqItems } from "@/components/home/FAQ";
 import { FinalBookingCTA } from "@/components/home/FinalBookingCTA";
-import { ProcessStory } from "@/components/home/ProcessStory";
 import { SectionIntro } from "@/components/home/SectionIntro";
+import { OperationalProcess } from "@/components/pages/OperationalProcess";
 import { PageHero } from "@/components/pages/PageHero";
 import { ProcessSteps } from "@/components/pages/ProcessSteps";
 import { ButtonLink, WhatsAppButton } from "@/components/ui/Button";
@@ -61,12 +61,12 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      <ProcessStory
+      <OperationalProcess
         title="What happens once your order reaches us"
         intro={
           <p>
-            Eight steps, the same for every order. Special garments and household items may add time
-            where extra care is needed.
+            The same ten steps for every order, in four stages. Special garments and household items
+            may add time where extra care is needed.
           </p>
         }
       />

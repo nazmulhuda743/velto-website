@@ -20,17 +20,19 @@ export default function RegularLaundryPage() {
         crumbs={[{ label: "Home", href: "/" }, { label: "Regular Laundry" }]}
         title="A regular laundry pickup, so the week takes care of itself."
         image={IMAGES.regular}
+        // "Set Up Regular Pickup" + WhatsApp don't fit side by side at 360px.
+        stackActionsOnMobile
         actions={
           <>
             <ButtonLink
               href={setUpHref("regular-laundry-page")}
               event="regular_laundry_interest"
               placement="regular_hero"
-              className="flex-[1.45] max-md:px-4 md:flex-none"
+              className="w-full md:w-auto"
             >
               Set Up Regular Pickup
             </ButtonLink>
-            <WhatsAppButton href={WHATSAPP_URL} placement="regular_hero" className="flex-1 max-md:px-3 md:flex-none">
+            <WhatsAppButton href={WHATSAPP_URL} placement="regular_hero" className="w-full md:w-auto">
               WhatsApp
             </WhatsAppButton>
           </>

@@ -16,7 +16,7 @@ export default function AboutPage() {
       <PageHero
         crumbs={[{ label: "Home", href: "/" }, { label: "About" }]}
         title="A laundry in Uttara that works to a written process."
-        image={IMAGES.process[1]}
+        image={IMAGES.about}
         actions={
           <ButtonLink href={bookHref("about-page")} event="book_pickup_click" placement="about_hero">
             Book a Pickup
