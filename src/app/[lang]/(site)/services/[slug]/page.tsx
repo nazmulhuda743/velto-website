@@ -4,6 +4,7 @@ import { ServiceViewTracker } from "@/components/analytics/ServiceViewTracker";
 import { pageMetadata } from "@/lib/seo/page-metadata";
 import { ServicePage } from "@/components/services/ServicePage";
 import { SERVICE_PAGES, getServicePage } from "@/content/services";
+import { getLocale } from "@/lib/i18n/server";
 
 // Unknown slugs 404 via notFound(). dynamicParams=false would also 404 the real pages
 // after an admin save revalidates the layout (Next.js NoFallbackError on regeneration).
@@ -22,7 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function ServiceRoute({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const service = getServicePage(slug);
+  const service = getServicePage(slug, await getLocale());
   if (!service) notFound();
   return (
     <>

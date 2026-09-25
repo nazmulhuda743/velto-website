@@ -3,7 +3,7 @@ import "server-only";
 import { headers } from "next/headers";
 import { lang } from "next/root-params";
 import { dictionary } from "@/content/i18n";
-import { LOCATIONS } from "@/content/site";
+import { LOCATIONS, SERVICE_AREA, SERVICE_SECTORS } from "@/content/site";
 import { DEFAULT_LOCALE, isLocale, LOCALE_HEADER, localDigits, localizeHref, type Locale } from "./config";
 
 /**
@@ -49,3 +49,7 @@ export async function localLocation<L extends { id: string; name: string; hours:
     hours: loc.hours === defaultHours && d.locationHours[loc.id] ? d.locationHours[loc.id] : localDigits(loc.hours, locale),
   };
 }
+
+/** "Uttara Sectors 1–18" in the given language. */
+export const serviceArea = (locale: Locale) =>
+  locale === "bn" ? `উত্তরা সেক্টর ${localDigits(SERVICE_SECTORS, locale)}` : SERVICE_AREA;

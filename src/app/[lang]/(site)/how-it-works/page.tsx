@@ -1,6 +1,6 @@
 import { pageMetadata } from "@/lib/seo/page-metadata";
 import { ProofFigures } from "@/components/pages/ProofFigures";
-import { freeDeliveryFigure, sectorsFigure, turnaroundFigure } from "@/components/pages/figures";
+import { pageFigures } from "@/components/pages/figures";
 import { FAQ, faqItems } from "@/components/home/FAQ";
 import { FinalBookingCTA } from "@/components/home/FinalBookingCTA";
 import { SectionIntro } from "@/components/home/SectionIntro";
@@ -10,20 +10,28 @@ import { ProcessSteps } from "@/components/pages/ProcessSteps";
 import { ButtonLink, WhatsAppButton } from "@/components/ui/Button";
 import { FREE_DELIVERY_THRESHOLD, WHATSAPP_URL, bookHref } from "@/content/site";
 import { IMAGES } from "@/content/mock";
+import { dictionary } from "@/content/i18n";
+import { pageText } from "@/content/i18n/pages";
+import { fill } from "@/lib/i18n/config";
+import { getLocale } from "@/lib/i18n/server";
 
 export const generateMetadata = () => pageMetadata("/how-it-works");
 
-export default function HowItWorksPage() {
+export default async function HowItWorksPage() {
+  const locale = await getLocale();
+  const d = dictionary(locale);
+  const t = pageText(locale).howPage;
+  const fig = await pageFigures();
   return (
     <>
       <PageHero
         path={"/how-it-works"}
         image={IMAGES.hero}
-        crumbs={[{ label: "Home", href: "/" }, { label: "How It Works" }]}
-        title="From your door and back again."
-        eyebrow="How it works"
-        highlight="back again"
-        aside={<ProofFigures wide={3} figures={[sectorsFigure, turnaroundFigure, freeDeliveryFigure]} />}
+        crumbs={[{ label: d.common.home, href: "/" }, { label: d.nav.howItWorks }]}
+        title={t.title}
+        eyebrow={t.eyebrow}
+        highlight={t.highlight}
+        aside={<ProofFigures wide={3} figures={[fig.sectors, fig.turnaround, fig.freeDelivery]} />}
         actions={
           <>
             <ButtonLink
@@ -32,54 +40,36 @@ export default function HowItWorksPage() {
               placement="how_hero"
               className="flex-[1.45] max-md:px-4 md:flex-none"
             >
-              Book a Pickup
+              {d.common.bookPickup}
             </ButtonLink>
             <WhatsAppButton href={WHATSAPP_URL} placement="how_hero" className="flex-1 max-md:px-3 md:flex-none">
-              WhatsApp
+              {d.common.whatsapp}
             </WhatsAppButton>
           </>
         }
       >
-        <p>
-          You book, we collect. Everything in between follows the same steps for every order, so you
-          know what happens to your clothes while they are with us.
-        </p>
+        <p>{t.intro}</p>
       </PageHero>
 
       <section aria-labelledby="booking-steps-title" className="bg-warm py-(--space-section)">
         <div className="container-page grid-page gap-y-10">
           <div className="col-span-4 md:col-span-8 xl:col-span-5">
-            <SectionIntro id="booking-steps-title" eyebrow="Your side" title="Before and after we have it">
-              <p>
-                Pickup and delivery cover Uttara Sectors 1–18. Orders of {FREE_DELIVERY_THRESHOLD}+
-                qualify for free pickup and delivery.
-              </p>
+            <SectionIntro id="booking-steps-title" eyebrow={t.yourSideEyebrow} title={t.yourSideTitle}>
+              <p>{fill(t.yourSideIntro, { amount: FREE_DELIVERY_THRESHOLD }, locale)}</p>
             </SectionIntro>
           </div>
           <div className="col-span-4 md:col-span-8 xl:col-span-6 xl:col-start-7">
-            <ProcessSteps
-              steps={[
-                { title: "Book", copy: "Book a pickup online or message Velto on WhatsApp. Tell us where to collect from and what you are sending." },
-                { title: "Pickup", copy: "We collect the order from your address." },
-                { title: "At Velto", copy: "Your order is checked in, tagged, cleaned, finished and checked again. Every step is below." },
-                { title: "Return", copy: "Your finished order is packed and delivered back to your address." },
-              ]}
-            />
+            <ProcessSteps steps={t.steps} />
           </div>
         </div>
       </section>
 
       <OperationalProcess
-        title="What happens once your order reaches us"
-        intro={
-          <p>
-            The same ten steps for every order, in four stages. Special garments and household items
-            may add time where extra care is needed.
-          </p>
-        }
+        title={t.processTitle}
+        intro={<p>{t.processIntro}</p>}
       />
 
-      <FAQ items={faqItems("turnaround", "area", "freeDelivery", "stains", "express")} className="bg-soft" />
+      <FAQ items={faqItems(locale, "turnaround", "area", "freeDelivery", "stains", "express")} className="bg-soft" />
 
       <FinalBookingCTA id="book" source="how-it-works-final" />
     </>

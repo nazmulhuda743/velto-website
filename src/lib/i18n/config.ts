@@ -29,7 +29,25 @@ export const banglaEnabled = () => process.env.NEXT_PUBLIC_BANGLA_ENABLED === "t
  * hreflang, a self-canonical /bn URL and a Bangla sitemap entry; any other /bn page
  * still works but canonicalises to its English page until its phase ships.
  */
-export const BANGLA_READY_PATHS: readonly string[] = ["/"];
+export const BANGLA_READY_PATHS: readonly string[] = [
+  "/",
+  // Phase 2: services, pricing, how it works, regular laundry, locations, about.
+  "/services",
+  "/services/dry-cleaning",
+  "/services/wash-and-iron",
+  "/services/ironing",
+  "/services/curtain-cleaning",
+  "/services/carpet-cleaning",
+  "/services/blanket-comforter-cleaning",
+  "/services/express",
+  "/pricing",
+  "/how-it-works",
+  "/regular-laundry",
+  "/locations",
+  "/locations/sector-11",
+  "/locations/sector-18",
+  "/about",
+];
 export const banglaIndexable = (path: string) => banglaEnabled() && BANGLA_READY_PATHS.includes(path);
 
 /** Paths that exist in one language only (APIs, admin, redirects, files). */

@@ -5,6 +5,8 @@ import { Eyebrow } from "@/components/home/SectionIntro";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildBreadcrumbSchema } from "@/lib/seo/schema";
 import { Breadcrumbs, type Crumb } from "./Breadcrumbs";
+import { localizeHref } from "@/lib/i18n/config";
+import { getLocale } from "@/lib/i18n/server";
 
 /** Sets one phrase of the title in Velto blue: the page's single highlighted idea. */
 function emphasise(title: ReactNode, phrase?: string) {
@@ -24,7 +26,7 @@ function emphasise(title: ReactNode, phrase?: string) {
  * Internal-page hero. Same grid, type and CTA hierarchy as the homepage hero,
  * at a quieter scale (H1 style, 4:3 image) so internal pages stay subordinate.
  */
-export function PageHero({
+export async function PageHero({
   crumbs,
   path,
   title,
@@ -58,12 +60,13 @@ export function PageHero({
   stackActionsOnMobile?: boolean;
 }) {
   const hasVisual = Boolean(image || visual);
+  const locale = await getLocale();
   return (
     <section aria-labelledby="page-title" className="pb-14 pt-6 md:pb-20 md:pt-10 xl:pb-24 xl:pt-12">
       <div className="container-page">
         <Breadcrumbs items={crumbs} />
         {path ? (
-          <JsonLd data={buildBreadcrumbSchema(crumbs.map((c) => ({ label: c.label, path: c.href ?? path })))} />
+          <JsonLd data={buildBreadcrumbSchema(crumbs.map((c) => ({ label: c.label, path: localizeHref(c.href ?? path, locale) })))} />
         ) : null}
         <div className="mt-6 grid-page gap-y-8 md:mt-8">
           <div className={hasVisual ? "col-span-4 md:col-span-4 xl:col-span-6" : "col-span-4 md:col-span-8 xl:col-span-9"}>

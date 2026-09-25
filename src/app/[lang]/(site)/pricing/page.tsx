@@ -11,6 +11,10 @@ import { ServiceCompare } from "@/components/services/ServiceCompare";
 import { TextLink } from "@/components/ui/TextLink";
 import { ButtonLink } from "@/components/ui/Button";
 import { FREE_DELIVERY_THRESHOLD, bookHref } from "@/content/site";
+import { dictionary } from "@/content/i18n";
+import { pageText } from "@/content/i18n/pages";
+import { fill, localizeHref } from "@/lib/i18n/config";
+import { getLocale } from "@/lib/i18n/server";
 
 export const generateMetadata = () => pageMetadata("/pricing");
 
@@ -20,77 +24,58 @@ export const generateMetadata = () => pageMetadata("/pricing");
  */
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-const HOUSEHOLD = [
-  {
-    label: "Curtains",
-    copy: "Quantity and approximate size. We confirm the final amount when measurement or condition needs checking.",
-    service: "curtain-cleaning",
-    action: "Get a curtain quote",
-  },
-  {
-    label: "Carpets",
-    copy: "Approximate length and width. Material and condition can change the final price.",
-    service: "carpet-cleaning",
-    action: "Get a carpet quote",
-  },
-  {
-    label: "Blankets & comforters",
-    copy: "Mainly the item, type and size.",
-    service: "blanket-comforter-cleaning",
-    action: "Get a bedding quote",
-  },
-];
+/** Quote services, in the order of pageText().pricingPage.household. */
+const HOUSEHOLD_SERVICES = ["curtain-cleaning", "carpet-cleaning", "blanket-comforter-cleaning"];
 
 export default async function PricingPage({ searchParams }: { searchParams: SearchParams }) {
   const q = (await searchParams).q;
   const initialQuery = (Array.isArray(q) ? q[0] : q) ?? "";
+  const locale = await getLocale();
+  const d = dictionary(locale);
+  const t = pageText(locale).pricingPage;
+  const free = fill(t.free, { amount: FREE_DELIVERY_THRESHOLD }, locale);
   return (
     <>
       <section aria-labelledby="page-title" className="bg-soft pb-(--space-section) pt-6 md:pt-10 xl:pt-12">
         <div className="container-page">
-          <Breadcrumbs items={[{ label: "Home", href: "/" }, { label: "Pricing" }]} />
-          <JsonLd data={buildBreadcrumbSchema([{ label: "Home", path: "/" }, { label: "Pricing", path: "/pricing" }])} />
+          <Breadcrumbs items={[{ label: d.common.home, href: "/" }, { label: d.nav.pricing }]} />
+          <JsonLd
+            data={buildBreadcrumbSchema([
+              { label: d.common.home, path: localizeHref("/", locale) },
+              { label: d.nav.pricing, path: localizeHref("/pricing", locale) },
+            ])}
+          />
           <div className="mt-6 grid-page gap-y-12 md:mt-8">
             <div className="col-span-4 md:col-span-8 xl:col-span-7">
-              <Eyebrow>Pricing</Eyebrow>
+              <Eyebrow>{t.eyebrow}</Eyebrow>
               <h1 id="page-title" className="t-h1 max-w-[18ch] text-navy">
-                Find the <span className="text-blue">price</span> of an item.
+                {t.titleBefore}
+                <span className="text-blue">{t.titleHighlight}</span>
+                {t.titleAfter}
               </h1>
               <div className="mt-5 max-w-[560px] space-y-4 t-body text-body md:mt-6 md:t-body-lg">
-                <p>
-                  Prices are set per item and service. Search for what you want to send to see the
-                  services available and the current Velto price.
-                </p>
+                <p>{t.intro}</p>
               </div>
               <div className="mt-(--space-intro-content)">
                 <PriceFinder initialQuery={initialQuery} syncUrl bookFromResult={{ source: "pricing-result" }} />
               </div>
             </div>
-            <aside aria-label="Delivery and turnaround" className="col-span-4 md:col-span-8 xl:col-span-4 xl:col-start-9 xl:pt-2">
+            <aside aria-label={t.asideLabel} className="col-span-4 md:col-span-8 xl:col-span-4 xl:col-start-9 xl:pt-2">
               <p className="border-t border-navy pt-4 t-h4 text-navy [text-wrap:balance]">
-                Free pickup &amp; delivery on orders of {FREE_DELIVERY_THRESHOLD}+.
+                {free}
               </p>
-              <p className="mt-3 t-small text-secondary">
-                For smaller orders, a pickup and delivery charge applies. We tell you the amount when
-                we confirm your pickup.
-              </p>
+              <p className="mt-3 t-small text-secondary">{t.smaller}</p>
               <FactRows
                 className="mt-10"
-                rows={[
-                  { label: "General orders", value: "Usually around 48 hours" },
-                  { label: "Wash & Iron", value: "Usually around 72 hours" },
-                  { label: "Dry Cleaning", value: "Usually around 72 hours" },
-                ]}
+                rows={d.home.findPrice.turnaround}
               />
-              <p className="mt-4 t-small text-secondary">Some garments and household items may take longer.</p>
+              <p className="mt-4 t-small text-secondary">{t.mayTakeLonger}</p>
               {/* The step after checking a price: on mobile this lands right after the search, not at the page end. */}
               <div className="mt-8 border-t border-line pt-6">
-                <p className="font-semibold text-navy">Know what you&apos;re sending?</p>
-                <p className="mt-1 t-small text-secondary">
-                  Book the pickup now. We call or WhatsApp to confirm the time, and can go through prices then.
-                </p>
+                <p className="font-semibold text-navy">{t.knowTitle}</p>
+                <p className="mt-1 t-small text-secondary">{t.knowBody}</p>
                 <ButtonLink href={bookHref("pricing-aside")} event="book_pickup_click" placement="pricing_aside" className="mt-4 max-md:w-full">
-                  Book a Pickup
+                  {d.common.bookPickup}
                 </ButtonLink>
               </div>
             </aside>
@@ -101,11 +86,8 @@ export default async function PricingPage({ searchParams }: { searchParams: Sear
       <section aria-labelledby="compare-title" className="py-(--space-section)">
         <div className="container-page">
           <div className="max-w-[640px]">
-            <SectionIntro id="compare-title" eyebrow="Choosing a service" title="Dry Cleaning, Wash & Iron or Ironing?">
-              <p>
-                Many items have a price for more than one service. This is what each one covers, so
-                you can pick the right one.
-              </p>
+            <SectionIntro id="compare-title" eyebrow={pageText(locale).service.blockEyebrows.compare} title={t.compareTitle}>
+              <p>{t.compareIntro}</p>
             </SectionIntro>
           </div>
           <div className="mt-(--space-intro-content)">
@@ -117,21 +99,18 @@ export default async function PricingPage({ searchParams }: { searchParams: Sear
       <section aria-labelledby="household-pricing-title" className="bg-warm py-(--space-section)">
         <div className="container-page grid-page gap-y-10">
           <div className="col-span-4 md:col-span-8 xl:col-span-5">
-            <SectionIntro id="household-pricing-title" eyebrow="Household care" title="Curtains, carpets and bedding are priced differently.">
-              <p>
-                These depend on size, material and condition, so they are not always a single item
-                price.
-              </p>
+            <SectionIntro id="household-pricing-title" eyebrow={t.householdEyebrow} title={t.householdTitle}>
+              <p>{t.householdIntro}</p>
             </SectionIntro>
           </div>
           <div className="col-span-4 md:col-span-8 xl:col-span-6 xl:col-start-7">
             <ul className="border-t border-navy">
-              {HOUSEHOLD.map((row) => (
-                <li key={row.service} className="border-b border-line py-4">
+              {t.household.map((row, i) => (
+                <li key={HOUSEHOLD_SERVICES[i]} className="border-b border-line py-4">
                   <h3 className="t-label uppercase text-navy">{row.label}</h3>
                   <p className="mt-1 text-body">{row.copy}</p>
                   <div className="mt-1">
-                    <TextLink href={`/quote?service=${row.service}&source=pricing-page`} placement="pricing_household">
+                    <TextLink href={`/quote?service=${HOUSEHOLD_SERVICES[i]}&source=pricing-page`} placement="pricing_household">
                       {row.action}
                     </TextLink>
                   </div>
@@ -140,19 +119,19 @@ export default async function PricingPage({ searchParams }: { searchParams: Sear
             </ul>
             <div className="mt-6">
               <TextLink href="/services" placement="pricing_services">
-                See all services
+                {t.seeAllServices}
               </TextLink>
             </div>
           </div>
         </div>
       </section>
 
-      <FAQ title="Pricing questions." items={faqItems("freeDelivery", "express", "household", "unsure")} />
+      <FAQ title={t.faqTitle} items={faqItems(locale, "freeDelivery", "express", "household", "unsure")} />
 
       <FinalBookingCTA
         id="book"
-        title="Found what you need?"
-        body={<p>Book a pickup and we will collect from your door in Uttara Sectors 1–18.</p>}
+        title={t.finalTitle}
+        body={<p>{t.finalBody}</p>}
         source="pricing-page-final"
       />
     </>

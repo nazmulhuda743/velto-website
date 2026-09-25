@@ -11,53 +11,59 @@ import { ButtonLink, WhatsAppButton } from "@/components/ui/Button";
 import { TextLink } from "@/components/ui/TextLink";
 import { IMAGES } from "@/content/mock";
 import { FREE_DELIVERY_THRESHOLD, REGULAR_FREE_DELIVERY_THRESHOLD, WHATSAPP_URL, bookHref } from "@/content/site";
+import { dictionary } from "@/content/i18n";
+import { pageText } from "@/content/i18n/pages";
+import { fill, localDigits, type Locale } from "@/lib/i18n/config";
+import { getLocale } from "@/lib/i18n/server";
 
 export const generateMetadata = () => pageMetadata("/regular-laundry");
 
 const setUpHref = (source: string) => bookHref(source, "regular-laundry");
 
 /** Reviews from customers who come back week after week, moving like the homepage strip. */
-async function RegularReviews() {
+async function RegularReviews({ locale }: { locale: Locale }) {
+  const t = pageText(locale);
   const { reviews, specific } = await getServiceReviews("regular-laundry");
   if (!reviews.length) return null;
   return (
     <section aria-labelledby="regular-reviews-title" className="bg-warm py-(--space-section)">
       <div className="container-page flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <Eyebrow>Customer proof</Eyebrow>
+          <Eyebrow>{t.service.customerProof}</Eyebrow>
           <h2 id="regular-reviews-title" className="t-h2 max-w-[20ch] text-navy">
-            {specific ? "From customers who keep coming back" : "What Velto customers say"}
+            {specific ? t.regularPage.reviewsSpecific : t.service.reviewsGeneral}
           </h2>
         </div>
         <GoogleProof placement="regular_reviews" />
       </div>
       <div className="mt-(--space-intro-content)">
-        <ReviewCarousel reviews={reviews} label="Customer reviews" />
+        <ReviewCarousel reviews={reviews} label={t.service.reviewsLabel} />
       </div>
     </section>
   );
 }
 
-export default function RegularLaundryPage() {
+export default async function RegularLaundryPage() {
+  const locale = await getLocale();
+  const d = dictionary(locale);
+  const t = pageText(locale).regularPage;
+  const f = (template: string, amount: string) => fill(template, { amount }, locale);
   return (
     <>
       <PageHero
         path={"/regular-laundry"}
-        crumbs={[{ label: "Home", href: "/" }, { label: "Regular Laundry" }]}
-        title="A regular laundry pickup, so the week takes care of itself."
-        eyebrow="Regular laundry"
-        highlight="the week takes care of itself"
+        crumbs={[{ label: d.common.home, href: "/" }, { label: d.nav.regularLaundry }]}
+        title={t.title}
+        eyebrow={t.eyebrow}
+        highlight={t.highlight}
         image={IMAGES.regular}
         aside={
           // The one reason to choose a routine over one-off orders, stated where the decision is made.
           <div className="border-t border-line pt-4">
             <p className="text-[28px] font-semibold leading-none tracking-[-0.03em] text-navy tabular-nums md:text-[32px]">
-              {REGULAR_FREE_DELIVERY_THRESHOLD}+
+              {localDigits(`${REGULAR_FREE_DELIVERY_THRESHOLD}+`, locale)}
             </p>
-            <p className="mt-1.5 max-w-[34ch] t-small text-secondary">
-              Free pickup &amp; delivery on a fixed weekly or fortnightly pickup. One-off orders qualify
-              from {FREE_DELIVERY_THRESHOLD}+.
-            </p>
+            <p className="mt-1.5 max-w-[34ch] t-small text-secondary">{f(t.asideBody, FREE_DELIVERY_THRESHOLD)}</p>
           </div>
         }
         actions={
@@ -68,40 +74,28 @@ export default function RegularLaundryPage() {
               placement="regular_hero"
               className="flex-[1.45] max-md:px-4 md:flex-none"
             >
-              Set Up Regular Pickup
+              {t.setUp}
             </ButtonLink>
             <WhatsAppButton href={WHATSAPP_URL} placement="regular_hero" className="flex-1 max-md:px-3 md:flex-none">
               {/* Icon only below 375px so the longer primary label keeps its room. */}
-              <span className="max-[374px]:sr-only">WhatsApp</span>
+              <span className="max-[374px]:sr-only">{d.common.whatsapp}</span>
             </WhatsAppButton>
           </>
         }
       >
-        <p>
-          Regular laundry and ironing can be arranged as recurring pickups, so you don&apos;t need
-          to book from scratch every time. Agree a day once, put the clothes out, and they come back
-          ready to wear.
-        </p>
+        <p>{t.intro}</p>
       </PageHero>
 
       <section aria-labelledby="regular-how-title" className="bg-warm py-(--space-section)">
         <div className="container-page grid-page gap-y-10">
           <div className="col-span-4 md:col-span-8 xl:col-span-5">
-            <SectionIntro id="regular-how-title" eyebrow="The routine" title="How it works">
-              <p>
-                {/* TODO_VERIFY: recurring pickup rules beyond confirmed availability (spec §36). */}
-                The details of your schedule are agreed with you when you set it up.
-              </p>
+            <SectionIntro id="regular-how-title" eyebrow={t.howEyebrow} title={t.howTitle}>
+              {/* TODO_VERIFY: recurring pickup rules beyond confirmed availability (spec §36). */}
+              <p>{t.howIntro}</p>
             </SectionIntro>
           </div>
           <div className="col-span-4 md:col-span-8 xl:col-span-6 xl:col-start-7">
-            <ProcessSteps
-              steps={[
-                { title: "Tell us what you usually send", copy: "Laundry, ironing or both, and roughly how much." },
-                { title: "Agree a pickup routine", copy: "Tell us which day suits you. We confirm the schedule with you." },
-                { title: "We collect and return", copy: "Each order is checked in, cleaned, finished, checked again and packed, like any other." },
-              ]}
-            />
+            <ProcessSteps steps={t.steps} />
           </div>
         </div>
       </section>
@@ -109,40 +103,37 @@ export default function RegularLaundryPage() {
       <section aria-labelledby="regular-save-title" className="py-(--space-section)">
         <div className="container-page grid-page gap-y-8">
           <div className="col-span-4 md:col-span-8 xl:col-span-5">
-            <SectionIntro id="regular-save-title" eyebrow="Free pickup" title="Put the week together.">
-              <p>
-                Laundry and ironing can go in the same pickup, so the week&apos;s clothes travel together
-                and it&apos;s easier to reach {REGULAR_FREE_DELIVERY_THRESHOLD}+.
-              </p>
+            <SectionIntro id="regular-save-title" eyebrow={t.saveEyebrow} title={t.saveTitle}>
+              <p>{f(t.saveIntro, REGULAR_FREE_DELIVERY_THRESHOLD)}</p>
             </SectionIntro>
           </div>
           <div className="col-span-4 flex flex-col gap-4 md:col-span-8 xl:col-span-6 xl:col-start-7 xl:justify-center">
             <TextLink href="/services/wash-and-iron" placement="regular_services">
-              Wash &amp; Iron
+              {d.serviceNames["wash-and-iron"]}
             </TextLink>
             <TextLink href="/services/ironing" placement="regular_services">
-              Ironing
+              {d.serviceNames.ironing}
             </TextLink>
             <TextLink href="/pricing" placement="regular_services">
-              Check item prices
+              {t.checkPrices}
             </TextLink>
           </div>
         </div>
       </section>
 
-      <RegularReviews />
+      <RegularReviews locale={locale} />
 
-      <FAQ items={faqItems("turnaround", "freeDelivery", "area")} className="bg-soft" />
+      <FAQ items={faqItems(locale, "turnaround", "freeDelivery", "area")} className="bg-soft" />
 
       <FinalBookingCTA
         id="book"
-        title="Set up your regular pickup."
-        body={<p>Tell us where to collect from and which day suits you. We will confirm the routine with you.</p>}
+        title={t.finalTitle}
+        body={<p>{t.finalBody}</p>}
         source="regular-laundry-final"
         primary={{
           href: setUpHref("regular-laundry-final"),
-          label: "Set Up Regular Pickup",
-          helper: "Send the request. We\u2019ll agree the pickup day with you.",
+          label: t.setUp,
+          helper: t.finalHelper,
           event: "regular_laundry_interest",
         }}
       />
