@@ -147,6 +147,8 @@ export const formsEn = {
     signInLink: "Sign in to fill in your details",
     signInAfter: ".",
     /** Arrival contexts that aren't a cleaning service: a pre-filled, editable note. */
+    repeatNote: "Same as my last order ({n}).",
+    repeatIntro: "Booking the same again as order {n}. Change anything you need before you send.",
     presetNotes: {
       "regular-laundry": "I'd like to set up a regular pickup.",
       express: "I'd like Express, if it's possible for this order.",

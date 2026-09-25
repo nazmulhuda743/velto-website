@@ -5,12 +5,14 @@ import { accountText, orderFormat, type AccountText } from "@/content/i18n/accou
 import { fill, format, type Locale } from "@/lib/i18n/config";
 import { Alert } from "@/components/account/Alert";
 import { LinkHistoryCard } from "@/components/account/LinkHistoryCard";
+import { NextPickupCard } from "@/components/account/NextPickupCard";
 import { OrderProgress } from "@/components/account/OrderProgress";
 import { OrderRow } from "@/components/account/OrderRow";
 import { ButtonLink, WhatsAppButton } from "@/components/ui/Button";
 import { serviceLabel } from "@/content/order-status";
 import { WHATSAPP_URL } from "@/content/site";
 import { getCustomerSession, getPortalOrders, type PortalOrder } from "@/lib/customer/portal";
+import { laundryRhythm } from "@/lib/customer/rhythm";
 import { areaLabel, displayBdPhone, greetingName } from "@/lib/customer/validation";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -84,6 +86,9 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
   const orders = linked ? await getPortalOrders() : [];
   const active = (orders ?? []).filter((o) => o.active);
   const recent = (orders ?? []).filter((o) => o !== active[0]).slice(0, 3);
+  const rhythm = laundryRhythm(orders ?? []);
+  // Weekly or fortnightly pace (or three orders in): a fixed regular pickup saves arranging each one.
+  const suggestRegular = linked && (rhythm.stage === "regular" || (rhythm.count >= 2 && (rhythm.everyDays ?? 99) <= 16));
   const name = greetingName(account.fullName);
   const hasAddress = Boolean(account.address && account.area);
   const locale = await getLocale();
@@ -113,20 +118,22 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
       {params.welcome ? <Alert tone="success">{t.welcome}</Alert> : null}
       {orders === null ? <Alert tone="error">{t.ordersFailed}</Alert> : null}
 
-      {/* 1. What's happening with my laundry */}
-      {active[0] ? <ActiveOrderCard order={active[0]} more={active.length - 1} t={t} locale={locale} /> : null}
-
-      {/* 2. What can I do next */}
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <ButtonLink href="/book?source=account" event="book_pickup_click" placement="account_home" className="sm:!px-8">
-          {orders?.length ? t.bookAnother : t.book}
-        </ButtonLink>
-        {linked ? (
-          <ButtonLink href="/account/orders" variant="secondary">
-            {t.viewAll}
-          </ButtonLink>
-        ) : null}
-      </div>
+      {/* 1. What's happening with my laundry, or 2. the next pickup (first → the same again) */}
+      {active[0] ? (
+        <>
+          <ActiveOrderCard order={active[0]} more={active.length - 1} t={t} locale={locale} />
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <ButtonLink href="/book?source=account" event="book_pickup_click" placement="account_home" className="sm:!px-8">
+              {t.bookAnother}
+            </ButtonLink>
+            <ButtonLink href="/account/orders" variant="secondary">
+              {t.viewAll}
+            </ButtonLink>
+          </div>
+        </>
+      ) : orders !== null ? (
+        <NextPickupCard rhythm={rhythm} locale={locale} firstTime={linked} />
+      ) : null}
 
       {linked && recent.length ? (
         <section aria-labelledby="recent-title">
@@ -192,7 +199,7 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
       {/* 5. Secondary setup */}
       <LinkHistoryCard account={account} />
 
-      {linked && (orders?.length ?? 0) >= 3 ? (
+      {suggestRegular ? (
         <section aria-labelledby="regular-title" className="rounded-lg bg-navy p-5 text-white md:p-6">
           <h2 id="regular-title" className="text-[20px] font-semibold tracking-[-0.01em]">
             {t.regularTitle}

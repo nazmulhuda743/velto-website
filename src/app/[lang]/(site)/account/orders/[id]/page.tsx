@@ -3,13 +3,14 @@ import { notFound } from "next/navigation";
 import { Alert } from "@/components/account/Alert";
 import { OrderProgress } from "@/components/account/OrderProgress";
 import { StatusPill } from "@/components/account/OrderRow";
-import { WhatsAppButton } from "@/components/ui/Button";
+import { ButtonLink, WhatsAppButton } from "@/components/ui/Button";
 import { serviceLabel } from "@/content/order-status";
 import { accountText, orderFormat } from "@/content/i18n/account";
 import { format, localDigits } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
 import { WHATSAPP_URL } from "@/content/site";
 import { getPortalOrder } from "@/lib/customer/portal";
+import { bookingServiceFor, repeatHref } from "@/lib/customer/rhythm";
 import { validOrderNumber } from "@/lib/customer/validation";
 
 type Params = Promise<{ id: string }>;
@@ -142,6 +143,25 @@ export default async function OrderPage({ params }: { params: Params }) {
               </li>
             ))}
           </ol>
+        </section>
+      ) : null}
+
+      {order.status === "Delivered" ? (
+        <section aria-labelledby="rebook-title" className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-line bg-white p-5 md:p-6" data-rebook>
+          <div>
+            <h2 id="rebook-title" className="font-semibold text-navy">
+              {t.rebook}
+            </h2>
+            <p className="mt-1 t-small text-body">{t.rebookBody}</p>
+          </div>
+          <ButtonLink
+            href={repeatHref({ last: order, repeatService: bookingServiceFor(order.services) }, "account_order")}
+            event="book_pickup_click"
+            placement="account_order_rebook"
+            className="!h-12 !px-6"
+          >
+            {t.rebook}
+          </ButtonLink>
         </section>
       ) : null}
 

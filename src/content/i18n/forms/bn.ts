@@ -141,6 +141,8 @@ export const formsBn: FormText = {
     haveAccount: "Velto অ্যাকাউন্ট আছে? ",
     signInLink: "সাইন ইন করে আপনার তথ্য পূরণ করুন",
     signInAfter: "।",
+    repeatNote: "আমার আগের অর্ডারের মতোই ({n})।",
+    repeatIntro: "অর্ডার {n}-এর মতো আবার বুক করছেন। পাঠানোর আগে দরকার হলে যেকোনো কিছু বদলে নিন।",
     presetNotes: {
       "regular-laundry": "আমি নিয়মিত পিকআপ ঠিক করতে চাই।",
       express: "সম্ভব হলে এই অর্ডারটি এক্সপ্রেসে চাই।",
