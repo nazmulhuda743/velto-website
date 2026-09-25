@@ -49,7 +49,7 @@ export async function ReviewCard({ review }: { review: Review }) {
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className="shrink-0 py-1 t-small text-secondary underline decoration-blue/50 underline-offset-4 hover:text-navy"
+            className="-my-2 inline-flex min-h-11 shrink-0 items-center t-small text-secondary underline decoration-blue/50 underline-offset-4 hover:text-navy"
             data-analytics={review.platform === "Google" ? "google_reviews_click" : undefined}
             data-placement="review_card"
             data-branch={review.branch}
@@ -63,15 +63,33 @@ export async function ReviewCard({ review }: { review: Review }) {
   );
 }
 
+/** Below this many distinct reviews a moving strip has to repeat them, and the same review shows twice on a wide screen. */
+const MARQUEE_MIN = 6;
+
 /**
  * Moving review strip. Two identical groups scroll continuously; the second is
  * hidden from assistive tech and not focusable. Stops on hover or focus, and
- * has a pause button. Reduced motion shows one static, swipeable row.
+ * has a pause button. Reduced motion shows one static, swipeable row, and so
+ * do short lists, which would otherwise repeat on screen.
  */
 export async function ReviewCarousel({ reviews, label }: { reviews: Review[]; label?: string }) {
   label ??= dictionary(await getLocale()).home.reviews.carouselLabel;
   const shown = reviews.filter((r) => r.text && r.name);
   if (!shown.length) return null;
+  if (shown.length < MARQUEE_MIN) {
+    return (
+      <div role="region" aria-label={label} className="container-page">
+        {/* relative: the cards' sr-only text is absolutely positioned and must be clipped by this scroller, not widen the page. */}
+        <ul className="relative -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-2 min-[360px]:-mx-5 min-[360px]:scroll-px-5 min-[360px]:px-5 md:mx-0 md:scroll-px-0 md:gap-6 md:px-0">
+          {shown.map((r, i) => (
+            <li key={i} className="flex">
+              <ReviewCard review={r} />
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
   // Short lists repeat so the strip is always wider than the screen.
   const group = Array.from({ length: Math.max(1, Math.ceil(4 / shown.length)) }, () => shown).flat();
   const seconds = group.length * 11;

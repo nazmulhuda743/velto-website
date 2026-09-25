@@ -76,10 +76,10 @@ export function ConsentManager() {
           role="region"
           aria-labelledby={titleId}
           data-consent-banner
-          // Mobile: a short sheet that sits directly above the sticky booking bar when that bar is
-          // showing (it hides while typing and at the final CTA), so Book a Pickup stays tappable.
-          // Desktop: a compact floating panel. Neither blocks the page.
-          className="fixed inset-x-0 bottom-0 z-[45] border-t border-line bg-white px-4 pb-[calc(8px+env(safe-area-inset-bottom))] pt-3.5 shadow-[0_-8px_24px_rgba(0,49,83,0.10)] min-[360px]:px-5 max-md:[html:has([data-mobile-bar].visible)_&]:bottom-[calc(4rem+env(safe-area-inset-bottom))] max-md:[html:has([data-mobile-bar].visible)_&]:pb-2 md:inset-x-auto md:bottom-6 md:left-6 md:w-[400px] md:rounded-lg md:border md:px-5 md:pb-3 md:pt-5 md:shadow-[0_12px_32px_rgba(0,49,83,0.14)]"
+          // Mobile: a short bottom sheet; the sticky booking bar steps aside while it is open, so the
+          // hero and its proof aren't covered by two stacked bars. Desktop: a compact floating panel,
+          // bottom-right so it sits over imagery rather than the hero copy. Neither blocks the page.
+          className="fixed inset-x-0 bottom-0 z-[45] border-t border-line bg-white px-4 pb-[calc(8px+env(safe-area-inset-bottom))] pt-3.5 shadow-[0_-8px_24px_rgba(0,49,83,0.10)] min-[360px]:px-5 md:inset-x-auto md:bottom-6 md:right-6 md:w-[400px] md:rounded-lg md:border md:px-5 md:pb-3 md:pt-5 md:shadow-[0_12px_32px_rgba(0,49,83,0.14)]"
         >
           <h2 id={titleId} className="sr-only md:not-sr-only md:mb-1.5 md:text-[16px] md:font-semibold md:leading-snug md:text-navy">
             {t.bannerTitle}

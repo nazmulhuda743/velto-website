@@ -10,8 +10,10 @@ import { WHATSAPP_URL, bookHref } from "@/content/site";
 const TEXT_ENTRY = "input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]), textarea, select";
 
 /**
- * Persistent mobile conversion bar (spec §18). Hidden while typing and while
- * the final booking section fills ~60%+ of the viewport.
+ * Persistent mobile conversion bar (spec §18). Hidden while typing, while
+ * the final booking section fills ~60%+ of the viewport, and while the cookie
+ * banner is open (the hero's own Book a Pickup is on screen then, and two
+ * stacked bottom bars cover the hero proof).
  */
 export function MobileConversionBar({
   finalSectionId,
@@ -28,6 +30,7 @@ export function MobileConversionBar({
   const t = dictionary(useLocale()).common;
   const [typing, setTyping] = useState(false);
   const [finalInView, setFinalInView] = useState(false);
+  const [consentOpen, setConsentOpen] = useState(false);
 
   useEffect(() => {
     const onFocusIn = (e: FocusEvent) => {
@@ -50,14 +53,20 @@ export function MobileConversionBar({
       );
       io.observe(target);
     }
+    // The banner mounts after first paint and unmounts once a choice is made.
+    const checkConsent = () => setConsentOpen(!!document.querySelector("[data-consent-banner]"));
+    checkConsent();
+    const mo = new MutationObserver(checkConsent);
+    mo.observe(document.body, { childList: true, subtree: true });
     return () => {
       document.removeEventListener("focusin", onFocusIn);
       document.removeEventListener("focusout", onFocusOut);
       io?.disconnect();
+      mo.disconnect();
     };
   }, [finalSectionId]);
 
-  const hidden = typing || finalInView;
+  const hidden = typing || finalInView || consentOpen;
 
   return (
     <div

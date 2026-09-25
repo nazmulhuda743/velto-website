@@ -48,7 +48,7 @@ export function PriceFinder({
   initialQuery?: string;
   /** Keep ?q= in the address bar in step with the selected item. */
   syncUrl?: boolean;
-  /** Show a per-service "Book" action in results. Omitted on the homepage. */
+  /** Show a per-service "Book" action in results. */
   bookFromResult?: { source: string };
 } = {}) {
   const uid = useId();
@@ -231,7 +231,8 @@ export function PriceFinder({
               <button
                 type="button"
                 onClick={() => tryExample(name)}
-                className="rounded-sm font-medium text-navy underline decoration-blue/50 underline-offset-4 hover:decoration-blue"
+                // The pseudo-element gives the short word a 44px-tall tap area without changing the line.
+                className="relative rounded-sm font-medium text-navy underline decoration-blue/50 underline-offset-4 after:absolute after:-inset-x-1 after:-inset-y-3 after:content-[''] hover:decoration-blue"
               >
                 {name}
               </button>
