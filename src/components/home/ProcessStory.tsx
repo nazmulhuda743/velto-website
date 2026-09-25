@@ -107,7 +107,7 @@ export async function ProcessStory({
                 </div>
                 <div>
                   <p className="mb-2 flex items-baseline gap-3 lg:hidden">
-                    <span className="t-label text-blue">{num(g)}</span>
+                    <span className="t-label text-action">{num(g)}</span>
                     <span className="t-h4 text-navy">{t.movements[g]}</span>
                   </p>
                   <ol start={movement.stages[0] + 1} className="list-none">

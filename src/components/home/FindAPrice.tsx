@@ -18,7 +18,8 @@ export async function FindAPrice() {
             <p>{t.intro}</p>
           </SectionIntro>
           <div className="mt-(--space-intro-content)">
-            <PriceFinder />
+            {/* Each priced service can be booked straight from the result, like on /pricing. */}
+            <PriceFinder bookFromResult={{ source: "home_pricing" }} />
           </div>
         </div>
 

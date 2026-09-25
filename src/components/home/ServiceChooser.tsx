@@ -25,10 +25,11 @@ function ServiceItem({
 }) {
   return (
     <>
-      <h3 className={large ? "t-h3 text-navy" : "t-h4 text-navy"}>{title}</h3>
+      <h3 className={`${large ? "t-h3" : "t-h4"} text-navy transition-colors group-hover/service:text-blue`}>{title}</h3>
       <p className={`mt-3 max-w-[46ch] text-secondary ${large ? "t-body-lg" : "t-body"}`}>{children}</p>
       <div className="mt-3">
-        <TextLink href={href} placement="service_chooser" className="t-body">
+        {/* Stretched link: the whole article (photo and title too) opens the service page. */}
+        <TextLink href={href} placement="service_chooser" className="t-body after:absolute after:inset-0 after:content-['']">
           {linkLabel}
         </TextLink>
       </div>
@@ -56,7 +57,7 @@ export async function ServiceChooser() {
 
         <div className="mt-(--space-intro-content) grid-page gap-y-12 md:gap-y-16 xl:gap-y-20">
           {/* Dry Cleaning — strongest visual weight */}
-          <article className="col-span-4 md:col-span-5 xl:col-span-7">
+          <article className="group/service relative col-span-4 md:col-span-5 xl:col-span-7">
             <ResponsiveImage
               image={IMAGES.dryCleaning}
               aspect="aspect-[3/2]"
@@ -74,7 +75,7 @@ export async function ServiceChooser() {
             </div>
           </article>
 
-          <article className="col-span-4 border-t border-line pt-8 md:col-span-3 md:border-0 md:pt-0 xl:col-span-5">
+          <article className="group/service relative col-span-4 border-t border-line pt-8 md:col-span-3 md:border-0 md:pt-0 xl:col-span-5">
             <ResponsiveImage
               image={IMAGES.washAndIron}
               aspect="aspect-[3/2] md:aspect-[3/4] xl:aspect-[21/20]"
@@ -92,7 +93,7 @@ export async function ServiceChooser() {
             </div>
           </article>
 
-          <article className="col-span-4 border-t border-line pt-8 md:col-span-3 xl:col-span-5">
+          <article className="group/service relative col-span-4 border-t border-line pt-8 md:col-span-3 xl:col-span-5">
             <ResponsiveImage
               image={IMAGES.ironing}
               aspect="aspect-[3/2] md:aspect-[4/5] xl:aspect-[4/3]"

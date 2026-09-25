@@ -386,7 +386,8 @@ body {
   transition: color 200ms ease;
 }
 .process-stage[data-active="true"] .process-num {
-  color: var(--velto-blue);
+  /* Action blue: the brand blue is just under AA at label size. */
+  color: var(--color-brand-action);
 }
 .process-stage .process-marker {
   transform: scaleX(0);
