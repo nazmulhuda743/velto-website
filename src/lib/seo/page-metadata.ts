@@ -13,8 +13,9 @@ const DEFAULT_SHARE_IMAGE = { url: "/opengraph-image", width: 1200, height: 630 
 
 /**
  * Page metadata in the page's language. English: registry defaults, overridden by anything
- * saved in the admin dashboard. Bangla: the Bangla dictionary's title/description (falling
- * back to English), with the admin's share image and noindex choices applied to both.
+ * saved in the admin dashboard. Bangla: the admin's Bangla title/description, else the Bangla
+ * dictionary's (falling back to English), with the admin's share image and noindex choices
+ * applied to both.
  * Translated pages are canonical in each language and point at each other (hreflang). A /bn
  * page that isn't translated yet is noindex (follow), canonicalises to English and has no hreflang.
  */
@@ -26,8 +27,9 @@ export async function pageMetadata(path: string, options: { noindex?: boolean } 
     locale === "bn"
       ? (dictionary("bn").seo[path] ?? (path.startsWith("/services/") ? getServicePage(path.slice(10), "bn")?.meta : undefined))
       : undefined;
-  const title = local?.title ?? override.title ?? route?.title;
-  const description = local?.description ?? override.description ?? route?.description;
+  // Bangla: the admin's Bangla text, then the built-in Bangla, then English. English is unchanged.
+  const title = (locale === "bn" ? override.titleBn : undefined) ?? local?.title ?? override.title ?? route?.title;
+  const description = (locale === "bn" ? override.descriptionBn : undefined) ?? local?.description ?? override.description ?? route?.description;
   const canonical = banglaIndexable(path) ? localizeHref(path, locale) : path;
   const untranslated = locale === "bn" && !banglaIndexable(path);
   return {

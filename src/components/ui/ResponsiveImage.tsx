@@ -1,8 +1,8 @@
 import Image from "next/image";
-import type { ImageSlot } from "@/content/mock";
+import { IMAGE_SLOTS, type ImageSlot } from "@/content/mock";
 import { dictionary } from "@/content/i18n";
 import { getLocale } from "@/lib/i18n/server";
-import { resolveImage } from "@/lib/site-content";
+import { getSiteContent, resolveImage } from "@/lib/site-content";
 import { Logo } from "./Logo";
 
 /**
@@ -26,6 +26,20 @@ type ResponsiveImageProps = {
 };
 
 /**
+ * Alt text in the page language. Bangla: the admin's Bangla alt text; otherwise the built-in
+ * Bangla for the built-in description; an English description written in the admin is shown
+ * as entered (it describes the uploaded photo, which the built-in Bangla may not).
+ */
+async function localAlt(id: string | undefined, alt: string) {
+  const locale = await getLocale();
+  if (!id || locale === "en") return alt;
+  const altBn = (await getSiteContent()).images[id]?.altBn;
+  if (altBn) return altBn;
+  const builtIn = IMAGE_SLOTS.find((s) => s.id === id)?.slot.alt;
+  return alt === builtIn ? (dictionary(locale).imageAlts[id] ?? alt) : alt;
+}
+
+/**
  * Photography slot. Renders the production photo when one is supplied;
  * otherwise a clearly-marked MOCK frame that carries the shot brief so the
  * layout, crop and space reservation can be reviewed without stock imagery.
@@ -41,9 +55,7 @@ export async function ResponsiveImage({
 }: ResponsiveImageProps) {
   // Photos replaced from the admin dashboard override the built-in slot.
   const resolved = await resolveImage(slot);
-  // Built-in alt text has a Bangla version; alt text written in the admin is shown as entered.
-  const localAlt = slot.id && resolved.alt === slot.alt ? dictionary(await getLocale()).imageAlts[slot.id] : undefined;
-  const image = localAlt ? { ...resolved, alt: localAlt } : resolved;
+  const image = { ...resolved, alt: await localAlt(slot.id, resolved.alt) };
   if (image.src) {
     return (
       <div className={`relative overflow-hidden rounded-md bg-soft ${aspect} ${className}`}>

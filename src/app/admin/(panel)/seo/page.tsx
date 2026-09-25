@@ -11,7 +11,7 @@ function flags(route: SeoRoute, o: SeoEntry | undefined): Flag[] {
   if (!(o?.title ?? route.title)) out.push({ key: "no-title", label: "Missing title", tone: "amber" });
   if (!(o?.description ?? route.description)) out.push({ key: "no-description", label: "Missing description", tone: "amber" });
   if (o?.noindex) out.push({ key: "noindex", label: "Hidden from Google", tone: "amber" });
-  out.push(o && (o.title || o.description || o.ogImage || o.noindex) ? { key: "custom", label: "Custom", tone: "blue" } : { key: "default", label: "Default", tone: "neutral" });
+  out.push(o && (o.title || o.description || o.titleBn || o.descriptionBn || o.ogImage || o.noindex) ? { key: "custom", label: "Custom", tone: "blue" } : { key: "default", label: "Default", tone: "neutral" });
   out.push(o?.ogImage ? { key: "og", label: "Share image", tone: "green" } : { key: "no-og", label: "No share image", tone: "neutral" });
   return out;
 }

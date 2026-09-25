@@ -32,7 +32,10 @@ export default async function SettingsPage({ searchParams }: { searchParams: Sea
             <Field label="Text" hint="Up to 160 characters.">
               <input name="announcementText" defaultValue={settings.announcement.text} maxLength={160} className="admin-input" />
             </Field>
-            <Field label="Link" hint="Optional. A page like /pricing or a full https:// link.">
+            <Field label="Text in Bangla" hint="Optional. Shown on Bangla pages; if empty, they show the English text.">
+              <input name="announcementTextBn" lang="bn" defaultValue={settings.announcement.textBn} maxLength={160} className="admin-input" />
+            </Field>
+            <Field label="Link" hint="Optional. A page like /pricing or a full https:// link. Bangla pages open the page's Bangla version.">
               <input name="announcementHref" defaultValue={settings.announcement.href} maxLength={300} className="admin-input" />
             </Field>
           </div>

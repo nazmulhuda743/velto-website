@@ -58,7 +58,12 @@ export async function saveSettingsAction(form: FormData) {
 
   const next: SiteSettings = {
     whatsappNumber: whatsapp,
-    announcement: { enabled: form.get("announcementEnabled") === "on", text: text(form, "announcementText", 160), href },
+    announcement: {
+      enabled: form.get("announcementEnabled") === "on",
+      text: text(form, "announcementText", 160),
+      textBn: text(form, "announcementTextBn", 160),
+      href,
+    },
     outlets: { ...settings.outlets },
   };
   for (const id of Object.keys(next.outlets) as (keyof SiteSettings["outlets"])[]) {
@@ -93,6 +98,8 @@ export async function saveSeoAction(form: FormData) {
   } else {
     entry.title = text(form, "title", 120) || undefined;
     entry.description = text(form, "description", 320) || undefined;
+    entry.titleBn = text(form, "titleBn", 120) || undefined;
+    entry.descriptionBn = text(form, "descriptionBn", 320) || undefined;
     entry.noindex = form.get("noindex") === "on";
     try {
       const upload = file(form, "ogImage");
@@ -127,6 +134,7 @@ export async function saveImageAction(form: FormData) {
   } else {
     const upload = file(form, "image");
     const alt = text(form, "alt", 300);
+    const altBn = text(form, "altBn", 300);
     const position = text(form, "position", 40);
     const current = images[id];
     if (!upload && !current) back(target, { error: "Choose an image to upload.", slot: id });
@@ -134,6 +142,8 @@ export async function saveImageAction(form: FormData) {
       images[id] = {
         src: upload ? await uploadImage(upload, id) : current!.src,
         alt: alt || current?.alt,
+        // Emptying the Bangla field clears it (Bangla pages then use the built-in or English text).
+        altBn: altBn || undefined,
         position: /^[\w% .-]*$/.test(position) && position ? position : current?.position,
         updatedAt: new Date().toISOString(),
       };
