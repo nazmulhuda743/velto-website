@@ -5,11 +5,20 @@ import { track } from "@/components/layout/Analytics";
 import { ButtonLink } from "@/components/ui/Button";
 import { WhatsAppIcon } from "@/components/ui/icons";
 import { FREE_DELIVERY_THRESHOLD, WHATSAPP_URL } from "@/content/site";
+import {
+  bookingItemsText,
+  composeBookingNotes,
+  MAX_BOOKING_NOTES,
+  sharedItemService,
+  type BookingItem,
+} from "@/lib/booking-items";
+import { BookingItems, type ItemLine } from "./BookingItems";
 import { normalisePhone, phoneOk } from "./fields";
 import { submitBooking, type BookingFormData, type SubmitResult } from "./submit";
 
 /**
  * Book a Pickup — one compact form, grouped as what / where / when / who.
+ * "What" is an optional list of item + service + quantity lines (BookingItems).
  * Values map onto the Ops `BookingSubmission` shape via BookingFormData;
  * submission stays behind the isolated adapter in ./submit (Codex wires it).
  */
@@ -44,7 +53,9 @@ const TIMES = [
 type Day = (typeof DAYS)[number]["value"] | "";
 
 type FormState = {
-  service: string | null; // null = not answered, "" = a mix / not sure
+  /** From a service page (?service=): the default for new item lines, and the service when no lines are added. */
+  service: string | null;
+  items: ItemLine[];
   sector: string;
   address: string;
   day: Day;
@@ -86,6 +97,15 @@ const areaLabel = (sector: string) => (sector === OUTSIDE ? "Outside Uttara Sect
 const serviceLabel = (value: string | null) =>
   value === null ? "" : (BOOKING_SERVICES.find((s) => s.value === value)?.label ?? "");
 
+const itemsOf = (s: FormState): BookingItem[] =>
+  s.items.map((l) => ({ item: l.item, quantity: l.quantity, ...(l.service ? { service: l.service } : {}) }));
+
+/** With item lines, the Ops service is the one they all share (none for a mix); otherwise the page's service. */
+const bookingService = (s: FormState) => (s.items.length ? sharedItemService(itemsOf(s)) : s.service || undefined);
+
+/** One line for summaries: the items, or the page's service. */
+const whatLabel = (s: FormState) => (s.items.length ? bookingItemsText(itemsOf(s)) : serviceLabel(s.service));
+
 /** Human-readable preference, e.g. "Tomorrow Fri 25 Sep, evening". Sent as the contract's single preferredPickup string. */
 function pickupLabel(s: FormState) {
   const iso = s.day === "today" ? isoDate(0) : s.day === "tomorrow" ? isoDate(1) : s.day === "other" ? s.date : "";
@@ -102,7 +122,8 @@ function toBookingData(s: FormState): BookingFormData {
     area: areaLabel(s.sector),
     address: s.address.trim(),
     preferredPickup: pickupLabel(s) || undefined,
-    service: s.service || undefined,
+    service: bookingService(s),
+    ...(s.items.length ? { items: itemsOf(s) } : {}),
     notes: s.notes.trim() || undefined,
   };
 }
@@ -111,7 +132,7 @@ function toBookingData(s: FormState): BookingFormData {
 function whatsappHref(s: FormState) {
   const lines = [
     "Hi Velto, I'd like to book a pickup.",
-    s.service !== null ? `Service: ${serviceLabel(s.service)}` : "",
+    s.items.length ? `Items: ${bookingItemsText(itemsOf(s))}` : s.service ? `Service: ${serviceLabel(s.service)}` : "",
     s.sector ? `Area: ${areaLabel(s.sector)}` : "",
     s.address.trim() ? `Address: ${s.address.trim()}` : "",
     pickupLabel(s) ? `Preferred pickup: ${pickupLabel(s)}` : "",
@@ -297,6 +318,7 @@ export function BookingForm({
 }) {
   const [s, setS] = useState<FormState>({
     service: BOOKING_SERVICES.some((o) => o.value !== "" && o.value === initialService) ? initialService! : null,
+    items: [],
     sector: initialContact && (SECTORS.map(String).includes(initialContact.sector) || initialContact.sector === OUTSIDE) ? initialContact.sector : "",
     address: initialContact?.address ?? "",
     day: "",
@@ -309,8 +331,6 @@ export function BookingForm({
   const [errors, setErrors] = useState<Errors>({});
   const [status, setStatus] = useState<Status>({ state: "idle" });
   const [notesOpen, setNotesOpen] = useState(Boolean(presetNote));
-  // Arriving from a service page: show the choice as one line, with the option to change it.
-  const [serviceOpen, setServiceOpen] = useState(s.service === null);
   const started = useRef(false);
   const statusRef = useRef<HTMLDivElement>(null);
   const successRef = useRef<HTMLHeadingElement>(null);
@@ -361,7 +381,7 @@ export function BookingForm({
     }
 
     if (result.ok) {
-      if (!previewOutcome) track("booking_success", { service: s.service || undefined });
+      if (!previewOutcome) track("booking_success", { service: bookingService(s) });
       setStatus({ state: "success", reference: result.reference });
     } else {
       setStatus({ state: "failed", code: result.code });
@@ -384,7 +404,7 @@ export function BookingForm({
       <div className="mt-6 md:mt-8">
         <StepProgress
           done={[
-            s.service !== null,
+            s.items.length > 0 || s.service !== null,
             Boolean(s.sector && s.address.trim()),
             Boolean(s.day && (s.day !== "other" || s.date)),
             Boolean(s.name.trim() && phoneOk(s.phone)),
@@ -399,28 +419,12 @@ export function BookingForm({
           className="space-y-6 [&_input]:scroll-mt-32 [&_select]:scroll-mt-32 [&_textarea]:scroll-mt-32"
         >
           <Group step={1} title="What needs cleaning?">
-            {serviceOpen ? (
-              <ChoiceTiles
-                name="service"
-                label="What needs cleaning?"
-                options={BOOKING_SERVICES}
-                value={s.service}
-                onChange={(v) => update("service", v)}
-                columns="grid-cols-3 [&>label:last-child]:col-span-3"
-                segmented
-              />
-            ) : (
-              <div className="flex min-h-11 items-center justify-between gap-4 rounded-md border border-blue bg-[#f0f7fc] px-3.5 py-2">
-                <span className="font-semibold text-navy">{serviceLabel(s.service)}</span>
-                <button
-                  type="button"
-                  onClick={() => setServiceOpen(true)}
-                  className="min-h-11 rounded-sm px-1 t-small font-semibold text-navy underline decoration-blue/60 underline-offset-4 hover:decoration-blue"
-                >
-                  Change<span className="sr-only"> service</span>
-                </button>
-              </div>
-            )}
+            {s.service && !s.items.length ? (
+              <p className="t-small text-navy">
+                Booking <span className="font-semibold">{serviceLabel(s.service)}</span>. Add items below if you like, or just continue.
+              </p>
+            ) : null}
+            <BookingItems lines={s.items} onChange={(items) => update("items", items)} preferredService={s.service ?? undefined} />
           </Group>
 
           <Group step={2} title="Where should we collect from?">
@@ -573,6 +577,8 @@ export function BookingForm({
                   id="booking-notes"
                   name="notes"
                   rows={3}
+                  // Items and the note share the Ops notes field.
+                  maxLength={Math.max(0, MAX_BOOKING_NOTES - (composeBookingNotes(itemsOf(s), "x")?.length ?? 0))}
                   placeholder="e.g. a saree with a stain, or call when you arrive"
                   value={s.notes}
                   onChange={(e) => update("notes", e.target.value)}
@@ -657,7 +663,7 @@ function BookingSuccess({
   const when = pickupLabel(state);
   const firstName = state.name.trim().split(/\s+/)[0];
   const rows = [
-    { label: "Service", value: state.service === null ? "Not specified" : serviceLabel(state.service) },
+    { label: state.items.length ? "Items" : "Service", value: whatLabel(state) || "Not specified" },
     { label: "Pickup from", value: `${state.address.trim()}, ${areaLabel(state.sector)}` },
     { label: "Preferred time", value: when ? when.charAt(0).toUpperCase() + when.slice(1) : "No preference" },
     { label: "We'll contact", value: displayPhone(state.phone) },

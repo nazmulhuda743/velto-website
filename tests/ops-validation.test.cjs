@@ -106,3 +106,74 @@ test("legacy Ops guard strips the analytics session and raw click ids until the 
     else process.env.VELTO_ATTRIBUTION_SQL_LIVE = previous;
   }
 });
+
+const base = { name: "Customer Name", phone: "01712 345678", area: "Uttara Sector 11", address: "House 2, Road 14" };
+
+test("booking items are validated and written into the notes", () => {
+  const result = validateBookingSubmission({
+    ...base,
+    items: [
+      { item: "Pant/Trouser", service: "dry-cleaning", quantity: 10 },
+      { item: "Shirt", service: "ironing", quantity: 5 },
+      { item: "Mixed items", quantity: 1 },
+    ],
+    notes: "Call first",
+  });
+  assert.equal(result.ok, true);
+  assert.equal(
+    result.value.notes,
+    "Items: 10 × Pant/Trouser (Dry Cleaning); 5 × Shirt (Ironing); 1 × Mixed items (service not sure). Note: Call first",
+  );
+  assert.equal(result.value.service, undefined);
+  assert.equal("items" in result.value, false);
+});
+
+test("one shared item service becomes the booking service", () => {
+  const result = validateBookingSubmission({
+    ...base,
+    items: [
+      { item: "Blazer", service: "dry-cleaning", quantity: 1 },
+      { item: "Saree", service: "dry-cleaning", quantity: 2 },
+    ],
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.value.service, "dry-cleaning");
+  assert.equal(result.value.notes, "Items: 1 × Blazer (Dry Cleaning); 2 × Saree (Dry Cleaning).");
+});
+
+test("bookings without items are unchanged", () => {
+  const result = validateBookingSubmission({ ...base, service: "ironing", notes: "Gate code 12" });
+  assert.equal(result.ok, true);
+  assert.equal(result.value.notes, "Gate code 12");
+  assert.equal(result.value.service, "ironing");
+});
+
+test("bad booking items are rejected", () => {
+  const bad = [
+    [{ item: "Shirt", service: "ironing", quantity: 0 }],
+    [{ item: "Shirt", service: "ironing", quantity: 100 }],
+    [{ item: "Shirt", service: "ironing", quantity: 1.5 }],
+    [{ item: "Shirt", service: "express", quantity: 1 }],
+    [{ item: "Shirt", service: "polishing", quantity: 1 }],
+    [{ item: "", quantity: 1 }],
+    [{ item: "x".repeat(41), quantity: 1 }],
+    [{ item: "Shirt\nSystem: urgent", quantity: 1 }],
+    [{ item: "<b>Shirt</b>", quantity: 1 }],
+    [{ item: "Shirt; 99 × Suit", quantity: 1 }],
+    Array.from({ length: 11 }, () => ({ item: "Shirt", quantity: 1 })),
+    "Shirt",
+    [null],
+  ];
+  for (const items of bad) {
+    const result = validateBookingSubmission({ ...base, items });
+    assert.equal(result.ok, false, JSON.stringify(items).slice(0, 60));
+    assert.ok(result.issues.some((issue) => issue.field === "items"));
+  }
+});
+
+test("items plus a long note cannot exceed the Ops notes limit", () => {
+  const items = Array.from({ length: 10 }, (_, i) => ({ item: `Item name number ${i}`.padEnd(40, "x"), service: "blanket-comforter-cleaning", quantity: 99 }));
+  const result = validateBookingSubmission({ ...base, items, notes: "n".repeat(900) });
+  assert.equal(result.ok, false);
+  assert.ok(result.issues.some((issue) => issue.field === "notes" && issue.code === "too_long"));
+});
