@@ -10,6 +10,8 @@
 import { IMAGES, REVIEW_ANGELA, type ImageSlot, type Review } from "./mock";
 import type { FAQ_KEYS } from "@/components/home/FAQ";
 import type { Step } from "@/components/pages/ProcessSteps";
+import { keepBanglaSuffixes, type Locale } from "@/lib/i18n/config";
+import { SERVICE_PAGES_BN } from "./i18n/services.bn";
 
 export type ServiceSlug =
   | "dry-cleaning"
@@ -679,4 +681,9 @@ export const SERVICE_PAGES: ServiceContent[] = [
   },
 ];
 
-export const getServicePage = (slug: string) => SERVICE_PAGES.find((s) => s.slug === slug);
+/** Service pages in a language (content/i18n/services.bn.ts for Bangla, same structure). */
+// Data (images, the customer's review, price-list names) and search metadata pass through untouched.
+const SERVICE_PAGES_BN_DISPLAY = keepBanglaSuffixes(SERVICE_PAGES_BN, ["meta", "image", "review", "names"]);
+export const servicePages = (locale: Locale): ServiceContent[] => (locale === "bn" ? SERVICE_PAGES_BN_DISPLAY : SERVICE_PAGES);
+
+export const getServicePage = (slug: string, locale: Locale = "en") => servicePages(locale).find((s) => s.slug === slug);

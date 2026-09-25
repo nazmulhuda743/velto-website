@@ -1,6 +1,6 @@
 import { pageMetadata } from "@/lib/seo/page-metadata";
 import { ProofFigures } from "@/components/pages/ProofFigures";
-import { freeDeliveryFigure, googleFigure, sectorsFigure } from "@/components/pages/figures";
+import { pageFigures } from "@/components/pages/figures";
 import Link from "@/components/i18n/Link";
 import { FAQ, faqItems } from "@/components/home/FAQ";
 import { FinalBookingCTA } from "@/components/home/FinalBookingCTA";
@@ -12,21 +12,24 @@ import { ButtonLink } from "@/components/ui/Button";
 import { ArrowRight } from "@/components/ui/icons";
 import { ResponsiveImage } from "@/components/ui/ResponsiveImage";
 import { TextLink } from "@/components/ui/TextLink";
-import { SERVICE_PAGES, type ServiceContent, type ServiceSlug } from "@/content/services";
+import { servicePages, type ServiceContent, type ServiceSlug } from "@/content/services";
 import { FREE_DELIVERY_THRESHOLD, bookHref, quoteHref } from "@/content/site";
 import { IMAGES } from "@/content/mock";
+import { dictionary } from "@/content/i18n";
+import { pageText } from "@/content/i18n/pages";
+import { fill } from "@/lib/i18n/config";
+import { getLocale } from "@/lib/i18n/server";
 
 export const revalidate = 300;
 
 export const generateMetadata = () => pageMetadata("/services");
 
-const GROUPS: { title: string; slugs: ServiceSlug[] }[] = [
-  { title: "Clothes", slugs: ["dry-cleaning", "wash-and-iron", "ironing"] },
-  { title: "Curtains, carpets and bedding", slugs: ["curtain-cleaning", "carpet-cleaning", "blanket-comforter-cleaning"] },
-  { title: "Timing", slugs: ["express"] },
+/** Group slugs, in the order of the group titles in the page text. */
+const GROUPS: ServiceSlug[][] = [
+  ["dry-cleaning", "wash-and-iron", "ironing"],
+  ["curtain-cleaning", "carpet-cleaning", "blanket-comforter-cleaning"],
+  ["express"],
 ];
-
-const bySlug = new Map(SERVICE_PAGES.map((s) => [s.slug, s]));
 
 function DecisionRow({ service }: { service: ServiceContent }) {
   return (
@@ -58,34 +61,24 @@ function DecisionRow({ service }: { service: ServiceContent }) {
   );
 }
 
-const PRICING_MODELS = [
-  {
-    title: "Clothes are priced per item",
-    copy: "Every garment has its own price for each service it can have, so you can check before you send it. A few items are priced after assessment, once Velto has seen them.",
-    link: { href: "/pricing", label: "Search the price list" },
-  },
-  {
-    title: "Curtains and carpets are priced per square foot",
-    copy: "Send the approximate size. Velto confirms the final amount when measurement or condition needs checking.",
-    link: { href: quoteHref(undefined, "services-page"), label: "Request a Quote" },
-  },
-  {
-    title: "Blankets, comforters and quilts are priced per piece",
-    copy: "By type and size, so most bedding can be booked straight away.",
-    link: { href: "/services/blanket-comforter-cleaning", label: "See bedding prices" },
-  },
-];
+/** Links for the pricing models, in the order of pageText().servicesPage.models. */
+const MODEL_LINKS = ["/pricing", quoteHref(undefined, "services-page"), "/services/blanket-comforter-cleaning"];
 
 export default async function ServicesPage() {
+  const locale = await getLocale();
+  const d = dictionary(locale);
+  const t = pageText(locale).servicesPage;
+  const fig = await pageFigures();
+  const bySlug = new Map(servicePages(locale).map((s) => [s.slug, s]));
   return (
     <>
       <PageHero
         path={"/services"}
         image={IMAGES.final}
-        crumbs={[{ label: "Home", href: "/" }, { label: "Services" }]}
-        title="Which service do you need?"
-        eyebrow="Services"
-        highlight="Which service"
+        crumbs={[{ label: d.common.home, href: "/" }, { label: d.nav.services }]}
+        title={t.title}
+        eyebrow={t.eyebrow}
+        highlight={t.highlight}
         actions={
           <>
             <ButtonLink
@@ -94,30 +87,27 @@ export default async function ServicesPage() {
               placement="services_hero"
               className="flex-[1.45] max-md:px-4 md:flex-none"
             >
-              Book a Pickup
+              {d.common.bookPickup}
             </ButtonLink>
             <ButtonLink href="/pricing" variant="secondary" placement="services_hero" className="flex-1 max-md:px-3 md:flex-none">
-              View Pricing
+              {t.viewPricing}
             </ButtonLink>
           </>
         }
-        aside={<ProofFigures wide={3} figures={[await googleFigure("services_hero"), sectorsFigure, freeDeliveryFigure]} />}
+        aside={<ProofFigures wide={3} figures={[await fig.google("services_hero"), fig.sectors, fig.freeDelivery]} />}
       >
-        <p>
-          Every service begins with a pickup from your door in Uttara Sectors 1–18. Not sure which one
-          fits? Send a photo on WhatsApp and we&apos;ll tell you.
-        </p>
+        <p>{t.intro}</p>
       </PageHero>
 
       <section aria-labelledby="choose-title" className="bg-warm py-(--space-section)">
         <div className="container-page">
-          <SectionIntro id="choose-title" eyebrow="All services" title="Start with what you're sending." />
+          <SectionIntro id="choose-title" eyebrow={t.chooseEyebrow} title={t.chooseTitle} />
           <div className="mt-(--space-intro-content) space-y-(--space-related)">
-            {GROUPS.map((group) => (
-              <div key={group.title}>
-                <h3 className="t-label uppercase text-navy">{group.title}</h3>
+            {GROUPS.map((slugs, g) => (
+              <div key={t.groups[g]}>
+                <h3 className="t-label uppercase text-navy">{t.groups[g]}</h3>
                 <ul className="mt-3 border-t border-navy">
-                  {group.slugs.map((slug) => {
+                  {slugs.map((slug) => {
                     const service = bySlug.get(slug);
                     return service ? <DecisionRow key={slug} service={service} /> : null;
                   })}
@@ -130,8 +120,8 @@ export default async function ServicesPage() {
 
       <section aria-labelledby="compare-title" className="py-(--space-section)">
         <div className="container-page">
-          <SectionIntro id="compare-title" eyebrow="Choosing a service" title="Wash & Iron, Ironing or Dry Cleaning?">
-            <p>The three clothing services, side by side.</p>
+          <SectionIntro id="compare-title" eyebrow={pageText(locale).service.blockEyebrows.compare} title={t.compareTitle}>
+            <p>{t.compareIntro}</p>
           </SectionIntro>
           <div className="mt-(--space-intro-content)">
             <ServiceCompare current={null} />
@@ -142,20 +132,17 @@ export default async function ServicesPage() {
       <section aria-labelledby="pricing-models-title" className="bg-soft py-(--space-section)">
         <div className="container-page grid-page gap-y-(--space-intro-content)">
           <div className="col-span-4 md:col-span-8 xl:col-span-4">
-            <SectionIntro id="pricing-models-title" eyebrow="Pricing" title="How each service is priced" titleClassName="max-w-[14ch]">
-              <p>
-                Free pickup &amp; delivery on orders of {FREE_DELIVERY_THRESHOLD}+. Smaller orders have a
-                pickup and delivery charge, which we tell you when we confirm.
-              </p>
+            <SectionIntro id="pricing-models-title" eyebrow={t.pricingEyebrow} title={t.pricingTitle} titleClassName="max-w-[14ch]">
+              <p>{fill(t.pricingIntro, { amount: FREE_DELIVERY_THRESHOLD }, locale)}</p>
             </SectionIntro>
           </div>
           <div className="col-span-4 border-t border-navy md:col-span-8 xl:col-span-7 xl:col-start-6">
-            {PRICING_MODELS.map((m) => (
+            {t.models.map((m, i) => (
               <div key={m.title} className="border-b border-line py-5">
                 <h3 className="t-h4 text-navy">{m.title}</h3>
                 <p className="mt-1.5 max-w-[56ch] text-secondary">{m.copy}</p>
-                <TextLink href={m.link.href} placement="services_pricing" className="mt-1">
-                  {m.link.label}
+                <TextLink href={MODEL_LINKS[i]} placement="services_pricing" className="mt-1">
+                  {m.label}
                 </TextLink>
               </div>
             ))}
@@ -163,17 +150,12 @@ export default async function ServicesPage() {
         </div>
       </section>
 
-      <FAQ title="Before you choose." items={faqItems("unsure", "turnaround", "area", "freeDelivery")} />
+      <FAQ title={t.faqTitle} items={faqItems(locale, "unsure", "turnaround", "area", "freeDelivery")} />
 
       <FinalBookingCTA
         id="book"
-        title="Not sure which service?"
-        body={
-          <p>
-            Book a pickup and add a note, or send a photo on WhatsApp. We can help you choose before
-            anything is cleaned.
-          </p>
-        }
+        title={t.finalTitle}
+        body={<p>{t.finalBody}</p>}
         source="services-page-final"
       />
       <MobileConversionBar finalSectionId="book" source="services-page-sticky" />

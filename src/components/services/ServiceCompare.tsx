@@ -1,35 +1,16 @@
 import Link from "@/components/i18n/Link";
 import { ArrowRight } from "@/components/ui/icons";
-import { SERVICE_SUMMARY } from "@/content/service-summaries";
+import { dictionary } from "@/content/i18n";
+import { pageText } from "@/content/i18n/pages";
+import { localDigits } from "@/lib/i18n/config";
+import { getLocale } from "@/lib/i18n/server";
 import { formatAmount } from "@/lib/format-price";
 import { getServicePrices } from "@/lib/service-prices";
 
 type CompareSlug = "wash-and-iron" | "ironing" | "dry-cleaning";
 
 /** Facts from spec §4 (turnaround) and §5 (workflows). */
-const OPTIONS: { slug: CompareSlug; name: string; does: string; time: string; forWhat: string }[] = [
-  {
-    slug: "wash-and-iron",
-    name: "Wash & Iron",
-    does: SERVICE_SUMMARY["wash-and-iron"],
-    time: "Usually around 72 hours",
-    forWhat: "Everyday clothes and linen that need washing.",
-  },
-  {
-    slug: "ironing",
-    name: "Ironing",
-    does: SERVICE_SUMMARY.ironing,
-    time: "General orders usually around 48 hours",
-    forWhat: "Clothes already washed that just need pressing.",
-  },
-  {
-    slug: "dry-cleaning",
-    name: "Dry Cleaning",
-    does: SERVICE_SUMMARY["dry-cleaning"],
-    time: "Usually around 72 hours",
-    forWhat: "Suits, saris, sherwanis and garments that need a closer look.",
-  },
-];
+const SLUGS: CompareSlug[] = ["wash-and-iron", "ironing", "dry-cleaning"];
 
 /** The same shirt across the three services, from the live price list. */
 async function shirtPrices(): Promise<Partial<Record<CompareSlug, string>>> {
@@ -45,6 +26,15 @@ async function shirtPrices(): Promise<Partial<Record<CompareSlug, string>>> {
 }
 
 export async function ServiceCompare({ current }: { current: CompareSlug | null }) {
+  const locale = await getLocale();
+  const d = dictionary(locale);
+  const t = pageText(locale).compare;
+  const OPTIONS = SLUGS.map((slug) => ({
+    slug,
+    name: d.serviceNames[slug],
+    does: d.priceFinder.summaries[slug],
+    ...t.options[slug],
+  }));
   const shirt = await shirtPrices();
   const hasShirt = OPTIONS.every((o) => shirt[o.slug]);
 
@@ -52,7 +42,7 @@ export async function ServiceCompare({ current }: { current: CompareSlug | null 
     o.slug === current ? (
       <span className="t-h4 text-navy">
         {o.name}
-        <span className="ml-2 align-middle t-caption font-medium text-secondary">This page</span>
+        <span className="ml-2 align-middle t-caption font-medium text-secondary">{t.thisPage}</span>
       </span>
     ) : (
       <Link href={`/services/${o.slug}`} className="group inline-flex items-center gap-2 t-h4 text-navy hover:text-blue">
@@ -65,7 +55,7 @@ export async function ServiceCompare({ current }: { current: CompareSlug | null 
     <>
       {/* Desktop / tablet: one comparison table */}
       <table className="hidden w-full table-fixed border-collapse text-left md:table">
-        <caption className="sr-only">Wash &amp; Iron, Ironing and Dry Cleaning compared</caption>
+        <caption className="sr-only">{t.caption}</caption>
         <thead>
           <tr className="border-b border-navy">
             <td className="w-[22%]" />
@@ -79,9 +69,9 @@ export async function ServiceCompare({ current }: { current: CompareSlug | null 
         <tbody>
           {(
             [
-              ["What happens", "does"],
-              ["Usually takes", "time"],
-              ["Choose it for", "forWhat"],
+              [t.whatHappens, "does"],
+              [t.usuallyTakes, "time"],
+              [t.chooseFor, "forWhat"],
             ] as const
           ).map(([label, key]) => (
             <tr key={key} className="border-b border-line">
@@ -98,11 +88,11 @@ export async function ServiceCompare({ current }: { current: CompareSlug | null 
           {hasShirt ? (
             <tr className="border-b border-line">
               <th scope="row" className="py-4 pr-6 align-top t-label uppercase text-navy">
-                One shirt
+                {t.oneShirt}
               </th>
               {OPTIONS.map((o) => (
                 <td key={o.slug} className="py-4 pr-6 align-top font-semibold tabular-nums text-navy">
-                  {shirt[o.slug]}
+                  {localDigits(shirt[o.slug] ?? "", locale)}
                 </td>
               ))}
             </tr>
@@ -118,7 +108,7 @@ export async function ServiceCompare({ current }: { current: CompareSlug | null 
               {nameCell(o)}
               {hasShirt ? (
                 <span className="t-small text-secondary">
-                  Shirt <span className="font-semibold tabular-nums text-navy">{shirt[o.slug]}</span>
+                  {t.shirt} <span className="font-semibold tabular-nums text-navy">{localDigits(shirt[o.slug] ?? "", locale)}</span>
                 </span>
               ) : null}
             </div>

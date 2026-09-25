@@ -259,6 +259,8 @@ export const en = {
       "dry-cleaning": "Assessed, dry cleaned, pressed and packed.",
     } as Record<string, string>,
   },
+  /** Unit labels from the price list, by their English text; unknown labels are shown as they come. */
+  priceUnits: {} as Record<string, string>,
   reviewBlock: {
     readFull: "Read the full review",
     outOf5: "{rating} out of 5",

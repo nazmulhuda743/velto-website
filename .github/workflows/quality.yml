@@ -52,6 +52,9 @@ jobs:
       - name: Command Center tests
         run: node scripts/command-center-tests.mjs
 
+      - name: Bangla / English content tests
+        run: npm run test:i18n
+
       - name: Production build
         run: npm run build
 

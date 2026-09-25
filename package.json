@@ -15,6 +15,7 @@
     "test:seo": "node scripts/seo-audit.mjs",
     "test:portal-smoke": "node scripts/customer-portal-smoke.mjs",
     "verify:production-readiness": "node scripts/production-readiness.mjs",
+    "test:i18n": "node --test tests/i18n/*.test.mjs",
     "i18n:review": "node scripts/bangla-review.mjs"
   },
   "dependencies": {

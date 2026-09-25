@@ -29,7 +29,25 @@ export const banglaEnabled = () => process.env.NEXT_PUBLIC_BANGLA_ENABLED === "t
  * hreflang, a self-canonical /bn URL and a Bangla sitemap entry; any other /bn page
  * still works but canonicalises to its English page until its phase ships.
  */
-export const BANGLA_READY_PATHS: readonly string[] = ["/"];
+export const BANGLA_READY_PATHS: readonly string[] = [
+  "/",
+  // Phase 2: services, pricing, how it works, regular laundry, locations, about.
+  "/services",
+  "/services/dry-cleaning",
+  "/services/wash-and-iron",
+  "/services/ironing",
+  "/services/curtain-cleaning",
+  "/services/carpet-cleaning",
+  "/services/blanket-comforter-cleaning",
+  "/services/express",
+  "/pricing",
+  "/how-it-works",
+  "/regular-laundry",
+  "/locations",
+  "/locations/sector-11",
+  "/locations/sector-18",
+  "/about",
+];
 export const banglaIndexable = (path: string) => banglaEnabled() && BANGLA_READY_PATHS.includes(path);
 
 /** Paths that exist in one language only (APIs, admin, redirects, files). */
@@ -69,4 +87,21 @@ export const localDigits = (value: string | number, locale: Locale) =>
 /** "{rating} on Google" + { rating: "5.0" } → "5.0 on Google"; Bangla digits on Bangla pages. */
 export function fill(template: string, vars: Record<string, string | number>, locale: Locale): string {
   return template.replace(/\{(\w+)\}/g, (match, key: string) => (key in vars ? localDigits(vars[key], locale) : match));
+}
+
+/**
+ * Bangla attaches case endings to a word with a hyphen ("সেক্টর ১১-এ", "Velto-র"). Browsers may
+ * break a line after the hyphen and strand the ending on the next line, so a word joiner (U+2060,
+ * invisible) is added after every hyphen that runs into a Bangla letter. Applied to Bangla copy
+ * where it is served; search titles and descriptions (keys in `skip`) are left as written.
+ */
+export function keepBanglaSuffixes<T>(value: T, skip: readonly string[] = ["seo", "meta"]): T {
+  if (typeof value === "string") return value.replace(/-(?=[\u0980-\u09FF])/g, "-\u2060") as T;
+  if (Array.isArray(value)) return value.map((v) => keepBanglaSuffixes(v, skip)) as T;
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([k, v]) => [k, skip.includes(k) ? v : keepBanglaSuffixes(v, skip)]),
+    ) as T;
+  }
+  return value;
 }

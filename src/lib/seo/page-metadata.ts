@@ -2,6 +2,7 @@ import "server-only";
 
 import type { Metadata } from "next";
 import { getSeoRoute } from "@/content/seo-routes";
+import { getServicePage } from "@/content/services";
 import { dictionary } from "@/content/i18n";
 import { banglaIndexable, localizeHref } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
@@ -21,7 +22,10 @@ export async function pageMetadata(path: string, options: { noindex?: boolean } 
   const locale = await getLocale();
   const route = getSeoRoute(path);
   const override = (await getSiteContent()).seo[path] ?? {};
-  const local = locale === "bn" ? dictionary("bn").seo[path] : undefined;
+  const local =
+    locale === "bn"
+      ? (dictionary("bn").seo[path] ?? (path.startsWith("/services/") ? getServicePage(path.slice(10), "bn")?.meta : undefined))
+      : undefined;
   const title = local?.title ?? override.title ?? route?.title;
   const description = local?.description ?? override.description ?? route?.description;
   const canonical = banglaIndexable(path) ? localizeHref(path, locale) : path;

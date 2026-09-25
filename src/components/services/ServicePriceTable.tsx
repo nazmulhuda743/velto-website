@@ -6,32 +6,42 @@ import { WHATSAPP_URL } from "@/content/site";
 import { formatAmount } from "@/lib/format-price";
 import type { PublicPriceService } from "@/lib/integrations/pricing/types";
 import { getServicePrices } from "@/lib/service-prices";
-
-export const COLUMN_LABEL: Record<PriceColumn, string> = {
-  "dry-cleaning": "Dry Cleaning",
-  "wash-and-iron": "Wash & Iron",
-  ironing: "Ironing",
-};
+import { dictionary } from "@/content/i18n";
+import { pageText, type PageText } from "@/content/i18n/pages";
+import { localDigits, type Locale } from "@/lib/i18n/config";
+import { getLocale } from "@/lib/i18n/server";
 
 /** "Curtain Heavy (per sqft)" → "Curtain Heavy"; the unit is shown with the price. */
 const displayName = (name: string) => name.replace(/\s*\(per sq ?ft\)$/i, "");
 
-function Price({ service }: { service: PublicPriceService | undefined }) {
+function Price({
+  service,
+  locale,
+  t,
+}: {
+  service: PublicPriceService | undefined;
+  locale: Locale;
+  t: PageText["priceTable"];
+}) {
   if (!service) {
     return (
       <span className="text-muted">
         <span aria-hidden="true">—</span>
-        <span className="sr-only">Not offered</span>
+        <span className="sr-only">{t.notOffered}</span>
       </span>
     );
   }
   if (service.amountMinor === null) {
-    return <span className="t-small font-medium text-secondary">After assessment</span>;
+    return <span className="t-small font-medium text-secondary">{t.afterAssessment}</span>;
   }
   return (
     <span className="whitespace-nowrap font-semibold tabular-nums text-navy">
-      {formatAmount(service.amountMinor)}
-      {service.unitLabel ? <span className="ml-1 t-small font-normal text-secondary">{service.unitLabel}</span> : null}
+      {localDigits(formatAmount(service.amountMinor), locale)}
+      {service.unitLabel ? (
+        <span className="ml-1 t-small font-normal text-secondary">
+          {dictionary(locale).priceUnits[service.unitLabel] ?? service.unitLabel}
+        </span>
+      ) : null}
     </span>
   );
 }
@@ -53,19 +63,19 @@ export async function ServicePriceTable({
   /** Shown under the table only when prices loaded. */
   footer?: ReactNode;
 }) {
+  const locale = await getLocale();
+  const t = pageText(locale).priceTable;
+  const columnLabel = (c: PriceColumn) => dictionary(locale).serviceNames[c];
   const prices = await getServicePrices(groups.flatMap((g) => g.names));
 
   if (prices.state === "unavailable") {
     return (
       <div role="status" className="border-t border-navy pt-6">
-        <p className="t-h4 text-navy">Prices couldn&apos;t load right now.</p>
-        <p className="mt-2 max-w-[46ch] text-secondary">
-          Search the full price list or ask Velto on WhatsApp. You can also book a pickup: we go
-          through prices when we call to confirm.
-        </p>
+        <p className="t-h4 text-navy">{t.errorTitle}</p>
+        <p className="mt-2 max-w-[46ch] text-secondary">{t.errorBody}</p>
         <div className="mt-5 flex flex-col items-start gap-3 md:flex-row md:items-center md:gap-6">
           <TextLink href="/pricing" placement="service_prices_error">
-            Search the price list
+            {t.searchList}
           </TextLink>
           <WhatsAppButton href={WHATSAPP_URL} placement="service_prices_error" />
         </div>
@@ -88,11 +98,11 @@ export async function ServicePriceTable({
         <thead className={multi ? "hidden md:table-header-group" : undefined}>
           <tr className="border-b border-navy">
             <th scope="col" className="pb-3 t-label uppercase text-navy">
-              Item
+              {t.item}
             </th>
             {columns.map((c) => (
               <th key={c} scope="col" className="pb-3 pl-4 text-right t-label uppercase text-navy">
-                {COLUMN_LABEL[c]}
+                {columnLabel(c)}
               </th>
             ))}
           </tr>
@@ -124,8 +134,8 @@ export async function ServicePriceTable({
                       {displayName(item.name)}
                     </th>
                     {columns.map((c) => (
-                      <td key={c} data-label={COLUMN_LABEL[c]} className={cellCls}>
-                        <Price service={bySlug.get(c)} />
+                      <td key={c} data-label={columnLabel(c)} className={cellCls}>
+                        <Price service={bySlug.get(c)} locale={locale} t={t} />
                       </td>
                     ))}
                   </tr>
@@ -136,18 +146,17 @@ export async function ServicePriceTable({
         })}
       </table>
       {prices.items.some((item) => item.services.some((sv) => columns.includes(sv.slug as PriceColumn) && sv.amountMinor === null)) ? (
-        <p className="mt-4 t-small text-secondary">
-          &ldquo;After assessment&rdquo; means the price is confirmed once Velto has seen the item.
-        </p>
+        <p className="mt-4 t-small text-secondary">{t.afterAssessmentNote}</p>
       ) : null}
       {footer}
     </>
   );
 }
 
-export function ServicePriceTableSkeleton({ rows = 6 }: { rows?: number }) {
+export async function ServicePriceTableSkeleton({ rows = 6 }: { rows?: number }) {
+  const t = pageText(await getLocale()).priceTable;
   return (
-    <div role="status" aria-label="Loading prices" className="border-t border-navy">
+    <div role="status" aria-label={t.loading} className="border-t border-navy">
       {Array.from({ length: rows }, (_, i) => (
         <div key={i} className="flex items-center justify-between border-b border-line py-[18px]">
           <span className="skeleton h-4 w-40" />

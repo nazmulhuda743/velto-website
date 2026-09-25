@@ -7,23 +7,14 @@ import { ResponsiveImage } from "@/components/ui/ResponsiveImage";
 import { TextLink } from "@/components/ui/TextLink";
 import type { ServiceBlock } from "@/content/services";
 import { getSiteContent } from "@/lib/site-content";
+import { pageText } from "@/content/i18n/pages";
+import { fill } from "@/lib/i18n/config";
+import { getLocale } from "@/lib/i18n/server";
 import { ServiceCompare } from "./ServiceCompare";
 import { ServicePriceTable, ServicePriceTableSkeleton } from "./ServicePriceTable";
 
 type Tone = "white" | "warm" | "soft";
 const TONE: Record<Tone, string> = { white: "", warm: "bg-warm", soft: "bg-soft" };
-
-/** Section label per block type: the same small blue label system as the homepage. */
-const EYEBROW: Record<ServiceBlock["type"], string> = {
-  scope: "What you can send",
-  prices: "Prices",
-  process: "How it's handled",
-  notes: "Good to know",
-  compare: "Choosing a service",
-  measure: "Measuring",
-  facts: "What happens next",
-  review: "Customer proof",
-};
 
 function Section({ id, tone, children }: { id: string; tone: Tone; children: ReactNode }) {
   return (
@@ -48,6 +39,10 @@ export async function ServiceBlockView({
   tone: Tone;
   serviceName: string;
 }) {
+  const locale = await getLocale();
+  const t = pageText(locale).service;
+  /** Section label per block type: the same small blue label system as the homepage. */
+  const EYEBROW = t.blockEyebrows;
   switch (block.type) {
     case "scope":
       return (
@@ -79,7 +74,7 @@ export async function ServiceBlockView({
           <div className={RIGHT}>
             <Suspense fallback={<ServicePriceTableSkeleton />}>
               <ServicePriceTable
-                caption={`${serviceName} prices`}
+                caption={fill(t.pricesCaption, { service: serviceName }, locale)}
                 columns={block.columns}
                 groups={block.groups}
                 footer={
@@ -90,9 +85,9 @@ export async function ServiceBlockView({
                         href={block.searchHint ? `/pricing?q=${encodeURIComponent(block.searchHint)}` : "/pricing"}
                         placement="service_prices"
                       >
-                        Look up another item
+                        {t.lookUpAnother}
                       </TextLink>
-                      <p className="t-caption text-secondary">Prices from Velto&apos;s current price list.</p>
+                      <p className="t-caption text-secondary">{t.pricesSource}</p>
                     </div>
                   </>
                 }
@@ -115,7 +110,7 @@ export async function ServiceBlockView({
               <ProcessSteps steps={block.steps} />
               <div className="mt-6">
                 <TextLink href="/how-it-works" placement="service_process">
-                  See how every order is handled
+                  {t.seeEveryOrder}
                 </TextLink>
               </div>
             </div>
@@ -140,7 +135,7 @@ export async function ServiceBlockView({
             <ProcessSteps className="mt-(--space-intro-content)" steps={block.steps} />
             <div className="mt-6">
               <TextLink href="/how-it-works" placement="service_process">
-                See how every order is handled
+                {t.seeEveryOrder}
               </TextLink>
             </div>
           </div>
@@ -190,7 +185,7 @@ export async function ServiceBlockView({
             <ProcessSteps className="mt-(--space-intro-content)" steps={block.steps} />
           </div>
           <div className="col-span-4 md:col-span-8 xl:col-span-5 xl:col-start-8 xl:pt-2">
-            <h3 className="t-label uppercase text-navy">Worked example</h3>
+            <h3 className="t-label uppercase text-navy">{t.workedExample}</h3>
             <dl className="mt-4 border-t border-navy">
               {block.examples.map((ex) => (
                 <div key={ex.label} className="flex items-baseline justify-between gap-6 border-b border-line py-5">

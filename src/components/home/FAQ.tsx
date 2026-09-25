@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { dictionary } from "@/content/i18n";
+import type { Locale } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
 import { Eyebrow } from "./SectionIntro";
 
@@ -9,9 +10,9 @@ export type FAQItem = { q: string; a: ReactNode };
 const toItems = (list: { q: string; a: string[] }[]): FAQItem[] =>
   list.map(({ q, a }) => ({ q, a: a.map((p) => <p key={p}>{p}</p>) }));
 
-/** Reused on internal pages by key (English until those pages are translated). */
+/** Reused on internal pages by key (faqItems), in each language. */
 export const FAQS: FAQItem[] = toItems(dictionary("en").faqs);
-const FAQS_BN: FAQItem[] = toItems(dictionary("bn").faqs);
+export const FAQS_BN: FAQItem[] = toItems(dictionary("bn").faqs);
 
 /** Native <details> accordion — keyboard accessible with no client JS. */
 export const FAQ_KEYS = {
@@ -24,7 +25,9 @@ export const FAQ_KEYS = {
   household: 6,
 } as const;
 
-export const faqItems = (...keys: (keyof typeof FAQ_KEYS)[]) => keys.map((k) => FAQS[FAQ_KEYS[k]]);
+/** Shared questions by key, in the page's language. */
+export const faqItems = (locale: Locale, ...keys: (keyof typeof FAQ_KEYS)[]) =>
+  keys.map((k) => (locale === "bn" ? FAQS_BN : FAQS)[FAQ_KEYS[k]]);
 
 export async function FAQ({
   title,
