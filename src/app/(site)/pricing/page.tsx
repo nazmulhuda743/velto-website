@@ -7,7 +7,8 @@ import { Breadcrumbs } from "@/components/pages/Breadcrumbs";
 import { FactRows } from "@/components/pages/FactRows";
 import { ServiceCompare } from "@/components/services/ServiceCompare";
 import { TextLink } from "@/components/ui/TextLink";
-import { FREE_DELIVERY_THRESHOLD } from "@/content/site";
+import { ButtonLink } from "@/components/ui/Button";
+import { FREE_DELIVERY_THRESHOLD, bookHref } from "@/content/site";
 
 export const generateMetadata = () => pageMetadata("/pricing");
 
@@ -78,6 +79,16 @@ export default async function PricingPage({ searchParams }: { searchParams: Sear
                 ]}
               />
               <p className="mt-4 t-small text-secondary">Some garments and household items may take longer.</p>
+              {/* The step after checking a price: on mobile this lands right after the search, not at the page end. */}
+              <div className="mt-8 border-t border-line pt-6">
+                <p className="font-semibold text-navy">Know what you&apos;re sending?</p>
+                <p className="mt-1 t-small text-secondary">
+                  Book the pickup now. We call or WhatsApp to confirm the time, and can go through prices then.
+                </p>
+                <ButtonLink href={bookHref("pricing-aside")} event="book_pickup_click" placement="pricing_aside" className="mt-4 max-md:w-full">
+                  Book a Pickup
+                </ButtonLink>
+              </div>
             </aside>
           </div>
         </div>

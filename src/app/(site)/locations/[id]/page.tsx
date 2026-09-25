@@ -44,30 +44,35 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
         image={outletPhoto.src ? outletPhoto : undefined}
         aside={<ProofList items={[`Open ${loc.hours}`, `${loc.rating} on Google · ${loc.reviewCount} reviews for ${loc.name}`]} />}
         actions={
+          // Pickup is the default way to use Velto; the outlet is an option.
           <>
             <ButtonLink
-              href={loc.directionsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              event="directions_click"
-              placement="location_hero"
-              className="flex-1 max-md:px-4 md:flex-none"
-            >
-              Get Directions
-            </ButtonLink>
-            <ButtonLink
               href={bookHref(`${loc.id}-page`)}
-              variant="secondary"
               event="book_pickup_click"
               placement="location_hero"
               className="flex-1 max-md:px-4 md:flex-none"
             >
               Book a Pickup
             </ButtonLink>
+            <ButtonLink
+              href={loc.directionsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              variant="secondary"
+              event="directions_click"
+              placement="location_hero"
+              className="flex-1 max-md:px-4 md:flex-none"
+            >
+              Get Directions
+            </ButtonLink>
           </>
         }
       >
         <p>{loc.address}</p>
+        <p>
+          You don&apos;t need to visit. Velto collects from your door anywhere in {SERVICE_AREA}, or you can
+          drop off here.
+        </p>
       </PageHero>
 
       <section aria-labelledby="visit-title" className="bg-warm py-(--space-section)">

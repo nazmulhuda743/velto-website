@@ -346,7 +346,7 @@ function PriceResult({
                 ) : (
                   // Adapter contract: null amount = price needs confirmation (MOCK source never shows a number either).
                   <span data-mock={source === "mock" ? "price" : undefined} className="block pt-0.5 font-semibold text-secondary">
-                    On request
+                    After assessment
                   </span>
                 )}
               </dd>
@@ -356,7 +356,8 @@ function PriceResult({
       </dl>
       {item.services.some((s) => s.amountMinor === null) ? (
         <p className="border-t border-line px-5 py-3 t-small text-secondary md:px-6">
-          &ldquo;On request&rdquo; means we confirm the amount once we see the item. Ask on WhatsApp or add it to a pickup.
+          &ldquo;After assessment&rdquo; means the price is confirmed once Velto has seen the item. You can still add it to a
+          pickup, or send a photo on WhatsApp first.
         </p>
       ) : null}
     </div>

@@ -2,7 +2,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { WhatsAppIcon } from "@/components/ui/icons";
 import { ResponsiveImage } from "@/components/ui/ResponsiveImage";
 import type { ImageSlot } from "@/content/mock";
-import { FREE_DELIVERY_THRESHOLD, WHATSAPP_URL, bookHref } from "@/content/site";
+import { WHATSAPP_URL, bookHref } from "@/content/site";
 import { getGoogleProofLabel } from "@/lib/site-content";
 import { SectionIntro } from "./SectionIntro";
 
@@ -20,7 +20,7 @@ type FinalBookingCTAProps = {
    */
   image?: ImageSlot;
   /** Overrides the primary action (e.g. Request a Quote on quote-first pages). */
-  primary?: { href: string; label: string; helper?: string };
+  primary?: { href: string; label: string; helper?: string; event?: string };
 };
 
 const DEFAULT_BODY = (
@@ -44,7 +44,7 @@ export async function FinalBookingCTA({
       {/* One decisive action; WhatsApp stays available but visibly secondary. */}
       <ButtonLink
         href={primary ? primary.href : bookHref(source, service)}
-        event={primary ? undefined : "book_pickup_click"}
+        event={primary ? primary.event : "book_pickup_click"}
         placement="final"
         className="w-full !h-14 !px-8 !text-[17px] md:w-auto"
       >
@@ -67,7 +67,8 @@ export async function FinalBookingCTA({
       </a>
     </>
   );
-  const proof = `${await getGoogleProofLabel()} · Free pickup & delivery on orders of ${FREE_DELIVERY_THRESHOLD}+`;
+  // Google proof only: the delivery threshold differs by page (৳499 general, ৳300 regular) and each page states its own.
+  const proof = await getGoogleProofLabel();
 
   if (!image) {
     return (

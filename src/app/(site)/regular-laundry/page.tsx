@@ -20,27 +20,39 @@ export default function RegularLaundryPage() {
         crumbs={[{ label: "Home", href: "/" }, { label: "Regular Laundry" }]}
         title="A regular laundry pickup, so the week takes care of itself."
         image={IMAGES.regular}
-        // "Set Up Regular Pickup" + WhatsApp don't fit side by side at 360px.
-        stackActionsOnMobile
+        aside={
+          // The one reason to choose a routine over one-off orders, stated where the decision is made.
+          <div className="border-t border-line pt-4">
+            <p className="text-[28px] font-semibold leading-none tracking-[-0.03em] text-navy tabular-nums md:text-[32px]">
+              {REGULAR_FREE_DELIVERY_THRESHOLD}+
+            </p>
+            <p className="mt-1.5 max-w-[34ch] t-small text-secondary">
+              Free pickup &amp; delivery on a fixed weekly or fortnightly pickup. One-off orders qualify
+              from {FREE_DELIVERY_THRESHOLD}+.
+            </p>
+          </div>
+        }
         actions={
           <>
             <ButtonLink
               href={setUpHref("regular-laundry-page")}
               event="regular_laundry_interest"
               placement="regular_hero"
-              className="w-full md:w-auto"
+              className="flex-[1.45] max-md:px-4 md:flex-none"
             >
               Set Up Regular Pickup
             </ButtonLink>
-            <WhatsAppButton href={WHATSAPP_URL} placement="regular_hero" className="w-full md:w-auto">
-              WhatsApp
+            <WhatsAppButton href={WHATSAPP_URL} placement="regular_hero" className="flex-1 max-md:px-3 md:flex-none">
+              {/* Icon only below 375px so the longer primary label keeps its room. */}
+              <span className="max-[374px]:sr-only">WhatsApp</span>
             </WhatsAppButton>
           </>
         }
       >
         <p>
           Regular laundry and ironing can be arranged as recurring pickups, so you don&apos;t need
-          to book from scratch every time.
+          to book from scratch every time. Agree a day once, put the clothes out, and they come back
+          ready to wear.
         </p>
       </PageHero>
 
@@ -71,9 +83,8 @@ export default function RegularLaundryPage() {
           <div className="col-span-4 md:col-span-8 xl:col-span-5">
             <SectionIntro id="regular-save-title" title="Put the week together.">
               <p>
-                On a fixed weekly or fortnightly pickup, regular orders of{" "}
-                {REGULAR_FREE_DELIVERY_THRESHOLD}+ qualify for free pickup and delivery. Other orders
-                qualify from {FREE_DELIVERY_THRESHOLD}+.
+                Laundry and ironing can go in the same pickup, so the week&apos;s clothes travel together
+                and it&apos;s easier to reach {REGULAR_FREE_DELIVERY_THRESHOLD}+.
               </p>
             </SectionIntro>
           </div>
@@ -98,7 +109,12 @@ export default function RegularLaundryPage() {
         title="Set up your regular pickup."
         body={<p>Tell us where to collect from and which day suits you. We will confirm the routine with you.</p>}
         source="regular-laundry-final"
-        primary={{ href: setUpHref("regular-laundry-final"), label: "Set Up Regular Pickup" }}
+        primary={{
+          href: setUpHref("regular-laundry-final"),
+          label: "Set Up Regular Pickup",
+          helper: "Send the request. We\u2019ll agree the pickup day with you.",
+          event: "regular_laundry_interest",
+        }}
       />
     </>
   );
