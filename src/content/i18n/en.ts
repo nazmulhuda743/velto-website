@@ -282,6 +282,9 @@ export const en = {
     address: "Address",
     hours: "Opening hours",
     seeReviews: "See Google Reviews",
+    mapShow: "Show map",
+    mapNote: "Loads Google Maps, which may set its own cookies.",
+    mapTitle: "Map of Velto {name}",
   },
   googleProof: {
     label: "{rating} on Google · {reviews} reviews",
