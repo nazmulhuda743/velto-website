@@ -122,10 +122,15 @@ test("booking items are validated and written into the notes", () => {
   assert.equal(result.ok, true);
   assert.equal(
     result.value.notes,
-    "Items: 10 × Pant/Trouser (Dry Cleaning); 5 × Shirt (Ironing); 1 × Mixed items (service not sure). Note: Call first",
+    "Items: 10 × Pant/Trouser – Dry Cleaning; 5 × Shirt – Ironing; 1 × Mixed items – service not sure. Note: Call first",
   );
   assert.equal(result.value.service, undefined);
   assert.equal("items" in result.value, false);
+});
+
+test("item names that already end in brackets stay readable", () => {
+  const result = validateBookingSubmission({ ...base, items: [{ item: "Sari (Cotton)", service: "ironing", quantity: 5 }] });
+  assert.equal(result.value.notes, "Items: 5 × Sari (Cotton) – Ironing.");
 });
 
 test("one shared item service becomes the booking service", () => {
@@ -138,7 +143,7 @@ test("one shared item service becomes the booking service", () => {
   });
   assert.equal(result.ok, true);
   assert.equal(result.value.service, "dry-cleaning");
-  assert.equal(result.value.notes, "Items: 1 × Blazer (Dry Cleaning); 2 × Saree (Dry Cleaning).");
+  assert.equal(result.value.notes, "Items: 1 × Blazer – Dry Cleaning; 2 × Saree – Dry Cleaning.");
 });
 
 test("bookings without items are unchanged", () => {
@@ -183,7 +188,7 @@ test("line breaks in notes are kept as ' / ' instead of rejecting the booking", 
   assert.equal(result.ok, true);
   assert.equal(result.value.notes, "Call first / Gate code 12 / Thanks");
   const withItems = validateBookingSubmission({ ...base, items: [{ item: "Shirt", service: "ironing", quantity: 2 }], notes: "a\nb" });
-  assert.equal(withItems.value.notes, "Items: 2 × Shirt (Ironing). Note: a / b");
+  assert.equal(withItems.value.notes, "Items: 2 × Shirt – Ironing. Note: a / b");
   const quote = validateQuoteSubmission({ ...base, service: "curtain-cleaning", approximateDetails: "4 panels\n2 m each", notes: "x\ty", photoReferences: [] });
   assert.equal(quote.ok, true);
   assert.equal(quote.value.approximateDetails, "4 panels / 2 m each");
