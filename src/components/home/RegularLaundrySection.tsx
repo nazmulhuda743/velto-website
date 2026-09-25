@@ -1,5 +1,6 @@
 import { ButtonLink, WhatsAppButton } from "@/components/ui/Button";
 import { ResponsiveImage } from "@/components/ui/ResponsiveImage";
+import { TextLink } from "@/components/ui/TextLink";
 import { IMAGES, REGULAR_REVIEW } from "@/content/mock";
 import { REGULAR_FREE_DELIVERY_THRESHOLD, WHATSAPP_URL, bookHref } from "@/content/site";
 import { ReviewBlock } from "./ReviewsSection";
@@ -47,6 +48,11 @@ export function RegularLaundrySection() {
               Set Up Regular Pickup
             </ButtonLink>
             <WhatsAppButton href={WHATSAPP_URL} placement="regular_laundry" />
+          </div>
+          <div className="mt-5">
+            <TextLink href="/regular-laundry" placement="regular_laundry">
+              How regular pickup works
+            </TextLink>
           </div>
         </div>
       </div>

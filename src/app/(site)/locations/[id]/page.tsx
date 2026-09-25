@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { SERVICE_PAGES } from "@/content/services";
 import { notFound } from "next/navigation";
 import { FinalBookingCTA } from "@/components/home/FinalBookingCTA";
 import { ProofFigures, RatingValue } from "@/components/pages/ProofFigures";
@@ -7,7 +9,7 @@ import { SectionIntro } from "@/components/home/SectionIntro";
 import { FactRows } from "@/components/pages/FactRows";
 import { PageHero } from "@/components/pages/PageHero";
 import { ButtonLink } from "@/components/ui/Button";
-import { Star } from "@/components/ui/icons";
+import { ArrowRight, Star } from "@/components/ui/icons";
 import { TextLink } from "@/components/ui/TextLink";
 import { IMAGES } from "@/content/mock";
 import { FREE_DELIVERY_THRESHOLD, LOCATIONS, SERVICE_AREA, WHATSAPP_URL, bookHref } from "@/content/site";
@@ -39,11 +41,14 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
   return (
     <>
       <PageHero
+        path={`/locations/${loc.id}`}
         crumbs={[{ label: "Home", href: "/" }, { label: "Locations", href: "/locations" }, { label: loc.name }]}
-        title={`Velto ${loc.name}`}
+        // Search intent is "laundry / dry cleaning in Uttara Sector N"; the outlet name stays in the label.
+        title={`Laundry and dry cleaning in Uttara ${loc.name}`}
+        highlight={`Uttara ${loc.name}`}
         // Real outlet: never stock. Show the photo only once a verified Velto one is uploaded.
         image={outletPhoto.src ? outletPhoto : undefined}
-        eyebrow="Velto location"
+        eyebrow={`Velto ${loc.name}`}
         aside={
           <>
             {/* This outlet's own rating: never blended with the other outlet (§21). */}
@@ -141,6 +146,38 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
               </TextLink>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* What customers can send from this outlet: real internal links, one line each. */}
+      <section aria-labelledby="outlet-services-title" className="py-(--space-section)">
+        <div className="container-page grid-page gap-y-10">
+          <div className="col-span-4 md:col-span-8 xl:col-span-5">
+            <SectionIntro id="outlet-services-title" eyebrow="Services" title={`What you can send from ${loc.name}`}>
+              <p>
+                Book a pickup for any of these from anywhere in Uttara Sectors 1–18, or visit the outlet. Check the price of an
+                item before you send it.
+              </p>
+            </SectionIntro>
+            <div className="mt-6">
+              <TextLink href="/pricing" placement="location_services">
+                Check laundry and dry cleaning prices
+              </TextLink>
+            </div>
+          </div>
+          <ul className="col-span-4 border-t border-navy md:col-span-8 xl:col-span-6 xl:col-start-7">
+            {SERVICE_PAGES.map((sv) => (
+              <li key={sv.slug} className="border-b border-line">
+                <Link href={`/services/${sv.slug}`} className="group flex items-start justify-between gap-6 py-4">
+                  <span>
+                    <span className="block t-h4 text-navy group-hover:text-blue">{sv.name}</span>
+                    <span className="mt-1 block t-small text-secondary">{sv.whenToChoose}</span>
+                  </span>
+                  <ArrowRight className="mt-1.5 size-4 shrink-0 text-action" />
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 

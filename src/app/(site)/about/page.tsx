@@ -16,6 +16,7 @@ export default async function AboutPage() {
   return (
     <>
       <PageHero
+        path={"/about"}
         crumbs={[{ label: "Home", href: "/" }, { label: "About" }]}
         title="A laundry in Uttara that works to a written process."
         eyebrow="About Velto"

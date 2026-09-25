@@ -77,3 +77,4 @@ jobs:
 
           npm run test:launch
           npm run test:portal-smoke
+          npm run test:seo

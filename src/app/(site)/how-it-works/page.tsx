@@ -16,6 +16,7 @@ export default function HowItWorksPage() {
   return (
     <>
       <PageHero
+        path={"/how-it-works"}
         crumbs={[{ label: "Home", href: "/" }, { label: "How It Works" }]}
         title="From your door and back again."
         eyebrow="How it works"

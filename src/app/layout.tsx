@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Instrument_Sans, Source_Serif_4 } from "next/font/google";
-import { SITE_URL } from "@/lib/site-url";
+import { SITE_URL } from "@/lib/seo/site";
 import "./globals.css";
 
 const instrumentSans = Instrument_Sans({
@@ -17,9 +17,9 @@ const sourceSerif = Source_Serif_4({
   display: "swap",
 });
 
-const title = "Velto Premium Laundry — Laundry & dry cleaning in Uttara";
+const title = "Laundry & Dry Cleaning in Uttara with Pickup | Velto";
 const description =
-  "Laundry and dry cleaning in Uttara, with pickup from your door. We collect across Uttara Sectors 1–18.";
+  "Laundry, dry cleaning and ironing in Uttara, Dhaka. Pickup from your door across Sectors 1–18, every item tagged and checked. Free pickup on ৳499+.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     description,
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title,
     description,
   },

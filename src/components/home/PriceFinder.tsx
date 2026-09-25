@@ -317,7 +317,14 @@ function PriceResult({
           return (
             <div key={s.slug} className="flex items-start justify-between gap-4 border-t border-line px-5 py-4 md:px-6">
               <dt className="min-w-0">
-                <span className="block font-semibold text-navy">{s.name}</span>
+                {/* Internal link from a price to the service it belongs to. */}
+                {BOOKABLE.has(s.slug) ? (
+                  <a href={`/services/${s.slug}`} className="block font-semibold text-navy hover:text-blue">
+                    {s.name}
+                  </a>
+                ) : (
+                  <span className="block font-semibold text-navy">{s.name}</span>
+                )}
                 {summary ? <span className="mt-0.5 block t-small text-secondary">{summary}</span> : null}
                 {canBook ? (
                   <a

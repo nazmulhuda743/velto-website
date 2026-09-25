@@ -212,7 +212,7 @@ export const SERVICE_PAGES: ServiceContent[] = [
       body: "Tell us where to collect from and what you are sending. If a garment needs a closer look, mention it in the notes.",
     },
     meta: {
-      title: "Dry Cleaning in Uttara, Dhaka — suits, saris, sherwanis | Velto",
+      title: "Dry Cleaning in Uttara: Suits, Saris & Sherwanis | Velto",
       description:
         "Dry cleaning with pickup across Uttara Sectors 1–18. Garments are tagged and checked for stains before cleaning. See current prices for suits, blazers and saris.",
     },
@@ -290,7 +290,7 @@ export const SERVICE_PAGES: ServiceContent[] = [
       body: "Tell us where to collect from and when suits you. Orders of ৳499+ qualify for free pickup and delivery.",
     },
     meta: {
-      title: "Wash & Iron laundry service in Uttara | Velto",
+      title: "Wash & Iron Laundry Service in Uttara, Dhaka | Velto",
       description:
         "Everyday clothes and bed linen collected from your door in Uttara, washed, ironed and returned. Priced per item, usually around 72 hours.",
     },
@@ -359,7 +359,7 @@ export const SERVICE_PAGES: ServiceContent[] = [
       body: "Tell us where to collect from and roughly how much there is. That's enough to get started.",
     },
     meta: {
-      title: "Ironing service in Uttara — pickup and delivery | Velto",
+      title: "Ironing Service in Uttara with Pickup & Delivery | Velto",
       description:
         "Ironing for clothes already washed at home, collected and returned across Uttara Sectors 1–18. See the current per-piece ironing prices.",
     },
@@ -440,9 +440,9 @@ export const SERVICE_PAGES: ServiceContent[] = [
       body: "Send the number of panels and their approximate size. It takes a minute, and there's no obligation.",
     },
     meta: {
-      title: "Curtain Cleaning in Uttara — priced per sq ft | Velto",
+      title: "Curtain Cleaning in Uttara, Priced per Sq Ft | Velto",
       description:
-        "Curtain cleaning in Uttara with pickup from your door. See the current per-square-foot rates for normal and heavy curtains, then request a quote.",
+        "Curtain (porda) cleaning in Uttara with pickup from your door. See the current per-square-foot rates for normal and heavy curtains, then request a quote.",
     },
   },
   {
@@ -514,9 +514,9 @@ export const SERVICE_PAGES: ServiceContent[] = [
       body: "Send the approximate length and width. Add a photo on WhatsApp if the material or condition matters.",
     },
     meta: {
-      title: "Carpet Cleaning in Uttara — priced per sq ft | Velto",
+      title: "Carpet & Rug Cleaning in Uttara, per Sq Ft | Velto",
       description:
-        "Carpet cleaning with pickup across Uttara. See the per-square-foot carpet rate and per-piece mat prices, then send the size for a quote.",
+        "Carpet, rug and mat cleaning with pickup across Uttara. See the per-square-foot carpet rate and per-piece mat prices, then send the size for a quote.",
     },
   },
   {
@@ -672,9 +672,9 @@ export const SERVICE_PAGES: ServiceContent[] = [
       body: "Book as usual and your request is marked as Express. We'll confirm what's possible before we collect.",
     },
     meta: {
-      title: "Express laundry and dry cleaning in Uttara | Velto",
+      title: "Express Laundry & Dry Cleaning in Uttara | Velto",
       description:
-        "Need an order back sooner? Express depends on the item, service and workload, and carries an extra charge. Velto confirms before pickup.",
+        "Need laundry or dry cleaning back sooner in Uttara? Express depends on the item, service and workload, and carries an extra charge. Velto confirms before pickup.",
     },
   },
 ];

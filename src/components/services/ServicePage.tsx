@@ -165,7 +165,8 @@ export function ServicePage({ service }: { service: ServiceContent }) {
       <PageHero
         crumbs={[{ label: "Home", href: "/" }, { label: "Services", href: "/services" }, { label: service.name }]}
         title={service.h1}
-        eyebrow={service.name}
+        // The local modifier lives in the label, not stuffed into the headline.
+        eyebrow={`${service.name} in Uttara`}
         highlight={service.h1Highlight}
         image={service.image}
         stackActionsOnMobile={stacked}
