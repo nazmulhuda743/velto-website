@@ -1,17 +1,55 @@
 import { AdminHeader, Field, Notice, one, type SearchParams } from "@/components/admin/ui";
 import { LOCATIONS } from "@/content/site";
 import { getSiteContent } from "@/lib/site-content";
-import { saveSettingsAction } from "../../actions";
+import { ImageFileInput } from "@/components/admin/ImageFileInput";
+import { saveLogoAction, saveSettingsAction } from "../../actions";
 import { requireSection } from "@/lib/admin/session";
 
 export default async function SettingsPage({ searchParams }: { searchParams: SearchParams }) {
   await requireSection("settings");
   const params = await searchParams;
-  const { settings } = await getSiteContent();
+  const { settings, brand } = await getSiteContent();
   return (
     <>
-      <AdminHeader title="Site settings" intro="Contact details, the announcement bar and the Google figures shown across the website." />
+      <AdminHeader title="Site settings" intro="Logo, contact details, the announcement bar and the Google figures shown across the website. Menu, footer and page wording is edited on Text & copy." />
       <Notice saved={one(params.saved)} error={one(params.error)} />
+
+      <section aria-labelledby="logo-title" className="admin-card mt-6 p-5 md:p-7">
+        <h2 id="logo-title" className="t-h4 text-navy">
+          Logo
+        </h2>
+        <p className="mt-1 t-small text-secondary">Used in the header, footer and dashboard. Upload a transparent PNG or WebP, wider than tall, under 4 MB.</p>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          {(
+            [
+              { which: "logo", title: "Logo (on white)", src: brand.logo ?? "/brand/velto-logo.png", custom: Boolean(brand.logo), bg: "bg-white" },
+              { which: "white", title: "White logo (on navy)", src: brand.logoWhite ?? "/brand/velto-logo-white.png", custom: Boolean(brand.logoWhite), bg: "bg-navy" },
+            ] as const
+          ).map((l) => (
+            <form key={l.which} action={saveLogoAction} className="rounded-md border border-line p-4">
+              <input type="hidden" name="which" value={l.which} />
+              <p className="t-small font-semibold text-navy">
+                {l.title} {l.custom ? <span className="font-normal text-success">· your upload</span> : <span className="font-normal text-secondary">· official artwork</span>}
+              </p>
+              <div className={`mt-3 flex h-24 items-center justify-center rounded-md ${l.bg}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={l.src} alt="" className="h-12 w-auto" />
+              </div>
+              <ImageFileInput name="file" accept="image/png,image/webp" className="mt-3 block w-full t-small" aria-label={`New file for ${l.title}`} />
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button type="submit" className="admin-btn">
+                  Upload logo
+                </button>
+                {l.custom ? (
+                  <button type="submit" name="reset" value="1" formNoValidate className="admin-btn-danger">
+                    Restore official logo
+                  </button>
+                ) : null}
+              </div>
+            </form>
+          ))}
+        </div>
+      </section>
 
       <form action={saveSettingsAction} className="mt-6 space-y-6">
         <section className="admin-card p-5 md:p-7">

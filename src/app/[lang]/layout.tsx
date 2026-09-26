@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { LocaleProvider } from "@/components/i18n/LocaleProvider";
 import { dictionary } from "@/content/i18n";
 import { isLocale, LOCALES } from "@/lib/i18n/config";
+import { loadCopy } from "@/lib/i18n/server";
+import { getSiteContent } from "@/lib/site-content";
 import { SITE_URL } from "@/lib/seo/site";
 import { fontVariables } from "../fonts";
 import "../globals.css";
@@ -18,6 +20,7 @@ export const generateStaticParams = () => LOCALES.map((lang) => ({ lang }));
 
 export async function generateMetadata({ params }: Omit<Props, "children">): Promise<Metadata> {
   const { lang } = await params;
+  await loadCopy();
   const t = dictionary(isLocale(lang) ? lang : "en").meta;
   // The brand cards live at the app root (opengraph-image.tsx, twitter-image.tsx), outside this
   // root layout, so Next.js doesn't attach them here: name them explicitly for every page that
@@ -55,10 +58,14 @@ export const viewport: Viewport = {
 export default async function LangRootLayout({ children, params }: Props) {
   const { lang } = await params;
   if (!isLocale(lang)) notFound();
+  await loadCopy();
+  const { copy } = await getSiteContent();
   return (
     <html lang={lang} className={fontVariables}>
       <body>
-        <LocaleProvider locale={lang}>{children}</LocaleProvider>
+        <LocaleProvider locale={lang} copy={copy[lang]}>
+          {children}
+        </LocaleProvider>
       </body>
     </html>
   );

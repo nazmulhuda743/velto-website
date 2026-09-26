@@ -27,11 +27,14 @@ const SECTION_LABEL: Record<Section, string> = {
   health: "Website health",
   seo: "SEO",
   images: "Images",
+  copy: "Text & copy",
   reviews: "Reviews",
   settings: "Site settings",
   prices: "Prices",
   notifications: "Notifications",
+  board: "Task board",
   activity: "Activity",
+  approvals: "Approvals",
   access: "Access",
 };
 

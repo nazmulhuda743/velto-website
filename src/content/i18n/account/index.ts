@@ -3,6 +3,7 @@ import "server-only";
 import { formatDay, formatTime, taka } from "@/content/order-status";
 import { formText } from "@/content/i18n/forms";
 import { fill, keepBanglaSuffixes, localDigits, type Locale } from "@/lib/i18n/config";
+import { withOverrides } from "@/lib/i18n/copy-overrides";
 import { accountBn } from "./bn";
 import { accountEn, type AccountText } from "./en";
 
@@ -11,7 +12,8 @@ export type { AccountText };
 const accountBnDisplay = keepBanglaSuffixes(accountBn);
 
 /** Account and sign-in text for a language (Server Components and server actions only). */
-export const accountText = (locale: Locale): AccountText => (locale === "bn" ? accountBnDisplay : accountEn);
+export const accountText = (locale: Locale): AccountText =>
+  locale === "bn" ? withOverrides("account", "bn", accountBnDisplay, keepBanglaSuffixes) : withOverrides("account", "en", accountEn);
 
 const WEEKDAY_INDEX: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
 

@@ -1,10 +1,26 @@
 import "server-only";
 
+import { cache } from "react";
 import { headers } from "next/headers";
 import { lang } from "next/root-params";
 import { dictionary } from "@/content/i18n";
 import { LOCATIONS, SERVICE_AREA, SERVICE_SECTORS } from "@/content/site";
 import { DEFAULT_LOCALE, isLocale, LOCALE_HEADER, localDigits, localizeHref, type Locale } from "./config";
+import { setCopyOverrides } from "./copy-overrides";
+
+/**
+ * Loads the admin's text edits into the text modules once per request, before any text is read:
+ * every page and component asks for the locale first. site-content is imported lazily because it
+ * uses getLocale itself.
+ */
+export const loadCopy = cache(async () => {
+  try {
+    const { getSiteContent } = await import("@/lib/site-content");
+    setCopyOverrides((await getSiteContent()).copy);
+  } catch {
+    /* built-in copy stays in place */
+  }
+});
 
 /**
  * The language of the page being rendered: the root [lang] segment (next/root-params),
@@ -12,6 +28,7 @@ import { DEFAULT_LOCALE, isLocale, LOCALE_HEADER, localDigits, localizeHref, typ
  * handlers and server actions get English.
  */
 export async function getLocale(): Promise<Locale> {
+  await loadCopy();
   try {
     const value = await lang();
     if (isLocale(value)) return value;
