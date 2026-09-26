@@ -2,8 +2,10 @@ import { AdminHeader, Field, Notice, one, type SearchParams } from "@/components
 import { LOCATIONS } from "@/content/site";
 import { getSiteContent } from "@/lib/site-content";
 import { saveSettingsAction } from "../../actions";
+import { requireSection } from "@/lib/admin/session";
 
 export default async function SettingsPage({ searchParams }: { searchParams: SearchParams }) {
+  await requireSection("settings");
   const params = await searchParams;
   const { settings } = await getSiteContent();
   return (

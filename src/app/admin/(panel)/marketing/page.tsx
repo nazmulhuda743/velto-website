@@ -7,12 +7,14 @@ import { isAnalyticsWritesEnabled, sessionsFor } from "@/lib/admin/analytics-dat
 import { byChannel, pageLabel, pct, utmTable } from "@/lib/admin/insights";
 import { readDashboardParams } from "@/lib/admin/page-helpers";
 import { SITE_URL } from "@/lib/seo/site";
+import { requireSection } from "@/lib/admin/session";
 
 export const metadata = { title: "Marketing · Velto Command Center" };
 
 const LINK_PAGES = SEO_ROUTES.filter((r) => !["/privacy", "/terms", "/cookies"].includes(r.path)).map((r) => ({ path: r.path, label: r.label, group: r.group }));
 
 export default async function MarketingPage({ searchParams }: { searchParams: SearchParams }) {
+  await requireSection("marketing");
   const { flat, range } = readDashboardParams(await searchParams);
   const loaded = await sessionsFor(range);
   const rows = loaded.state === "ok" ? loaded.data.rows : [];

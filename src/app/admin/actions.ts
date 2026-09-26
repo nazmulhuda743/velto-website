@@ -7,7 +7,10 @@ import { getSeoRoute } from "@/content/seo-routes";
 import { saveContent, uploadImage } from "@/lib/admin/content-store";
 import { SEEN_COOKIE } from "@/lib/admin/notifications";
 import { logServerEvent } from "@/lib/analytics/store";
-import { requireAdmin, signIn, signOut } from "@/lib/admin/session";
+import { logActivity } from "@/lib/admin/activity";
+import { slotName } from "@/lib/admin/image-pages";
+import { homeFor } from "@/lib/admin/permissions";
+import { getAdmin, requireSection, signIn, signOut } from "@/lib/admin/session";
 import { supabaseFetch } from "@/lib/supabase-server";
 import { getSiteContent, type ReviewEntry, type SiteSettings } from "@/lib/site-content";
 
@@ -16,7 +19,8 @@ const file = (form: FormData, key: string) => {
   const f = form.get(key);
   return f instanceof File && f.size > 0 ? f : null;
 };
-const back = (path: string, params: Record<string, string>): never => redirect(`${path}?${new URLSearchParams(params)}`);
+const back = (path: string, params: Record<string, string>): never =>
+  redirect(`${path}${path.includes("?") ? "&" : "?"}${new URLSearchParams(params)}`);
 const failure = (error: unknown) => (error instanceof Error ? error.message : "Something went wrong.").slice(0, 160);
 /** Health Center record of a failed admin save/upload (kind + route only). */
 const logFailure = (kind: "media_upload_error" | "content_save_error", route: string) => logServerEvent(kind, route);
@@ -38,18 +42,35 @@ export async function loginAction(_: unknown, form: FormData): Promise<{ error: 
             : "Sign-in is unavailable right now. Try again shortly.",
     };
   }
-  redirect("/admin");
+  await logActivity(result.admin, { section: "session", action: "signed_in", summary: "Signed in" });
+  redirect(homeFor(result.admin.role));
 }
 
 export async function logoutAction() {
+  const admin = await getAdmin();
+  if (admin) await logActivity(admin, { section: "session", action: "signed_out", summary: "Signed out" });
   await signOut();
   redirect("/admin/login");
+}
+
+/** Top-level fields that differ, with one level of nesting ("announcement.text"). */
+function changedKeys(before: Record<string, unknown>, after: Record<string, unknown>, prefix = "", depth = 0): string[] {
+  const keys = new Set([...Object.keys(before ?? {}), ...Object.keys(after ?? {})]);
+  return [...keys].flatMap((k) => {
+    const a = before?.[k];
+    const b = after?.[k];
+    if (JSON.stringify(a) === JSON.stringify(b)) return [];
+    if (depth < 1 && a && b && typeof a === "object" && typeof b === "object") {
+      return changedKeys(a as Record<string, unknown>, b as Record<string, unknown>, `${prefix}${k}.`, depth + 1);
+    }
+    return [`${prefix}${k}`];
+  });
 }
 
 /* ---------- settings ---------- */
 
 export async function saveSettingsAction(form: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireSection("settings");
   const { settings } = await getSiteContent();
   const whatsapp = text(form, "whatsappNumber", 20).replace(/\D/g, "");
   if (!/^\d{8,15}$/.test(whatsapp)) back("/admin/settings", { error: "WhatsApp number must include the country code, e.g. 8801605162788." });
@@ -80,13 +101,20 @@ export async function saveSettingsAction(form: FormData) {
     await logFailure("content_save_error", "/admin/settings");
     back("/admin/settings", { error: failure(e) });
   }
+  const changed = changedKeys(settings as unknown as Record<string, unknown>, next as unknown as Record<string, unknown>);
+  await logActivity(admin, {
+    section: "settings",
+    action: "settings_saved",
+    summary: changed.length ? `Updated site settings: ${changed.join(", ")}` : "Saved site settings (no changes)",
+    detail: { changed },
+  });
   back("/admin/settings", { saved: "1" });
 }
 
 /* ---------- SEO ---------- */
 
 export async function saveSeoAction(form: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireSection("seo");
   const path = text(form, "path", 200);
   if (!getSeoRoute(path)) back("/admin/seo", { error: "Unknown page." });
   const editUrl = `/admin/seo/edit`;
@@ -117,22 +145,34 @@ export async function saveSeoAction(form: FormData) {
     await logFailure("content_save_error", "/admin/seo");
     back(editUrl, { path, error: failure(e) });
   }
+  const reset = form.get("reset") === "1";
+  await logActivity(admin, {
+    section: "seo",
+    action: reset ? "seo_reset" : "seo_saved",
+    target: path,
+    summary: reset ? `Reset the search text for ${path} to the default` : `Updated the search text for ${path}`,
+    detail: reset ? {} : { title: entry.title ?? null, noindex: entry.noindex ?? false, ogImage: Boolean(entry.ogImage) },
+  });
   back(editUrl, { path, saved: "1" });
 }
 
 /* ---------- images ---------- */
 
 export async function saveImageAction(form: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireSection("images");
   const id = text(form, "id", 80);
   if (!IMAGE_SLOTS.some((s) => s.id === id)) back("/admin/images", { error: "Unknown image slot." });
   const { images } = await getSiteContent();
-  const target = `/admin/images`;
+  const page = text(form, "page", 40).replace(/[^a-z0-9-]/g, "");
+  const target = `/admin/images${page ? `?page=${page}` : ""}`;
 
+  const before = images[id];
+  let uploaded = false;
   if (form.get("reset") === "1") {
     delete images[id];
   } else {
     const upload = file(form, "image");
+    uploaded = Boolean(upload);
     const alt = text(form, "alt", 300);
     const altBn = text(form, "altBn", 300);
     const position = text(form, "position", 40);
@@ -158,6 +198,20 @@ export async function saveImageAction(form: FormData) {
     await logFailure("content_save_error", "/admin/images");
     back(target, { error: failure(e), slot: id });
   }
+  const name = slotName(id);
+  const after = images[id];
+  await logActivity(admin, {
+    section: "images",
+    action: form.get("reset") === "1" ? "image_restored" : uploaded ? "image_replaced" : "image_details_saved",
+    target: id,
+    summary:
+      form.get("reset") === "1"
+        ? `Restored the original photo for ${name}`
+        : uploaded
+          ? `Replaced the photo for ${name}`
+          : `Updated alt text / focus for ${name}`,
+    detail: { before: before?.src ?? null, after: after?.src ?? null, alt: after?.alt ?? null, position: after?.position ?? null },
+  });
   back(target, { saved: id });
 }
 
@@ -183,11 +237,12 @@ function reviewFromForm(form: FormData, id: string): ReviewEntry | string {
 }
 
 export async function saveReviewAction(form: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireSection("reviews");
   const reviews = [...(await getSiteContent()).reviews];
   const op = String(form.get("op") ?? "save");
   const id = text(form, "id", 40);
   const index = reviews.findIndex((r) => r.id === id);
+  const existingName = index >= 0 ? reviews[index].name : null;
 
   if (op === "add") {
     const review = reviewFromForm(form, `review-${Date.now().toString(36)}`);
@@ -211,13 +266,16 @@ export async function saveReviewAction(form: FormData) {
     await logFailure("content_save_error", "/admin/reviews");
     back("/admin/reviews", { error: failure(e) });
   }
+  const who = (op === "add" ? reviews[0]?.name : existingName) || "a customer";
+  const verb = { add: "Added", delete: "Deleted", up: "Moved up", down: "Moved down" }[op] ?? "Edited";
+  await logActivity(admin, { section: "reviews", action: `review_${op}`, target: op === "add" ? reviews[0]?.id : id, summary: `${verb} the review by ${who}` });
   back("/admin/reviews", { saved: "1" });
 }
 
 /* ---------- notifications ---------- */
 
 export async function markNotificationsReadAction() {
-  await requireAdmin();
+  await requireSection("notifications");
   (await cookies()).set(SEEN_COOKIE, String(Date.now()), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -237,7 +295,7 @@ const LINK_DECISIONS = new Set(["approve", "reject", "unlink"]);
  * the Ops customer record. The database re-checks the phone match and one-account rule.
  */
 export async function decideLinkAction(form: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireSection("accounts");
   const target = "/admin/accounts";
   const userId = text(form, "authUserId", 40);
   const decision = text(form, "decision", 10);
@@ -255,6 +313,8 @@ export async function decideLinkAction(form: FormData) {
     const body = (await res.json().catch(() => null)) as { message?: string } | null;
     back(target, { error: (body?.message ?? `Failed with HTTP ${res.status}`).slice(0, 160) });
   }
+  const verb = { approve: "Approved", reject: "Rejected", unlink: "Unlinked" }[decision] ?? decision;
+  await logActivity(admin, { section: "accounts", action: `link_${decision}`, target: userId, summary: `${verb} a customer's order-history link` });
   back(target, { saved: decision });
 }
 
@@ -265,7 +325,7 @@ const RETENTION_OUTCOMES = new Set(["messaged", "not_now", "wrong_number", "opt_
 
 /** Staff record of a bring-back contact; the list then hides that customer for a while. */
 export async function logRetentionAction(form: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireSection("retention");
   const bucket = text(form, "bucket", 10);
   const outcome = text(form, "outcome", 20);
   const customerId = text(form, "customerId", 40);
@@ -281,5 +341,7 @@ export async function logRetentionAction(form: FormData) {
     cache: "no-store",
   }).catch(() => null);
   if (!res?.ok) back(target, { bucket, lang, error: "Couldn't save that. Please try again." });
+  const label = { messaged: "Messaged", not_now: "Marked not now", wrong_number: "Marked wrong number", opt_out: "Marked don't contact" }[outcome];
+  await logActivity(admin, { section: "retention", action: `retention_${outcome}`, target: customerId, summary: `${label}: a customer on the ${bucket} list` });
   back(target, { bucket, lang, saved: outcome });
 }

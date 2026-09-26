@@ -3,6 +3,7 @@ import { BUCKETS, getRetentionQueue, getRetentionSummary, type RetentionRow } fr
 import { retentionMessage, whatsappLink, type MessageLang, type RetentionBucket } from "@/lib/admin/retention-messages";
 import { displayBdPhone } from "@/lib/customer/validation";
 import { logRetentionAction } from "../../actions";
+import { requireSection } from "@/lib/admin/session";
 
 const BUCKET_COPY: Record<RetentionBucket, { tab: string; title: string; why: string }> = {
   second: {
@@ -107,6 +108,7 @@ function Row({ r, bucket, lang }: { r: RetentionRow; bucket: RetentionBucket; la
 }
 
 export default async function RetentionPage({ searchParams }: { searchParams: SearchParams }) {
+  await requireSection("retention");
   const params = await searchParams;
   const bucketParam = one(params.bucket);
   const bucket: RetentionBucket = BUCKETS.includes(bucketParam as RetentionBucket) ? (bucketParam as RetentionBucket) : "second";

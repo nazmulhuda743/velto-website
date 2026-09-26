@@ -4,6 +4,7 @@ import { dayLabel } from "@/lib/admin/page-helpers";
 import { getReviewQueue, type ReviewItem } from "@/lib/admin/revenue-data";
 import { METHOD_LABELS } from "@/lib/admin/revenue-helpers";
 import { reviewLinkAction } from "../../../revenue-actions";
+import { requireSection } from "@/lib/admin/session";
 
 export const metadata = { title: "Attribution review · Velto Command Center" };
 
@@ -41,6 +42,7 @@ const ISSUES: Record<ReviewItem["issue"], { title: string; body: string; tone: "
 };
 
 export default async function ReviewPage({ searchParams }: { searchParams: SearchParams }) {
+  await requireSection("revenue");
   const params = await searchParams;
   const queue = await getReviewQueue();
   const items = queue.state === "ok" ? queue.data : [];

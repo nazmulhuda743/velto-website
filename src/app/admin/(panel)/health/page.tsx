@@ -5,6 +5,7 @@ import { AdminHeader, Panel } from "@/components/admin/ui";
 import { getServerEvents, recordHealthChecks } from "@/lib/admin/analytics-data";
 import { contentIssues, runHealthChecks } from "@/lib/admin/health";
 import { dayLabel, timeAgo } from "@/lib/admin/page-helpers";
+import { requireSection } from "@/lib/admin/session";
 
 export const metadata = { title: "Website health · Velto Command Center" };
 
@@ -19,6 +20,7 @@ const KIND_LABELS: Record<string, string> = {
 };
 
 export default async function HealthPage() {
+  await requireSection("health");
   const [checks, events, issues] = await Promise.all([runHealthChecks(), getServerEvents(7), contentIssues()]);
   const memory = await recordHealthChecks(checks.map((c) => ({ id: c.id, status: c.status })));
   const checkedAt = new Date().toISOString();

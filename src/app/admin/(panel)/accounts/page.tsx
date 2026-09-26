@@ -2,6 +2,7 @@ import { AdminHeader, Badge, Notice, one, type SearchParams } from "@/components
 import { getLinkRequests, type LinkRequest } from "@/lib/admin/data";
 import { requestDate } from "@/lib/admin/request-details";
 import { decideLinkAction } from "../../actions";
+import { requireSection } from "@/lib/admin/session";
 
 const SAVED: Record<string, string> = {
   approve: "Linked. The customer can now see their Velto orders.",
@@ -89,6 +90,7 @@ function Request({ r }: { r: LinkRequest }) {
 }
 
 export default async function AccountsPage({ searchParams }: { searchParams: SearchParams }) {
+  await requireSection("accounts");
   const params = await searchParams;
   const view = one(params.view) === "all" ? "all" : "pending";
   let rows: LinkRequest[] = [];

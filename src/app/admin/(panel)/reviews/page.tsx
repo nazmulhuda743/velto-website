@@ -6,6 +6,7 @@ import { getSiteContent, type ReviewEntry } from "@/lib/site-content";
 const serviceLinks = (name: string | null) =>
   SERVICE_PAGES.filter((s) => s.blocks.some((b) => b.type === "review" && b.review.name === name)).map((s) => s.name);
 import { saveReviewAction } from "../../actions";
+import { requireSection } from "@/lib/admin/session";
 
 function ReviewFields({ review }: { review?: ReviewEntry }) {
   return (
@@ -55,6 +56,7 @@ function ReviewFields({ review }: { review?: ReviewEntry }) {
 }
 
 export default async function ReviewsPage({ searchParams }: { searchParams: SearchParams }) {
+  await requireSection("reviews");
   const params = await searchParams;
   const { reviews } = await getSiteContent();
   return (

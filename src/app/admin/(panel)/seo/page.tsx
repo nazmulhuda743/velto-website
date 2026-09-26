@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AdminHeader, Badge, Notice, one, type SearchParams } from "@/components/admin/ui";
 import { SEO_ROUTES, type SeoRoute } from "@/content/seo-routes";
 import { getSiteContent, type SeoEntry } from "@/lib/site-content";
+import { requireSection } from "@/lib/admin/session";
 
 type Flag = { key: string; label: string; tone: "neutral" | "blue" | "green" | "amber" };
 
@@ -25,6 +26,7 @@ const VIEWS = [
 ];
 
 export default async function SeoPage({ searchParams }: { searchParams: SearchParams }) {
+  await requireSection("seo");
   const params = await searchParams;
   const view = one(params.view) ?? "all";
   const { seo } = await getSiteContent();

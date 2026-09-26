@@ -10,9 +10,9 @@
 -- (the website admin server); nothing is reachable with the anon or
 -- authenticated keys.
 --
--- Status: applied to STAGING (ekgdefcdqcsqvpbqponv) and tested with
--- docs/technical/sql/tests/website_retention_test.sql. Production only with
--- the owner's approval.
+-- Status: applied to STAGING (ekgdefcdqcsqvpbqponv) and PRODUCTION (erutxtnepbejdxkoimeo,
+-- 2026-09-26, owner-approved); tested on staging with
+-- docs/technical/sql/tests/website_retention_test.sql.
 
 begin;
 

@@ -56,6 +56,19 @@ const I = {
       <path d="M12 3v2.5M12 18.5V21M21 12h-2.5M5.5 12H3M18.4 5.6l-1.8 1.8M7.4 16.6l-1.8 1.8M18.4 18.4l-1.8-1.8M7.4 7.4 5.6 5.6" />
     </>
   ),
+  activity: (
+    <>
+      <path d="M4 6h16M4 12h10M4 18h7" />
+      <circle cx="18" cy="16.5" r="3" />
+      <path d="M18 15v1.6l1 .8" />
+    </>
+  ),
+  access: (
+    <>
+      <rect x="5" y="10.5" width="14" height="9.5" rx="2" />
+      <path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5M12 14.5v2" />
+    </>
+  ),
   prices: (
     <>
       <path d="M11.5 4H5v6.5l8.5 8.5 6.5-6.5L11.5 4Z" />
@@ -97,6 +110,13 @@ const GROUPS: { label: string; items: Item[] }[] = [
       { href: "/admin/prices", label: "Prices", icon: "prices" },
     ],
   },
+  {
+    label: "Team",
+    items: [
+      { href: "/admin/activity", label: "Activity", icon: "activity" },
+      { href: "/admin/access", label: "Access", icon: "access" },
+    ],
+  },
 ];
 
 const isActive = (href: string, path: string) => (href === "/admin" ? path === "/admin" : path.startsWith(href));
@@ -109,10 +129,10 @@ function Icon({ name }: { name: keyof typeof I }) {
   );
 }
 
-function Links({ path, badges, onNavigate }: { path: string; badges: Record<string, number>; onNavigate?: () => void }) {
+function Links({ path, badges, groups, onNavigate }: { path: string; badges: Record<string, number>; groups: typeof GROUPS; onNavigate?: () => void }) {
   return (
     <div className="flex flex-col gap-6">
-      {GROUPS.map((group) => (
+      {groups.map((group) => (
         <div key={group.label} className="flex flex-col gap-0.5">
           <p className="px-3 pb-1 t-caption font-semibold uppercase tracking-[0.08em] text-white/45">{group.label}</p>
           {group.items.map((item) => {
@@ -151,10 +171,15 @@ function Links({ path, badges, onNavigate }: { path: string; badges: Record<stri
  * Mobile: the current section plus a Menu button that opens the same grouped
  * list, instead of a long sideways-scrolling strip.
  */
-export function AdminNav({ badges = {} }: { badges?: Record<string, number> }) {
+/** "/admin" → "overview", "/admin/images" → "images" (same rule as lib/admin/permissions). */
+const sectionOf = (href: string) => (href === "/admin" ? "overview" : href.split("/")[2]);
+
+export function AdminNav({ badges = {}, allowed }: { badges?: Record<string, number>; allowed: string[] }) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
-  const current = GROUPS.flatMap((g) => g.items).find((i) => isActive(i.href, path));
+  // Only the sections this role may open (the server enforces it too).
+  const groups = GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => allowed.includes(sectionOf(i.href))) })).filter((g) => g.items.length);
+  const current = groups.flatMap((g) => g.items).find((i) => isActive(i.href, path));
   const total = Object.values(badges).reduce((a, b) => a + b, 0);
 
   useEffect(() => {
@@ -167,7 +192,7 @@ export function AdminNav({ badges = {} }: { badges?: Record<string, number> }) {
   return (
     <nav aria-label="Dashboard">
       <div className="hidden lg:block">
-        <Links path={path} badges={badges} />
+        <Links path={path} badges={badges} groups={groups} />
       </div>
 
       <div className="lg:hidden">
@@ -190,7 +215,7 @@ export function AdminNav({ badges = {} }: { badges?: Record<string, number> }) {
         </button>
         {open ? (
           <div id="admin-mobile-menu" className="mt-3 border-t border-white/15 pb-2 pt-4">
-            <Links path={path} badges={badges} onNavigate={() => setOpen(false)} />
+            <Links path={path} badges={badges} groups={groups} onNavigate={() => setOpen(false)} />
           </div>
         ) : null}
       </div>
