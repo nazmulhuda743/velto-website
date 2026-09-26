@@ -32,6 +32,7 @@ const SECTION_LABEL: Record<Section, string> = {
   settings: "Site settings",
   prices: "Prices",
   notifications: "Notifications",
+  board: "Task board",
   activity: "Activity",
   approvals: "Approvals",
   access: "Access",

@@ -29,6 +29,7 @@ export const SECTIONS = [
   "settings",
   "prices",
   "notifications",
+  "board",
   "activity",
   "approvals",
   "access",
@@ -47,9 +48,9 @@ const ALL = new Set<Section>(SECTIONS);
 const MATRIX: Record<Role, ReadonlySet<Section>> = {
   owner: ALL,
   manager: new Set(SECTIONS.filter((s) => s !== "access" && s !== "approvals")),
-  marketing: new Set<Section>(["overview", "funnel", "visitors", "marketing", "revenue", "consent", "seo", "copy", "reviews", "notifications"]),
-  designer: new Set<Section>(["images", "copy", "seo", "reviews", "settings"]),
-  support: new Set<Section>(["requests", "retention", "accounts", "prices", "notifications"]),
+  marketing: new Set<Section>(["overview", "funnel", "visitors", "marketing", "revenue", "consent", "seo", "copy", "reviews", "notifications", "board"]),
+  designer: new Set<Section>(["images", "copy", "seo", "reviews", "settings", "board"]),
+  support: new Set<Section>(["requests", "retention", "accounts", "prices", "notifications", "board"]),
 };
 
 export const isRole = (value: unknown): value is Role => ROLES.includes(value as Role);
@@ -111,3 +112,6 @@ export function passwordProblem(password: string): string | null {
  * page; an Owner's own change is approved as it is made. Everyone else with Prices only views.
  */
 export const canProposePrices = (role: Role | null | undefined) => role === "owner" || role === "manager";
+
+/** Archiving a board task (there is no delete) is for Owners and Managers. */
+export const canArchiveTasks = (role: Role | null | undefined) => role === "owner" || role === "manager";

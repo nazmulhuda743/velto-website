@@ -16,6 +16,7 @@ const SECTION_LABEL: Record<string, string> = {
   revenue: "Revenue",
   prices: "Prices",
   approvals: "Approvals",
+  board: "Task board",
   access: "Access",
 };
 
