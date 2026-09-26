@@ -116,6 +116,44 @@ export async function saveSettingsAction(form: FormData) {
   back("/admin/settings", { saved: "1" });
 }
 
+/* ---------- logo ---------- */
+
+/** Replace or restore the header/footer logo (Settings → Logo). */
+export async function saveLogoAction(form: FormData) {
+  const admin = await requireSection("settings");
+  const { brand } = await getSiteContent();
+  const before = { ...brand };
+  const which = text(form, "which", 10) === "white" ? "logoWhite" : "logo";
+  const label = which === "logo" ? "the logo" : "the white logo";
+  if (form.get("reset") === "1") {
+    delete brand[which];
+  } else {
+    const upload = file(form, "file");
+    if (!upload) back("/admin/settings", { error: "Choose a logo file to upload." });
+    try {
+      brand[which] = await uploadImage(upload!, "brand");
+    } catch (e) {
+      await logFailure("media_upload_error", "/admin/settings");
+      back("/admin/settings", { error: failure(e) });
+    }
+  }
+  brand.updatedAt = new Date().toISOString();
+  try {
+    await saveContent("brand", brand, admin.name);
+  } catch (e) {
+    await logFailure("content_save_error", "/admin/settings");
+    back("/admin/settings", { error: failure(e) });
+  }
+  await logActivity(admin, {
+    section: "settings",
+    action: form.get("reset") === "1" ? "logo_restored" : "logo_replaced",
+    target: which,
+    summary: form.get("reset") === "1" ? `Restored the official ${label.replace("the ", "")}` : `Replaced ${label}`,
+    detail: { before: before[which] ?? "/brand/velto-logo.png", after: brand[which] ?? (which === "logo" ? "/brand/velto-logo.png" : "/brand/velto-logo-white.png") },
+  });
+  back("/admin/settings", { saved: "1" });
+}
+
 /* ---------- SEO ---------- */
 
 export async function saveSeoAction(form: FormData) {

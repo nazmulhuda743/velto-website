@@ -6,7 +6,7 @@ import { SITE_CONTENT_TAG } from "../site-content";
 import { supabaseFetch, supabaseOrigin } from "../supabase-server";
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from "./upload-limits";
 
-export type ContentKey = "settings" | "seo" | "images" | "reviews";
+export type ContentKey = "settings" | "seo" | "images" | "reviews" | "copy" | "brand";
 
 /** Upsert one content document, then refresh every public page. */
 export async function saveContent(key: ContentKey, value: unknown, updatedBy: string) {

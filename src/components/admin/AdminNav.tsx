@@ -49,6 +49,11 @@ const I = {
       <path d="m20.5 16-5-5-8.5 8" />
     </>
   ),
+  copy: (
+    <>
+      <path d="M5 5h14M12 5v14M9 19h6" />
+    </>
+  ),
   reviews: <path d="m12 4 2.4 5 5.4.6-4 3.7 1.1 5.4L12 16l-4.9 2.7 1.1-5.4-4-3.7 5.4-.6L12 4Z" />,
   settings: (
     <>
@@ -61,6 +66,12 @@ const I = {
       <path d="M4 6h16M4 12h10M4 18h7" />
       <circle cx="18" cy="16.5" r="3" />
       <path d="M18 15v1.6l1 .8" />
+    </>
+  ),
+  approvals: (
+    <>
+      <path d="M9 11.5 11 13.5 15.5 9" />
+      <path d="M12 3.5 5 6.5v5c0 4.2 3 7.6 7 9 4-1.4 7-4.8 7-9v-5l-7-3Z" />
     </>
   ),
   access: (
@@ -105,6 +116,7 @@ const GROUPS: { label: string; items: Item[] }[] = [
     items: [
       { href: "/admin/seo", label: "SEO", icon: "seo" },
       { href: "/admin/images", label: "Images", icon: "images" },
+      { href: "/admin/copy", label: "Text & copy", icon: "copy" },
       { href: "/admin/reviews", label: "Reviews", icon: "reviews" },
       { href: "/admin/settings", label: "Site settings", icon: "settings" },
       { href: "/admin/prices", label: "Prices", icon: "prices" },
@@ -113,6 +125,7 @@ const GROUPS: { label: string; items: Item[] }[] = [
   {
     label: "Team",
     items: [
+      { href: "/admin/approvals", label: "Approvals", icon: "approvals" },
       { href: "/admin/activity", label: "Activity", icon: "activity" },
       { href: "/admin/access", label: "Access", icon: "access" },
     ],

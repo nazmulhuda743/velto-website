@@ -7,6 +7,7 @@ import { dictionary } from "@/content/i18n";
 import { fill } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
 import { isSupabaseConfigured, supabaseFetch } from "./supabase-server";
+import type { CopyOverrides } from "./i18n/copy-overrides";
 
 /** Cache tag invalidated by every admin save. */
 export const SITE_CONTENT_TAG = "site-content";
@@ -31,8 +32,14 @@ export type SeoEntry = { title?: string; description?: string; titleBn?: string;
 export type ImageOverride = { src: string; alt?: string; altBn?: string; position?: string; updatedAt?: string };
 export type ReviewEntry = Review & { id: string; showOnHome: boolean };
 
+/** Uploaded logo files (Settings → Logo); empty means the official artwork in /public/brand. */
+export type Brand = { logo?: string; logoWhite?: string; updatedAt?: string };
+
 export type SiteContent = {
   settings: SiteSettings;
+  /** Admin text edits (Text & copy), "namespace.path" → text per language. */
+  copy: CopyOverrides;
+  brand: Brand;
   seo: Record<string, SeoEntry>;
   images: Record<string, ImageOverride>;
   reviews: ReviewEntry[];
@@ -107,6 +114,23 @@ function parseSeo(v: unknown): Record<string, SeoEntry> {
   return out;
 }
 
+const COPY_KEY = /^(site|pages|forms|account|services)\.[A-Za-z0-9_.-]{1,160}$/;
+function parseCopy(v: unknown): CopyOverrides {
+  const out: CopyOverrides = { en: {}, bn: {} };
+  for (const lang of ["en", "bn"] as const) {
+    for (const [k, t] of Object.entries(rec(rec(v)[lang]))) {
+      if (COPY_KEY.test(k) && typeof t === "string" && t.trim() && t.length <= 4000) out[lang][k] = t;
+    }
+  }
+  return out;
+}
+
+const httpsUrl = (v: unknown) => (typeof v === "string" && /^https:\/\/[^\s"'<>]+$/.test(v) && v.length <= 500 ? v : undefined);
+function parseBrand(v: unknown): Brand {
+  const b = rec(v);
+  return { logo: httpsUrl(b.logo), logoWhite: httpsUrl(b.logoWhite), updatedAt: str(b.updatedAt, 40) };
+}
+
 function parseImages(v: unknown): Record<string, ImageOverride> {
   const out: Record<string, ImageOverride> = {};
   for (const [id, entry] of Object.entries(rec(v))) {
@@ -171,6 +195,8 @@ export const getSiteContent = cache(async (): Promise<SiteContent> => {
     seo: parseSeo(rows.seo),
     images: parseImages(rows.images),
     reviews: parseReviews(rows.reviews) ?? DEFAULT_REVIEWS,
+    copy: parseCopy(rows.copy),
+    brand: parseBrand(rows.brand),
   };
 });
 

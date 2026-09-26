@@ -6,6 +6,7 @@ const build = "../../.command-center-test-build";
 const p = require(`${build}/lib/admin/permissions.js`);
 const pages = require(`${build}/lib/admin/image-pages.js`);
 const { IMAGE_SLOTS } = require(`${build}/content/mock.js`);
+const diff = require(`${build}/lib/admin/price-diff.js`);
 
 const UID = "11111111-1111-4111-8111-111111111111";
 
@@ -13,6 +14,15 @@ test("owners see everything; only owners manage access", () => {
   for (const s of p.SECTIONS) assert.ok(p.can("owner", s), s);
   for (const r of p.ROLES.filter((r) => r !== "owner")) assert.equal(p.can(r, "access"), false, r);
   assert.ok(p.can("manager", "activity"));
+});
+
+test("only owners approve price changes; managers and owners may propose them", () => {
+  assert.ok(p.can("owner", "approvals"));
+  for (const r of p.ROLES.filter((r) => r !== "owner")) assert.equal(p.can(r, "approvals"), false, r);
+  assert.ok(p.canProposePrices("owner"));
+  assert.ok(p.canProposePrices("manager"));
+  for (const r of ["marketing", "designer", "support", null, undefined]) assert.equal(p.canProposePrices(r), false, String(r));
+  assert.ok(p.can("support", "prices"), "support can still view prices");
 });
 
 test("designers never reach customer data or money", () => {
@@ -103,4 +113,30 @@ test("every dashboard page and every admin action checks its section on the serv
       assert.match(m[2], /await requireSection\("[a-z]+"\)/, `${path.basename(file)}: ${m[1]} must call requireSection`);
     }
   }
+});
+
+test("price diffs show exactly what an approval would change", () => {
+  const before = { item_name: "Shirt", category: "Shirts", service_category: "Wash + Iron", price: 60, price_type: "fixed", hanger: "request", item_group: "Men", note: null, is_popular: false };
+  const after = { ...before, price: 70, is_popular: true };
+  assert.deepEqual(diff.priceDiff(before, after), [
+    { field: "price", from: "৳ 60", to: "৳ 70" },
+    { field: "is_popular", from: "No", to: "Yes" },
+  ]);
+  assert.deepEqual(diff.priceDiff(before, { ...before, price: "60.00" }), [], "same amount in another form is no change");
+  const added = diff.priceDiff(null, { ...before, price: 1250 });
+  assert.equal(added[0].field, "item_name");
+  assert.ok(added.some((d) => d.field === "price" && d.to === "৳ 1,250"));
+  assert.equal(diff.priceJump(before, { price: 120 }), 100);
+  assert.equal(diff.priceJump(before, { price: 54 }), -10);
+  assert.equal(diff.priceJump({ price: null }, { price: 10 }), null);
+});
+
+test("taka amounts use Bangladeshi grouping and price types", () => {
+  assert.equal(diff.taka(1250), "৳ 1,250");
+  assert.equal(diff.taka(125000), "৳ 1,25,000");
+  assert.equal(diff.taka(1000000), "৳ 10,00,000");
+  assert.equal(diff.taka(45.5), "৳ 45.50");
+  assert.equal(diff.taka(45, "per_sqft"), "৳ 45 / sq ft");
+  assert.equal(diff.taka(null), "On inspection");
+  assert.equal(diff.taka(300, "poa"), "On inspection");
 });
