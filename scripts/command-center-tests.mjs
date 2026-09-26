@@ -22,6 +22,7 @@ execFileSync(
     "src/lib/attribution.ts",
     "src/lib/admin/permissions.ts",
     "src/lib/admin/image-pages.ts",
+    "src/lib/admin/price-diff.ts",
     "src/content/mock.ts",
   ],
   { stdio: "inherit" },

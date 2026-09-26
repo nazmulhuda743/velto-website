@@ -29,13 +29,14 @@ export const SECTIONS = [
   "prices",
   "notifications",
   "activity",
+  "approvals",
   "access",
 ] as const;
 export type Section = (typeof SECTIONS)[number];
 
 export const ROLE_INFO: Record<Role, { label: string; summary: string }> = {
-  owner: { label: "Owner", summary: "Everything, including who has access." },
-  manager: { label: "Manager", summary: "Everything except the Access page." },
+  owner: { label: "Owner", summary: "Everything, including who has access and approving price changes." },
+  manager: { label: "Manager", summary: "Everything except Access and Approvals. Price changes wait for an Owner's approval." },
   marketing: { label: "Marketing", summary: "Traffic, funnel, campaigns, revenue, consent, SEO and reviews." },
   designer: { label: "Designer", summary: "Images, SEO text, reviews and site settings. No customer data." },
   support: { label: "Customer support", summary: "Bookings, bring-back list, customer accounts and prices." },
@@ -44,7 +45,7 @@ export const ROLE_INFO: Record<Role, { label: string; summary: string }> = {
 const ALL = new Set<Section>(SECTIONS);
 const MATRIX: Record<Role, ReadonlySet<Section>> = {
   owner: ALL,
-  manager: new Set(SECTIONS.filter((s) => s !== "access")),
+  manager: new Set(SECTIONS.filter((s) => s !== "access" && s !== "approvals")),
   marketing: new Set<Section>(["overview", "funnel", "visitors", "marketing", "revenue", "consent", "seo", "reviews", "notifications"]),
   designer: new Set<Section>(["images", "seo", "reviews", "settings"]),
   support: new Set<Section>(["requests", "retention", "accounts", "prices", "notifications"]),
@@ -103,3 +104,9 @@ export function passwordProblem(password: string): string | null {
   if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) return "Include at least one letter and one number.";
   return null;
 }
+
+/**
+ * Proposing price changes (add, edit, remove, restore). Managers' changes wait on the Approvals
+ * page; an Owner's own change is approved as it is made. Everyone else with Prices only views.
+ */
+export const canProposePrices = (role: Role | null | undefined) => role === "owner" || role === "manager";

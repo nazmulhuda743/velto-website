@@ -63,6 +63,12 @@ const I = {
       <path d="M18 15v1.6l1 .8" />
     </>
   ),
+  approvals: (
+    <>
+      <path d="M9 11.5 11 13.5 15.5 9" />
+      <path d="M12 3.5 5 6.5v5c0 4.2 3 7.6 7 9 4-1.4 7-4.8 7-9v-5l-7-3Z" />
+    </>
+  ),
   access: (
     <>
       <rect x="5" y="10.5" width="14" height="9.5" rx="2" />
@@ -113,6 +119,7 @@ const GROUPS: { label: string; items: Item[] }[] = [
   {
     label: "Team",
     items: [
+      { href: "/admin/approvals", label: "Approvals", icon: "approvals" },
       { href: "/admin/activity", label: "Activity", icon: "activity" },
       { href: "/admin/access", label: "Access", icon: "access" },
     ],
