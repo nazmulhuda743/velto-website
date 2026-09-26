@@ -7,6 +7,7 @@ import { getRequests } from "@/lib/admin/analytics-data";
 import { pageLabel } from "@/lib/admin/insights";
 import { requestDate } from "@/lib/admin/request-details";
 import { QUICK_FILTERS, analyseRequest, formatAge, matchesQuickFilter, requestSummary } from "@/lib/admin/request-intel";
+import { requireSection } from "@/lib/admin/session";
 
 export const metadata = { title: "Bookings & quotes · Velto Command Center" };
 
@@ -28,6 +29,7 @@ function Breakdown({ title, children }: { title: string; children: React.ReactNo
 const bars = (list: { label: string; count: number }[], limit = 6) => list.slice(0, limit).map((x) => ({ key: x.label, label: x.label, value: x.count }));
 
 export default async function RequestsPage({ searchParams }: { searchParams: SearchParams }) {
+  await requireSection("requests");
   const params = await searchParams;
   const filter = one(params.filter) ?? "all";
   const q = (one(params.q) ?? "").trim().toLowerCase().slice(0, 60);

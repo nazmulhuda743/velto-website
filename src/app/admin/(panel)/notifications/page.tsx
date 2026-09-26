@@ -4,6 +4,7 @@ import { AdminHeader } from "@/components/admin/ui";
 import { getNotifications } from "@/lib/admin/notifications";
 import { timeAgo } from "@/lib/admin/page-helpers";
 import { markNotificationsReadAction } from "../../actions";
+import { requireSection } from "@/lib/admin/session";
 
 export const metadata = { title: "Notifications · Velto Command Center" };
 
@@ -15,6 +16,7 @@ const TONES = {
 } as const;
 
 export default async function NotificationsPage() {
+  await requireSection("notifications");
   const { items, unread } = await getNotifications();
   return (
     <>

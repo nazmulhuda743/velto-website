@@ -11,6 +11,7 @@ import { dhakaDay } from "@/lib/admin/insights";
 import { isAdminPreview } from "@/lib/admin/preview";
 import { isSupabaseConfigured } from "@/lib/supabase-server";
 import { deleteSpendAction, saveSpendAction } from "../../../revenue-actions";
+import { requireSection } from "@/lib/admin/session";
 
 export const metadata = { title: "Campaign spend · Velto Command Center" };
 
@@ -82,6 +83,7 @@ function SpendForm({ row }: { row?: SpendRow }) {
 }
 
 export default async function SpendPage({ searchParams }: { searchParams: SearchParams }) {
+  await requireSection("revenue");
   const params = await searchParams;
   const fallback = parseRevenueRange({ range: "90d" });
   const from = DAY.test(one(params.from) ?? "") ? one(params.from)! : fallback.from;

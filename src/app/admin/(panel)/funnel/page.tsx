@@ -5,6 +5,7 @@ import { CHANNEL_LABELS, CHANNEL_ORDER } from "@/lib/analytics/classify";
 import { isAnalyticsWritesEnabled, sessionsFor } from "@/lib/admin/analytics-data";
 import { byChannel, byDevice, campaigns, filterSessions, funnel, pct, type SessionFilter } from "@/lib/admin/insights";
 import { readDashboardParams, SERVICE_OPTIONS } from "@/lib/admin/page-helpers";
+import { requireSection } from "@/lib/admin/session";
 
 export const metadata = { title: "Funnel · Velto Command Center" };
 
@@ -25,6 +26,7 @@ function Select({ name, label, value, options }: { name: string; label: string; 
 }
 
 export default async function FunnelPage({ searchParams }: { searchParams: SearchParams }) {
+  await requireSection("funnel");
   const { flat, range } = readDashboardParams(await searchParams);
   const loaded = await sessionsFor(range);
   const all = loaded.state === "ok" ? loaded.data.rows : [];

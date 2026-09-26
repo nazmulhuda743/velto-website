@@ -5,7 +5,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { previewSpendCsv, spendKey, validateSpend, type CsvPreview, type SpendInput } from "@/lib/admin/revenue";
 import { deleteSpend, insertSpend, listSpend, reviewLink, runMatching, updateSpend } from "@/lib/admin/revenue-data";
-import { requireAdmin } from "@/lib/admin/session";
+import { logActivity } from "@/lib/admin/activity";
+import { requireSection } from "@/lib/admin/session";
 
 const SPEND_PATH = "/admin/revenue/spend";
 const back = (path: string, params: Record<string, string>): never => redirect(`${path}?${new URLSearchParams(params)}`);
@@ -14,7 +15,7 @@ const field = (form: FormData, key: string) => String(form.get(key) ?? "");
 /* ---------- spend: manual entry ---------- */
 
 export async function saveSpendAction(form: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireSection("revenue");
   const id = field(form, "id");
   const v = validateSpend(Object.fromEntries([...form.entries()].map(([k, val]) => [k, typeof val === "string" ? val : ""])));
   if (!v.ok) back(SPEND_PATH, { error: v.error, ...(id ? { edit: id } : {}) });
@@ -22,15 +23,23 @@ export async function saveSpendAction(form: FormData) {
   const result = id ? await updateSpend(id, value, admin.name) : await insertSpend([value], admin.name, "manual");
   if (!result.ok) back(SPEND_PATH, { error: result.error, ...(id ? { edit: id } : {}) });
   revalidatePath("/admin/revenue");
+  await logActivity(admin, {
+    section: "revenue",
+    action: id ? "spend_updated" : "spend_added",
+    target: id || null,
+    summary: `${id ? "Edited" : "Added"} ad spend for ${value.spend_date}`,
+    detail: { ...value },
+  });
   back(SPEND_PATH, { saved: id ? "updated" : "added", from: value.spend_date.slice(0, 7) + "-01" });
 }
 
 export async function deleteSpendAction(form: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireSection("revenue");
   if (field(form, "confirm") !== "yes") back(SPEND_PATH, { error: "Deletion was not confirmed." });
   const result = await deleteSpend(field(form, "id"), admin.name);
   if (!result.ok) back(SPEND_PATH, { error: result.error });
   revalidatePath("/admin/revenue");
+  await logActivity(admin, { section: "revenue", action: "spend_deleted", target: field(form, "id"), summary: "Deleted an ad spend entry" });
   back(SPEND_PATH, { saved: "deleted" });
 }
 
@@ -52,7 +61,7 @@ async function existingKeysFor(rows: SpendInput[]) {
 }
 
 export async function csvSpendAction(_: CsvState, form: FormData): Promise<CsvState> {
-  const admin = await requireAdmin();
+  const admin = await requireSection("revenue");
   const mode = field(form, "mode");
 
   if (mode === "confirm") {
@@ -81,6 +90,7 @@ export async function csvSpendAction(_: CsvState, form: FormData): Promise<CsvSt
     const result = await insertSpend(fresh, admin.name, "csv", randomUUID());
     if (!result.ok) return { stage: "error", error: result.error };
     revalidatePath("/admin/revenue");
+    await logActivity(admin, { section: "revenue", action: "spend_imported", summary: `Imported ${fresh.length} ad spend rows from CSV` });
     return { stage: "done", imported: fresh.length };
   }
 
@@ -99,20 +109,22 @@ export async function csvSpendAction(_: CsvState, form: FormData): Promise<CsvSt
 /* ---------- review queue ---------- */
 
 export async function reviewLinkAction(form: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireSection("revenue");
   const action = field(form, "action");
   if (action !== "confirm" && action !== "reject" && action !== "reverse") back("/admin/revenue/review", { error: "Unknown action." });
   const result = await reviewLink(field(form, "link_id"), action as "confirm", admin.name, field(form, "note").trim());
   if (!result.ok) back("/admin/revenue/review", { error: result.error });
   revalidatePath("/admin/revenue");
+  await logActivity(admin, { section: "revenue", action: `attribution_${action}`, target: field(form, "link_id"), summary: `${{ confirm: "Confirmed", reject: "Rejected", reverse: "Reversed" }[action]} a lead-to-order match` });
   back("/admin/revenue/review", { saved: action });
 }
 
 export async function runMatchingAction() {
-  await requireAdmin();
+  const admin = await requireSection("revenue");
   const result = await runMatching();
   if (!result.ok) back("/admin/revenue", { error: result.error });
   const s = (result as { ok: true; summary: { linked: number; updated: number; superseded: number } }).summary;
   revalidatePath("/admin/revenue");
+  await logActivity(admin, { section: "revenue", action: "matching_run", summary: `Ran lead matching: ${s.linked} linked, ${s.updated} updated` });
   back("/admin/revenue", { matched: `${s.linked}.${s.updated}.${s.superseded}` });
 }

@@ -23,6 +23,7 @@ import {
 import { getRevenueData, getReviewQueue } from "@/lib/admin/revenue-data";
 import { money, parseRevenueRange, roas } from "@/lib/admin/revenue-helpers";
 import { runMatchingAction } from "../../revenue-actions";
+import { requireSection } from "@/lib/admin/session";
 
 export const metadata = { title: "Revenue · Velto Command Center" };
 
@@ -62,6 +63,7 @@ function Select({ name, label, value, options }: { name: string; label: string; 
 }
 
 export default async function RevenuePage({ searchParams }: { searchParams: SearchParams }) {
+  await requireSection("revenue");
   const params = await searchParams;
   const flat = Object.fromEntries(Object.entries(params).map(([k, v]) => [k, one(v)?.slice(0, 120)])) as Record<string, string | undefined>;
   const range = parseRevenueRange(flat);

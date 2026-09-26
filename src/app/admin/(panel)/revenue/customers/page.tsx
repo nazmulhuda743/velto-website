@@ -6,6 +6,7 @@ import { CHANNEL_LABELS } from "@/lib/analytics/classify";
 import { acquisitionTouch, campaignLabel, filterConversions, type ConversionRow } from "@/lib/admin/revenue";
 import { getRevenueData } from "@/lib/admin/revenue-data";
 import { CLASSIFICATION_LABELS, METHOD_LABELS, money, parseRevenueRange } from "@/lib/admin/revenue-helpers";
+import { requireSection } from "@/lib/admin/session";
 
 export const metadata = { title: "Attributed customers · Velto Command Center" };
 
@@ -25,6 +26,7 @@ const windowCell = (value: ConversionRow["billed_30"], matured: boolean) =>
  * revenue only. No phone, name, address or browsing history is shown here.
  */
 export default async function RevenueCustomersPage({ searchParams }: { searchParams: SearchParams }) {
+  await requireSection("revenue");
   const params = await searchParams;
   const flat = Object.fromEntries(Object.entries(params).map(([k, v]) => [k, one(v)?.slice(0, 120)])) as Record<string, string | undefined>;
   const range = parseRevenueRange(flat);

@@ -15,6 +15,7 @@ import {
   type Ranked,
 } from "@/lib/admin/insights";
 import { readDashboardParams, serviceName } from "@/lib/admin/page-helpers";
+import { requireSection } from "@/lib/admin/session";
 
 export const metadata = { title: "Visitors · Velto Command Center" };
 
@@ -22,6 +23,7 @@ const pageItems = (list: Ranked[]) => list.map((r) => ({ key: r.key, label: `${p
 const searchLabel = (slug: string) => slug.replace(/-/g, " ");
 
 export default async function VisitorsPage({ searchParams }: { searchParams: SearchParams }) {
+  await requireSection("visitors");
   const { flat, range } = readDashboardParams(await searchParams);
   const loaded = await sessionsFor(range);
   const rows = loaded.state === "ok" ? loaded.data.rows : [];

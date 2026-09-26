@@ -20,6 +20,9 @@ execFileSync(
     "src/lib/admin/request-intel.ts",
     "src/lib/admin/revenue.ts",
     "src/lib/attribution.ts",
+    "src/lib/admin/permissions.ts",
+    "src/lib/admin/image-pages.ts",
+    "src/content/mock.ts",
   ],
   { stdio: "inherit" },
 );

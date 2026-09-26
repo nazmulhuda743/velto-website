@@ -10,8 +10,10 @@ import { BANGLA_READY_PATHS, banglaEnabled } from "@/lib/i18n/config";
 import { getSiteContent } from "@/lib/site-content";
 import { SITE_URL } from "@/lib/site-url";
 import { saveSeoAction } from "../../../actions";
+import { requireSection } from "@/lib/admin/session";
 
 export default async function SeoEditPage({ searchParams }: { searchParams: SearchParams }) {
+  await requireSection("seo");
   const params = await searchParams;
   const path = one(params.path) ?? "";
   const route = getSeoRoute(path);

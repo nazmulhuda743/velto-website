@@ -6,12 +6,14 @@ import { getAnalyticsHealth, getConsentSummary, isAnalyticsWritesEnabled } from 
 import { consentRates, pct } from "@/lib/admin/insights";
 import { isAdminPreview } from "@/lib/admin/preview";
 import { dayLabel, hoursSince, readDashboardParams, timeAgo } from "@/lib/admin/page-helpers";
+import { requireSection } from "@/lib/admin/session";
 
 export const metadata = { title: "Consent & tracking · Velto Command Center" };
 
 type Row = { label: string; status: "healthy" | "warning" | "error"; detail: string };
 
 export default async function ConsentPage({ searchParams }: { searchParams: SearchParams }) {
+  await requireSection("consent");
   const { flat, range } = readDashboardParams(await searchParams);
   const [summary, health] = await Promise.all([getConsentSummary(range), getAnalyticsHealth()]);
   const c = summary.state === "ok" ? summary.data : null;

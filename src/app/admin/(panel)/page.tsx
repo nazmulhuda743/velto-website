@@ -11,7 +11,7 @@ import { getNotifications } from "@/lib/admin/notifications";
 import { dayLabel, readDashboardParams, serviceName } from "@/lib/admin/page-helpers";
 import { requestDate, requestDetails } from "@/lib/admin/request-details";
 import { formatAge, todaySummary } from "@/lib/admin/request-intel";
-import { requireAdmin } from "@/lib/admin/session";
+import { requireSection } from "@/lib/admin/session";
 import { getSiteContent } from "@/lib/site-content";
 
 /** Dhaka-time greeting for the person signed in. */
@@ -54,7 +54,7 @@ function Metric({ label, value, change, sub }: { label: string; value: string; c
 
 export default async function CommandCenter({ searchParams }: { searchParams: SearchParams }) {
   const { flat, range } = readDashboardParams(await searchParams);
-  const admin = await requireAdmin();
+  const admin = await requireSection("overview");
   const [current, previous, consent, requests, content, notes] = await Promise.all([
     sessionsFor(range),
     sessionsFor({ from: range.prevFrom, to: range.prevTo }),

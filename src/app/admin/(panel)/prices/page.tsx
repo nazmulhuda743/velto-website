@@ -1,6 +1,7 @@
 import { AdminHeader, one, type SearchParams } from "@/components/admin/ui";
 import { getAllPrices } from "@/lib/admin/data";
 import { formatAmount } from "@/lib/format-price";
+import { requireSection } from "@/lib/admin/session";
 
 const COLUMNS = [
   { slug: "dry-cleaning", label: "Dry Cleaning" },
@@ -9,6 +10,7 @@ const COLUMNS = [
 ];
 
 export default async function PricesPage({ searchParams }: { searchParams: SearchParams }) {
+  await requireSection("prices");
   const q = (one((await searchParams).q) ?? "").trim().toLowerCase().slice(0, 60);
   let items: Awaited<ReturnType<typeof getAllPrices>> = [];
   let error = false;
