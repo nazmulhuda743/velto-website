@@ -7,6 +7,7 @@ import { requireSection } from "@/lib/admin/session";
 const SECTION_LABEL: Record<string, string> = {
   session: "Sign-in",
   images: "Images",
+  copy: "Text & copy",
   seo: "SEO",
   reviews: "Reviews",
   settings: "Site settings",
@@ -22,14 +23,15 @@ const dhaka = (iso: string, opts: Intl.DateTimeFormatOptions) => new Date(iso).t
 const dayKey = (iso: string) => dhaka(iso, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
 const time = (iso: string) => dhaka(iso, { hour: "2-digit", minute: "2-digit", hour12: true });
 
-const isImageUrl = (v: unknown): v is string => typeof v === "string" && /^(https:\/\/|\/images\/)/.test(v);
+const isImageUrl = (v: unknown): v is string => typeof v === "string" && /^(https:\/\/\S+\.(png|jpe?g|webp|avif)$|\/images\/|\/brand\/)/i.test(v);
 
 /** Small, readable before/after facts. Image changes show both photos. */
 function Detail({ row }: { row: ActivityRow }) {
   const d = row.detail ?? {};
   const entries = Object.entries(d).filter(([k]) => !["before", "after"].includes(k));
   const images = isImageUrl(d.before) || isImageUrl(d.after);
-  if (!entries.length && !images) return null;
+  const texts = !images && (typeof d.before === "string" || typeof d.after === "string");
+  if (!entries.length && !images && !texts) return null;
   return (
     <details className="mt-2">
       <summary className="cursor-pointer t-caption font-semibold text-blue">Details</summary>
@@ -45,6 +47,16 @@ function Detail({ row }: { row: ActivityRow }) {
             ) : null,
           )}
         </div>
+      ) : null}
+      {texts ? (
+        <dl className="mt-2 grid gap-2 t-caption">
+          {(["before", "after"] as const).map((k) => (
+            <div key={k} className={`rounded-md p-2 ${k === "before" ? "bg-soft text-secondary" : "bg-success-soft text-navy"}`}>
+              <dt className="font-semibold">{k === "before" ? "Before" : "After"}</dt>
+              <dd className="mt-0.5 whitespace-pre-line [overflow-wrap:anywhere]">{typeof d[k] === "string" ? (d[k] as string) : "—"}</dd>
+            </div>
+          ))}
+        </dl>
       ) : null}
       {entries.length ? (
         <dl className="mt-2 grid grid-cols-[8rem_1fr] gap-x-3 gap-y-1 t-caption">

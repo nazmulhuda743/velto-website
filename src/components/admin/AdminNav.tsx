@@ -49,6 +49,11 @@ const I = {
       <path d="m20.5 16-5-5-8.5 8" />
     </>
   ),
+  copy: (
+    <>
+      <path d="M5 5h14M12 5v14M9 19h6" />
+    </>
+  ),
   reviews: <path d="m12 4 2.4 5 5.4.6-4 3.7 1.1 5.4L12 16l-4.9 2.7 1.1-5.4-4-3.7 5.4-.6L12 4Z" />,
   settings: (
     <>
@@ -111,6 +116,7 @@ const GROUPS: { label: string; items: Item[] }[] = [
     items: [
       { href: "/admin/seo", label: "SEO", icon: "seo" },
       { href: "/admin/images", label: "Images", icon: "images" },
+      { href: "/admin/copy", label: "Text & copy", icon: "copy" },
       { href: "/admin/reviews", label: "Reviews", icon: "reviews" },
       { href: "/admin/settings", label: "Site settings", icon: "settings" },
       { href: "/admin/prices", label: "Prices", icon: "prices" },

@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import Image from "next/image";
+import { getSiteContent } from "@/lib/site-content";
 
 /**
  * Velto logo — renders the supplied official artwork only (spec §11,
@@ -30,7 +31,22 @@ type LogoProps = {
   priority?: boolean;
 };
 
-export function Logo({ height = 32, className, inverse = false, priority = false }: LogoProps) {
+export async function Logo({ height = 32, className, inverse = false, priority = false }: LogoProps) {
+  // A logo uploaded in Settings → Logo replaces the built-in artwork everywhere.
+  const { brand } = await getSiteContent();
+  const uploaded = inverse ? brand.logoWhite : brand.logo;
+  if (uploaded) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element -- remote upload of unknown size; height is set by the layout
+      <img
+        src={uploaded}
+        alt="Velto Premium Laundry"
+        fetchPriority={priority ? "high" : undefined}
+        className={className ? `w-auto ${className}` : "w-auto"}
+        style={className ? undefined : { height }}
+      />
+    );
+  }
   const src = inverse ? LOGO_WHITE : LOGO;
   const size = pngSize(src);
 
