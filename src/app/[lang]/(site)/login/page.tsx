@@ -3,6 +3,7 @@ import { Alert } from "@/components/account/Alert";
 import { AuthShell } from "@/components/account/AuthShell";
 import { SignInForm } from "@/components/account/forms";
 import { AccountsUnavailable, SignedInNotice, StaffAccountNotice } from "@/components/account/SignedInNotice";
+import { googleSignInEnabled } from "@/lib/customer/google";
 import { getCustomerSession } from "@/lib/customer/portal";
 import { safeNextPath } from "@/lib/customer/validation";
 import { alternatesFor } from "@/lib/seo/page-metadata";
@@ -17,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
-const NOTICE_TONES: Record<string, "error" | "info"> = { link_expired: "error", link_unavailable: "error", signed_out: "info" };
+const NOTICE_TONES: Record<string, "error" | "info"> = { link_expired: "error", link_unavailable: "error", signed_out: "info", oauth_failed: "error" };
 
 export default async function LoginPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
@@ -43,10 +44,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
     );
   }
   return (
-    <AuthShell title={t.signInTitle} intro={/^(?:\/bn)?\/book/.test(next) ? t.signInIntroBook : t.signInIntro}>
+    <AuthShell mode="signin" next={next} title={t.signInTitle} intro={/^(?:\/bn)?\/book/.test(next) ? t.signInIntroBook : t.signInIntro}>
       <SignInForm
         t={a.forms}
         next={next}
+        google={await googleSignInEnabled()}
         notice={
           session.kind === "unavailable" ? (
             <Alert tone="error">{t.signInUnavailable}</Alert>

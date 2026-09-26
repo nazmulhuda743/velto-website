@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { AuthShell } from "@/components/account/AuthShell";
 import { SignUpForm } from "@/components/account/forms";
 import { AccountsUnavailable, SignedInNotice, StaffAccountNotice } from "@/components/account/SignedInNotice";
+import { googleSignInEnabled } from "@/lib/customer/google";
 import { getCustomerSession } from "@/lib/customer/portal";
 import { safeNextPath } from "@/lib/customer/validation";
 import { alternatesFor } from "@/lib/seo/page-metadata";
@@ -37,8 +38,8 @@ export default async function SignUpPage({ searchParams }: { searchParams: Searc
     );
   }
   return (
-    <AuthShell title={title} intro={a.pages.signUpIntro}>
-      <SignUpForm t={a.forms} next={next} />
+    <AuthShell mode="signup" next={next} title={title} intro={a.pages.signUpIntro}>
+      <SignUpForm t={a.forms} next={next} google={await googleSignInEnabled()} />
     </AuthShell>
   );
 }

@@ -88,12 +88,15 @@ export default async function AccountLayout({ children }: { children: React.Reac
   }
   if (session.kind !== "customer") redirect(await loginRedirectPath("/account"));
   if (session.account.state === "incomplete") {
+    // Google sign-ups arrive with their name in the auth metadata; use it as the starting value.
+    const meta = session.user.user_metadata ?? {};
+    const metaName = typeof meta.full_name === "string" ? meta.full_name : typeof meta.name === "string" ? meta.name : "";
     return (
       <Frame nav={false} t={t}>
         <h1 className="t-h2 text-navy">{t.finishTitle}</h1>
         <p className="mt-3 text-body">{t.finishBody}</p>
         <div className="mt-6 rounded-lg border border-line bg-white p-5 md:p-7">
-          <ProfileForm t={a.forms} completing phoneLocked={null} initial={{ fullName: "", phone: "", address: "", area: "" }} />
+          <ProfileForm t={a.forms} completing phoneLocked={null} initial={{ fullName: metaName.trim().slice(0, 80), phone: "", address: "", area: "" }} />
         </div>
       </Frame>
     );

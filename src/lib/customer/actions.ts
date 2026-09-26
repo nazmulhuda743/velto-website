@@ -204,6 +204,32 @@ export async function signInAction(_prev: AuthFormState, form: FormData): Promis
   redirect(next);
 }
 
+/* ---------- Sign in with Google ---------- */
+
+/**
+ * Starts Google sign-in (Supabase OAuth, PKCE). The code verifier is stored in an httpOnly
+ * cookie here and redeemed by /auth/confirm, which also serves sign-up links. A new Google
+ * customer has no phone or accepted terms yet, so /account shows "finish setting up" first.
+ */
+export async function googleSignInAction(form: FormData): Promise<void> {
+  const next = safeNextPath(str(form, "next", 300));
+  const supabase = await customerSupabase();
+  if (!supabase) redirect(await localHref("/login"));
+  if (await throttled("signin")) redirect(await localHref("/login?error=oauth_failed"));
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: await redirectTo(next),
+      queryParams: { prompt: "select_account" },
+    },
+  });
+  if (error || !data.url) {
+    console.error("customer_google_start_failed", error?.code ?? error?.status ?? "no_url");
+    redirect(await localHref("/login?error=oauth_failed"));
+  }
+  redirect(data.url);
+}
+
 export async function signOutAction() {
   const supabase = await customerSupabase();
   await supabase?.auth.signOut({ scope: "local" });
