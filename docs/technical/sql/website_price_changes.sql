@@ -15,9 +15,9 @@
 --
 -- Everything is service_role only.
 --
--- Status: applied to STAGING (ekgdefcdqcsqvpbqponv) and tested with
--- docs/technical/sql/tests/website_price_changes_test.sql; production only
--- with the owner's approval.
+-- Status: applied to STAGING (ekgdefcdqcsqvpbqponv) and PRODUCTION
+-- (erutxtnepbejdxkoimeo, 2026-09-27, owner-approved); tested on staging with
+-- docs/technical/sql/tests/website_price_changes_test.sql.
 
 begin;
 

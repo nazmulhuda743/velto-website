@@ -8,9 +8,9 @@
 -- No deletes: tasks are archived. Everything is service_role only (the admin
 -- server enforces who may do what and records it in the activity log).
 --
--- Status: applied to STAGING (ekgdefcdqcsqvpbqponv) and tested with
--- docs/technical/sql/tests/website_board_test.sql; production only
--- with the owner's approval.
+-- Status: applied to STAGING (ekgdefcdqcsqvpbqponv) and PRODUCTION
+-- (erutxtnepbejdxkoimeo, 2026-09-27, owner-approved); tested on staging with
+-- docs/technical/sql/tests/website_board_test.sql.
 
 begin;
 
