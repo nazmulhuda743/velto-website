@@ -76,3 +76,20 @@ test("without a delivery time, days since counts from the order day and says so"
   assert.equal(x.daysSince, 15);
   assert.equal(x.sinceDelivery, false);
 });
+
+test("the usual weekday is the one they order on most, newest wins a tie", () => {
+  // 2026-09-19 and 2026-09-12 are Saturdays; 2026-09-08 is a Tuesday.
+  const sat = r.laundryRhythm([order("VEL-3", "2026-09-19"), order("VEL-2", "2026-09-12"), order("VEL-1", "2026-09-08")], at("2026-09-25"));
+  assert.equal(sat.usualWeekday, 6);
+  const tie = r.laundryRhythm([order("VEL-2", "2026-09-15"), order("VEL-1", "2026-09-12")], at("2026-09-25"));
+  assert.equal(tie.usualWeekday, 2, "Tuesday is the newer habit");
+  assert.equal(r.laundryRhythm([order("VEL-1", "2026-09-12")], at("2026-09-25")).usualWeekday, null);
+});
+
+test("routine requests only accept the offered choices", () => {
+  assert.deepEqual(r.parseRoutine("weekly", "sat"), { every: "weekly", day: 6 });
+  assert.deepEqual(r.parseRoutine("fortnightly", "sun"), { every: "fortnightly", day: 0 });
+  assert.equal(r.parseRoutine("daily", "sat"), null);
+  assert.equal(r.parseRoutine("weekly", "saturday"), null);
+  assert.equal(r.parseRoutine(undefined, undefined), null);
+});

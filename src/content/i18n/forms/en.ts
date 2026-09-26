@@ -147,6 +147,10 @@ export const formsEn = {
     signInLink: "Sign in to fill in your details",
     signInAfter: ".",
     /** Arrival contexts that aren't a cleaning service: a pre-filled, editable note. */
+    routineIntro: "Requesting a regular pickup. Velto will confirm the day and time with you before the first one.",
+    routineNote: "Please set up a regular pickup: {every}, on {day}.",
+    routineEvery: { weekly: "every week", fortnightly: "every two weeks" } as Record<string, string>,
+    routineDays: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
     repeatNote: "Same as my last order ({n}).",
     repeatIntro: "Booking the same again as order {n}. Change anything you need before you send.",
     presetNotes: {

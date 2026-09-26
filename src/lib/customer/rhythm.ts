@@ -40,6 +40,8 @@ export type Rhythm = {
   /** Dhaka calendar day (YYYY-MM-DD) the next pickup would fall on at their usual pace. */
   nextOn: string | null;
   due: Due | null;
+  /** Weekday (0 = Sunday) they order on most, from two or more orders; ties go to the latest. */
+  usualWeekday: number | null;
   /** Booking-form service to preselect for "the same again", when one maps. */
   repeatService: string | null;
 };
@@ -78,7 +80,7 @@ export function laundryRhythm(orders: RhythmOrder[], now: Date = new Date()): Rh
   const count = kept.length;
   const stage: Stage = count === 0 ? "first" : count === 1 ? "second" : count === 2 ? "third" : "regular";
   const last = kept[0] ?? null;
-  if (!last) return { stage, count, last, daysSince: null, sinceDelivery: false, everyDays: null, nextOn: null, due: null, repeatService: null };
+  if (!last) return { stage, count, last, daysSince: null, sinceDelivery: false, everyDays: null, nextOn: null, due: null, usualWeekday: null, repeatService: null };
 
   const today = dayNumber(dhakaDay(now));
   const lastDay = dayNumber(dhakaDay(last.deliveredAt ?? last.orderDate.slice(0, 10)));
@@ -99,7 +101,40 @@ export function laundryRhythm(orders: RhythmOrder[], now: Date = new Date()): Rh
     due = left > 3 ? "later" : left > 0 ? "soon" : left >= -3 ? "now" : "overdue";
   }
 
-  return { stage, count, last, daysSince, sinceDelivery: Boolean(last.deliveredAt), everyDays, nextOn, due, repeatService: bookingServiceFor(last.services) };
+  let usualWeekday: number | null = null;
+  if (count >= 2) {
+    const tally = new Map<number, number>();
+    // Newest first, so on a tie the more recent habit wins (Map keeps first-seen order).
+    for (const d of days) {
+      const w = new Date(d * DAY_MS).getUTCDay();
+      tally.set(w, (tally.get(w) ?? 0) + 1);
+    }
+    let best = 0;
+    for (const [w, n] of tally) if (n > best) [usualWeekday, best] = [w, n];
+  }
+
+  return {
+    stage,
+    count,
+    last,
+    daysSince,
+    sinceDelivery: Boolean(last.deliveredAt),
+    everyDays,
+    nextOn,
+    due,
+    usualWeekday,
+    repeatService: bookingServiceFor(last.services),
+  };
+}
+
+export const ROUTINE_DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
+export const ROUTINE_EVERY = ["weekly", "fortnightly"] as const;
+
+/** Parses /book?routine=weekly&day=sat from the account's routine form; null when anything is off. */
+export function parseRoutine(every: unknown, day: unknown) {
+  const e = ROUTINE_EVERY.find((x) => x === every);
+  const d = ROUTINE_DAYS.findIndex((x) => x === day);
+  return e && d >= 0 ? { every: e, day: d } : null;
 }
 
 /** The /book link for "the same again": preselects the service and notes which order it repeats. */

@@ -1,6 +1,7 @@
 import Link from "@/components/i18n/Link";
 import { pageMetadata } from "@/lib/seo/page-metadata";
 import { getCustomerSession } from "@/lib/customer/portal";
+import { parseRoutine } from "@/lib/customer/rhythm";
 import { validOrderNumber } from "@/lib/customer/validation";
 import { BookingForm } from "@/components/forms/BookingForm";
 import { Breadcrumbs } from "@/components/pages/Breadcrumbs";
@@ -38,6 +39,11 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
   } catch {
     // A malformed escape in the query: ignore it, it's only a note.
   }
+  // "Make it a routine" from the account: a request note Ops confirms by phone, never a contract.
+  const routine = parseRoutine(one(params.routine), one(params.day));
+  const routineNote = routine
+    ? format(t.routineNote, { every: t.routineEvery[routine.every], day: t.routineDays[routine.day] })
+    : null;
 
   return (
     <section aria-labelledby="page-title" className="group/book pb-(--space-section) pt-7 md:pt-10 xl:pt-12">
@@ -54,7 +60,11 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
                 intro={
                   <>
                     {t.intro}
-                    {repeat ? (
+                    {routine ? (
+                      <span className="mt-3 block t-small font-semibold text-navy" data-routine>
+                        {t.routineIntro}
+                      </span>
+                    ) : repeat ? (
                       <span className="mt-3 block t-small font-semibold text-navy" data-repeat>
                         {format(t.repeatIntro, { n: repeat })}
                       </span>
@@ -74,7 +84,7 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
                   </>
                 }
                 initialService={service}
-                presetNote={repeat ? format(t.repeatNote, { n: repeat }) : t.presetNotes[service ?? ""]}
+                presetNote={routineNote ?? (repeat ? format(t.repeatNote, { n: repeat }) : t.presetNotes[service ?? ""])}
                 previewOutcome={previewOutcome}
                 initialContact={
                   account
