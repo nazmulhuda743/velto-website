@@ -12,7 +12,7 @@ import { slotName } from "@/lib/admin/image-pages";
 import { homeFor } from "@/lib/admin/permissions";
 import { getAdmin, requireSection, signIn, signOut } from "@/lib/admin/session";
 import { supabaseFetch } from "@/lib/supabase-server";
-import { getSiteContent, type ReviewEntry, type SiteSettings } from "@/lib/site-content";
+import { getSiteContent, readCharge, type ReviewEntry, type SiteSettings } from "@/lib/site-content";
 
 const text = (form: FormData, key: string, max: number) => String(form.get(key) ?? "").trim().slice(0, max);
 const file = (form: FormData, key: string) => {
@@ -77,6 +77,10 @@ export async function saveSettingsAction(form: FormData) {
   const href = text(form, "announcementHref", 300);
   if (href && !/^(\/|https:\/\/)/.test(href)) back("/admin/settings", { error: "Announcement link must start with / or https://" });
 
+  const chargeRaw = text(form, "pickupChargeTaka", 6);
+  const pickupChargeTaka = chargeRaw === "" ? null : readCharge(Number(chargeRaw));
+  if (chargeRaw !== "" && pickupChargeTaka === null) back("/admin/settings", { error: "Pickup & delivery charge must be a whole number of taka from 0 to 2000, or empty." });
+
   const next: SiteSettings = {
     whatsappNumber: whatsapp,
     announcement: {
@@ -86,6 +90,7 @@ export async function saveSettingsAction(form: FormData) {
       href,
     },
     outlets: { ...settings.outlets },
+    pickupChargeTaka,
   };
   for (const id of Object.keys(next.outlets) as (keyof SiteSettings["outlets"])[]) {
     const count = Number(text(form, `${id}.reviewCount`, 7));
