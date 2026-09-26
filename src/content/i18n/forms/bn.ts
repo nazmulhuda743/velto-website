@@ -141,6 +141,12 @@ export const formsBn: FormText = {
     haveAccount: "Velto অ্যাকাউন্ট আছে? ",
     signInLink: "সাইন ইন করে আপনার তথ্য পূরণ করুন",
     signInAfter: "।",
+    routineIntro: "নিয়মিত পিকআপের অনুরোধ করছেন। প্রথম পিকআপের আগে Velto আপনার সাথে দিন ও সময় নিশ্চিত করবে।",
+    routineNote: "অনুগ্রহ করে একটি নিয়মিত পিকআপ ঠিক করে দিন: {every}, {day}।",
+    routineEvery: { weekly: "প্রতি সপ্তাহে", fortnightly: "প্রতি দুই সপ্তাহে" } as Record<string, string>,
+    routineDays: ["রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার", "শুক্রবার", "শনিবার"],
+    repeatNote: "আমার আগের অর্ডারের মতোই ({n})।",
+    repeatIntro: "অর্ডার {n}-এর মতো আবার বুক করছেন। পাঠানোর আগে দরকার হলে যেকোনো কিছু বদলে নিন।",
     presetNotes: {
       "regular-laundry": "আমি নিয়মিত পিকআপ ঠিক করতে চাই।",
       express: "সম্ভব হলে এই অর্ডারটি এক্সপ্রেসে চাই।",

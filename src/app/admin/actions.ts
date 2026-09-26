@@ -257,3 +257,29 @@ export async function decideLinkAction(form: FormData) {
   }
   back(target, { saved: decision });
 }
+
+/* ---------- bring-back list ---------- */
+
+const RETENTION_BUCKETS = new Set(["second", "due", "winback"]);
+const RETENTION_OUTCOMES = new Set(["messaged", "not_now", "wrong_number", "opt_out"]);
+
+/** Staff record of a bring-back contact; the list then hides that customer for a while. */
+export async function logRetentionAction(form: FormData) {
+  const admin = await requireAdmin();
+  const bucket = text(form, "bucket", 10);
+  const outcome = text(form, "outcome", 20);
+  const customerId = text(form, "customerId", 40);
+  const lang = text(form, "lang", 2) === "en" ? "en" : "bn";
+  const target = "/admin/retention";
+  if (!RETENTION_BUCKETS.has(bucket) || !RETENTION_OUTCOMES.has(outcome) || !/^[0-9a-f-]{36}$/i.test(customerId)) {
+    back(target, { error: "Unknown request." });
+  }
+  const res = await supabaseFetch("/rest/v1/rpc/website_retention_log", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ p_customer_id: customerId, p_bucket: bucket, p_outcome: outcome, p_staff_name: admin.name }),
+    cache: "no-store",
+  }).catch(() => null);
+  if (!res?.ok) back(target, { bucket, lang, error: "Couldn't save that. Please try again." });
+  back(target, { bucket, lang, saved: outcome });
+}

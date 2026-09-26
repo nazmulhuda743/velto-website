@@ -2,15 +2,18 @@ import Link from "@/components/i18n/Link";
 import { redirect } from "next/navigation";
 import { getLocale, loginRedirectPath } from "@/lib/i18n/server";
 import { accountText, orderFormat, type AccountText } from "@/content/i18n/account";
-import { fill, format, type Locale } from "@/lib/i18n/config";
+import { fill, format, localizeHref, type Locale } from "@/lib/i18n/config";
 import { Alert } from "@/components/account/Alert";
 import { LinkHistoryCard } from "@/components/account/LinkHistoryCard";
+import { NextPickupCard } from "@/components/account/NextPickupCard";
 import { OrderProgress } from "@/components/account/OrderProgress";
 import { OrderRow } from "@/components/account/OrderRow";
 import { ButtonLink, WhatsAppButton } from "@/components/ui/Button";
 import { serviceLabel } from "@/content/order-status";
 import { WHATSAPP_URL } from "@/content/site";
 import { getCustomerSession, getPortalOrders, type PortalOrder } from "@/lib/customer/portal";
+import { laundryRhythm, ROUTINE_DAYS } from "@/lib/customer/rhythm";
+import { formText } from "@/content/i18n/forms";
 import { areaLabel, displayBdPhone, greetingName } from "@/lib/customer/validation";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -84,11 +87,15 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
   const orders = linked ? await getPortalOrders() : [];
   const active = (orders ?? []).filter((o) => o.active);
   const recent = (orders ?? []).filter((o) => o !== active[0]).slice(0, 3);
+  const rhythm = laundryRhythm(orders ?? []);
+  // From the second order on: turning repeat orders into a fixed day is what makes them a habit.
+  const suggestRegular = linked && rhythm.count >= 2;
   const name = greetingName(account.fullName);
   const hasAddress = Boolean(account.address && account.area);
   const locale = await getLocale();
   const a = accountText(locale);
   const t = a.home;
+  const f = formText(locale);
 
   return (
     <div className="space-y-5 md:space-y-6">
@@ -113,20 +120,22 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
       {params.welcome ? <Alert tone="success">{t.welcome}</Alert> : null}
       {orders === null ? <Alert tone="error">{t.ordersFailed}</Alert> : null}
 
-      {/* 1. What's happening with my laundry */}
-      {active[0] ? <ActiveOrderCard order={active[0]} more={active.length - 1} t={t} locale={locale} /> : null}
-
-      {/* 2. What can I do next */}
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <ButtonLink href="/book?source=account" event="book_pickup_click" placement="account_home" className="sm:!px-8">
-          {orders?.length ? t.bookAnother : t.book}
-        </ButtonLink>
-        {linked ? (
-          <ButtonLink href="/account/orders" variant="secondary">
-            {t.viewAll}
-          </ButtonLink>
-        ) : null}
-      </div>
+      {/* 1. What's happening with my laundry, or 2. the next pickup (first → the same again) */}
+      {active[0] ? (
+        <>
+          <ActiveOrderCard order={active[0]} more={active.length - 1} t={t} locale={locale} />
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <ButtonLink href="/book?source=account" event="book_pickup_click" placement="account_home" className="sm:!px-8">
+              {t.bookAnother}
+            </ButtonLink>
+            <ButtonLink href="/account/orders" variant="secondary">
+              {t.viewAll}
+            </ButtonLink>
+          </div>
+        </>
+      ) : orders !== null ? (
+        <NextPickupCard rhythm={rhythm} locale={locale} firstTime={linked} />
+      ) : null}
 
       {linked && recent.length ? (
         <section aria-labelledby="recent-title">
@@ -192,15 +201,39 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
       {/* 5. Secondary setup */}
       <LinkHistoryCard account={account} />
 
-      {linked && (orders?.length ?? 0) >= 3 ? (
-        <section aria-labelledby="regular-title" className="rounded-lg bg-navy p-5 text-white md:p-6">
+      {suggestRegular ? (
+        <section aria-labelledby="regular-title" className="rounded-lg bg-navy p-5 text-white md:p-6" data-routine>
           <h2 id="regular-title" className="text-[20px] font-semibold tracking-[-0.01em]">
             {t.regularTitle}
           </h2>
           <p className="mt-1.5 max-w-[56ch] t-small text-white/80">{t.regularBody}</p>
-          <ButtonLink href="/regular-laundry" variant="secondary-inverse" className="mt-4 !h-11">
-            {t.regularButton}
-          </ButtonLink>
+          {/* A plain GET form: no script needed, and /book re-validates both values. */}
+          <form action={localizeHref("/book", locale)} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+            <input type="hidden" name="source" value="account_routine" />
+            <label className="block t-small font-semibold">
+              {t.routineEvery}
+              <select name="routine" defaultValue={(rhythm.everyDays ?? 7) > 10 ? "fortnightly" : "weekly"} className="mt-1 block h-11 w-full rounded-md border border-white/40 bg-navy px-3 text-white sm:w-48">
+                <option value="weekly">{t.routineWeekly}</option>
+                <option value="fortnightly">{t.routineFortnightly}</option>
+              </select>
+            </label>
+            <label className="block t-small font-semibold">
+              {t.routineDay}
+              <select name="day" defaultValue={ROUTINE_DAYS[rhythm.usualWeekday ?? 6]} className="mt-1 block h-11 w-full rounded-md border border-white/40 bg-navy px-3 text-white sm:w-44">
+                {ROUTINE_DAYS.map((d, i) => (
+                  <option key={d} value={d}>
+                    {f.bookPage.routineDays[i]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button type="submit" data-analytics="book_pickup_click" data-placement="account_routine" className="inline-flex h-11 items-center justify-center rounded-md bg-white px-5 font-semibold text-navy hover:bg-white/90">
+              {t.routineButton}
+            </button>
+          </form>
+          <Link href="/regular-laundry" className="mt-3 inline-block t-small font-semibold text-white underline decoration-white/50 underline-offset-4 hover:decoration-white">
+            {t.routineMore}
+          </Link>
         </section>
       ) : null}
     </div>

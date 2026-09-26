@@ -35,6 +35,7 @@ const I = {
     </>
   ),
   health: <path d="M3.5 12h4l2-5 4 10 2-5h5" />,
+  retention: <path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4.5v4h-4" />,
   seo: (
     <>
       <circle cx="10.5" cy="10.5" r="6" />
@@ -81,6 +82,7 @@ const GROUPS: { label: string; items: Item[] }[] = [
     label: "Operations",
     items: [
       { href: "/admin/requests", label: "Bookings & quotes", icon: "requests" },
+      { href: "/admin/retention", label: "Bring customers back", icon: "retention" },
       { href: "/admin/accounts", label: "Customer accounts", icon: "accounts" },
       { href: "/admin/health", label: "Website health", icon: "health" },
     ],
