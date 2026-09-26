@@ -1,6 +1,8 @@
 import Link from "@/components/i18n/Link";
 import { pageMetadata } from "@/lib/seo/page-metadata";
 import { getCustomerSession } from "@/lib/customer/portal";
+import { parseRoutine } from "@/lib/customer/rhythm";
+import { validOrderNumber } from "@/lib/customer/validation";
 import { BookingForm } from "@/components/forms/BookingForm";
 import { Breadcrumbs } from "@/components/pages/Breadcrumbs";
 import { WhatsAppButton } from "@/components/ui/Button";
@@ -29,6 +31,19 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
   const locale = await getLocale();
   const f = formText(locale);
   const t = f.bookPage;
+  // "Book the same again" from the account: only a well-formed order number, only for a signed-in
+  // customer, and only as a note the customer can edit (Ops staff see which order it repeats).
+  let repeat: string | null = null;
+  try {
+    repeat = account ? validOrderNumber(one(params.repeat) ?? "") : null;
+  } catch {
+    // A malformed escape in the query: ignore it, it's only a note.
+  }
+  // "Make it a routine" from the account: a request note Ops confirms by phone, never a contract.
+  const routine = parseRoutine(one(params.routine), one(params.day));
+  const routineNote = routine
+    ? format(t.routineNote, { every: t.routineEvery[routine.every], day: t.routineDays[routine.day] })
+    : null;
 
   return (
     <section aria-labelledby="page-title" className="group/book pb-(--space-section) pt-7 md:pt-10 xl:pt-12">
@@ -45,7 +60,15 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
                 intro={
                   <>
                     {t.intro}
-                    {account ? (
+                    {routine ? (
+                      <span className="mt-3 block t-small font-semibold text-navy" data-routine>
+                        {t.routineIntro}
+                      </span>
+                    ) : repeat ? (
+                      <span className="mt-3 block t-small font-semibold text-navy" data-repeat>
+                        {format(t.repeatIntro, { n: repeat })}
+                      </span>
+                    ) : account ? (
                       <span className="mt-3 block t-small text-secondary" data-prefilled>
                         {format(t.signedIn, { name: account.fullName })}
                       </span>
@@ -61,7 +84,7 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
                   </>
                 }
                 initialService={service}
-                presetNote={t.presetNotes[service ?? ""]}
+                presetNote={routineNote ?? (repeat ? format(t.repeatNote, { n: repeat }) : t.presetNotes[service ?? ""])}
                 previewOutcome={previewOutcome}
                 initialContact={
                   account
