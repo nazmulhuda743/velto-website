@@ -11,6 +11,11 @@ import { dictionary } from "@/content/i18n";
 import { formText } from "@/content/i18n/forms";
 import { format, localDigits } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
+import { getPickupChargeMinor } from "@/lib/booking-estimate";
+import { getServicePrices } from "@/lib/service-prices";
+
+/** Quick picks on /book: the everyday items customers send most, exactly as the Ops price list names them. */
+const POPULAR_ITEMS = ["Shirt", "Pant", "T-Shirt", "Panjabi", "Kamiz", "Salwar", "Sari (Cotton)", "Jeans", "Blazer", "Bed Sheet (Medium)"];
 
 export const generateMetadata = () => pageMetadata("/book");
 
@@ -25,7 +30,11 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
   // Development-only QA hook: simulate the adapter result without any backend.
   const preview = process.env.NODE_ENV !== "production" ? one(params.preview) : undefined;
   const previewOutcome = preview === "success" || preview === "error" ? preview : undefined;
-  const session = await getCustomerSession();
+  const [session, popular, pickupChargeMinor] = await Promise.all([
+    getCustomerSession(),
+    getServicePrices(POPULAR_ITEMS),
+    getPickupChargeMinor(),
+  ]);
   const account = session.kind === "customer" && session.account.state === "ready" ? session.account : null;
   const returnTo = `/book${service ? `?service=${encodeURIComponent(service)}` : ""}`;
   const locale = await getLocale();
@@ -84,6 +93,8 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
                   </>
                 }
                 initialService={service}
+                popularItems={popular.state === "live" ? popular.items : []}
+                pickupChargeMinor={pickupChargeMinor}
                 presetNote={routineNote ?? (repeat ? format(t.repeatNote, { n: repeat }) : t.presetNotes[service ?? ""])}
                 previewOutcome={previewOutcome}
                 initialContact={

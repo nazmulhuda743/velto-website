@@ -19,6 +19,48 @@ export const ITEM_SERVICES = {
 
 export type ItemService = keyof typeof ITEM_SERVICES;
 
+/** The per-garment services a customer chooses first on /book (one or more). */
+export const GARMENT_SERVICES = ["dry-cleaning", "wash-and-iron", "ironing"] as const satisfies readonly ItemService[];
+export type GarmentService = (typeof GARMENT_SERVICES)[number];
+export const isGarmentService = (value: unknown): value is GarmentService =>
+  typeof value === "string" && (GARMENT_SERVICES as readonly string[]).includes(value);
+
+/** Orders of ৳499+ get free pickup & delivery (spec §4), in minor units (paisa). */
+export const FREE_DELIVERY_MIN_MINOR = 49_900;
+
+/** A booking line for the estimate: its unit price from the Ops price list, or null when priced at pickup. */
+export type EstimateLine = { quantity: number; unitMinor: number | null };
+
+export type BookingEstimate = {
+  /** Sum of the lines with a price. */
+  subtotalMinor: number;
+  /** Lines without a price (not on the list, per sq ft, or needing a check): Velto prices them at pickup. */
+  unpricedLines: number;
+  /** ৳499+ (on the priced lines): free pickup & delivery. */
+  free: boolean;
+  /** Below ৳499: the charge from the admin setting, or null when it isn't set (Velto confirms it). */
+  chargeMinor: number | null;
+  /** Subtotal plus the charge when it is known. */
+  totalMinor: number;
+};
+
+/**
+ * The website's estimate: prices from Velto Ops times quantities, plus the pickup & delivery
+ * charge below ৳499. Shared by the booking form and /api/bookings. Velto confirms the final
+ * amount after counting the items at pickup.
+ */
+export function estimateBooking(lines: EstimateLine[], chargeMinor: number | null): BookingEstimate {
+  let subtotalMinor = 0;
+  let unpricedLines = 0;
+  for (const l of lines) {
+    if (l.unitMinor === null) unpricedLines += 1;
+    else subtotalMinor += l.unitMinor * l.quantity;
+  }
+  const free = subtotalMinor >= FREE_DELIVERY_MIN_MINOR;
+  const charge = free ? 0 : chargeMinor;
+  return { subtotalMinor, unpricedLines, free, chargeMinor: charge, totalMinor: subtotalMinor + (charge ?? 0) };
+}
+
 export type BookingItem = {
   item: string;
   /** Omitted when the customer isn't sure which service it needs. */
@@ -81,9 +123,34 @@ export function sharedItemService(items: BookingItem[]): ItemService | undefined
   return services.size === 1 && only ? only : undefined;
 }
 
-/** Items sentence first, then the customer's own note: a single line, as the Ops intake expects. */
-export function composeBookingNotes(items: BookingItem[], note?: string): string | undefined {
-  const parts = [items.length ? `Items: ${bookingItemsText(items)}.` : "", note?.trim() ? `Note: ${note.trim()}` : ""];
-  if (!items.length) return note?.trim() || undefined;
-  return parts.filter(Boolean).join(" ");
+/** Booking facts that ride in the notes next to the items (the Ops intake has no columns for them). */
+export type BookingNoteExtras = {
+  /** Services chosen without item lines, when there is more than one (one goes in the Service field). */
+  services?: ItemService[];
+  /** The website estimate, already worded ("৳610 for 7 items; pickup & delivery free"). */
+  estimate?: string;
+  /** When the customer wants the order back ("Fri 3 Oct"). */
+  backBy?: string;
+};
+
+/**
+ * Items (or chosen services) first, then the website estimate and the wanted-back date, then the
+ * customer's own note: a single line, as the Ops intake expects.
+ */
+export function composeBookingNotes(items: BookingItem[], note?: string, extras: BookingNoteExtras = {}): string | undefined {
+  const parts = [
+    items.length
+      ? `Items: ${bookingItemsText(items)}.`
+      : extras.services?.length
+        ? `Services: ${extras.services.map((s) => ITEM_SERVICES[s]).join(", ")}.`
+        : "",
+    extras.estimate ? `Website estimate: ${extras.estimate}.` : "",
+    extras.backBy ? `Wanted back by: ${extras.backBy}.` : "",
+  ].filter(Boolean);
+  const text = note?.trim();
+  if (!parts.length) return text || undefined;
+  return [...parts, text ? `Note: ${text}` : ""].filter(Boolean).join(" ");
 }
+
+/** The longest estimate and wanted-back wording the notes need room for. */
+export const NOTE_EXTRAS_RESERVE = 160;

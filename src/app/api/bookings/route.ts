@@ -1,5 +1,7 @@
 import { after, NextResponse, type NextRequest } from "next/server";
 import { logServerEvent } from "@/lib/analytics/store";
+import { bookingEstimateText } from "@/lib/booking-estimate";
+import { cleanBookingItems } from "@/lib/booking-items";
 import {
   IntegrationError,
   integrationLogContext,
@@ -41,7 +43,11 @@ export async function POST(request: NextRequest) {
   if (!body.ok) return fail("invalid_request", requestId, false, body.status);
 
   const input = (body.value ?? {}) as Record<string, unknown>;
-  const parsed = validateBookingSubmission(input.data);
+  // The estimate comes from the Ops price list on the server, never from the browser.
+  const data = input.data && typeof input.data === "object" ? (input.data as Record<string, unknown>) : {};
+  const items = cleanBookingItems(data.items);
+  const estimate = items?.length ? await bookingEstimateText(items).catch(() => undefined) : undefined;
+  const parsed = validateBookingSubmission(input.data, { estimate });
   const context = validateSubmissionContext({ idempotencyKey: input.idempotencyKey, requestId });
   if (!parsed.ok || !context.ok) {
     const issues = [...(parsed.ok ? [] : parsed.issues), ...(context.ok ? [] : context.issues)];
