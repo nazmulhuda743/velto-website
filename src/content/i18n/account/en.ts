@@ -48,6 +48,9 @@ export const accountEn = {
       { title: "Your details stay yours", copy: "We only use them to run your orders." },
     ],
     stillWorks: "Booking and order tracking still work without an account.",
+    tabsLabel: "Sign in or create an account",
+    tabSignIn: "Sign in",
+    tabSignUp: "Create account",
   },
   /** Client forms (components/account/forms.tsx). */
   forms: {
@@ -66,6 +69,9 @@ export const accountEn = {
     forgot: "Forgot password?",
     signInPending: "Signing in…",
     signInSubmit: "Sign in",
+    google: "Continue with Google",
+    googlePending: "Opening Google…",
+    orEmail: "or use your email",
     newTo: "New to Velto accounts? ",
     createLink: "Create an account",
     verifyTitle: "Please confirm your email first.",
@@ -126,6 +132,7 @@ export const accountEn = {
       link_expired: "That link has expired or was already used. Sign in below, or request a new link.",
       link_unavailable: "We couldn't check that link just now. Please try it again in a moment.",
       signed_out: "You've been signed out.",
+      oauth_failed: "Google sign-in didn't finish. Try again, or use your email below.",
     } as Record<string, string>,
     signInUnavailable: "We can't reach Velto accounts right now. You can still try to sign in, or come back in a moment.",
     signUpTitle: "Create your Velto account",

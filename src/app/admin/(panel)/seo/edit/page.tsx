@@ -84,7 +84,7 @@ export default async function SeoEditPage({ searchParams }: { searchParams: Sear
               </label>
             </div>
           ) : null}
-          <ImageFileInput name="ogImage" accept="image/jpeg,image/png,image/webp" className="mt-3 block t-small" />
+          <ImageFileInput name="ogImage" accept="image/jpeg,image/png,image/webp" className="mt-3 block t-small" aria-label="Upload a share image" />
         </div>
         <label className="flex items-start gap-3">
           <input type="checkbox" name="noindex" defaultChecked={entry.noindex} className="mt-1 size-4" />

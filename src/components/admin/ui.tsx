@@ -45,7 +45,7 @@ export function Field({ label, hint, children }: { label: string; hint?: ReactNo
 export function Badge({ children, tone = "neutral" }: { children: ReactNode; tone?: "neutral" | "blue" | "green" | "amber" }) {
   const tones = {
     neutral: "bg-soft text-secondary",
-    blue: "bg-[#e8f3fb] text-blue",
+    blue: "bg-[#e8f3fb] text-action-hover",
     green: "bg-success-soft text-success",
     amber: "bg-[#fff4e5] text-[#8a5300]",
   };

@@ -4,11 +4,24 @@ Customer sign-in, order history and booking prefill for the Velto website. Velto
 source of truth for customers, orders, items, payments and outlets. Supabase Auth (same Ops
 project) only provides customer identity.
 
-Status: **BUILT and TESTED on staging** (`ekgdefcdqcsqvpbqponv`). Not applied to production.
+Status: **BUILT and TESTED on staging** (`ekgdefcdqcsqvpbqponv`). **SQL applied to production** (`erutxtnepbejdxkoimeo`) on 2026-09-25; accounts stay off until SMTP, email templates and redirect URLs are set (§8 steps 5–9).
+
+> ### Production activation log (2026-09-25)
+> - `dashboard@velto.internal` kept by owner decision: `profiles` row created (role `manager`, outlet `all`).
+> - Policy snapshot taken first: `docs/technical/sql/customer_portal_rollback_production.sql` (145 policies).
+> - Applied as migrations: `website_admin_and_tracking`, `website_analytics_command_center`, `website_revenue_attribution_v1`,
+>   `website_create_request_attribution_v1`, `customer_portal_v1` (hardening + portal).
+> - `customer_portal.sql` now runs on both projects: the Ops v2 objects that exist only on staging
+>   (`orders.v2_promised_at`, `order_status_history.v2_corrected_by_event_id`, `velto_v2_local_phone()`) are read through
+>   JSON or replaced by the portal-owned `portal_local_phone()`.
+> - Verified: 0 ungated policies; an active staff session sees all orders/customers/payments/tasks, a non-staff session sees 0;
+>   `customer_accounts` and staff link functions are not reachable by API roles.
+> - Cron: `website-analytics-retention` (21:15 UTC) and `website-match-leads` (21:30 UTC).
+> - Website Vercel env points at production; booking, quote, tracking and duplicate handling tested live (test tasks removed).
 
 > ## ⛔ Production blockers (read first)
 >
-> **Nothing in this document has been applied to production. Production is NOT fixed.**
+> **Update 2026-09-25:** blockers 1 and 2 are resolved on production (see the activation log above). Blocker 3 (custom SMTP) is still open.
 >
 > ### 1. Critical: public sign-up + permissive Ops policies (live risk today)
 > Production Ops (`erutxtnepbejdxkoimeo`) currently has:

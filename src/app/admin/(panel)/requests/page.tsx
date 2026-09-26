@@ -28,6 +28,8 @@ function Breakdown({ title, children }: { title: string; children: React.ReactNo
 
 const bars = (list: { label: string; count: number }[], limit = 6) => list.slice(0, limit).map((x) => ({ key: x.label, label: x.label, value: x.count }));
 
+const PAGE_SIZE = 30;
+
 export default async function RequestsPage({ searchParams }: { searchParams: SearchParams }) {
   await requireSection("requests");
   const params = await searchParams;
@@ -38,6 +40,9 @@ export default async function RequestsPage({ searchParams }: { searchParams: Sea
   const all = loaded.state === "ok" ? loaded.data.map((r) => analyseRequest(r)) : [];
   const summary = requestSummary(all);
   const rows = all.filter((i) => matchesQuickFilter(i, filter) && (!q || `${i.request.title} ${i.request.description ?? ""}`.toLowerCase().includes(q)));
+  // Show the newest first in pages of 30, so the list stays quick to scan on a phone.
+  const shown = Math.min(rows.length, Math.max(PAGE_SIZE, Math.min(Number(one(params.show)) || PAGE_SIZE, 500)));
+  const moreHref = `/admin/requests?${new URLSearchParams({ filter, ...(q ? { q } : {}), show: String(shown + PAGE_SIZE) })}`;
 
   return (
     <>
@@ -130,10 +135,10 @@ export default async function RequestsPage({ searchParams }: { searchParams: Sea
       </div>
 
       <p className="mt-6 t-small text-secondary">
-        {rows.length} request{rows.length === 1 ? "" : "s"}
+        {rows.length > shown ? `Showing ${shown} of ${rows.length} requests` : `${rows.length} request${rows.length === 1 ? "" : "s"}`}
       </p>
       <ul className="mt-2 space-y-2">
-        {rows.map((i) => {
+        {rows.slice(0, shown).map((i) => {
           const r = i.request;
           const d = i.details;
           return (
@@ -203,6 +208,13 @@ export default async function RequestsPage({ searchParams }: { searchParams: Sea
           );
         })}
       </ul>
+      {rows.length > shown ? (
+        <div className="mt-4 flex justify-center">
+          <Link href={moreHref} scroll={false} className="admin-btn-secondary">
+            Show {Math.min(PAGE_SIZE, rows.length - shown)} more
+          </Link>
+        </div>
+      ) : null}
     </>
   );
 }

@@ -26,8 +26,13 @@ export async function GET(request: NextRequest) {
   const supabase = await customerSupabase();
   if (!supabase) return to("/login");
 
-  // Supabase itself reports a dead link this way (e.g. error_code=otp_expired).
-  if (url.searchParams.get("error") || url.searchParams.get("error_code")) return fail("expired");
+  // Supabase reports a dead email link this way (e.g. error_code=otp_expired). A Google sign-in
+  // that was cancelled or refused comes back with an OAuth error instead and no email-link type.
+  const oauthError = url.searchParams.get("error");
+  if (oauthError && !recovery && !url.searchParams.get("type") && url.searchParams.get("error_code") !== "otp_expired") {
+    return to("/login?error=oauth_failed");
+  }
+  if (oauthError || url.searchParams.get("error_code")) return fail("expired");
 
   const code = url.searchParams.get("code");
   const tokenHash = url.searchParams.get("token_hash");
