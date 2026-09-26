@@ -11,9 +11,9 @@
 --
 -- The activity log is append-only for the website (select + insert only).
 --
--- Status: applied to STAGING (ekgdefcdqcsqvpbqponv) and tested with
--- docs/technical/sql/tests/website_admin_access_test.sql; production only
--- with the owner's approval.
+-- Status: applied to STAGING (ekgdefcdqcsqvpbqponv) and PRODUCTION
+-- (erutxtnepbejdxkoimeo, 2026-09-26, owner-approved); tested on staging with
+-- docs/technical/sql/tests/website_admin_access_test.sql.
 
 begin;
 
