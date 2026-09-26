@@ -24,6 +24,27 @@ export default async function SettingsPage({ searchParams }: { searchParams: Sea
         </section>
 
         <section className="admin-card p-5 md:p-7">
+          <h2 className="t-h4 text-navy">Booking</h2>
+          <p className="mt-1 t-small text-secondary">
+            Orders of ৳499+ get free pickup &amp; delivery. Smaller orders show this charge in the booking summary.
+          </p>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <Field label="Pickup & delivery charge under ৳499 (৳)" hint="Whole taka. Leave empty until it's decided: the summary then says Velto will confirm it.">
+              <input
+                name="pickupChargeTaka"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                max={2000}
+                step={1}
+                defaultValue={settings.pickupChargeTaka ?? ""}
+                className="admin-input"
+              />
+            </Field>
+          </div>
+        </section>
+
+        <section className="admin-card p-5 md:p-7">
           <h2 className="t-h4 text-navy">Announcement bar</h2>
           <p className="mt-1 t-small text-secondary">A thin navy bar above the header on every page, e.g. Eid holiday hours or an offer.</p>
           <label className="mt-4 flex items-center gap-3">

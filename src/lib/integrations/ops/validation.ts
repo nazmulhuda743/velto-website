@@ -1,5 +1,12 @@
 import { legacyOpsAttribution, readSubmissionAttribution } from "../../attribution";
-import { cleanBookingItems, composeBookingNotes, MAX_BOOKING_NOTES, sharedItemService } from "../../booking-items";
+import {
+  cleanBookingItems,
+  composeBookingNotes,
+  isGarmentService,
+  MAX_BOOKING_NOTES,
+  sharedItemService,
+  type GarmentService,
+} from "../../booking-items";
 import type {
   BookingSubmission,
   QuoteSubmission,
@@ -87,8 +94,39 @@ const attributionSqlLive = () =>
   (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env
     ?.VELTO_ATTRIBUTION_SQL_LIVE === "true";
 
+const DAY_MS = 86_400_000;
+/** Today's date in Dhaka as YYYY-MM-DD. */
+const dhakaToday = (now: Date) => new Date(now.getTime() + 6 * 3_600_000).toISOString().slice(0, 10);
+
+/**
+ * "When do you want it back?": an ISO date from today (Dhaka) up to 180 days ahead, worded for
+ * Ops staff ("Fri 3 Oct"). `null` means the value is unusable; undefined means none was given.
+ */
+export function readBackBy(value: unknown, now = new Date()): string | null | undefined {
+  if (value === undefined || value === null || value === "") return undefined;
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const date = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) return null;
+  const today = new Date(`${dhakaToday(now)}T00:00:00Z`).getTime();
+  if (date.getTime() < today || date.getTime() > today + 180 * DAY_MS) return null;
+  return `${WEEKDAYS[date.getUTCDay()]} ${date.getUTCDate()} ${MONTHS[date.getUTCMonth()]}`;
+}
+
+// Fixed words (not Intl, whose short month names differ between runtimes: "Sep" / "Sept").
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** The services chosen at the top of /book: Dry Cleaning, Wash & Iron and/or Ironing. */
+function readServices(value: unknown): GarmentService[] | null {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.length > 3 || !value.every(isGarmentService)) return null;
+  return [...new Set(value)];
+}
+
 export function validateBookingSubmission(
   value: unknown,
+  /** Server-computed website estimate (from the Ops price list), added to the notes when it fits. */
+  options: { estimate?: string; now?: Date } = {},
 ): ValidationResult<BookingSubmission> {
   const input = record(value);
   if (!input) return { ok: false, issues: [{ field: "request", code: "invalid" }] };
@@ -105,13 +143,26 @@ export function validateBookingSubmission(
     typeof rawService === "string" && isServiceSlug(rawService)
       ? rawService
       : undefined;
-  // Itemised lines ride in the notes (the Ops intake has no items column).
+  // Itemised lines, chosen services, the estimate and the wanted-back date ride in the notes
+  // (the Ops intake has no columns for them).
   const items = cleanBookingItems(input.items);
-  const notes = items ? composeBookingNotes(items, note) : note;
-  const service = chosenService ?? (items ? sharedItemService(items) : undefined);
+  const services = readServices(input.services);
+  const backBy = readBackBy(input.deliveryBy, options.now);
+  const extras = {
+    services: !items?.length && services && services.length > 1 ? services : undefined,
+    backBy: backBy ?? undefined,
+  };
+  const withEstimate = items ? composeBookingNotes(items, note, { ...extras, estimate: options.estimate }) : note;
+  // The estimate is a courtesy for staff: drop it rather than reject a booking whose notes are full.
+  const notes =
+    withEstimate && withEstimate.length > MAX_BOOKING_NOTES && items ? composeBookingNotes(items, note, extras) : withEstimate;
+  const service =
+    chosenService ?? (items ? sharedItemService(items) : undefined) ?? (services?.length === 1 ? services[0] : undefined);
 
   if (phone && !PHONE_PATTERN.test(phone)) issues.push({ field: "phone", code: "invalid" });
   if (rawService !== undefined && !chosenService) issues.push({ field: "service", code: "invalid" });
+  if (!services) issues.push({ field: "services", code: "invalid" });
+  if (backBy === null) issues.push({ field: "deliveryBy", code: "invalid" });
   if (!items) issues.push({ field: "items", code: "invalid" });
   else if (notes && notes.length > MAX_BOOKING_NOTES) issues.push({ field: "notes", code: "too_long" });
   if (issues.length || !name || !phone || !area || !address) return { ok: false, issues };

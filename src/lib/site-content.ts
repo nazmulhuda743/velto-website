@@ -19,6 +19,11 @@ export type SiteSettings = {
   /** textBn is shown on Bangla pages; empty means the English text is shown there too. */
   announcement: { enabled: boolean; text: string; textBn: string; href: string };
   outlets: Record<LocationId, { rating: string; reviewCount: number; hours: string }>;
+  /**
+   * Pickup & delivery charge for orders under ৳499, in whole taka (spec §4: operational data,
+   * set in the admin). null until the owner sets it; the booking summary then says Velto confirms it.
+   */
+  pickupChargeTaka: number | null;
 };
 
 /** titleBn/descriptionBn override the built-in Bangla text on /bn pages. */
@@ -39,6 +44,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
   outlets: Object.fromEntries(
     LOCATIONS.map((l) => [l.id, { rating: l.rating, reviewCount: l.reviewCount, hours: l.hours }]),
   ) as SiteSettings["outlets"],
+  pickupChargeTaka: null,
 };
 
 export const DEFAULT_REVIEWS: ReviewEntry[] = REVIEWS.map((r, i) => ({
@@ -77,8 +83,12 @@ function parseSettings(v: unknown): SiteSettings {
         ];
       }),
     ) as SiteSettings["outlets"],
+    pickupChargeTaka: readCharge(s.pickupChargeTaka),
   };
 }
+
+/** Whole taka, 0–2,000; anything else counts as not set. */
+export const readCharge = (v: unknown) => (typeof v === "number" && Number.isInteger(v) && v >= 0 && v <= 2000 ? v : null);
 
 function parseSeo(v: unknown): Record<string, SeoEntry> {
   const out: Record<string, SeoEntry> = {};
