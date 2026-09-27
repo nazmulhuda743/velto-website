@@ -22,6 +22,7 @@ const SECTION_LABEL: Record<Section, string> = {
   revenue: "Revenue",
   consent: "Consent",
   requests: "Bookings & quotes",
+  dispatch: "Pickup & delivery",
   retention: "Bring customers back",
   accounts: "Customer accounts",
   health: "Website health",

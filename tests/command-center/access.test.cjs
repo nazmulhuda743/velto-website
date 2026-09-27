@@ -26,14 +26,14 @@ test("only owners approve price changes; managers and owners may propose them", 
 });
 
 test("designers never reach customer data or money", () => {
-  for (const s of ["requests", "retention", "accounts", "revenue", "visitors", "funnel", "marketing", "overview", "activity", "access", "prices"]) {
+  for (const s of ["requests", "dispatch", "retention", "accounts", "revenue", "visitors", "funnel", "marketing", "overview", "activity", "access", "prices"]) {
     assert.equal(p.can("designer", s), false, s);
   }
   for (const s of ["images", "seo", "reviews", "settings"]) assert.ok(p.can("designer", s), s);
 });
 
 test("support handles customers but not site content or marketing", () => {
-  for (const s of ["requests", "retention", "accounts"]) assert.ok(p.can("support", s), s);
+  for (const s of ["requests", "dispatch", "retention", "accounts"]) assert.ok(p.can("support", s), s);
   for (const s of ["images", "settings", "seo", "revenue", "marketing"]) assert.equal(p.can("support", s), false, s);
 });
 

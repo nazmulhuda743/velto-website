@@ -19,6 +19,7 @@ export const SECTIONS = [
   "revenue",
   "consent",
   "requests",
+  "dispatch",
   "retention",
   "accounts",
   "health",
@@ -41,7 +42,7 @@ export const ROLE_INFO: Record<Role, { label: string; summary: string }> = {
   manager: { label: "Manager", summary: "Everything except Access and Approvals. Price changes wait for an Owner's approval." },
   marketing: { label: "Marketing", summary: "Traffic, funnel, campaigns, revenue, consent, SEO, website text and reviews." },
   designer: { label: "Designer", summary: "Images, logo, website text, SEO text, reviews and site settings. No customer data." },
-  support: { label: "Customer support", summary: "Bookings, bring-back list, customer accounts and prices." },
+  support: { label: "Customer support", summary: "Bookings, pickup & delivery, bring-back list, customer accounts and prices." },
 };
 
 const ALL = new Set<Section>(SECTIONS);
@@ -50,7 +51,7 @@ const MATRIX: Record<Role, ReadonlySet<Section>> = {
   manager: new Set(SECTIONS.filter((s) => s !== "access" && s !== "approvals")),
   marketing: new Set<Section>(["overview", "funnel", "visitors", "marketing", "revenue", "consent", "seo", "copy", "reviews", "notifications", "board"]),
   designer: new Set<Section>(["images", "copy", "seo", "reviews", "settings", "board"]),
-  support: new Set<Section>(["requests", "retention", "accounts", "prices", "notifications", "board"]),
+  support: new Set<Section>(["requests", "dispatch", "retention", "accounts", "prices", "notifications", "board"]),
 };
 
 export const isRole = (value: unknown): value is Role => ROLES.includes(value as Role);
@@ -68,7 +69,7 @@ export function sectionForPath(path: string): Section | null {
 }
 
 /** Where a role lands after signing in (their first allowed section, in menu order). */
-const MENU_ORDER: Section[] = ["overview", "requests", "images", "funnel", "retention", "seo"];
+const MENU_ORDER: Section[] = ["overview", "requests", "dispatch", "images", "funnel", "retention", "seo"];
 export function homeFor(role: Role): string {
   const first = MENU_ORDER.find((s) => can(role, s)) ?? SECTIONS.find((s) => can(role, s));
   return !first || first === "overview" ? "/admin" : `/admin/${first}`;
