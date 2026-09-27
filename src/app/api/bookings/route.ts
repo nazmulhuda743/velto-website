@@ -15,6 +15,7 @@ import {
   type ValidationIssue,
 } from "@/lib/integrations/ops/validation";
 import { readBoundedJson } from "@/lib/security/json-request";
+import { SITE_URL } from "@/lib/site-url";
 
 /**
  * Website-owned booking endpoint (spec §8). Wire format:
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
   const data = input.data && typeof input.data === "object" ? (input.data as Record<string, unknown>) : {};
   const items = cleanBookingItems(data.items);
   const estimate = items?.length ? await bookingEstimateText(items).catch(() => undefined) : undefined;
-  const parsed = validateBookingSubmission(input.data, { estimate });
+  const parsed = validateBookingSubmission(input.data, { estimate, siteUrl: SITE_URL });
   const context = validateSubmissionContext({ idempotencyKey: input.idempotencyKey, requestId });
   if (!parsed.ok || !context.ok) {
     const issues = [...(parsed.ok ? [] : parsed.issues), ...(context.ok ? [] : context.issues)];

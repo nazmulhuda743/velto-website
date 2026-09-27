@@ -7,13 +7,14 @@
 --   ip     : 10 code requests per requester IP (website action)
 --   global : 300 codes for the whole site (ceiling on the SMS bill)
 --   verify : 10 code checks per phone number (with 6 digits and a 5-minute code, guessing is hopeless)
+--   photo  : 20 booking photo uploads per IP (docs/technical/sql/website_booking_photos.sql)
 --
 -- Idempotent; safe to re-run.
 
 begin;
 
 create table if not exists public.website_otp_rate_limits (
-  bucket text not null check (bucket in ('phone', 'ip', 'global', 'verify')),
+  bucket text not null check (bucket in ('phone', 'ip', 'global', 'verify', 'photo')),
   rate_key text not null check (rate_key ~ '^[a-f0-9]{64}$'),
   window_started_at timestamptz not null default now(),
   attempts integer not null default 0 check (attempts >= 0),
@@ -34,10 +35,10 @@ declare
   v_attempts integer;
   v_started timestamptz;
 begin
-  if p_bucket not in ('phone', 'ip', 'global', 'verify') or p_rate_key !~ '^[a-f0-9]{64}$' then
+  if p_bucket not in ('phone', 'ip', 'global', 'verify', 'photo') or p_rate_key !~ '^[a-f0-9]{64}$' then
     return jsonb_build_object('ok', false, 'error', 'invalid');
   end if;
-  v_limit := case p_bucket when 'phone' then 5 when 'ip' then 10 when 'verify' then 10 else 300 end;
+  v_limit := case p_bucket when 'phone' then 5 when 'ip' then 10 when 'verify' then 10 when 'photo' then 20 else 300 end;
 
   insert into public.website_otp_rate_limits as rl (bucket, rate_key, window_started_at, attempts, updated_at)
   values (p_bucket, p_rate_key, now(), 1, now())
