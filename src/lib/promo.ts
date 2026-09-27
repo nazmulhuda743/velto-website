@@ -147,6 +147,15 @@ export function popupExcluded(pathname: string): boolean {
   return /^\/(?:book|quote|track|account|auth|login|signup|forgot-password|reset-password|offline|privacy|cookies|terms|admin)(?:\/|$)/.test(path);
 }
 
+/**
+ * Where the top bar goes: the link set in the admin; failing that, the booking page whenever the
+ * bar carries an offer that the booking summary repeats (an offer people can't act on is bait).
+ */
+export function barLink(a: { href: string; bookingNote: string }): string {
+  if (a.href) return a.href;
+  return a.bookingNote.trim() ? "/book?source=promo_bar" : "";
+}
+
 /** The top-bar text may hold several messages separated by "|"; each becomes one ticker item. */
 export function barMessages(text: string): string[] {
   return text

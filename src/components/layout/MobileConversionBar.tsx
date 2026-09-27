@@ -10,10 +10,9 @@ import { WHATSAPP_URL, bookHref } from "@/content/site";
 const TEXT_ENTRY = "input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]), textarea, select";
 
 /**
- * Persistent mobile conversion bar (spec §18). Hidden while typing, while
- * the final booking section fills ~60%+ of the viewport, and while the cookie
- * banner is open (the hero's own Book a Pickup is on screen then, and two
- * stacked bottom bars cover the hero proof).
+ * Persistent mobile conversion bar (spec §18). Hidden while typing, while the page's own
+ * Book a Pickup (the hero's) is on screen, while the final booking section fills ~60%+ of the
+ * viewport, and while the cookie banner is open (two stacked bottom bars would cover the page).
  */
 export function MobileConversionBar({
   finalSectionId,
@@ -30,6 +29,7 @@ export function MobileConversionBar({
   const t = dictionary(useLocale()).common;
   const [typing, setTyping] = useState(false);
   const [finalInView, setFinalInView] = useState(false);
+  const [heroCtaInView, setHeroCtaInView] = useState(true);
   const [consentOpen, setConsentOpen] = useState(false);
 
   useEffect(() => {
@@ -53,6 +53,17 @@ export function MobileConversionBar({
       );
       io.observe(target);
     }
+    // The page's own primary button: no second Book button while the first is still visible.
+    const heroCta = document.querySelector('#hero a[data-placement="hero"]');
+    let heroIo: IntersectionObserver | undefined;
+    let heroFrame = 0;
+    if (heroCta) {
+      heroIo = new IntersectionObserver(([entry]) => setHeroCtaInView(entry.isIntersecting), { threshold: 0.5 });
+      heroIo.observe(heroCta);
+    } else {
+      // No hero button on this page: show the bar as soon as it has painted.
+      heroFrame = requestAnimationFrame(() => setHeroCtaInView(false));
+    }
     // The banner mounts after first paint and unmounts once a choice is made.
     const checkConsent = () => setConsentOpen(!!document.querySelector("[data-consent-banner]"));
     checkConsent();
@@ -62,11 +73,13 @@ export function MobileConversionBar({
       document.removeEventListener("focusin", onFocusIn);
       document.removeEventListener("focusout", onFocusOut);
       io?.disconnect();
+      heroIo?.disconnect();
+      cancelAnimationFrame(heroFrame);
       mo.disconnect();
     };
   }, [finalSectionId]);
 
-  const hidden = typing || finalInView || consentOpen;
+  const hidden = typing || heroCtaInView || finalInView || consentOpen;
 
   return (
     <div

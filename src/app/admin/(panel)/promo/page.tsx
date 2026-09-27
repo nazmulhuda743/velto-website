@@ -75,8 +75,14 @@ export default async function PromoPage({ searchParams }: { searchParams: Search
             <Field label="Message in Bangla" hint="Optional. Shown on Bangla pages; if empty, they show the English text.">
               <textarea name="textBn" lang="bn" defaultValue={bar.textBn} rows={2} maxLength={400} className="admin-input" />
             </Field>
-            <Field label="Link" hint="Optional. The whole bar opens it: a page like /signup or /book, or a full https:// link.">
+            <Field label="Link" hint="Optional. The whole bar opens it: a page like /signup or /book, or a full https:// link. With an offer line below and no link, the bar opens the booking page.">
               <input name="href" defaultValue={bar.href} maxLength={300} className="admin-input" placeholder="/signup" />
+            </Field>
+            <Field label="Offer line in the booking summary" hint="Optional. Repeats the offer in the order summary on Book a Pickup, so it is still there when the customer confirms. Up to 160 characters.">
+              <input name="bookingNote" defaultValue={bar.bookingNote} maxLength={160} className="admin-input" placeholder="10% off your first website order. We apply it when we confirm." />
+            </Field>
+            <Field label="Offer line in Bangla" hint="Optional. Shown on Bangla pages; if empty, they show the English line.">
+              <input name="bookingNoteBn" lang="bn" defaultValue={bar.bookingNoteBn} maxLength={160} className="admin-input" />
             </Field>
           </div>
           <button type="submit" className="admin-btn">

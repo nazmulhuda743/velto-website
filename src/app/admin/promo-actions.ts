@@ -29,6 +29,8 @@ export async function savePromoBarAction(form: FormData) {
       text: text(form, "text", 400),
       textBn: text(form, "textBn", 400),
       href,
+      bookingNote: text(form, "bookingNote", 160),
+      bookingNoteBn: text(form, "bookingNoteBn", 160),
     },
   };
   if (next.announcement.enabled && !next.announcement.text) back({ error: "Write the message before switching the top bar on.", tab: "bar" });

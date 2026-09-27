@@ -19,10 +19,15 @@ import { dictionary } from "@/content/i18n";
  *   first-party analytics sender drops events, Consent Mode defaults to denied.
  * - Reject and Accept are equal buttons, side by side ("Reject non-essential" /
  *   "Accept all" in the preferences dialog, where there is room for the full labels).
- * - Mobile: bottom sheet. Desktop: a compact floating panel. Neither blocks
- *   the page; only "Manage preferences" opens a modal dialog.
+ * - Mobile: a short bottom sheet. Desktop: a compact floating panel. Neither blocks
+ *   the page; only "Manage preferences" opens a modal dialog. On a first visit it appears
+ *   once the visitor scrolls (or after a few seconds), never over the first screen.
  * - Footer "Cookie settings" (CONSENT_OPEN_EVENT) reopens the preferences.
  */
+/** The first-visit banner appears once the visitor scrolls this far, or after this long. */
+const BANNER_SCROLL_PX = 240;
+const BANNER_DELAY_MS = 6000;
+
 export function ConsentManager() {
   const t = dictionary(useLocale()).consent;
   const [banner, setBanner] = useState(false);
@@ -34,21 +39,36 @@ export function ConsentManager() {
 
   useEffect(() => {
     const saved = readConsent();
-    // Shown after first paint, so the banner never competes with the hero for LCP.
-    const frame = saved
-      ? 0
-      : requestAnimationFrame(() => {
-          setBanner(true);
-          sendConsentEvent("banner_view");
-          window.dataLayer?.push({ event: "cookie_banner_view" });
-        });
+    // First visit: the banner waits until the visitor has started reading (a scroll) or a few
+    // seconds have passed, so the first screen is the page and its buttons, not a dialog. It never
+    // competes with the hero for LCP. Nothing non-essential runs in the meantime.
+    let shown = !!saved;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const show = () => {
+      if (shown) return;
+      shown = true;
+      window.removeEventListener("scroll", onScroll);
+      clearTimeout(timer);
+      setBanner(true);
+      sendConsentEvent("banner_view");
+      window.dataLayer?.push({ event: "cookie_banner_view" });
+    };
+    const onScroll = () => {
+      if (window.scrollY >= BANNER_SCROLL_PX) show();
+    };
+    if (!shown) {
+      window.addEventListener("scroll", onScroll, { passive: true });
+      timer = setTimeout(show, BANNER_DELAY_MS);
+      onScroll();
+    }
     const open = () => {
       setDraft(readConsent() ?? ESSENTIAL_ONLY);
       setPrefsOpen(true);
     };
     window.addEventListener(CONSENT_OPEN_EVENT, open);
     return () => {
-      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+      clearTimeout(timer);
       window.removeEventListener(CONSENT_OPEN_EVENT, open);
     };
   }, []);
@@ -79,7 +99,7 @@ export function ConsentManager() {
           // Mobile: a short bottom sheet; the sticky booking bar steps aside while it is open, so the
           // hero and its proof aren't covered by two stacked bars. Desktop: a compact floating panel,
           // bottom-right so it sits over imagery rather than the hero copy. Neither blocks the page.
-          className="fixed inset-x-0 bottom-0 z-[45] border-t border-line bg-white px-4 pb-[calc(8px+env(safe-area-inset-bottom))] pt-3.5 shadow-[0_-8px_24px_rgba(0,49,83,0.10)] min-[360px]:px-5 md:inset-x-auto md:bottom-6 md:right-6 md:w-[400px] md:rounded-lg md:border md:px-5 md:pb-3 md:pt-5 md:shadow-[0_12px_32px_rgba(0,49,83,0.14)]"
+          className="fixed inset-x-0 bottom-0 z-[45] border-t border-line bg-white px-4 pb-[calc(6px+env(safe-area-inset-bottom))] pt-3 shadow-[0_-8px_24px_rgba(0,49,83,0.10)] min-[360px]:px-5 md:inset-x-auto md:bottom-6 md:right-6 md:w-[400px] md:rounded-lg md:border md:px-5 md:pb-3 md:pt-5 md:shadow-[0_12px_32px_rgba(0,49,83,0.14)]"
         >
           <h2 id={titleId} className="sr-only md:not-sr-only md:mb-1.5 md:text-[16px] md:font-semibold md:leading-snug md:text-navy">
             {t.bannerTitle}
@@ -88,23 +108,23 @@ export function ConsentManager() {
             <span className="font-semibold text-navy md:hidden">{t.bannerLead}</span>
             {t.bannerBody}
           </p>
-          <div className="mt-2.5 grid grid-cols-2 gap-2 md:mt-4 md:gap-3">
+          <div className="mt-2 grid grid-cols-2 gap-2 md:mt-4 md:gap-3">
             {/* Equal weight: rejecting is as easy as accepting. */}
             <ConsentButton compact onClick={rejectAll}>{t.reject}</ConsentButton>
             <ConsentButton compact onClick={acceptAll}>{t.accept}</ConsentButton>
           </div>
-          <div className="mt-0.5 flex items-center justify-between gap-4 md:mt-1.5">
+          <div className="flex items-center justify-between gap-4 md:mt-1">
             <button
               type="button"
               onClick={() => {
                 setDraft(readConsent() ?? ESSENTIAL_ONLY);
                 setPrefsOpen(true);
               }}
-              className="inline-flex min-h-10 items-center t-small font-semibold text-navy underline underline-offset-4 hover:text-action"
+              className="inline-flex min-h-9 items-center t-small font-semibold text-navy underline underline-offset-4 hover:text-action"
             >
               {t.manage}
             </button>
-            <Link href="/cookies" className="inline-flex min-h-10 items-center t-small text-secondary underline underline-offset-4 hover:text-navy">
+            <Link href="/cookies" className="inline-flex min-h-9 items-center t-small text-secondary underline underline-offset-4 hover:text-navy">
               {t.policy}
             </Link>
           </div>

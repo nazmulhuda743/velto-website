@@ -97,6 +97,7 @@ export const formsBn: FormText = {
     summaryUnpricedOne: "১টি আইটেমের দাম পিকআপের সময় ঠিক হবে।",
     summaryUnpricedMany: "{n}টি আইটেমের দাম পিকআপের সময় ঠিক হবে।",
     summaryNote: "আমাদের দামের তালিকা থেকে আনুমানিক হিসাব। পিকআপের সময় গুনে চূড়ান্ত পরিমাণ নিশ্চিত করব।",
+    summaryOffer: "অফার:",
     failedNotConnectedTitle: "অনলাইন বুকিং এখনো চালু হয়নি।",
     failedTitle: "এই মুহূর্তে আপনার বুকিং পাঠানো যায়নি।",
     failedNotConnectedBody: "কিছুই পাঠানো হয়নি। একই তথ্য WhatsApp-এ পাঠান। সেগুলো আগে থেকেই লেখা আছে।",
