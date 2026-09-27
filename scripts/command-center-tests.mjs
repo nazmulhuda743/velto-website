@@ -25,6 +25,7 @@ execFileSync(
     "src/lib/admin/price-diff.ts",
     "src/lib/admin/board-logic.ts",
     "src/lib/pwa/sw-rules.ts",
+    "src/lib/promo.ts",
     "src/lib/i18n/copy-overrides.ts",
     "src/content/mock.ts",
   ],

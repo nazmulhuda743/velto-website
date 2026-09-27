@@ -27,7 +27,7 @@ The board finds them and offers one tap:
 
 The rules (slots, capacity, overlaps, suggested slot) are pure functions in `src/lib/admin/dispatch-logic.ts`, unit-tested in `tests/dispatch.test.cjs`.
 
-Status: applied and tested on **staging**. Production: only after the owner approves.
+Status: applied and tested on **staging**; applied on **production** 2026-09-27 (owner-approved). The test script stays staging-only.
 
 ## Later: the Velto Ops engine
 

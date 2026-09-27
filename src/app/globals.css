@@ -352,6 +352,39 @@ body {
   }
 }
 
+/* Promo top bar ticker: two identical groups; the track moves by one group. Pauses on hover, focus or the pause button. */
+@keyframes promo-ticker {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.promo-ticker-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: promo-ticker var(--ticker-duration, 40s) linear infinite;
+}
+.promo-ticker:hover .promo-ticker-track,
+.promo-ticker:focus-within .promo-ticker-track,
+.promo-ticker[data-paused="true"] .promo-ticker-track {
+  animation-play-state: paused;
+}
+.promo-ticker-still {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .promo-ticker-track,
+  .promo-ticker-toggle {
+    display: none;
+  }
+  .promo-ticker-still {
+    display: block;
+  }
+}
+
 /* FAQ accordion (native <details>) */
 .faq-item summary::-webkit-details-marker {
   display: none;

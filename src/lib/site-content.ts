@@ -8,6 +8,7 @@ import { fill } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
 import { isSupabaseConfigured, supabaseFetch } from "./supabase-server";
 import type { CopyOverrides } from "./i18n/copy-overrides";
+import { parsePopup, type PromoPopup } from "./promo";
 
 /** Cache tag invalidated by every admin save. */
 export const SITE_CONTENT_TAG = "site-content";
@@ -17,8 +18,11 @@ export type LocationId = Location["id"];
 export type SiteSettings = {
   /** Digits only, with country code, e.g. 8801605162788. */
   whatsappNumber: string;
-  /** textBn is shown on Bangla pages; empty means the English text is shown there too. */
-  announcement: { enabled: boolean; text: string; textBn: string; href: string };
+  /**
+   * Top bar. textBn is shown on Bangla pages; empty means the English text is shown there too.
+   * moving: a continuous ticker (several messages separated by "|") instead of one still line.
+   */
+  announcement: { enabled: boolean; moving: boolean; text: string; textBn: string; href: string };
   outlets: Record<LocationId, { rating: string; reviewCount: number; hours: string }>;
   /**
    * Pickup & delivery charge for orders under ৳499, in whole taka (spec §4: operational data,
@@ -40,6 +44,8 @@ export type SiteContent = {
   /** Admin text edits (Text & copy), "namespace.path" → text per language. */
   copy: CopyOverrides;
   brand: Brand;
+  /** Campaign popup (Promo & popup). */
+  promo: PromoPopup;
   seo: Record<string, SeoEntry>;
   images: Record<string, ImageOverride>;
   reviews: ReviewEntry[];
@@ -47,7 +53,7 @@ export type SiteContent = {
 
 export const DEFAULT_SETTINGS: SiteSettings = {
   whatsappNumber: "8801605162788",
-  announcement: { enabled: false, text: "", textBn: "", href: "" },
+  announcement: { enabled: false, moving: false, text: "", textBn: "", href: "" },
   outlets: Object.fromEntries(
     LOCATIONS.map((l) => [l.id, { rating: l.rating, reviewCount: l.reviewCount, hours: l.hours }]),
   ) as SiteSettings["outlets"],
@@ -71,8 +77,9 @@ function parseSettings(v: unknown): SiteSettings {
     whatsappNumber: /^\d{8,15}$/.test(String(s.whatsappNumber ?? "")) ? String(s.whatsappNumber) : DEFAULT_SETTINGS.whatsappNumber,
     announcement: {
       enabled: a.enabled === true,
-      text: str(a.text, 160) ?? "",
-      textBn: str(a.textBn, 160) ?? "",
+      moving: a.moving === true,
+      text: str(a.text, 400) ?? "",
+      textBn: str(a.textBn, 400) ?? "",
       href: str(a.href, 300) ?? "",
     },
     outlets: Object.fromEntries(
@@ -197,6 +204,7 @@ export const getSiteContent = cache(async (): Promise<SiteContent> => {
     reviews: parseReviews(rows.reviews) ?? DEFAULT_REVIEWS,
     copy: parseCopy(rows.copy),
     brand: parseBrand(rows.brand),
+    promo: parsePopup(rows.promo),
   };
 });
 

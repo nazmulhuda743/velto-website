@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { popupActive } from "@/lib/promo";
 import { Delta, FunnelChart, Sparkline, fmt } from "@/components/admin/charts";
 import { NotificationRefresher } from "@/components/admin/NotificationRefresher";
 import { AdminHeader, Badge, DataNotice, Facts, Panel, RangePicker, type SearchParams } from "@/components/admin/ui";
@@ -264,7 +265,7 @@ export default async function CommandCenter({ searchParams }: { searchParams: Se
             { label: "Pages with custom SEO", value: `${SEO_ROUTES.filter((r) => content.seo[r.path]).length} / ${SEO_ROUTES.length}` },
             { label: "Photos replaced", value: `${IMAGE_SLOTS.filter((s) => content.images[s.id]).length} / ${IMAGE_SLOTS.length}` },
             { label: "Reviews", value: fmt(content.reviews.length), sub: `${content.reviews.filter((r) => r.showOnHome).length} on the homepage` },
-            { label: "Announcement bar", value: content.settings.announcement.enabled ? "On" : "Off", sub: `WhatsApp +${content.settings.whatsappNumber}` },
+            { label: "Top bar / popup", value: `${content.settings.announcement.enabled ? (content.settings.announcement.moving ? "Moving" : "On") : "Off"} / ${popupActive(content.promo) ? "Live" : "Off"}`, sub: `WhatsApp +${content.settings.whatsappNumber}` },
           ]}
         />
         <p className="mt-3 t-caption text-secondary">Data checked {dayLabel(new Date().toISOString())}.</p>

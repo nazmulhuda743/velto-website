@@ -11,6 +11,7 @@ const SECTION_LABEL: Record<string, string> = {
   seo: "SEO",
   reviews: "Reviews",
   settings: "Site settings",
+  promo: "Promo & popup",
   accounts: "Customer accounts",
   retention: "Bring back",
   revenue: "Revenue",

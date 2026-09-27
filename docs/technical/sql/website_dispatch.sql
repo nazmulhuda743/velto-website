@@ -16,7 +16,7 @@
 -- Orders are never written. Their status is only read (Ready → Delivered / Cancelled).
 --
 -- Service role only (the admin server checks who may do what and logs it). No deletes.
--- Status: STAGING only until the owner approves production.
+-- Status: applied on staging and on production (owner-approved, 2026-09-27).
 
 begin;
 

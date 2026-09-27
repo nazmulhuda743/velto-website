@@ -23,6 +23,9 @@ const approvedEvents = [
   "consent_reject_nonessential",
   "consent_preferences_saved",
   "app_launch",
+  "promo_view",
+  "promo_click",
+  "promo_dismiss",
 ] as const satisfies readonly AnalyticsEvent[];
 
 const taxonomyIsComplete: Exclude<AnalyticsEvent, (typeof approvedEvents)[number]> extends never
