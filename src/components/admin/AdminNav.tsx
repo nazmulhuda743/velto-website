@@ -43,6 +43,13 @@ const I = {
   ),
   health: <path d="M3.5 12h4l2-5 4 10 2-5h5" />,
   retention: <path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4.5v4h-4" />,
+  feedback: <path d="M5 5.5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-8l-4 3v-3H5a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1ZM12 8.3l.9 1.9 2 .2-1.5 1.4.4 2-1.8-1-1.8 1 .4-2-1.5-1.4 2-.2.9-1.9Z" />,
+  loyalty: (
+    <>
+      <path d="M12 3.5 14 8l4.8.4-3.6 3.2 1.1 4.7L12 13.8l-4.3 2.5 1.1-4.7L5.2 8.4 10 8l2-4.5Z" />
+      <path d="M8 20h8" />
+    </>
+  ),
   seo: (
     <>
       <circle cx="10.5" cy="10.5" r="6" />
@@ -122,6 +129,8 @@ const GROUPS: { label: string; items: Item[] }[] = [
       { href: "/admin/requests", label: "Bookings & quotes", icon: "requests" },
       { href: "/admin/dispatch", label: "Pickup & delivery", icon: "dispatch" },
       { href: "/admin/retention", label: "Bring customers back", icon: "retention" },
+      { href: "/admin/feedback", label: "Customer feedback", icon: "feedback" },
+      { href: "/admin/loyalty", label: "Loyalty", icon: "loyalty" },
       { href: "/admin/accounts", label: "Customer accounts", icon: "accounts" },
       { href: "/admin/health", label: "Website health", icon: "health" },
     ],

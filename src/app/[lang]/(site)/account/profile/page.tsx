@@ -4,9 +4,11 @@ import { accountText } from "@/content/i18n/account";
 import { format } from "@/lib/i18n/config";
 import { ProfileForm } from "@/components/account/forms";
 import { LinkHistoryCard } from "@/components/account/LinkHistoryCard";
+import { PreferencesForm } from "@/components/account/PreferencesForm";
 import { WHATSAPP_URL } from "@/content/site";
 import { signOutAction } from "@/lib/customer/actions";
-import { getCustomerSession } from "@/lib/customer/portal";
+import { getCustomerSession, getPreferences } from "@/lib/customer/portal";
+import { fill } from "@/lib/i18n/config";
 import { displayBdPhone } from "@/lib/customer/validation";
 
 export default async function ProfilePage() {
@@ -16,6 +18,12 @@ export default async function ProfilePage() {
   const locked = a.phoneVerified ? "verified" : a.link.status === "linked" ? "linked" : a.link.status === "pending" ? "pending" : null;
   const text = accountText(await getLocale());
   const t = text.profile;
+  const locale = await getLocale();
+  const prefs = await getPreferences();
+  const areas = [
+    ...Array.from({ length: 18 }, (_, i) => ({ value: String(i + 1), label: fill(text.forms.areaSector, { n: i + 1 }, locale) })),
+    { value: "outside", label: text.forms.areaOutside },
+  ];
 
   return (
     <div className="space-y-8">
@@ -30,6 +38,16 @@ export default async function ProfilePage() {
         </h2>
         <div className="mt-6 max-w-[560px]">
           <ProfileForm t={text.forms} phoneLocked={locked} initial={{ fullName: a.fullName, phone: a.phone, address: a.address ?? "", area: a.area ?? "" }} />
+        </div>
+      </section>
+
+      <section aria-labelledby="prefs-title" className="rounded-lg border border-line bg-white p-5 md:p-8" data-preferences>
+        <h2 id="prefs-title" className="t-h3 text-navy">
+          {text.prefs.title}
+        </h2>
+        <p className="mt-2 max-w-[62ch] text-body">{text.prefs.intro}</p>
+        <div className="mt-6">
+          <PreferencesForm initial={prefs} t={text.prefs} areas={areas} />
         </div>
       </section>
 

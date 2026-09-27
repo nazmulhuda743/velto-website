@@ -4,6 +4,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { loginRedirectPath } from "@/lib/i18n/server";
+import { EMPTY_PREFERENCES, parsePreferences, type Feedback, type Preferences } from "./extras";
 import { customerSupabase } from "./supabase";
 
 export type LinkStatus = "none" | "pending" | "linked" | "rejected";
@@ -106,3 +107,41 @@ export async function getPortalOrder(orderNumber: string): Promise<PortalOrderDe
   }
   return (data ?? null) as PortalOrderDetail | null;
 }
+
+/* ---------- loyalty, feedback and preferences (docs/technical/sql/website_customer_extras.sql) ---------- */
+
+/** Orders in the last `months` and in total; null when unavailable (not installed, or an error). */
+export const getLoyaltyCounts = cache(async (months: number): Promise<{ recent: number; total: number } | null> => {
+  const supabase = await customerSupabase();
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc("portal_loyalty", { p_months: months });
+  if (error) {
+    console.error("portal_loyalty_failed", error.code);
+    return null;
+  }
+  const d = (data ?? {}) as { linked?: boolean; recent?: number; total?: number };
+  return d.linked ? { recent: Number(d.recent) || 0, total: Number(d.total) || 0 } : null;
+});
+
+/** The customer's ratings; [] when none or unavailable (the account then simply asks again). */
+export const getFeedbackList = cache(async (): Promise<Feedback[]> => {
+  const supabase = await customerSupabase();
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc("portal_feedback_list");
+  if (error) {
+    console.error("portal_feedback_list_failed", error.code);
+    return [];
+  }
+  return (data ?? []) as Feedback[];
+});
+
+export const getPreferences = cache(async (): Promise<Preferences> => {
+  const supabase = await customerSupabase();
+  if (!supabase) return EMPTY_PREFERENCES;
+  const { data, error } = await supabase.rpc("portal_prefs_get");
+  if (error) {
+    console.error("portal_prefs_get_failed", error.code);
+    return EMPTY_PREFERENCES;
+  }
+  return parsePreferences(data);
+});

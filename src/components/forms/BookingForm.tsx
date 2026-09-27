@@ -678,6 +678,7 @@ export function BookingForm({
   popularItems = [],
   pickupChargeMinor = null,
   repeatItems = [],
+  savedAddresses = [],
 }: {
   /** Form text in the page language (formText(locale).booking), passed by the page. */
   t: Text;
@@ -697,6 +698,8 @@ export function BookingForm({
   pickupChargeMinor?: number | null;
   /** "Book the same again": the earlier order's lines, with today's price-list entry when listed (signed-in customers). */
   repeatItems?: RepeatItem[];
+  /** Signed-in customer's saved pickup addresses (Profile): one tap fills the area and address. */
+  savedAddresses?: { label: string; address: string; area: string }[];
 }) {
   const locale = useLocale();
   const [initialItems] = useState(() => repeatItems.map((r) => repeatLine(r.item, r.service, r.quantity, r.listed)));
@@ -915,6 +918,34 @@ export function BookingForm({
               />
               <ErrorText id="booking-phone-error">{errors.phone}</ErrorText>
             </div>
+
+            {savedAddresses.length ? (
+              <div data-saved-addresses>
+                <p className="text-[15px] font-semibold text-navy">{t.savedAddresses}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {savedAddresses.map((a, i) => {
+                    const chosen = s.address === a.address && (!a.area || s.sector === a.area);
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        aria-pressed={chosen}
+                        onClick={() => {
+                          update("address", a.address);
+                          if (a.area) update("sector", a.area);
+                        }}
+                        className={`inline-flex min-h-11 max-w-full items-center gap-2 rounded-full border px-4 text-left t-small font-semibold ${
+                          chosen ? "border-action bg-[#e8f3fb] text-navy" : "border-line-strong bg-white text-navy hover:border-navy"
+                        }`}
+                      >
+                        <span>{a.label || fill(t.savedAddressFallback, { n: i + 1 }, locale)}</span>
+                        <span className="truncate font-normal text-secondary">{a.address}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
 
             <div>
               <FieldLabel htmlFor="booking-sector">{t.sectorLabel}</FieldLabel>
