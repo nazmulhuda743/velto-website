@@ -86,6 +86,7 @@ const I = {
       <path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5M12 14.5v2" />
     </>
   ),
+  promo: <path d="M4 10v4h3l7 4V6l-7 4H4ZM17 9.5c.7.7 1 1.5 1 2.5s-.3 1.8-1 2.5M7 14v5h2.5" />,
   prices: (
     <>
       <path d="M11.5 4H5v6.5l8.5 8.5 6.5-6.5L11.5 4Z" />
@@ -124,6 +125,7 @@ const GROUPS: { label: string; items: Item[] }[] = [
       { href: "/admin/images", label: "Images", icon: "images" },
       { href: "/admin/copy", label: "Text & copy", icon: "copy" },
       { href: "/admin/reviews", label: "Reviews", icon: "reviews" },
+      { href: "/admin/promo", label: "Promo & popup", icon: "promo" },
       { href: "/admin/settings", label: "Site settings", icon: "settings" },
       { href: "/admin/prices", label: "Prices", icon: "prices" },
     ],

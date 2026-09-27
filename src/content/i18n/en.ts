@@ -302,6 +302,16 @@ export const en = {
     retry: "Try again",
     whatsappNote: "You can still write to Velto on WhatsApp; the message is sent as soon as you’re back online.",
   },
+  promo: {
+    /** The moving top bar and the campaign popup (Promo & popup in the admin). */
+    barLabel: "Offers and notices",
+    pause: "Pause the moving text",
+    play: "Play the moving text",
+    dialogLabel: "Offer from Velto",
+    close: "Close",
+    notNow: "Not now",
+    posterOpens: "Open the offer",
+  },
   notFound: {
     title: "We can’t find that page.",
     body: "The link may be old, or the page may have moved. You can still book a pickup, look through Velto’s services or go back to the homepage.",

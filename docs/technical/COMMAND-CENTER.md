@@ -108,6 +108,15 @@ Applied to **Velto Staging - Prod Clone (`ekgdefcdqcsqvpbqponv`)** only, as migr
 health, consent summary, rollup and purge. Also verified that `anon`/`authenticated` have no table or
 function privileges and `service_role` does. **Production is untouched.**
 
+## Promo bar and campaign popup (`/admin/promo`)
+
+Section `promo` (Owner, Manager, Marketing, Designer). Logic in `src/lib/promo.ts`, tested in `tests/command-center/promo.test.cjs`.
+
+- **Top bar**: `website_content.settings.announcement` gains `moving`. Still = one centred line; moving = a CSS ticker (`.promo-ticker`, two identical groups, `translateX(-50%)`), several messages separated by `|`. Pauses on hover, focus and a pause button; `prefers-reduced-motion` shows the still line. The whole bar is the link.
+- **Popup**: `website_content.promo` (`parsePopup`). Poster (Storage upload, folder `promo`) and/or tag + headline + text + button, one link, frequency (visit / day / week / once), delay, Dhaka start/end dates. `popupProblem` blocks switching on an incomplete popup; `popupActive` decides live; the browser re-checks the dates (pages are cached). Closing is remembered as `velto_promo` in localStorage (sessionStorage for "once per visit"), listed on `/cookies`. Any visible change makes a new `version` (`popupFingerprint`), so everyone sees the new campaign once. Never shown on booking, quote, track, account, auth or legal pages (`popupExcluded`). `?promo=preview` shows it at once, even when off.
+- Events: `promo_view`, `promo_click`, `promo_dismiss` (detail = version). Links carrying `?source=promo_popup` / `promo_bar` appear in Funnel.
+- Activity log actions: `promo_bar_saved`, `promo_popup_saved`, `promo_popup_poster_replaced`.
+
 ## Notifications
 
 These are derived on every dashboard render from data the dashboard already reads: new open requests

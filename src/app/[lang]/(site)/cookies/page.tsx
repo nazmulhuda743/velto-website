@@ -33,6 +33,13 @@ const ESSENTIAL: Row[] = [
     setBy: "Velto",
   },
   {
+    name: "velto_promo (browser or tab storage)",
+    purpose:
+      "When you close an offer popup, remembers which offer you closed and when, so the same offer isn't shown again straight away. Holds no identifier and no personal information.",
+    duration: "Until the offer changes or you clear your browser data; for some offers, until the tab is closed",
+    setBy: "Velto",
+  },
+  {
     name: "Velto app files (service worker and Cache Storage)",
     purpose:
       "If your browser supports it, the website keeps copies of its own design files, photos and recently opened public pages on your device, so it opens quickly, can be installed as an app and shows an offline page without a connection. Account, booking and sign-in pages are never stored. No identifier or personal information.",
