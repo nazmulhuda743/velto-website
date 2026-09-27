@@ -131,6 +131,8 @@ export type BookingNoteExtras = {
   estimate?: string;
   /** When the customer wants the order back ("Fri 3 Oct"). */
   backBy?: string;
+  /** Links to the customer's photos (opened by staff from the Ops task). */
+  photos?: string[];
 };
 
 /**
@@ -146,6 +148,8 @@ export function composeBookingNotes(items: BookingItem[], note?: string, extras:
         : "",
     extras.estimate ? `Website estimate: ${extras.estimate}.` : "",
     extras.backBy ? `Wanted back by: ${extras.backBy}.` : "",
+    // No full stop after a link: it would end up inside the link when the Ops app opens it.
+    extras.photos?.length ? `Photos: ${extras.photos.join(" ")}` : "",
   ].filter(Boolean);
   const text = note?.trim();
   if (!parts.length) return text || undefined;
@@ -154,3 +158,6 @@ export function composeBookingNotes(items: BookingItem[], note?: string, extras:
 
 /** The longest estimate and wanted-back wording the notes need room for. */
 export const NOTE_EXTRAS_RESERVE = 160;
+
+/** Room one photo link takes in the notes ("https://www.velto.com.bd/go/photo/<32 hex> "). */
+export const NOTE_PHOTO_RESERVE = 72;

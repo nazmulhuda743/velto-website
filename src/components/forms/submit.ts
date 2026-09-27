@@ -22,6 +22,8 @@ export type BookingFormData = {
   services?: string[];
   /** When the customer wants the order back (YYYY-MM-DD); the server words it for Ops. */
   deliveryBy?: string;
+  /** Ids of photos already uploaded through /api/bookings/photos (the server links them in the notes). */
+  photos?: string[];
   notes?: string;
 };
 
@@ -93,4 +95,24 @@ export async function submitQuote(data: QuoteFormData): Promise<SubmitResult> {
   const { photos, ...fields } = data;
   void photos; // Photos never leave the browser until the controlled upload flow exists.
   return post("/api/quotes", { ...fields, photoReferences: [] });
+}
+
+export type PhotoUploadResult = { ok: true; id: string } | { ok: false; code: "invalid_type" | "too_large" | "rate_limited" | "unavailable" };
+
+/**
+ * Sends one booking photo (already shrunk in the browser) to private storage and returns its
+ * id, which the booking then carries. Nothing about the photo is tracked.
+ */
+export async function uploadBookingPhoto(photo: Blob): Promise<PhotoUploadResult> {
+  const form = new FormData();
+  form.append("photo", photo, "photo");
+  try {
+    const res = await fetch("/api/bookings/photos", { method: "POST", body: form });
+    const body = (await res.json().catch(() => null)) as { ok?: boolean; id?: unknown; error?: { code?: string } } | null;
+    if (res.ok && body?.ok && typeof body.id === "string") return { ok: true, id: body.id };
+    const code = body?.error?.code;
+    return { ok: false, code: code === "invalid_type" || code === "too_large" || code === "rate_limited" ? code : "unavailable" };
+  } catch {
+    return { ok: false, code: "unavailable" };
+  }
 }

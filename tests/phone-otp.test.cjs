@@ -50,3 +50,16 @@ test("codes are six digits; the SMS is one plain segment with the WebOTP line", 
   assert.ok(sms.length <= 160, `SMS is ${sms.length} characters`);
   assert.match(sms, /^[\x20-\x7e\n]+$/, "GSM-7 friendly ASCII only");
 });
+
+const { sniffPhotoType, readPhotoIds } = require("../.foundation-test-build/booking-photos.js");
+
+test("booking photos: the real type comes from the bytes", () => {
+  assert.equal(sniffPhotoType(new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0, 0, 0, 0, 0])), "image/jpeg");
+  assert.equal(sniffPhotoType(new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0])), "image/png");
+  assert.equal(sniffPhotoType(new TextEncoder().encode("RIFF\0\0\0\0WEBPVP8 ")), "image/webp");
+  assert.equal(sniffPhotoType(new TextEncoder().encode("<svg xmlns=...>")), null);
+  assert.equal(sniffPhotoType(new TextEncoder().encode("GIF89a......")), null);
+  assert.equal(readPhotoIds(undefined), undefined);
+  assert.equal(readPhotoIds([]), undefined);
+  assert.deepEqual(readPhotoIds(["0123456789abcdef0123456789abcdef", "0123456789abcdef0123456789abcdef"]), ["0123456789abcdef0123456789abcdef"]);
+});

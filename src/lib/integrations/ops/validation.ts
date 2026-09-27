@@ -7,6 +7,7 @@ import {
   sharedItemService,
   type GarmentService,
 } from "../../booking-items";
+import { photoLink, readPhotoIds } from "../../booking-photos";
 import type {
   BookingSubmission,
   QuoteSubmission,
@@ -126,7 +127,7 @@ function readServices(value: unknown): GarmentService[] | null {
 export function validateBookingSubmission(
   value: unknown,
   /** Server-computed website estimate (from the Ops price list), added to the notes when it fits. */
-  options: { estimate?: string; now?: Date } = {},
+  options: { estimate?: string; now?: Date; siteUrl?: string } = {},
 ): ValidationResult<BookingSubmission> {
   const input = record(value);
   if (!input) return { ok: false, issues: [{ field: "request", code: "invalid" }] };
@@ -136,7 +137,8 @@ export function validateBookingSubmission(
   const phone = text(input, "phone", issues, { required: true, max: 32 });
   const area = text(input, "area", issues, { required: true, min: 2, max: 120 });
   const address = text(input, "address", issues, { required: true, min: 5, max: 500 });
-  const preferredPickup = text(input, "preferredPickup", issues, { max: 120 });
+  // The pickup day and time window are required (the form asks for both).
+  const preferredPickup = text(input, "preferredPickup", issues, { required: true, min: 3, max: 120 });
   const note = text(input, "notes", issues, { max: MAX_BOOKING_NOTES, multiline: true });
   const rawService = input.service;
   const chosenService =
@@ -148,9 +150,11 @@ export function validateBookingSubmission(
   const items = cleanBookingItems(input.items);
   const services = readServices(input.services);
   const backBy = readBackBy(input.deliveryBy, options.now);
+  const photoIds = readPhotoIds(input.photos);
   const extras = {
     services: !items?.length && services && services.length > 1 ? services : undefined,
     backBy: backBy ?? undefined,
+    photos: photoIds?.map((id) => photoLink(options.siteUrl ?? "https://www.velto.com.bd", id)),
   };
   const withEstimate = items ? composeBookingNotes(items, note, { ...extras, estimate: options.estimate }) : note;
   // The estimate is a courtesy for staff: drop it rather than reject a booking whose notes are full.
@@ -163,9 +167,10 @@ export function validateBookingSubmission(
   if (rawService !== undefined && !chosenService) issues.push({ field: "service", code: "invalid" });
   if (!services) issues.push({ field: "services", code: "invalid" });
   if (backBy === null) issues.push({ field: "deliveryBy", code: "invalid" });
+  if (photoIds === null) issues.push({ field: "photos", code: "invalid" });
   if (!items) issues.push({ field: "items", code: "invalid" });
   else if (notes && notes.length > MAX_BOOKING_NOTES) issues.push({ field: "notes", code: "too_long" });
-  if (issues.length || !name || !phone || !area || !address) return { ok: false, issues };
+  if (issues.length || !name || !phone || !area || !address || !preferredPickup) return { ok: false, issues };
 
   return {
     ok: true,
@@ -174,7 +179,7 @@ export function validateBookingSubmission(
       phone,
       area,
       address,
-      ...(preferredPickup ? { preferredPickup } : {}),
+      preferredPickup,
       ...(service ? { service } : {}),
       ...(notes ? { notes } : {}),
       attribution: attribution(input.attribution),

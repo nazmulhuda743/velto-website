@@ -14,6 +14,7 @@ import {
   MAX_BOOKING_NOTES,
   MIXED_ITEM,
   NOTE_EXTRAS_RESERVE,
+  NOTE_PHOTO_RESERVE,
   sharedItemService,
   type BookingEstimate,
   type BookingItem,
@@ -28,16 +29,18 @@ import { BookingItems, lineUnit, money, repeatLine, type ItemLine, type PriceIte
 /** One line of an earlier order, as the book page reads it on the server. */
 export type RepeatItem = { item: string; service: ItemService | ""; quantity: number; listed?: PriceItem };
 import { normalisePhone, phoneOk } from "./fields";
-import { submitBooking, type BookingFormData, type SubmitResult } from "./submit";
+import { MAX_BOOKING_PHOTOS } from "@/lib/booking-photos";
+import { shrinkPhoto } from "./shrink-photo";
+import { submitBooking, uploadBookingPhoto, type BookingFormData, type SubmitResult } from "./submit";
 
 type Text = FormText["booking"];
 type Common = FormText["common"];
 
 /**
  * Book a Pickup, in the order the owner set: choose services, add items with their prices,
- * your details, pickup and delivery dates with instructions, then the order summary (estimate
- * and the pickup & delivery charge below ৳499) and Confirm. Velto then calls to confirm a
- * pickup time slot.
+ * your details, pickup day and time (required) with delivery date, instructions and optional
+ * photos, then the order summary (estimate and the pickup & delivery charge below ৳499) and
+ * Confirm. Velto then calls to confirm the pickup.
  *
  * Language: the customer sees the page language (`t`), but everything sent to Velto Ops
  * (toBookingData) is English — the area label, the pickup preference, service slugs and item
@@ -50,8 +53,24 @@ const BOOKING_SERVICES = ["dry-cleaning", "wash-and-iron", "ironing", "curtain-c
 const SECTORS = Array.from({ length: 18 }, (_, i) => i + 1);
 const OUTSIDE = "outside";
 
-const DAYS = ["any", "today", "tomorrow", "other"] as const;
+const DAYS = ["today", "tomorrow", "other"] as const;
 type Day = (typeof DAYS)[number];
+
+/**
+ * Preferred part of the day. No clock times: the Velto team calls to confirm the exact time.
+ * `en` is what Velto Ops receives; the customer sees t.slots[id]. `end` (Dhaka hour) only
+ * rules out a part of today that has already passed.
+ */
+const SLOTS = [
+  { id: "morning", en: "Morning", end: 12 },
+  { id: "afternoon", en: "Afternoon", end: 17 },
+  { id: "evening", en: "Evening", end: 21 },
+] as const;
+
+/** A part of the day can still be chosen for today until an hour before it ends (Dhaka time). */
+const slotOpenToday = (end: number) => (new Date().getUTCHours() + 6) % 24 < end - 1;
+
+type Photo = { key: string; preview: string; status: "uploading" | "done" | "failed"; id?: string };
 
 /** Orders are usually ready in about 3 days (spec §4: ~72 hours), so "back by" starts 3 days after pickup. */
 const BACK_BY_DAYS = 3;
@@ -64,15 +83,17 @@ type FormState = {
   items: ItemLine[];
   sector: string;
   address: string;
-  day: Day;
+  day: Day | null;
   date: string;
+  slot: string;
   backBy: string;
   name: string;
   phone: string;
   notes: string;
+  photos: Photo[];
 };
 
-type ErrorKey = "services" | "name" | "phone" | "sector" | "address" | "date" | "backBy";
+type ErrorKey = "services" | "name" | "phone" | "sector" | "address" | "day" | "date" | "slot" | "backBy" | "photos";
 type Errors = Partial<Record<ErrorKey, string>>;
 type Status =
   | { state: "idle" }
@@ -161,11 +182,16 @@ const servicesText = (s: FormState, t: Text) =>
 /** One line for summaries: the items, or the chosen services. */
 const whatLabel = (s: FormState, t: Text, locale: Locale) => (s.items.length ? itemsText(itemsOf(s), t, locale) : servicesText(s, t));
 
-/** Preferred pickup day, e.g. "Tomorrow Fri 25 Sep". With OPS_WORDS this is the contract's preferredPickup string. */
-function pickupLabel(s: FormState, w: DateWords = OPS_WORDS) {
+/**
+ * Pickup day and part of the day, e.g. "Tomorrow Fri 25 Sep, Afternoon". With OPS_WORDS (and no `slots`)
+ * this is the contract's preferredPickup string; the customer's version uses t.slots.
+ */
+function pickupLabel(s: FormState, w: DateWords = OPS_WORDS, slots?: Record<string, string>) {
   const iso = pickupIso(s);
   const prefix = s.day === "today" ? w.today : s.day === "tomorrow" ? w.tomorrow : "";
-  return iso ? `${prefix} ${niceDate(iso, w)}`.trim() : "";
+  const day = iso ? `${prefix} ${niceDate(iso, w)}`.trim() : "";
+  const slot = slots ? slots[s.slot] : SLOTS.find((x) => x.id === s.slot)?.en;
+  return [day, slot].filter(Boolean).join(", ");
 }
 
 const pageWords = (t: Text, c: Common, locale: Locale): DateWords => ({
@@ -184,14 +210,18 @@ function toBookingData(s: FormState): BookingFormData {
     phone: normalisePhone(s.phone),
     area: areaLabel(s.sector),
     address: s.address.trim(),
-    preferredPickup: pickupLabel(s) || undefined,
+    preferredPickup: pickupLabel(s),
     service: bookingService(s),
     ...(s.services.length ? { services: s.services } : {}),
     ...(s.items.length ? { items: itemsOf(s) } : {}),
     ...(s.backBy ? { deliveryBy: s.backBy } : {}),
+    ...(uploadedPhotos(s).length ? { photos: uploadedPhotos(s) } : {}),
     notes: s.notes.trim() || undefined,
   };
 }
+
+/** Ids of the photos that finished uploading (a failed one is simply left out). */
+const uploadedPhotos = (s: FormState) => s.photos.flatMap((p) => (p.status === "done" && p.id ? [p.id] : []));
 
 /** The estimate as one phrase for WhatsApp ("৳610"), when anything could be priced. */
 const estimateLabel = (e: BookingEstimate, locale: Locale) => (e.subtotalMinor > 0 ? money(e.totalMinor, locale) : "");
@@ -200,7 +230,7 @@ const estimateLabel = (e: BookingEstimate, locale: Locale) => (e.subtotalMinor >
 function whatsappHref(s: FormState, t: Text, c: Common, locale: Locale, chargeMinor: number | null) {
   const w = t.whatsapp;
   const words = pageWords(t, c, locale);
-  const when = pickupLabel(s, words);
+  const when = pickupLabel(s, words, t.slots);
   const estimate = estimateLabel(estimateOf(s, chargeMinor), locale);
   const lines = [
     w.greeting,
@@ -224,13 +254,16 @@ function validate(s: FormState, t: Text, c: Common, locale: Locale): Errors {
   else if (!phoneOk(s.phone)) e.phone = c.phoneInvalid;
   if (!s.sector) e.sector = t.errors.sector;
   if (!s.address.trim()) e.address = t.errors.address;
+  if (!s.day) e.day = t.errors.day;
   if (s.day === "other" && !s.date) e.date = t.errors.date;
+  if (!s.slot) e.slot = t.errors.slot;
+  if (s.photos.some((p) => p.status === "uploading")) e.photos = t.photosWait;
   const earliest = earliestBackBy(s);
   if (s.backBy && s.backBy < earliest) e.backBy = fill(t.errors.backBy, { date: niceDate(earliest, pageWords(t, c, locale)) }, locale);
   return e;
 }
 
-const FIELD_ORDER: ErrorKey[] = ["services", "name", "phone", "sector", "address", "date", "backBy"];
+const FIELD_ORDER: ErrorKey[] = ["services", "name", "phone", "sector", "address", "day", "date", "slot", "backBy", "photos"];
 
 /* ---------- presentational pieces (booking page only) ---------- */
 
@@ -298,26 +331,47 @@ function ChoiceTiles<T extends string>({
   value,
   onChange,
   columns,
+  firstId,
+  error,
 }: {
   name: string;
   label: string;
-  options: readonly { value: T; label: string }[];
+  options: readonly { value: T; label: string; disabled?: boolean }[];
   value: T | null;
   onChange: (v: T) => void;
   columns: string;
+  /** id on the first choice, so a validation error can move focus here. */
+  firstId?: string;
+  /** id of the error text, when there is one. */
+  error?: string;
 }) {
   return (
-    <div role="radiogroup" aria-label={label} className={`grid gap-2 ${columns}`}>
-      {options.map((o) => {
+    <div role="radiogroup" aria-label={label} aria-describedby={error} aria-invalid={error ? true : undefined} className={`grid gap-2 ${columns}`}>
+      {options.map((o, i) => {
         const checked = value === o.value;
         return (
           <label
             key={`${name}-${o.value}`}
-            className={`flex min-h-11 cursor-pointer items-center justify-center rounded-md border px-1 py-2 text-center text-[14px] leading-tight text-navy transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-blue md:text-[15px] ${
-              checked ? "border-blue bg-[#f0f7fc] font-semibold" : "border-line-strong hover:border-navy/50"
+            className={`flex min-h-11 items-center justify-center rounded-md border px-1 py-2 text-center text-[14px] leading-tight transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-blue md:text-[15px] ${
+              o.disabled
+                ? "cursor-not-allowed border-line bg-soft text-secondary line-through decoration-secondary/60"
+                : checked
+                  ? "cursor-pointer border-blue bg-[#f0f7fc] font-semibold text-navy"
+                  : error
+                    ? "cursor-pointer border-error text-navy"
+                    : "cursor-pointer border-line-strong text-navy hover:border-navy/50"
             }`}
           >
-            <input type="radio" name={name} value={o.value} checked={checked} onChange={() => onChange(o.value)} className="sr-only" />
+            <input
+              id={i === 0 ? firstId : undefined}
+              type="radio"
+              name={name}
+              value={o.value}
+              checked={checked}
+              disabled={o.disabled}
+              onChange={() => onChange(o.value)}
+              className="sr-only"
+            />
             {o.label}
           </label>
         );
@@ -441,6 +495,108 @@ function OrderSummary({ s, t, locale, chargeMinor }: { s: FormState; t: Text; lo
   );
 }
 
+/** Optional photos (stains, damage, delicate fabric): thumbnails with upload state, up to three. */
+function PhotoPicker({
+  t,
+  c,
+  locale,
+  photos,
+  onAdd,
+  onRemove,
+  error,
+}: {
+  t: Text;
+  c: Common;
+  locale: Locale;
+  photos: Photo[];
+  onAdd: (files: FileList | null) => void;
+  onRemove: (key: string) => void;
+  error?: string;
+}) {
+  const input = useRef<HTMLInputElement>(null);
+  const full = photos.length >= MAX_BOOKING_PHOTOS;
+  return (
+    <div>
+      <p className="text-[15px] font-semibold text-navy">
+        {t.photosLabel}
+        <span className="font-normal text-secondary">{c.optional}</span>
+      </p>
+      <p id="booking-photos-help" className="mt-1 t-small text-secondary">
+        {fill(t.photosHelp, { max: MAX_BOOKING_PHOTOS }, locale)}
+      </p>
+      {photos.length ? (
+        <ul className="mt-3 flex flex-wrap gap-3">
+          {photos.map((p, i) => (
+            <li key={p.key} className="relative">
+              {/* eslint-disable-next-line @next/next/no-img-element -- local preview (blob: URL), not a site image */}
+              <img
+                src={p.preview}
+                alt=""
+                className={`size-20 rounded-md border object-cover ${p.status === "failed" ? "border-error opacity-60" : "border-line"}`}
+              />
+              {p.status !== "done" ? (
+                <span
+                  className={`absolute inset-x-0 bottom-0 rounded-b-md px-1 py-0.5 text-center text-[11px] font-semibold text-white ${
+                    p.status === "failed" ? "bg-error" : "bg-navy/80"
+                  }`}
+                >
+                  {p.status === "failed" ? t.photoFailed : t.photoUploading}
+                </span>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => onRemove(p.key)}
+                aria-label={fill(t.photoRemove, { n: i + 1 }, locale)}
+                className="absolute -right-2 -top-2 flex size-7 items-center justify-center rounded-full border border-line-strong bg-white text-navy shadow-sm hover:border-navy"
+              >
+                <svg viewBox="0 0 16 16" aria-hidden="true" className="size-3.5">
+                  <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {photos.some((p) => p.status === "failed") ? <p className="mt-2 t-small text-navy">{t.photoRetryHint}</p> : null}
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <input
+          ref={input}
+          id="booking-photos"
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+          multiple
+          className="sr-only"
+          aria-describedby={error ? "booking-photos-help booking-photos-error" : "booking-photos-help"}
+          onChange={(e) => {
+            onAdd(e.target.files);
+            e.target.value = "";
+          }}
+          disabled={full}
+        />
+        <button
+          type="button"
+          onClick={() => input.current?.click()}
+          disabled={full}
+          className="inline-flex h-12 items-center gap-2 rounded-md border border-line-strong bg-white px-5 font-semibold text-navy hover:border-navy disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <svg viewBox="0 0 20 20" aria-hidden="true" className="size-5">
+            <path
+              d="M3 6.5A1.5 1.5 0 0 1 4.5 5h2l1.2-1.6A1 1 0 0 1 8.5 3h3a1 1 0 0 1 .8.4L13.5 5h2A1.5 1.5 0 0 1 17 6.5v8a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 14.5z"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            />
+            <circle cx="10" cy="10.5" r="3" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          </svg>
+          {photos.length ? t.addMorePhotos : t.addPhotos}
+        </button>
+        <span className="t-small text-secondary">{fill(t.photosCount, { n: photos.length, max: MAX_BOOKING_PHOTOS }, locale)}</span>
+      </div>
+      <ErrorText id="booking-photos-error">{error}</ErrorText>
+    </div>
+  );
+}
+
 /**
  * Phones only: once items are added, a slim bar keeps the count and estimate in view while the
  * customer fills in the rest, and jumps to the order summary. Hidden from md up, where the
@@ -556,12 +712,14 @@ export function BookingForm({
     items: initialItems,
     sector: initialContact && (SECTORS.map(String).includes(initialContact.sector) || initialContact.sector === OUTSIDE) ? initialContact.sector : "",
     address: initialContact?.address ?? "",
-    day: "any",
+    day: null,
     date: "",
+    slot: "",
     backBy: "",
     name: initialContact?.name ?? "",
     phone: initialContact?.phone ?? "",
     notes: presetNote ?? "",
+    photos: [],
   });
   const [errors, setErrors] = useState<Errors>({});
   const [status, setStatus] = useState<Status>({ state: "idle" });
@@ -585,6 +743,41 @@ export function BookingForm({
     setS((prev) => ({ ...prev, [key]: value }));
     if (key in errors) setErrors((prev) => ({ ...prev, [key]: undefined }));
     if (status.state === "failed") setStatus({ state: "idle" });
+  };
+
+  // Photo previews are object URLs: release them when the form goes away.
+  const previews = useRef<string[]>([]);
+  useEffect(() => () => previews.current.forEach((url) => URL.revokeObjectURL(url)), []);
+
+  const setPhoto = (key: string, patch: Partial<Photo>) =>
+    setS((prev) => ({ ...prev, photos: prev.photos.map((p) => (p.key === key ? { ...p, ...patch } : p)) }));
+
+  /** Each picked photo is shrunk and uploaded straight away; the booking carries only the ids. */
+  const addPhotos = (files: FileList | null) => {
+    const room = MAX_BOOKING_PHOTOS - s.photos.length;
+    const picked = Array.from(files ?? []).filter((f) => f.type.startsWith("image/")).slice(0, Math.max(0, room));
+    if (!picked.length) return;
+    const added: Photo[] = picked.map((file) => {
+      const preview = URL.createObjectURL(file);
+      previews.current.push(preview);
+      return { key: crypto.randomUUID(), preview, status: "uploading" };
+    });
+    update("photos", [...s.photos, ...added]);
+    setErrors((prev) => ({ ...prev, photos: undefined }));
+    added.forEach((photo, i) => {
+      void shrinkPhoto(picked[i])
+        .then(uploadBookingPhoto)
+        .then((r) => setPhoto(photo.key, r.ok ? { status: "done", id: r.id } : { status: "failed" }));
+    });
+  };
+
+  const removePhoto = (key: string) => {
+    const photo = s.photos.find((p) => p.key === key);
+    if (photo) URL.revokeObjectURL(photo.preview);
+    update(
+      "photos",
+      s.photos.filter((p) => p.key !== key),
+    );
   };
 
   const checkPhoneOnBlur = () => {
@@ -776,22 +969,27 @@ export function BookingForm({
             </div>
           </Group>
 
-          <Group step={4} title={t.datesTitle} stepOf={t.stepOf} locale={locale}>
+          <Group step={4} title={t.datesTitle} hint={t.datesHint} stepOf={t.stepOf} locale={locale}>
             <div>
-              <p className="text-[15px] font-semibold text-navy">
-                {t.dayLabel}
-                <span className="font-normal text-secondary">{c.optional}</span>
-              </p>
+              <p className="text-[15px] font-semibold text-navy">{t.dayLabel}</p>
               <div className="mt-2">
                 <ChoiceTiles
                   name="day"
                   label={t.dayLabel}
                   options={DAYS.map((value) => ({ value, label: t.days[value] }))}
                   value={s.day}
-                  onChange={(v) => update("day", v)}
-                  columns="grid-cols-2 min-[400px]:grid-cols-4"
+                  onChange={(v) => {
+                    update("day", v);
+                    // A window that has already passed today can't stay chosen.
+                    const slot = SLOTS.find((x) => x.id === s.slot);
+                    if (v === "today" && slot && !slotOpenToday(slot.end)) update("slot", "");
+                  }}
+                  columns="grid-cols-3"
+                  firstId="booking-day"
+                  error={errors.day ? "booking-day-error" : undefined}
                 />
               </div>
+              <ErrorText id="booking-day-error">{errors.day}</ErrorText>
               {s.day === "other" ? (
                 <div className="mt-3">
                   <FieldLabel htmlFor="booking-date">{t.dateLabel}</FieldLabel>
@@ -809,6 +1007,27 @@ export function BookingForm({
                   <ErrorText id="booking-date-error">{errors.date}</ErrorText>
                 </div>
               ) : null}
+            </div>
+
+            <div>
+              <p className="text-[15px] font-semibold text-navy">{t.slotLabel}</p>
+              <div className="mt-2">
+                <ChoiceTiles
+                  name="slot"
+                  label={t.slotLabel}
+                  // Only a chosen "today" rules out windows (never evaluated during server rendering).
+                  options={SLOTS.map((x) => ({ value: x.id, label: t.slots[x.id], disabled: s.day === "today" && !slotOpenToday(x.end) }))}
+                  value={s.slot || null}
+                  onChange={(v) => update("slot", v)}
+                  columns="grid-cols-3"
+                  firstId="booking-slot"
+                  error={errors.slot ? "booking-slot-error" : undefined}
+                />
+              </div>
+              {s.day === "today" && SLOTS.every((x) => !slotOpenToday(x.end)) ? (
+                <p className="mt-2 t-small text-navy">{t.slotsTodayNone}</p>
+              ) : null}
+              <ErrorText id="booking-slot-error">{errors.slot}</ErrorText>
             </div>
 
             <div>
@@ -843,13 +1062,18 @@ export function BookingForm({
                 name="notes"
                 rows={3}
                 // Items, the estimate and the date share the Ops notes field with the instructions.
-                maxLength={Math.max(0, MAX_BOOKING_NOTES - NOTE_EXTRAS_RESERVE - (composeBookingNotes(itemsOf(s), "x")?.length ?? 0))}
+                maxLength={Math.max(
+                  0,
+                  MAX_BOOKING_NOTES - NOTE_EXTRAS_RESERVE - s.photos.length * NOTE_PHOTO_RESERVE - (composeBookingNotes(itemsOf(s), "x")?.length ?? 0),
+                )}
                 placeholder={t.notesPlaceholder}
                 value={s.notes}
                 onChange={(e) => update("notes", e.target.value)}
                 className={`${inputBase} mt-2 min-h-[120px] py-3 leading-[1.4]`}
               />
             </div>
+
+            <PhotoPicker t={t} c={c} locale={locale} photos={s.photos} onAdd={addPhotos} onRemove={removePhoto} error={errors.photos} />
           </Group>
 
           <OrderSummary s={s} t={t} locale={locale} chargeMinor={pickupChargeMinor} />
@@ -925,14 +1149,16 @@ function BookingSuccess({
   chargeMinor: number | null;
 }) {
   const words = pageWords(t, c, locale);
-  const when = pickupLabel(state, words);
+  const when = pickupLabel(state, words, t.slots);
+  const photos = uploadedPhotos(state).length;
   const firstName = state.name.trim().split(/\s+/)[0];
   const estimate = estimateLabel(estimateOf(state, chargeMinor), locale);
   const rows = [
     { label: state.items.length ? t.rowItems : t.rowService, value: whatLabel(state, t, locale) || t.notSpecified },
     ...(estimate ? [{ label: t.rowEstimate, value: estimate }] : []),
     { label: t.rowPickupFrom, value: `${state.address.trim()}, ${areaText(state.sector, t, locale)}` },
-    { label: t.rowPreferredTime, value: when || t.noPreference },
+    { label: t.rowPreferredTime, value: when },
+    ...(photos ? [{ label: t.rowPhotos, value: fill(t.photosAdded, { n: photos }, locale) }] : []),
     ...(state.backBy ? [{ label: t.rowBackBy, value: niceDate(state.backBy, words) }] : []),
     // Phone numbers keep their digits.
     { label: t.rowContact, value: displayPhone(state.phone) },
