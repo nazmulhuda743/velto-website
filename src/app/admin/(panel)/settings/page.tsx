@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AdminHeader, Field, Notice, one, type SearchParams } from "@/components/admin/ui";
 import { LOCATIONS } from "@/content/site";
 import { getSiteContent } from "@/lib/site-content";
@@ -11,7 +12,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Sea
   const { settings, brand } = await getSiteContent();
   return (
     <>
-      <AdminHeader title="Site settings" intro="Logo, contact details, the announcement bar and the Google figures shown across the website. Menu, footer and page wording is edited on Text & copy." />
+      <AdminHeader title="Site settings" intro="Logo, contact details, the booking charge and the Google figures shown across the website. Menu, footer and page wording is edited on Text & copy; the top bar and popup on Promo & popup." />
       <Notice saved={one(params.saved)} error={one(params.error)} />
 
       <section aria-labelledby="logo-title" className="admin-card mt-6 p-5 md:p-7">
@@ -83,23 +84,14 @@ export default async function SettingsPage({ searchParams }: { searchParams: Sea
         </section>
 
         <section className="admin-card p-5 md:p-7">
-          <h2 className="t-h4 text-navy">Announcement bar</h2>
-          <p className="mt-1 t-small text-secondary">A thin navy bar above the header on every page, e.g. Eid holiday hours or an offer.</p>
-          <label className="mt-4 flex items-center gap-3">
-            <input type="checkbox" name="announcementEnabled" defaultChecked={settings.announcement.enabled} className="size-4" />
-            <span className="font-semibold text-navy">Show the announcement bar</span>
-          </label>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <Field label="Text" hint="Up to 160 characters.">
-              <input name="announcementText" defaultValue={settings.announcement.text} maxLength={160} className="admin-input" />
-            </Field>
-            <Field label="Text in Bangla" hint="Optional. Shown on Bangla pages; if empty, they show the English text.">
-              <input name="announcementTextBn" lang="bn" defaultValue={settings.announcement.textBn} maxLength={160} className="admin-input" />
-            </Field>
-            <Field label="Link" hint="Optional. A page like /pricing or a full https:// link. Bangla pages open the page's Bangla version.">
-              <input name="announcementHref" defaultValue={settings.announcement.href} maxLength={300} className="admin-input" />
-            </Field>
-          </div>
+          <h2 className="t-h4 text-navy">Top bar and popup</h2>
+          <p className="mt-1 t-small text-secondary">
+            The announcement bar above the header (still or moving) and the campaign popup are edited on{" "}
+            <Link href="/admin/promo" className="font-semibold text-action underline underline-offset-4">
+              Promo &amp; popup
+            </Link>
+            .
+          </p>
         </section>
 
         <section className="admin-card p-5 md:p-7">

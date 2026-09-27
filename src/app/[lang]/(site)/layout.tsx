@@ -4,6 +4,7 @@ import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { TrackingScripts } from "@/components/layout/TrackingScripts";
+import { CampaignPopup } from "@/components/promo/CampaignPopup";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Logo } from "@/components/ui/Logo";
 import { customerAccountsEnabled } from "@/lib/customer/config";
@@ -31,6 +32,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       <Footer />
       <Analytics />
       <ConsentManager />
+      <CampaignPopup />
     </>
   );
 }

@@ -74,21 +74,14 @@ export async function saveSettingsAction(form: FormData) {
   const { settings } = await getSiteContent();
   const whatsapp = text(form, "whatsappNumber", 20).replace(/\D/g, "");
   if (!/^\d{8,15}$/.test(whatsapp)) back("/admin/settings", { error: "WhatsApp number must include the country code, e.g. 8801605162788." });
-  const href = text(form, "announcementHref", 300);
-  if (href && !/^(\/|https:\/\/)/.test(href)) back("/admin/settings", { error: "Announcement link must start with / or https://" });
-
   const chargeRaw = text(form, "pickupChargeTaka", 6);
   const pickupChargeTaka = chargeRaw === "" ? null : readCharge(Number(chargeRaw));
   if (chargeRaw !== "" && pickupChargeTaka === null) back("/admin/settings", { error: "Pickup & delivery charge must be a whole number of taka from 0 to 2000, or empty." });
 
   const next: SiteSettings = {
     whatsappNumber: whatsapp,
-    announcement: {
-      enabled: form.get("announcementEnabled") === "on",
-      text: text(form, "announcementText", 160),
-      textBn: text(form, "announcementTextBn", 160),
-      href,
-    },
+    // The top bar is edited on Promo & popup (promo-actions.ts).
+    announcement: settings.announcement,
     outlets: { ...settings.outlets },
     pickupChargeTaka,
   };

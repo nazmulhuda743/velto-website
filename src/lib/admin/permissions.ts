@@ -27,6 +27,7 @@ export const SECTIONS = [
   "copy",
   "reviews",
   "settings",
+  "promo",
   "prices",
   "notifications",
   "board",
@@ -39,8 +40,8 @@ export type Section = (typeof SECTIONS)[number];
 export const ROLE_INFO: Record<Role, { label: string; summary: string }> = {
   owner: { label: "Owner", summary: "Everything, including who has access and approving price changes." },
   manager: { label: "Manager", summary: "Everything except Access and Approvals. Price changes wait for an Owner's approval." },
-  marketing: { label: "Marketing", summary: "Traffic, funnel, campaigns, revenue, consent, SEO, website text and reviews." },
-  designer: { label: "Designer", summary: "Images, logo, website text, SEO text, reviews and site settings. No customer data." },
+  marketing: { label: "Marketing", summary: "Traffic, funnel, campaigns, revenue, consent, SEO, website text, reviews and the promo bar & popup." },
+  designer: { label: "Designer", summary: "Images, logo, website text, SEO text, reviews, promo bar & popup and site settings. No customer data." },
   support: { label: "Customer support", summary: "Bookings, bring-back list, customer accounts and prices." },
 };
 
@@ -48,8 +49,8 @@ const ALL = new Set<Section>(SECTIONS);
 const MATRIX: Record<Role, ReadonlySet<Section>> = {
   owner: ALL,
   manager: new Set(SECTIONS.filter((s) => s !== "access" && s !== "approvals")),
-  marketing: new Set<Section>(["overview", "funnel", "visitors", "marketing", "revenue", "consent", "seo", "copy", "reviews", "notifications", "board"]),
-  designer: new Set<Section>(["images", "copy", "seo", "reviews", "settings", "board"]),
+  marketing: new Set<Section>(["overview", "funnel", "visitors", "marketing", "revenue", "consent", "seo", "copy", "reviews", "promo", "notifications", "board"]),
+  designer: new Set<Section>(["images", "copy", "seo", "reviews", "promo", "settings", "board"]),
   support: new Set<Section>(["requests", "retention", "accounts", "prices", "notifications", "board"]),
 };
 
