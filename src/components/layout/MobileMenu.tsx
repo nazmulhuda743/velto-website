@@ -51,7 +51,7 @@ export function MobileMenu({ open, onClose, accounts = false }: { open: boolean;
     <div
       id="mobile-menu"
       ref={panelRef}
-      className="fixed inset-x-0 bottom-0 top-16 z-50 overflow-y-auto border-t border-line bg-white lg:hidden"
+      className="fixed inset-x-0 bottom-0 top-[calc(4rem+var(--promo-h,0px))] z-50 overflow-y-auto border-t border-line bg-white lg:hidden"
     >
       <nav aria-label={t.nav.mobile} className="container-page pb-[calc(24px+env(safe-area-inset-bottom))] pt-3">
         {accounts ? <AccountLink variant="menu" onClick={onClose} className="mb-3 mt-1" /> : null}

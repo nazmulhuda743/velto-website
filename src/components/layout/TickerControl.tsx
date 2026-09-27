@@ -10,7 +10,7 @@ import { useState, type ReactNode } from "react";
 export function TickerControl({ label, pauseLabel, playLabel, children }: { label: string; pauseLabel: string; playLabel: string; children: ReactNode }) {
   const [paused, setPaused] = useState(false);
   return (
-    <div className="promo-ticker bg-navy text-white" data-paused={paused} role="region" aria-label={label}>
+    <div data-promo-bar className="promo-ticker bg-navy text-white" data-paused={paused} role="region" aria-label={label}>
       <div className="flex items-stretch">
         {children}
         <button

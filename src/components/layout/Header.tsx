@@ -31,11 +31,13 @@ export function Header({ logo, accounts = false }: { logo: ReactNode; accounts?:
 
   return (
     <header
-      className={`sticky top-0 z-40 border-b bg-white transition-[border-color,box-shadow] duration-200 ${
+      // Desktop: the bar shrinks 76px → 64px on scroll (spec). The 12px it gives up is kept as a
+      // bottom margin, animated in step, so the page below never moves and nothing jumps.
+      className={`sticky top-0 z-40 border-b bg-white transition-[border-color,box-shadow,margin] duration-200 motion-reduce:transition-none ${
         scrolled || menuOpen
           ? "border-line/70 lg:shadow-[0_8px_24px_-18px_rgba(0,43,78,0.35)]"
           : "border-transparent"
-      }`}
+      } ${scrolled ? "lg:mb-3" : "lg:mb-0"}`}
     >
       <div
         className={`container-page flex items-center justify-between gap-6 transition-[height] duration-200 motion-reduce:transition-none h-16 ${

@@ -49,7 +49,7 @@ export async function FAQ({
     <section id="faq" aria-labelledby="faq-title" className={`py-(--space-section) ${className}`}>
       <div className="container-page grid-page gap-y-(--space-intro-content)">
         <div className="col-span-4 md:col-span-8 xl:col-span-4">
-          <div className="xl:sticky xl:top-[100px]">
+          <div className="xl:sticky xl:top-[calc(100px+var(--promo-h,0px))]">
             <Eyebrow>{eyebrow}</Eyebrow>
             <h2 id="faq-title" className="t-h2 max-w-[16ch] text-navy">
               {title}

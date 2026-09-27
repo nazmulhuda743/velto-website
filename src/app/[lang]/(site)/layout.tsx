@@ -3,6 +3,7 @@ import { Analytics } from "@/components/layout/Analytics";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
+import { StickyTop } from "@/components/layout/StickyTop";
 import { TrackingScripts } from "@/components/layout/TrackingScripts";
 import { CampaignPopup } from "@/components/promo/CampaignPopup";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -26,8 +27,10 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       >
         {t.skipToContent}
       </a>
-      <AnnouncementBar />
-      <Header logo={<Logo className="h-9 lg:h-11" priority />} accounts={customerAccountsEnabled()} />
+      <StickyTop>
+        <AnnouncementBar />
+        <Header logo={<Logo className="h-9 lg:h-11" priority />} accounts={customerAccountsEnabled()} />
+      </StickyTop>
       <main id="main">{children}</main>
       <Footer />
       <Analytics />
