@@ -73,7 +73,7 @@ create table if not exists public.website_server_events (
   occurred_at     timestamptz not null default now(),
   kind            text not null check (kind in (
                     'booking_error', 'quote_error', 'pricing_error', 'tracking_error',
-                    'not_found', 'media_upload_error', 'content_save_error')),
+                    'not_found', 'media_upload_error', 'content_save_error', 'otp_error')),
   route           text check (char_length(route) <= 120),
   code            text check (char_length(code) <= 60),
   path            text check (char_length(path) <= 300)

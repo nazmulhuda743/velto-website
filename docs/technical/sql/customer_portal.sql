@@ -206,6 +206,57 @@ begin
 end;
 $$;
 
+-- The caller's phone as proven by an SMS sign-in code (auth.users.phone with
+-- phone_confirmed_at), as 01XXXXXXXXX, or null. Only Supabase Auth can set it, so unlike
+-- user metadata it is safe to trust for linking order history.
+create or replace function public.portal_auth_phone(p_uid uuid)
+returns text
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select public.portal_local_phone(u.phone)
+  from auth.users u
+  where u.id = p_uid and u.phone_confirmed_at is not null and coalesce(u.phone, '') <> ''
+$$;
+
+-- Link order history automatically when the account's phone was proven by SMS code and
+-- exactly one Velto customer has that phone (not already linked to another account).
+-- Anything ambiguous stays with staff (portal_link_decide). Staff rejections are respected.
+create or replace function public.portal_auto_link(p_uid uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_phone text := public.portal_auth_phone(p_uid);
+  v_acc public.customer_accounts;
+  v_customer_id uuid;
+begin
+  if v_phone is null then
+    return;
+  end if;
+  select * into v_acc from public.customer_accounts where auth_user_id = p_uid for update;
+  if v_acc.auth_user_id is null or v_acc.link_status not in ('none', 'pending') or v_acc.phone <> v_phone then
+    return;
+  end if;
+  if (select count(*) from public.customers where phone = v_phone) <> 1 then
+    return;
+  end if;
+  select id into v_customer_id from public.customers where phone = v_phone;
+  if exists (select 1 from public.customer_accounts where customer_id = v_customer_id and auth_user_id <> p_uid) then
+    return;
+  end if;
+  update public.customer_accounts
+     set customer_id = v_customer_id, verified_phone = v_phone, link_status = 'linked', link_method = 'sms_otp',
+         link_requested_at = coalesce(link_requested_at, now()), link_decided_at = now(),
+         link_decided_by = 'SMS sign-in code', updated_at = now()
+   where auth_user_id = p_uid;
+end;
+$$;
+
 -- Account home data. Creates the account row from sign-up metadata on first call.
 create or replace function public.portal_me()
 returns jsonb
@@ -222,14 +273,17 @@ declare
   v_phone text;
   v_terms smallint;
   v_customer jsonb;
+  v_auth_phone text;
 begin
   v_acc := public.portal_caller();
   select raw_user_meta_data, email into v_meta, v_email from auth.users where id = v_uid;
+  v_auth_phone := public.portal_auth_phone(v_uid);
 
   if v_acc.auth_user_id is null then
-    -- Metadata is user-editable: use it only to prefill the customer's own profile.
+    -- Metadata is user-editable: use it only to prefill the customer's own profile. A phone
+    -- proven by SMS code always wins over a typed one.
     v_name := btrim(coalesce(v_meta ->> 'full_name', ''));
-    v_phone := public.portal_local_phone(v_meta ->> 'phone');
+    v_phone := coalesce(v_auth_phone, public.portal_local_phone(v_meta ->> 'phone'));
     v_terms := case when (v_meta ->> 'terms_version') ~ '^[0-9]{1,3}$' then (v_meta ->> 'terms_version')::smallint end;
     if char_length(v_name) between 2 and 80 and v_phone ~ '^01[3-9][0-9]{8}$' and v_terms is not null then
       insert into public.customer_accounts (auth_user_id, full_name, phone, terms_version, terms_accepted_at, last_login_at)
@@ -237,8 +291,13 @@ begin
       on conflict (auth_user_id) do nothing;
       select * into v_acc from public.customer_accounts where auth_user_id = v_uid;
     else
-      return jsonb_build_object('state', 'incomplete', 'email', v_email);
+      return jsonb_build_object('state', 'incomplete', 'email', v_email, 'phone', v_auth_phone, 'phoneVerified', v_auth_phone is not null);
     end if;
+  end if;
+
+  if v_auth_phone is not null and v_acc.link_status in ('none', 'pending') then
+    perform public.portal_auto_link(v_uid);
+    select * into v_acc from public.customer_accounts where auth_user_id = v_uid;
   end if;
 
   if v_acc.link_status = 'linked' then
@@ -251,6 +310,7 @@ begin
     'email', v_email,
     'fullName', v_acc.full_name,
     'phone', v_acc.phone,
+    'phoneVerified', v_auth_phone is not null and v_auth_phone = v_acc.phone,
     'address', v_acc.address,
     'area', v_acc.area,
     'link', jsonb_build_object(
@@ -285,8 +345,13 @@ declare
   v_phone text := public.portal_local_phone(p_phone);
   v_address text := nullif(btrim(coalesce(p_address, '')), '');
   v_area text := nullif(btrim(coalesce(p_area, '')), '');
+  v_auth_phone text := public.portal_auth_phone(v_uid);
 begin
   v_acc := public.portal_caller();
+  -- A phone proven by SMS code can't be replaced by a typed one.
+  if v_auth_phone is not null then
+    v_phone := v_auth_phone;
+  end if;
   if char_length(v_name) not between 2 and 80 then
     raise exception 'invalid name' using errcode = '22023';
   end if;
@@ -317,6 +382,7 @@ begin
            updated_at = now()
      where auth_user_id = v_uid;
   end if;
+  perform public.portal_auto_link(v_uid);
   return public.portal_me();
 end;
 $$;
@@ -528,6 +594,8 @@ revoke all on function public.portal_local_phone(text) from public, anon, authen
 revoke all on function public.portal_status_label(text) from public, anon, authenticated;
 revoke all on function public.portal_order_json(public.orders) from public, anon, authenticated;
 revoke all on function public.portal_caller() from public, anon, authenticated;
+revoke all on function public.portal_auth_phone(uuid) from public, anon, authenticated;
+revoke all on function public.portal_auto_link(uuid) from public, anon, authenticated;
 
 revoke all on function public.portal_me() from public, anon;
 revoke all on function public.portal_profile_save(text, text, text, text, smallint) from public, anon;

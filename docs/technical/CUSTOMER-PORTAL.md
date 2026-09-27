@@ -167,8 +167,10 @@ functions), so OTP is not faked. Instead:
    the confirmation box and **Approve**. The database re-checks the phone match and the
    one-account-per-customer rule. **Reject** and **Unlink** are also available.
 
-When SMS OTP is configured later, `portal_link_decide(..., p_method => 'sms_otp')` is the hook: an
-OTP-verification step can call it after confirming possession of the Ops phone.
+**Sign in with a mobile number** (docs/technical/PHONE-SIGN-IN.md) proves the phone with an SMS
+code. When the account's phone was proven that way and exactly one Ops customer has that phone
+(not linked to another account), `portal_auto_link` links the history at once with
+`link_method = 'sms_otp'`. Anything ambiguous still goes to staff as above.
 
 ---
 
@@ -302,7 +304,8 @@ statement is in the PR description.
 - Profile edits update the portal profile used for booking prefill; they do not change the Ops
   customer record (staff remain the source of truth).
 - Email change is not self-service yet (the profile page says to contact Velto).
-- The in-memory sign-in brake is per server instance; Supabase rate limits are the backstop.
+- The in-memory email sign-in brake is per server instance; Supabase rate limits are the backstop.
+  SMS codes use durable database limits (docs/technical/sql/website_otp.sql).
 
 ---
 

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "@/components/i18n/Link";
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { SelectField, TextField } from "@/components/forms/fields";
 import {
@@ -10,8 +10,10 @@ import {
   resendVerificationAction,
   resetPasswordAction,
   saveProfileAction,
+  sendPhoneCodeAction,
   signInAction,
   signUpAction,
+  verifyPhoneCodeAction,
   type AuthFormState,
 } from "@/lib/customer/actions";
 import { OUTSIDE_AREA, PASSWORD_MIN, UTTARA_SECTORS, displayBdPhone } from "@/lib/customer/validation";
@@ -91,20 +93,277 @@ function GoogleSubmit({ t }: { t: Text }) {
   );
 }
 
+function GoogleButton({ t, next }: { t: Text; next: string }) {
+  return (
+    <form action={googleSignInAction}>
+      <input type="hidden" name="next" value={next} />
+      <GoogleSubmit t={t} />
+    </form>
+  );
+}
+
+function Divider({ label }: { label: string }) {
+  return (
+    <div className="my-6 flex items-center gap-4" role="separator" aria-label={label}>
+      <span className="h-px flex-1 bg-line" />
+      <span className="t-small text-secondary">{label}</span>
+      <span className="h-px flex-1 bg-line" />
+    </div>
+  );
+}
+
 /** "Continue with Google" plus an "or use your email" divider; shown only when Google is on in Supabase. */
 export function GoogleSignIn({ t, next }: { t: Text; next: string }) {
   return (
     <div>
-      <form action={googleSignInAction}>
+      <GoogleButton t={t} next={next} />
+      <Divider label={t.orEmail} />
+    </div>
+  );
+}
+
+/* ---------- Sign in with a mobile number (SMS code) ---------- */
+
+type CodeSent = Extract<AuthFormState, { status: "code-sent" }>;
+
+const RESEND_AFTER_SECONDS = 60;
+
+function TermsCheckbox({ t, name, error }: { t: Text; name: string; error?: string }) {
+  const errorId = `${name}-error`;
+  return (
+    <div>
+      <label className="flex items-start gap-3 t-small text-body">
+        <input
+          type="checkbox"
+          name={name}
+          required
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
+          className="mt-0.5 size-5 shrink-0 accent-[var(--color-action)]"
+        />
+        <span>
+          {t.agreeBefore}
+          <Link href="/terms" target="_blank" className="font-semibold text-navy underline underline-offset-4">
+            {t.termsLink}
+          </Link>
+          {t.and}
+          <Link href="/privacy" target="_blank" className="font-semibold text-navy underline underline-offset-4">
+            {t.privacyLink}
+          </Link>
+          {t.agreeAfter}
+        </span>
+      </label>
+      {error ? (
+        <p id={errorId} className="mt-2 flex items-start gap-2 t-small font-medium text-error">
+          <span aria-hidden="true">!</span>
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Mobile number → SMS code → signed in. New numbers get an account on the spot; the sign-up
+ * variant also asks for the name and the terms, so the account is ready straight away.
+ */
+export function PhoneSignIn({ t, next, mode }: { t: Text; next: string; mode: "signin" | "signup" }) {
+  const [sendState, sendAction] = useActionState(sendPhoneCodeAction, IDLE);
+  // "Change number" returns to step 1 without a server round trip.
+  const [dismissed, setDismissed] = useState<AuthFormState | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  useFocusFirstError(sendState, formRef);
+  const errors = errorsOf(sendState);
+  const signup = mode === "signup";
+
+  if (sendState.status === "code-sent" && dismissed !== sendState) {
+    return (
+      <PhoneCodeStep
+        key={`${sendState.phone}:${sendState.sentAt ?? 0}`}
+        t={t}
+        next={next}
+        sent={sendState}
+        sendAction={sendAction}
+        onChangeNumber={() => setDismissed(sendState)}
+      />
+    );
+  }
+
+  const phoneValue = sendState.status === "code-sent" ? sendState.phone : valueOf(sendState, "otpPhone");
+  return (
+    <form ref={formRef} action={sendAction} noValidate className="space-y-5" data-phone-sign-in>
+      <StateMessage state={sendState} t={t} />
+      <input type="hidden" name="next" value={next} />
+      <input type="hidden" name="mode" value={mode} />
+      {signup ? (
+        <TextField id="otpName" label={t.fullNameLabel} autoComplete="name" required maxLength={80} defaultValue={valueOf(sendState, "otpName")} error={errors.fullName} />
+      ) : null}
+      <TextField
+        id="otpPhone"
+        label={t.phoneLabel}
+        type="tel"
+        autoComplete="tel-national"
+        inputMode="tel"
+        required
+        maxLength={20}
+        placeholder="01712 345678"
+        helper={signup ? t.phoneSignUpHelp : t.phoneSignInHelp}
+        defaultValue={phoneValue}
+        error={errors.phone}
+      />
+      {signup ? <TermsCheckbox t={t} name="otpTerms" error={errors.terms} /> : null}
+      <SubmitButton pending={t.sendingCode}>{t.sendCode}</SubmitButton>
+    </form>
+  );
+}
+
+function ResendButton({ t }: { t: Text }) {
+  const { pending } = useFormStatus();
+  return (
+    <button type="submit" disabled={pending} className="font-semibold text-navy underline decoration-blue/50 underline-offset-4 hover:decoration-blue disabled:opacity-60">
+      {pending ? t.sendingCode : t.resendCode}
+    </button>
+  );
+}
+
+function PhoneCodeStep({
+  t,
+  next,
+  sent,
+  sendAction,
+  onChangeNumber,
+}: {
+  t: Text;
+  next: string;
+  sent: CodeSent;
+  sendAction: (form: FormData) => void;
+  onChangeNumber: () => void;
+}) {
+  const locale = useLocale();
+  const [state, action] = useActionState(verifyPhoneCodeAction, IDLE);
+  const [left, setLeft] = useState(RESEND_AFTER_SECONDS);
+  const formRef = useRef<HTMLFormElement>(null);
+  const codeRef = useRef<HTMLInputElement>(null);
+  useFocusFirstError(state, formRef);
+
+  useEffect(() => {
+    const timer = setInterval(() => setLeft((s) => (s > 0 ? s - 1 : 0)), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    codeRef.current?.focus();
+    // Android Chrome can read the code from the SMS (WebOTP; the SMS ends "@www.velto.com.bd #123456").
+    if (!("OTPCredential" in window)) return;
+    const abort = new AbortController();
+    (navigator.credentials.get({ otp: { transport: ["sms"] }, signal: abort.signal } as CredentialRequestOptions) as Promise<{ code?: string } | null>)
+      .then((otp) => {
+        if (otp?.code && codeRef.current) {
+          codeRef.current.value = otp.code;
+          formRef.current?.requestSubmit();
+        }
+      })
+      .catch(() => {});
+    return () => abort.abort();
+  }, []);
+
+  const verifyErrors = state.status === "code-sent" ? (state.errors ?? {}) : {};
+  const message =
+    state.status === "code-sent" ? state.message : state.status === "error" ? state.message : state.status === "idle" ? sent.message : undefined;
+
+  return (
+    <div className="space-y-5" data-phone-code-step>
+      <p className="text-body">
+        {t.codeSentBefore}
+        <strong className="whitespace-nowrap text-navy">{displayBdPhone(sent.phone)}</strong>
+        {t.codeSentAfter}
+      </p>
+      {sent.resent && !sent.message && state.status === "idle" ? <Alert tone="success">{t.codeResent}</Alert> : null}
+      {state.status === "unavailable" ? <Unavailable t={t} /> : message ? <Alert tone="error">{message}</Alert> : null}
+      <form ref={formRef} action={action} noValidate className="space-y-5">
+        <input type="hidden" name="otpPhone" value={sent.phone} />
         <input type="hidden" name="next" value={next} />
-        <GoogleSubmit t={t} />
+        <TextField
+          ref={codeRef}
+          id="otpCode"
+          label={t.codeLabel}
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          pattern="[0-9]*"
+          required
+          maxLength={6}
+          error={verifyErrors.code}
+        />
+        <SubmitButton pending={t.verifyingCode}>{t.verifyCode}</SubmitButton>
       </form>
-      <div className="my-6 flex items-center gap-4" role="separator" aria-label={t.orEmail}>
-        <span className="h-px flex-1 bg-line" />
-        <span className="t-small text-secondary">{t.orEmail}</span>
-        <span className="h-px flex-1 bg-line" />
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 t-small">
+        <button type="button" onClick={onChangeNumber} className="font-semibold text-navy underline decoration-blue/50 underline-offset-4 hover:decoration-blue">
+          {t.changeNumber}
+        </button>
+        {left > 0 ? (
+          <span className="text-secondary">{fill(t.resendIn, { s: left }, locale)}</span>
+        ) : (
+          <form action={sendAction}>
+            <input type="hidden" name="otpPhone" value={sent.phone} />
+            <input type="hidden" name="resend" value="1" />
+            <ResendButton t={t} />
+          </form>
+        )}
       </div>
     </div>
+  );
+}
+
+/** Email as the second way in when mobile sign-in is on: folded away, opened on any email result. */
+function EmailDisclosure({ label, open, children }: { label: string; open: boolean; children: React.ReactNode }) {
+  return (
+    <details className="group mt-3" open={open || undefined}>
+      <summary className="flex h-[52px] cursor-pointer list-none items-center justify-center gap-2 rounded-md border border-line-strong bg-white px-5 font-semibold text-navy transition-colors hover:border-navy hover:bg-soft lg:h-12 [&::-webkit-details-marker]:hidden">
+        {label}
+        <svg viewBox="0 0 16 16" aria-hidden="true" className="size-4 transition-transform group-open:rotate-180">
+          <path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </summary>
+      <div className="mt-6">{children}</div>
+    </details>
+  );
+}
+
+/** Mobile first, then Google, then email folded away. Without mobile sign-in: Google, then the email form. */
+function Methods({
+  t,
+  next,
+  mode,
+  google,
+  phone,
+  emailOpen,
+  children,
+}: {
+  t: Text;
+  next: string;
+  mode: "signin" | "signup";
+  google: boolean;
+  phone: boolean;
+  emailOpen: boolean;
+  children: React.ReactNode;
+}) {
+  if (!phone) {
+    return (
+      <>
+        {google ? <GoogleSignIn t={t} next={next} /> : null}
+        {children}
+      </>
+    );
+  }
+  return (
+    <>
+      <PhoneSignIn t={t} next={next} mode={mode} />
+      <Divider label={t.orDivider} />
+      {google ? <GoogleButton t={t} next={next} /> : null}
+      <EmailDisclosure label={mode === "signup" ? t.useEmailSignUp : t.useEmailSignIn} open={emailOpen}>
+        {children}
+      </EmailDisclosure>
+    </>
   );
 }
 
@@ -113,7 +372,19 @@ export function GoogleSignIn({ t, next }: { t: Text; next: string }) {
 /** Show/hide labels for PasswordField, in the page language. */
 const toggleLabels = (t: Text) => ({ show: t.show, hide: t.hide, srPassword: t.srPassword });
 
-export function SignInForm({ t, next, notice, google = false }: { t: Text; next: string; notice?: React.ReactNode; google?: boolean }) {
+export function SignInForm({
+  t,
+  next,
+  notice,
+  google = false,
+  phone = false,
+}: {
+  t: Text;
+  next: string;
+  notice?: React.ReactNode;
+  google?: boolean;
+  phone?: boolean;
+}) {
   const [state, action] = useActionState(signInAction, IDLE);
   const formRef = useRef<HTMLFormElement>(null);
   useFocusFirstError(state, formRef);
@@ -124,7 +395,7 @@ export function SignInForm({ t, next, notice, google = false }: { t: Text; next:
   return (
     <>
     {notice ? <div className="mb-5">{notice}</div> : null}
-    {google ? <GoogleSignIn t={t} next={next} /> : null}
+    <Methods t={t} next={next} mode="signin" google={google} phone={phone} emailOpen={state.status !== "idle"}>
     <form ref={formRef} action={action} noValidate className="space-y-5">
       <StateMessage state={state} t={t} />
       <input type="hidden" name="next" value={next} />
@@ -143,6 +414,7 @@ export function SignInForm({ t, next, notice, google = false }: { t: Text; next:
         </Link>
       </p>
     </form>
+    </Methods>
     </>
   );
 }
@@ -180,7 +452,7 @@ export function VerifyEmail({ t, email }: { t: Text; email: string }) {
 
 /* ---------- Sign up ---------- */
 
-export function SignUpForm({ t, next, google = false }: { t: Text; next: string; google?: boolean }) {
+export function SignUpForm({ t, next, google = false, phone = false }: { t: Text; next: string; google?: boolean; phone?: boolean }) {
   const locale = useLocale();
   const [state, action] = useActionState(signUpAction, IDLE);
   const formRef = useRef<HTMLFormElement>(null);
@@ -212,7 +484,7 @@ export function SignUpForm({ t, next, google = false }: { t: Text; next: string;
 
   return (
     <>
-    {google ? <GoogleSignIn t={t} next={next} /> : null}
+    <Methods t={t} next={next} mode="signup" google={google} phone={phone} emailOpen={state.status !== "idle"}>
     <form ref={formRef} action={action} noValidate className="space-y-5">
       <StateMessage state={state} t={t} />
       <TextField id="fullName" label={t.fullNameLabel} autoComplete="name" required maxLength={80} defaultValue={valueOf(state, "fullName")} error={errors.fullName} />
@@ -239,35 +511,7 @@ export function SignUpForm({ t, next, google = false }: { t: Text; next: string;
         labels={toggleLabels(t)}
       />
       <PasswordField id="confirm" label={t.confirmLabel} autoComplete="new-password" error={errors.confirm} labels={toggleLabels(t)} />
-      <div>
-        <label className="flex items-start gap-3 t-small text-body">
-          <input
-            type="checkbox"
-            name="terms"
-            required
-            aria-invalid={errors.terms ? true : undefined}
-            aria-describedby={errors.terms ? "terms-error" : undefined}
-            className="mt-0.5 size-5 shrink-0 accent-[var(--color-action)]"
-          />
-          <span>
-            {t.agreeBefore}
-            <Link href="/terms" target="_blank" className="font-semibold text-navy underline underline-offset-4">
-              {t.termsLink}
-            </Link>
-            {t.and}
-            <Link href="/privacy" target="_blank" className="font-semibold text-navy underline underline-offset-4">
-              {t.privacyLink}
-            </Link>
-            {t.agreeAfter}
-          </span>
-        </label>
-        {errors.terms ? (
-          <p id="terms-error" className="mt-2 flex items-start gap-2 t-small font-medium text-error">
-            <span aria-hidden="true">!</span>
-            {errors.terms}
-          </p>
-        ) : null}
-      </div>
+      <TermsCheckbox t={t} name="terms" error={errors.terms} />
       <SubmitButton pending={t.signUpPending}>{t.signUpSubmit}</SubmitButton>
       <p className="border-t border-line pt-5 text-center t-small text-secondary">
         {t.haveAccount}
@@ -276,6 +520,7 @@ export function SignUpForm({ t, next, google = false }: { t: Text; next: string;
         </Link>
       </p>
     </form>
+    </Methods>
     </>
   );
 }
@@ -364,7 +609,7 @@ export function ProfileForm({
 }: {
   t: Text;
   initial: { fullName: string; phone: string; address: string; area: string };
-  phoneLocked: "linked" | "pending" | null;
+  phoneLocked: "verified" | "linked" | "pending" | null;
   completing?: boolean;
 }) {
   const [state, action] = useActionState(saveProfileAction, IDLE);
@@ -386,7 +631,7 @@ export function ProfileForm({
           <input type="hidden" name="phone" value={initial.phone} />
           <p className="mt-2 flex h-[54px] items-center rounded-md border border-line bg-soft px-4 text-navy md:h-[52px]">{displayBdPhone(initial.phone)}</p>
           <p className="mt-2 t-small text-secondary">
-            {phoneLocked === "linked" ? t.lockedLinked : t.lockedPending}
+            {phoneLocked === "verified" ? t.lockedVerified : phoneLocked === "linked" ? t.lockedLinked : t.lockedPending}
           </p>
         </div>
       ) : (

@@ -73,7 +73,8 @@ export type ServerEventKind =
   | "pricing_error"
   | "tracking_error"
   | "media_upload_error"
-  | "content_save_error";
+  | "content_save_error"
+  | "otp_error";
 
 /**
  * Record a website failure for the Health Center. Never throws and never

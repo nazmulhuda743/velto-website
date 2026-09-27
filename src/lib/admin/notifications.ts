@@ -82,6 +82,7 @@ export const getNotifications = cache(async (): Promise<{ items: Notification[];
       ["tracking_error", "Order tracking unavailable", "Order tracking returned an error."],
       ["media_upload_error", "Media upload failed", "An image upload in the dashboard did not complete."],
       ["content_save_error", "Content save failed", "A dashboard change was not saved."],
+      ["otp_error", "Sign-in SMS problems", "Sign-in codes were refused or could not be sent (rate limit or SMS provider)."],
     ];
     for (const [kind, title, body] of groups) {
       const hits = since(kind);

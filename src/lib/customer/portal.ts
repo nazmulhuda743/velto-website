@@ -9,12 +9,15 @@ import { customerSupabase } from "./supabase";
 export type LinkStatus = "none" | "pending" | "linked" | "rejected";
 
 export type PortalAccount =
-  | { state: "incomplete"; email: string }
+  /** `phone` is set (and verified) when the customer signed in with an SMS code. Email is null then. */
+  | { state: "incomplete"; email: string | null; phone?: string | null; phoneVerified?: boolean }
   | {
       state: "ready";
-      email: string;
+      email: string | null;
       fullName: string;
       phone: string;
+      /** The phone was proven by SMS code: it is the sign-in number and can't be edited. */
+      phoneVerified?: boolean;
       address: string | null;
       area: string | null;
       link: { status: LinkStatus; requestedAt: string | null; decidedAt: string | null; verifiedPhone: string | null };
