@@ -64,6 +64,8 @@ export const formsBn: FormText = {
     outsideNote:
       "আমরা উত্তরা সেক্টর ১–১৮ জুড়ে কাপড় নিই। এর বাইরে হলে আগে যাচাই করতে হয়, তাই পিকআপের কথা দেওয়ার আগে আমরা নিশ্চিত করে জানাব।",
     addressLabel: "বাড়ি ও রোড",
+    savedAddresses: "সেভ করা ঠিকানা ব্যবহার করুন",
+    savedAddressFallback: "ঠিকানা {n}",
     addressPlaceholder: "যেমন: House 12, Road 7",
     datesTitle: "পিকআপ ও ডেলিভারি",
     datesHint: "দিন আর দিনের কোন সময় বেছে নিন। সঠিক সময় Velto টিম ফোন করে নিশ্চিত করবে।",
@@ -188,6 +190,13 @@ export const formsBn: FormText = {
     routineEvery: { weekly: "প্রতি সপ্তাহে", fortnightly: "প্রতি দুই সপ্তাহে" } as Record<string, string>,
     routineDays: ["রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার", "শুক্রবার", "শনিবার"],
     repeatNote: "আমার আগের অর্ডারের মতোই ({n})।",
+    care: {
+      intro: "আমার সাধারণ পছন্দ:",
+      shirts: { hanger: "শার্ট হ্যাঙ্গারে", folded: "শার্ট ভাঁজ করে" },
+      starch: { none: "মাড় ছাড়া", light: "হালকা মাড়", regular: "সাধারণ মাড়" },
+      fragrance: { none: "সুগন্ধি ছাড়া", regular: "সাধারণ সুগন্ধি" },
+      separate: "সাদা ও রঙিন কাপড় আলাদা করে ধোয়া",
+    },
     repeatIntro: "অর্ডার {n}-এর আইটেমগুলো পূরণ করা আছে। দরকার হলে বদলে নিন, তারপর নিশ্চিত করুন।",
     repeatIntroNote: "অর্ডার {n}-এর মতো আবার বুক করছেন। নিশ্চিত করার আগে দরকার হলে যেকোনো কিছু বদলে নিন।",
     presetNotes: {

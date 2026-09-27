@@ -10,6 +10,7 @@ import { SITE_URL } from "@/lib/site-url";
 import { otpAllowed } from "@/lib/sms/limits";
 import { bdPhoneToE164, validOtp } from "@/lib/sms/otp";
 import { ACCOUNT_HINT_COOKIE, RECOVERY_COOKIE } from "./config";
+import { AREA, cleanIssues, happy, parsePreferences } from "./extras";
 import { AUTH_COOKIE_OPTIONS, customerSupabase } from "./supabase";
 import {
   PASSWORD_MAX,
@@ -21,6 +22,7 @@ import {
   validArea,
   validEmail,
   validName,
+  validOrderNumber,
 } from "./validation";
 
 export type FieldErrors = Partial<Record<"fullName" | "email" | "phone" | "password" | "confirm" | "terms" | "address" | "area" | "code", string>>;
@@ -413,4 +415,68 @@ export async function requestLinkAction(): Promise<void> {
   const { error } = await supabase.rpc("portal_request_link");
   if (error) console.error("portal_request_link_failed", error.code);
   revalidatePath("/account", "layout");
+}
+
+/* ---------- order feedback ---------- */
+
+export type FeedbackState = { status: "idle" } | { status: "saved"; rating: number } | { status: "error"; message: string };
+
+/** Rate a delivered order. The database checks the order is this customer's and delivered. */
+export async function saveFeedbackAction(_prev: FeedbackState, form: FormData): Promise<FeedbackState> {
+  const m = await messages();
+  const orderNumber = validOrderNumber(str(form, "orderNumber", 20));
+  const rating = Number(str(form, "rating", 2));
+  if (!orderNumber) return { status: "error", message: m.t.feedbackFailed };
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) return { status: "error", message: m.t.feedbackRating };
+  const issues = happy(rating) ? [] : cleanIssues(form.getAll("issues"));
+  const comment = String(form.get("comment") ?? "").trim();
+  if (comment.length > 1000) return { status: "error", message: m.t.feedbackLong };
+
+  const supabase = await customerSupabase();
+  if (!supabase) return m.disabled as FeedbackState;
+  const { error } = await supabase.rpc("portal_feedback_save", {
+    p_order_number: orderNumber,
+    p_rating: rating,
+    p_issues: issues,
+    p_comment: comment || null,
+  });
+  if (error) {
+    if (error.code === "PGRST301" || error.message?.includes("authentication required")) redirect(await loginRedirectPath(`/account/orders/${orderNumber}`));
+    if (error.message?.includes("feedback closed")) return { status: "error", message: m.t.feedbackClosed };
+    console.error("portal_feedback_save_failed", error.code);
+    return { status: "error", message: m.t.feedbackFailed };
+  }
+  revalidatePath("/account", "layout");
+  return { status: "saved", rating };
+}
+
+/* ---------- saved preferences ---------- */
+
+export type PreferencesState = { status: "idle" } | { status: "saved" } | { status: "error"; message: string };
+
+/** Garment care and up to three pickup addresses, added to future booking requests. */
+export async function savePreferencesAction(_prev: PreferencesState, form: FormData): Promise<PreferencesState> {
+  const m = await messages();
+  const note = str(form, "note", 400).trim();
+  if (note.length > 300) return { status: "error", message: m.t.prefsNoteLong };
+  const addresses = [0, 1, 2]
+    .map((i) => ({ label: str(form, `label${i}`, 60).trim(), address: str(form, `address${i}`, 400).trim(), area: str(form, `area${i}`, 10).trim() }))
+    .filter((a) => a.address);
+  if (addresses.some((a) => a.address.length > 300 || a.label.length > 30)) return { status: "error", message: m.t.addressLong };
+  if (addresses.some((a) => a.area && !AREA.test(a.area))) return { status: "error", message: m.t.area };
+  const prefs = parsePreferences({
+    care: { shirts: str(form, "shirts", 10), starch: str(form, "starch", 10), fragrance: str(form, "fragrance", 10), separate: form.get("separate") === "on", note },
+    addresses,
+  });
+
+  const supabase = await customerSupabase();
+  if (!supabase) return m.disabled as PreferencesState;
+  const { error } = await supabase.rpc("portal_prefs_save", { p_care: prefs.care, p_addresses: prefs.addresses });
+  if (error) {
+    if (error.code === "PGRST301" || error.message?.includes("authentication required")) redirect(await loginRedirectPath("/account/profile"));
+    console.error("portal_prefs_save_failed", error.code);
+    return { status: "error", message: m.t.saveFailed };
+  }
+  revalidatePath("/account", "layout");
+  return { status: "saved" };
 }

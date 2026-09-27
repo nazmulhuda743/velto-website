@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "@/components/i18n/Link";
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { ButtonLink, WhatsAppButton } from "@/components/ui/Button";
 import { ArrowRight } from "@/components/ui/icons";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
@@ -13,6 +13,22 @@ import { AccountLink } from "./AccountLink";
 export function MobileMenu({ open, onClose, accounts = false }: { open: boolean; onClose: () => void; accounts?: boolean }) {
   const panelRef = useRef<HTMLDivElement>(null);
   const t = dictionary(useLocale());
+
+  // The panel starts right under the header. The header isn't always at the top of the screen
+  // (the announcement bar sits above it until the page scrolls), so measure it rather than
+  // assume 64px; otherwise the panel covers the logo and the close button.
+  useLayoutEffect(() => {
+    if (!open) return;
+    const panel = panelRef.current;
+    const header = panel?.closest("header");
+    if (!panel || !header) return;
+    const place = () => {
+      panel.style.top = `${Math.max(0, Math.round(header.getBoundingClientRect().bottom))}px`;
+    };
+    place();
+    window.addEventListener("resize", place);
+    return () => window.removeEventListener("resize", place);
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -51,7 +67,7 @@ export function MobileMenu({ open, onClose, accounts = false }: { open: boolean;
     <div
       id="mobile-menu"
       ref={panelRef}
-      className="fixed inset-x-0 bottom-0 top-16 z-50 overflow-y-auto border-t border-line bg-white lg:hidden"
+      className="fixed inset-x-0 bottom-0 top-[calc(4rem+var(--promo-h,0px))] z-50 overflow-y-auto border-t border-line bg-white lg:hidden"
     >
       <nav aria-label={t.nav.mobile} className="container-page pb-[calc(24px+env(safe-area-inset-bottom))] pt-3">
         {accounts ? <AccountLink variant="menu" onClick={onClose} className="mb-3 mt-1" /> : null}

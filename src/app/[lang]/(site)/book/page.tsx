@@ -1,6 +1,7 @@
 import Link from "@/components/i18n/Link";
 import { pageMetadata } from "@/lib/seo/page-metadata";
-import { getCustomerSession } from "@/lib/customer/portal";
+import { getCustomerSession, getPreferences } from "@/lib/customer/portal";
+import { careNote, joinNotes } from "@/lib/customer/extras";
 import { parseRoutine } from "@/lib/customer/rhythm";
 import { validOrderNumber } from "@/lib/customer/validation";
 import { BookingForm } from "@/components/forms/BookingForm";
@@ -59,6 +60,8 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
   const repeatItems = repeat ? await repeatItemsFor(repeat) : [];
   // "Make it a routine" from the account: a request note Ops confirms by phone, never a contract.
   const routine = parseRoutine(one(params.routine), one(params.day));
+  // Signed-in customers' saved care and addresses (Profile): a note line and one-tap addresses.
+  const prefs = account ? await getPreferences() : null;
   const routineNote = routine
     ? format(t.routineNote, { every: t.routineEvery[routine.every], day: t.routineDays[routine.day] })
     : null;
@@ -106,7 +109,8 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
                 repeatItems={repeatItems}
                 pickupChargeMinor={pickupChargeMinor}
                 offer={offer || undefined}
-                presetNote={routineNote ?? (repeat ? format(t.repeatNote, { n: repeat }) : t.presetNotes[service ?? ""])}
+                presetNote={joinNotes(routineNote ?? (repeat ? format(t.repeatNote, { n: repeat }) : t.presetNotes[service ?? ""]), prefs ? careNote(prefs.care, t.care) : "")}
+                savedAddresses={prefs?.addresses ?? []}
                 previewOutcome={previewOutcome}
                 initialContact={
                   account
@@ -118,7 +122,7 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
           </div>
 
           <aside aria-label={t.asideLabel} className="group-has-[[data-booking-success]]/book:hidden col-span-4 md:col-span-8 xl:col-span-4 xl:col-start-9">
-            <div className="xl:sticky xl:top-[100px]">
+            <div className="xl:sticky xl:top-[calc(100px+var(--promo-h,0px))]">
               <div className="hidden xl:block">
                 <h2 className="t-label uppercase text-navy">{t.howTitle}</h2>
                 <ol className="mt-4 border-t border-navy">

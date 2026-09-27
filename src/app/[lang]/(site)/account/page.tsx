@@ -5,13 +5,16 @@ import { accountText, orderFormat, type AccountText } from "@/content/i18n/accou
 import { fill, format, localizeHref, type Locale } from "@/lib/i18n/config";
 import { Alert } from "@/components/account/Alert";
 import { LinkHistoryCard } from "@/components/account/LinkHistoryCard";
+import { LoyaltyCard } from "@/components/account/LoyaltyCard";
 import { NextPickupCard } from "@/components/account/NextPickupCard";
 import { OrderProgress } from "@/components/account/OrderProgress";
 import { OrderRow } from "@/components/account/OrderRow";
 import { ButtonLink, WhatsAppButton } from "@/components/ui/Button";
 import { serviceLabel } from "@/content/order-status";
 import { WHATSAPP_URL } from "@/content/site";
-import { getCustomerSession, getPortalOrders, type PortalOrder } from "@/lib/customer/portal";
+import { getCustomerSession, getFeedbackList, getLoyaltyCounts, getPortalOrders, type PortalOrder } from "@/lib/customer/portal";
+import { orderToRate } from "@/lib/customer/extras";
+import { getSiteContent } from "@/lib/site-content";
 import { laundryRhythm, ROUTINE_DAYS } from "@/lib/customer/rhythm";
 import { formText } from "@/content/i18n/forms";
 import { areaLabel, displayBdPhone, greetingName } from "@/lib/customer/validation";
@@ -84,7 +87,12 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
   if (session.kind !== "customer" || session.account.state !== "ready") redirect(await loginRedirectPath("/account"));
   const account = session.account;
   const linked = account.link.status === "linked";
-  const orders = linked ? await getPortalOrders() : [];
+  const { loyalty } = await getSiteContent();
+  const [orders, counts, feedback] = linked
+    ? await Promise.all([getPortalOrders(), loyalty.enabled ? getLoyaltyCounts(loyalty.windowMonths) : null, getFeedbackList()])
+    : [[], null, []];
+  // A delivered order from the last two weeks that isn't rated yet: ask once, on the home.
+  const toRate = orderToRate(orders ?? [], new Set(feedback.map((f) => f.orderNumber)));
   const active = (orders ?? []).filter((o) => o.active);
   const recent = (orders ?? []).filter((o) => o !== active[0]).slice(0, 3);
   const rhythm = laundryRhythm(orders ?? []);
@@ -136,6 +144,22 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
       ) : orders !== null ? (
         <NextPickupCard rhythm={rhythm} locale={locale} firstTime={linked} />
       ) : null}
+
+      {toRate ? (
+        <section aria-labelledby="rate-title" className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-line bg-white p-5 md:p-6" data-rate-ask>
+          <div>
+            <h2 id="rate-title" className="font-semibold text-navy">
+              {format(a.feedback.askTitle, { n: toRate.orderNumber })}
+            </h2>
+            <p className="mt-1 t-small text-body">{a.feedback.askBody}</p>
+          </div>
+          <ButtonLink href={`/account/orders/${toRate.orderNumber}#rate`} variant="secondary" className="!h-11 !px-5">
+            {a.feedback.askButton}
+          </ButtonLink>
+        </section>
+      ) : null}
+
+      {loyalty.enabled && counts ? <LoyaltyCard settings={loyalty} counts={counts} locale={locale} /> : null}
 
       {linked && recent.length ? (
         <section aria-labelledby="recent-title">

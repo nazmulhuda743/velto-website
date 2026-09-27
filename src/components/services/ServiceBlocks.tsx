@@ -67,7 +67,7 @@ export async function ServiceBlockView({
       return (
         <Section id={id} tone={tone}>
           <div className={LEFT}>
-            <SectionIntro id={id} eyebrow={EYEBROW[block.type]} title={block.title} titleClassName="max-w-[14ch]" className="xl:sticky xl:top-[100px]">
+            <SectionIntro id={id} eyebrow={EYEBROW[block.type]} title={block.title} titleClassName="max-w-[14ch]" className="xl:sticky xl:top-[calc(100px+var(--promo-h,0px))]">
               <p>{block.intro}</p>
             </SectionIntro>
           </div>
@@ -120,7 +120,7 @@ export async function ServiceBlockView({
       return (
         <Section id={id} tone={tone}>
           <div className="col-span-4 md:col-span-8 lg:col-span-4 xl:col-span-5">
-            <div className="lg:sticky lg:top-[100px]">
+            <div className="lg:sticky lg:top-[calc(100px+var(--promo-h,0px))]">
               <ResponsiveImage
                 image={block.image}
                 aspect="aspect-[16/10] lg:aspect-[4/5]"

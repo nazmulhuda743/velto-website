@@ -50,7 +50,7 @@ export async function ProcessStory({
         <div className="mt-(--space-intro-content) grid-page">
           {/* Sticky visual — desktop/laptop only */}
           <div className="hidden lg:col-span-4 lg:block xl:col-span-7" aria-hidden="true">
-            <div className="sticky top-[100px]">
+            <div className="sticky top-[calc(100px+var(--promo-h,0px))]">
               <div className="relative h-[min(58vh,560px)] min-h-[400px] overflow-hidden rounded-md">
                 {IMAGES.process.map((image, i) => (
                   <div
