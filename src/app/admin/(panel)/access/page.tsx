@@ -31,6 +31,8 @@ const SECTION_LABEL: Record<Section, string> = {
   copy: "Text & copy",
   reviews: "Reviews",
   settings: "Site settings",
+  feedback: "Customer feedback",
+  loyalty: "Loyalty",
   promo: "Promo & popup",
   prices: "Prices",
   notifications: "Notifications",

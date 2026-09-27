@@ -69,6 +69,9 @@ export const formsEn = {
     outsideNote:
       "We collect across Uttara Sectors 1–18. Outside that area we need to check first, so we'll confirm before promising a pickup.",
     addressLabel: "House and road",
+    /** Signed-in customers with saved addresses (Profile → Saved addresses): one tap fills area and address. */
+    savedAddresses: "Use a saved address",
+    savedAddressFallback: "Address {n}",
     addressPlaceholder: "e.g. House 12, Road 7",
     datesTitle: "Pickup and delivery",
     datesHint: "Choose a day and a time of day. The Velto team will call you to confirm the exact time.",
@@ -195,6 +198,14 @@ export const formsEn = {
     routineEvery: { weekly: "every week", fortnightly: "every two weeks" } as Record<string, string>,
     routineDays: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
     repeatNote: "Same as my last order ({n}).",
+    /** The customer's saved garment care (Profile → How you like it done), added to the note. */
+    care: {
+      intro: "My usual care:",
+      shirts: { hanger: "shirts on hangers", folded: "shirts folded" },
+      starch: { none: "no starch", light: "light starch", regular: "regular starch" },
+      fragrance: { none: "no fragrance", regular: "regular fragrance" },
+      separate: "whites and colours washed separately",
+    },
     repeatIntro: "Your items from order {n} are filled in. Change anything, then confirm.",
     /** Repeating an order whose items couldn't be read: the note still tells Velto which order. */
     repeatIntroNote: "Booking the same again as order {n}. Change anything you need before you confirm.",

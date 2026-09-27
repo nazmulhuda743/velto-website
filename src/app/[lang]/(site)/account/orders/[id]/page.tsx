@@ -8,8 +8,9 @@ import { serviceLabel } from "@/content/order-status";
 import { accountText, orderFormat } from "@/content/i18n/account";
 import { format, localDigits } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
-import { WHATSAPP_URL } from "@/content/site";
-import { getPortalOrder } from "@/lib/customer/portal";
+import { LOCATIONS, WHATSAPP_URL } from "@/content/site";
+import { FeedbackForm } from "@/components/account/FeedbackForm";
+import { getFeedbackList, getPortalOrder } from "@/lib/customer/portal";
 import { bookingServiceFor, repeatHref } from "@/lib/customer/rhythm";
 import { validOrderNumber } from "@/lib/customer/validation";
 
@@ -41,6 +42,12 @@ export default async function OrderPage({ params }: { params: Params }) {
   if (!order) notFound();
 
   const cancelled = order.status === "Cancelled";
+  const delivered = order.status === "Delivered";
+  const feedback = delivered ? (await getFeedbackList()).find((f) => f.orderNumber === order.orderNumber) ?? null : null;
+  const fb = accountText(locale).feedback;
+  // Reviews go to the Google profile of the outlet that served the order (Sector 11 otherwise).
+  const outletId = /18/.test(`${order.outlet?.code ?? ""} ${order.outlet?.name ?? ""}`) ? "sector-18" : "sector-11";
+  const outletLocation = LOCATIONS.find((l) => l.id === outletId) ?? LOCATIONS[0];
   const expected = order.promisedAt ?? order.deliveryDate;
   const whatsapp = `${WHATSAPP_URL}?text=${encodeURIComponent(format(t.whatsapp, { n: order.orderNumber }))}`;
 
@@ -143,6 +150,23 @@ export default async function OrderPage({ params }: { params: Params }) {
               </li>
             ))}
           </ol>
+        </section>
+      ) : null}
+
+      {delivered ? (
+        <section id="rate" aria-labelledby="rate-order-title" className="scroll-mt-32 rounded-lg border border-line bg-white p-5 md:p-6" data-rate-order>
+          <h2 id="rate-order-title" className="font-semibold text-navy">
+            {fb.title}
+          </h2>
+          <div className="mt-3">
+            <FeedbackForm
+              orderNumber={order.orderNumber}
+              existing={feedback}
+              googleUrl={outletLocation.reviewsUrl}
+              t={fb}
+              digits={[1, 2, 3, 4, 5].map((n) => localDigits(n, locale))}
+            />
+          </div>
         </section>
       ) : null}
 

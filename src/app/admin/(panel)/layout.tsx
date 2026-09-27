@@ -8,6 +8,7 @@ import { isAdminPreview } from "@/lib/admin/preview";
 import { can, homeFor, ROLE_INFO, SECTIONS } from "@/lib/admin/permissions";
 import { myOpenTasks } from "@/lib/admin/board";
 import { pendingPriceCount } from "@/lib/admin/price-changes";
+import { openFeedbackCount } from "@/lib/admin/customer-extras";
 import { requireAdmin } from "@/lib/admin/session";
 import { DeniedNotice } from "@/components/admin/DeniedNotice";
 import { logoutAction } from "../actions";
@@ -36,11 +37,12 @@ export default async function AdminPanelLayout({ children }: { children: React.R
   const admin = await requireAdmin();
   const allowed = SECTIONS.filter((s) => can(admin.role, s));
   // Only load what this role may see (badge counts included).
-  const [notifications, requests, approvals, myTasks] = await Promise.all([
+  const [notifications, requests, approvals, myTasks, openFeedback] = await Promise.all([
     can(admin.role, "notifications") ? getNotifications() : null,
     can(admin.role, "requests") ? getRequests(500) : null,
     can(admin.role, "approvals") ? pendingPriceCount() : 0,
     can(admin.role, "board") ? myOpenTasks(admin.id) : 0,
+    can(admin.role, "feedback") ? openFeedbackCount() : 0,
   ]);
   const unread = notifications?.unread ?? 0;
   // Live count next to "Bookings & quotes": requests still open in Velto Ops.
@@ -58,7 +60,7 @@ export default async function AdminPanelLayout({ children }: { children: React.R
         </div>
         <p className="mt-3 hidden t-caption uppercase tracking-[0.08em] text-white/50 lg:block">Website Command Center</p>
         <div className="mt-3 lg:mt-7">
-          <AdminNav badges={{ "/admin/requests": openRequests, "/admin/approvals": approvals, "/admin/board": myTasks }} allowed={allowed} />
+          <AdminNav badges={{ "/admin/requests": openRequests, "/admin/approvals": approvals, "/admin/board": myTasks, "/admin/feedback": openFeedback }} allowed={allowed} />
         </div>
         <div className="mt-4 hidden border-t border-white/15 pt-4 lg:mt-auto lg:block">
           <Link href="/" target="_blank" className="t-small text-white/70 underline underline-offset-4 hover:text-white">

@@ -21,6 +21,8 @@ export const SECTIONS = [
   "requests",
   "dispatch",
   "retention",
+  "feedback",
+  "loyalty",
   "accounts",
   "health",
   "seo",
@@ -41,18 +43,18 @@ export type Section = (typeof SECTIONS)[number];
 export const ROLE_INFO: Record<Role, { label: string; summary: string }> = {
   owner: { label: "Owner", summary: "Everything, including who has access and approving price changes." },
   manager: { label: "Manager", summary: "Everything except Access and Approvals. Price changes wait for an Owner's approval." },
-  marketing: { label: "Marketing", summary: "Traffic, funnel, campaigns, revenue, consent, SEO, website text, reviews and the promo bar & popup." },
+  marketing: { label: "Marketing", summary: "Traffic, funnel, campaigns, revenue, consent, loyalty numbers, SEO, website text, reviews and the promo bar & popup." },
   designer: { label: "Designer", summary: "Images, logo, website text, SEO text, reviews, promo bar & popup and site settings. No customer data." },
-  support: { label: "Customer support", summary: "Bookings, pickup & delivery, bring-back list, customer accounts and prices." },
+  support: { label: "Customer support", summary: "Bookings, pickup & delivery, bring-back list, customer feedback, customer accounts and prices." },
 };
 
 const ALL = new Set<Section>(SECTIONS);
 const MATRIX: Record<Role, ReadonlySet<Section>> = {
   owner: ALL,
   manager: new Set(SECTIONS.filter((s) => s !== "access" && s !== "approvals")),
-  marketing: new Set<Section>(["overview", "funnel", "visitors", "marketing", "revenue", "consent", "seo", "copy", "reviews", "promo", "notifications", "board"]),
+  marketing: new Set<Section>(["overview", "funnel", "visitors", "marketing", "revenue", "consent", "loyalty", "seo", "copy", "reviews", "promo", "notifications", "board"]),
   designer: new Set<Section>(["images", "copy", "seo", "reviews", "promo", "settings", "board"]),
-  support: new Set<Section>(["requests", "dispatch", "retention", "accounts", "prices", "notifications", "board"]),
+  support: new Set<Section>(["requests", "dispatch", "retention", "feedback", "accounts", "prices", "notifications", "board"]),
 };
 
 export const isRole = (value: unknown): value is Role => ROLES.includes(value as Role);
@@ -117,3 +119,6 @@ export const canProposePrices = (role: Role | null | undefined) => role === "own
 
 /** Archiving a board task (there is no delete) is for Owners and Managers. */
 export const canArchiveTasks = (role: Role | null | undefined) => role === "owner" || role === "manager";
+
+/** Changing loyalty tiers, benefits and rewards is a business decision: Owners only. Others view. */
+export const canEditLoyalty = (role: Role | null | undefined) => role === "owner";
