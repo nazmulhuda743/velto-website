@@ -5,6 +5,7 @@ import { accountText, orderFormat, type AccountText } from "@/content/i18n/accou
 import { fill, format, localizeHref, type Locale } from "@/lib/i18n/config";
 import { Alert } from "@/components/account/Alert";
 import { LinkHistoryCard } from "@/components/account/LinkHistoryCard";
+import { GoalCard } from "@/components/account/GoalCard";
 import { LoyaltyCard } from "@/components/account/LoyaltyCard";
 import { NextPickupCard } from "@/components/account/NextPickupCard";
 import { OrderProgress } from "@/components/account/OrderProgress";
@@ -12,7 +13,7 @@ import { OrderRow } from "@/components/account/OrderRow";
 import { ButtonLink, WhatsAppButton } from "@/components/ui/Button";
 import { serviceLabel } from "@/content/order-status";
 import { WHATSAPP_URL } from "@/content/site";
-import { getCustomerSession, getFeedbackList, getLoyaltyCounts, getPortalOrders, type PortalOrder } from "@/lib/customer/portal";
+import { getCustomerSession, getFeedbackList, getGoal, getLoyaltyCounts, getPortalOrders, type PortalOrder } from "@/lib/customer/portal";
 import { orderToRate } from "@/lib/customer/extras";
 import { getSiteContent } from "@/lib/site-content";
 import { laundryRhythm, ROUTINE_DAYS } from "@/lib/customer/rhythm";
@@ -88,9 +89,9 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
   const account = session.account;
   const linked = account.link.status === "linked";
   const { loyalty } = await getSiteContent();
-  const [orders, counts, feedback] = linked
-    ? await Promise.all([getPortalOrders(), loyalty.enabled ? getLoyaltyCounts(loyalty.windowMonths) : null, getFeedbackList()])
-    : [[], null, []];
+  const [orders, counts, feedback, goal] = linked
+    ? await Promise.all([getPortalOrders(), loyalty.enabled ? getLoyaltyCounts(loyalty.windowMonths) : null, getFeedbackList(), loyalty.goal.enabled ? getGoal(loyalty.goal.doubleFirst) : null])
+    : [[], null, [], null];
   // A delivered order from the last two weeks that isn't rated yet: ask once, on the home.
   const toRate = orderToRate(orders ?? [], new Set(feedback.map((f) => f.orderNumber)));
   const active = (orders ?? []).filter((o) => o.active);
@@ -159,6 +160,7 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
         </section>
       ) : null}
 
+      {loyalty.goal.enabled && goal ? <GoalCard settings={loyalty.goal} goal={goal} locale={locale} /> : null}
       {loyalty.enabled && counts ? <LoyaltyCard settings={loyalty} counts={counts} locale={locale} /> : null}
 
       {linked && recent.length ? (

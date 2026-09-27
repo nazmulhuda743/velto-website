@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { loginRedirectPath } from "@/lib/i18n/server";
 import { EMPTY_PREFERENCES, parsePreferences, type Feedback, type Preferences } from "./extras";
+import { parseCoupons, type GoalCoupon } from "./goal";
 import { customerSupabase } from "./supabase";
 
 export type LinkStatus = "none" | "pending" | "linked" | "rejected";
@@ -121,6 +122,29 @@ export const getLoyaltyCounts = cache(async (months: number): Promise<{ recent: 
   }
   const d = (data ?? {}) as { linked?: boolean; recent?: number; total?: number };
   return d.linked ? { recent: Number(d.recent) || 0, total: Number(d.total) || 0 } : null;
+});
+
+export type GoalRead = { month: string; today: string; spend: number; orders: number; firstDoubled: number; coupons: GoalCoupon[] };
+
+/** This month's spend and the coupons still valid; null when unavailable (not installed, not linked, or an error). */
+export const getGoal = cache(async (doubleFirst: boolean): Promise<GoalRead | null> => {
+  const supabase = await customerSupabase();
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc("portal_goal", { p_double: doubleFirst });
+  if (error) {
+    console.error("portal_goal_failed", error.code);
+    return null;
+  }
+  const d = (data ?? {}) as Record<string, unknown>;
+  if (d.linked !== true) return null;
+  return {
+    month: String(d.month ?? ""),
+    today: String(d.today ?? ""),
+    spend: Math.max(0, Math.round(Number(d.spend) || 0)),
+    orders: Number(d.orders) || 0,
+    firstDoubled: Math.max(0, Math.round(Number(d.firstDoubled) || 0)),
+    coupons: parseCoupons(d.coupons),
+  };
 });
 
 /** The customer's ratings; [] when none or unavailable (the account then simply asks again). */

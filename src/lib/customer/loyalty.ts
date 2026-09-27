@@ -8,6 +8,8 @@
  * 1–3 / 4–7 / 8–15 / 16+ orders, with no perks and no reward until the owner writes them.
  */
 
+import { DEFAULT_GOAL, parseGoal, type GoalSettings } from "./goal";
+
 export type Tier = {
   name: string;
   nameBn: string;
@@ -25,6 +27,8 @@ export type LoyaltySettings = {
   tiers: Tier[];
   /** Every Nth order (lifetime) earns the reward. 0 or an empty reward: no milestone shown. */
   milestone: { every: number; reward: string; rewardBn: string };
+  /** Monthly goal → next-month reward (goal.ts); its own switch, saved from its own form. */
+  goal: GoalSettings;
   updatedAt?: string;
 };
 
@@ -38,6 +42,7 @@ export const DEFAULT_LOYALTY: LoyaltySettings = {
     { name: "Platinum", nameBn: "প্লাটিনাম", min: 16, perks: "", perksBn: "" },
   ],
   milestone: { every: 5, reward: "", rewardBn: "" },
+  goal: DEFAULT_GOAL,
 };
 
 const rec = (v: unknown) => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {});
@@ -72,6 +77,7 @@ export function parseLoyalty(v: unknown): LoyaltySettings {
       reward: str(m.reward, 200),
       rewardBn: str(m.rewardBn, 200),
     },
+    goal: parseGoal(s.goal),
     ...(str(s.updatedAt, 40) ? { updatedAt: str(s.updatedAt, 40) } : {}),
   };
 }

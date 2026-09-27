@@ -127,7 +127,7 @@ function readServices(value: unknown): GarmentService[] | null {
 export function validateBookingSubmission(
   value: unknown,
   /** Server-computed website estimate (from the Ops price list), added to the notes when it fits. */
-  options: { estimate?: string; now?: Date; siteUrl?: string } = {},
+  options: { estimate?: string; now?: Date; siteUrl?: string; coupon?: string } = {},
 ): ValidationResult<BookingSubmission> {
   const input = record(value);
   if (!input) return { ok: false, issues: [{ field: "request", code: "invalid" }] };
@@ -155,8 +155,9 @@ export function validateBookingSubmission(
     services: !items?.length && services && services.length > 1 ? services : undefined,
     backBy: backBy ?? undefined,
     photos: photoIds?.map((id) => photoLink(options.siteUrl ?? "https://www.velto.com.bd", id)),
+    coupon: options.coupon,
   };
-  const withEstimate = items ? composeBookingNotes(items, note, { ...extras, estimate: options.estimate }) : note;
+  const withEstimate = items || options.coupon ? composeBookingNotes(items ?? [], note, { ...extras, estimate: options.estimate }) : note;
   // The estimate is a courtesy for staff: drop it rather than reject a booking whose notes are full.
   const notes =
     withEstimate && withEstimate.length > MAX_BOOKING_NOTES && items ? composeBookingNotes(items, note, extras) : withEstimate;

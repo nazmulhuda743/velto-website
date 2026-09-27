@@ -23,6 +23,7 @@ export const SECTIONS = [
   "retention",
   "feedback",
   "loyalty",
+  "coupons",
   "accounts",
   "health",
   "seo",
@@ -45,16 +46,16 @@ export const ROLE_INFO: Record<Role, { label: string; summary: string }> = {
   manager: { label: "Manager", summary: "Everything except Access and Approvals. Price changes wait for an Owner's approval." },
   marketing: { label: "Marketing", summary: "Traffic, funnel, campaigns, revenue, consent, loyalty numbers, SEO, website text, reviews and the promo bar & popup." },
   designer: { label: "Designer", summary: "Images, logo, website text, SEO text, reviews, promo bar & popup and site settings. No customer data." },
-  support: { label: "Customer support", summary: "Bookings, pickup & delivery, bring-back list, customer feedback, customer accounts and prices." },
+  support: { label: "Customer support", summary: "Bookings, pickup & delivery, bring-back list, customer feedback, goal coupons, customer accounts and prices." },
 };
 
 const ALL = new Set<Section>(SECTIONS);
 const MATRIX: Record<Role, ReadonlySet<Section>> = {
   owner: ALL,
   manager: new Set(SECTIONS.filter((s) => s !== "access" && s !== "approvals")),
-  marketing: new Set<Section>(["overview", "funnel", "visitors", "marketing", "revenue", "consent", "loyalty", "seo", "copy", "reviews", "promo", "notifications", "board"]),
+  marketing: new Set<Section>(["overview", "funnel", "visitors", "marketing", "revenue", "consent", "loyalty", "coupons", "seo", "copy", "reviews", "promo", "notifications", "board"]),
   designer: new Set<Section>(["images", "copy", "seo", "reviews", "promo", "settings", "board"]),
-  support: new Set<Section>(["requests", "dispatch", "retention", "feedback", "accounts", "prices", "notifications", "board"]),
+  support: new Set<Section>(["requests", "dispatch", "retention", "feedback", "coupons", "accounts", "prices", "notifications", "board"]),
 };
 
 export const isRole = (value: unknown): value is Role => ROLES.includes(value as Role);

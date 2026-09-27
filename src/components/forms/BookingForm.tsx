@@ -428,8 +428,14 @@ function ServiceChoices({
 }
 
 /** The order summary right above Confirm: items and prices, pickup & delivery, and the estimated total. */
-function OrderSummary({ s, t, locale, chargeMinor, offer }: { s: FormState; t: Text; locale: Locale; chargeMinor: number | null; offer?: string }) {
-  const e = estimateOf(s, chargeMinor);
+type Coupon = { code: string; kind: "delivery" | "taka"; amount: number };
+
+/** A free-delivery reward makes the pickup & delivery line free whatever the subtotal; an amount off is applied by Velto at confirmation. */
+const withCoupon = (e: BookingEstimate, coupon?: Coupon): BookingEstimate =>
+  coupon?.kind === "delivery" && !e.free ? { ...e, free: true, chargeMinor: 0, totalMinor: e.subtotalMinor } : e;
+
+function OrderSummary({ s, t, locale, chargeMinor, offer, coupon }: { s: FormState; t: Text; locale: Locale; chargeMinor: number | null; offer?: string; coupon?: Coupon }) {
+  const e = withCoupon(estimateOf(s, chargeMinor), coupon);
   const threshold = localDigits(FREE_DELIVERY_THRESHOLD, locale);
   const priced = e.subtotalMinor > 0;
   const row = "flex items-baseline justify-between gap-4 py-2";
@@ -488,6 +494,11 @@ function OrderSummary({ s, t, locale, chargeMinor, offer }: { s: FormState; t: T
         ) : null}
         {priced && e.unpricedLines ? (
           <p className="text-secondary">{e.unpricedLines === 1 ? t.summaryUnpricedOne : fill(t.summaryUnpricedMany, { n: e.unpricedLines }, locale)}</p>
+        ) : null}
+        {coupon ? (
+          <p className="font-semibold text-navy" data-coupon={coupon.code}>
+            {format(t.summaryCoupon, { code: coupon.code, what: coupon.kind === "delivery" ? t.couponDelivery : fill(t.couponTaka, { n: coupon.amount }, locale) })}
+          </p>
         ) : null}
         {offer ? (
           // The website's current offer (the top bar), so it is still in view at the moment of booking.
@@ -609,7 +620,7 @@ function PhotoPicker({
  * customer fills in the rest, and jumps to the order summary. Hidden from md up, where the
  * summary sits close to the form.
  */
-function MobileTotalBar({ s, t, locale, chargeMinor }: { s: FormState; t: Text; locale: Locale; chargeMinor: number | null }) {
+function MobileTotalBar({ s, t, locale, chargeMinor, coupon }: { s: FormState; t: Text; locale: Locale; chargeMinor: number | null; coupon?: Coupon }) {
   // Steps aside once the summary is on screen, so it never covers the summary, Confirm or the footer.
   const [beforeSummary, setBeforeSummary] = useState(true);
   useEffect(() => {
@@ -625,7 +636,7 @@ function MobileTotalBar({ s, t, locale, chargeMinor }: { s: FormState; t: Text; 
     };
   }, []);
   if (!s.items.length || !beforeSummary) return null;
-  const e = estimateOf(s, chargeMinor);
+  const e = withCoupon(estimateOf(s, chargeMinor), coupon);
   const count = s.items.reduce((n, l) => n + l.quantity, 0);
   return (
     <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white/95 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-8px_24px_rgba(0,49,83,0.08)] backdrop-blur md:hidden" data-total-bar>
@@ -686,6 +697,7 @@ export function BookingForm({
   pickupChargeMinor = null,
   repeatItems = [],
   offer,
+  coupon,
   savedAddresses = [],
 }: {
   /** Form text in the page language (formText(locale).booking), passed by the page. */
@@ -708,6 +720,8 @@ export function BookingForm({
   repeatItems?: RepeatItem[];
   /** The top bar's offer in one line (Promo & popup in the admin), repeated in the order summary. */
   offer?: string;
+  /** The signed-in customer's monthly-goal reward for this month (the server adds it to the Ops notes). */
+  coupon?: Coupon;
   /** Signed-in customer's saved pickup addresses (Profile): one tap fills the area and address. */
   savedAddresses?: { label: string; address: string; area: string }[];
 }) {
@@ -1117,8 +1131,8 @@ export function BookingForm({
             <PhotoPicker t={t} c={c} locale={locale} photos={s.photos} onAdd={addPhotos} onRemove={removePhoto} error={errors.photos} />
           </Group>
 
-          <OrderSummary s={s} t={t} locale={locale} chargeMinor={pickupChargeMinor} offer={offer} />
-          <MobileTotalBar s={s} t={t} locale={locale} chargeMinor={pickupChargeMinor} />
+          <OrderSummary s={s} t={t} locale={locale} chargeMinor={pickupChargeMinor} offer={offer} coupon={coupon} />
+          <MobileTotalBar s={s} t={t} locale={locale} chargeMinor={pickupChargeMinor} coupon={coupon} />
 
           {/* Confirm — status lives right where the thumb already is */}
           <div>
