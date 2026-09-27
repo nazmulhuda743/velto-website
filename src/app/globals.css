@@ -144,7 +144,7 @@
 
 html {
   -webkit-text-size-adjust: 100%;
-  scroll-padding-top: calc(var(--header-h) + 16px);
+  scroll-padding-top: calc(var(--header-h) + var(--promo-h, 0px) + 16px);
 }
 
 @media (prefers-reduced-motion: no-preference) {

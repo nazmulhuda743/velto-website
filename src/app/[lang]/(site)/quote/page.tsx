@@ -40,7 +40,7 @@ export default async function QuotePage({ searchParams }: { searchParams: Search
           </div>
 
           <aside aria-labelledby="next-title" className="col-span-4 md:col-span-8 xl:col-span-4 xl:col-start-9">
-            <div className="xl:sticky xl:top-[100px]">
+            <div className="xl:sticky xl:top-[calc(100px+var(--promo-h,0px))]">
               <h2 id="next-title" className="t-label uppercase text-navy">
                 {t.howTitle}
               </h2>

@@ -111,7 +111,7 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
           </div>
 
           <aside aria-label={t.asideLabel} className="group-has-[[data-booking-success]]/book:hidden col-span-4 md:col-span-8 xl:col-span-4 xl:col-start-9">
-            <div className="xl:sticky xl:top-[100px]">
+            <div className="xl:sticky xl:top-[calc(100px+var(--promo-h,0px))]">
               <div className="hidden xl:block">
                 <h2 className="t-label uppercase text-navy">{t.howTitle}</h2>
                 <ol className="mt-4 border-t border-navy">

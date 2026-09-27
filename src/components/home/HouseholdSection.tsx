@@ -11,7 +11,7 @@ export async function HouseholdSection() {
     <section id="household" aria-labelledby="household-title" className="py-(--space-section)">
       <div className="container-page grid-page gap-y-10">
         <div className="col-span-4 md:col-span-4 xl:col-span-6">
-          <div className="md:sticky md:top-[100px]">
+          <div className="md:sticky md:top-[calc(100px+var(--promo-h,0px))]">
             <ResponsiveImage
               image={IMAGES.householdSection}
               aspect="aspect-[4/3] md:aspect-[4/5] xl:aspect-[4/3]"

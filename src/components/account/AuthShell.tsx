@@ -76,7 +76,7 @@ export async function AuthShell({
           </div>
         </div>
         <aside aria-label={t.asideLabel} className="hidden xl:col-span-4 xl:col-start-8 xl:block">
-          <div className="sticky top-[120px] rounded-lg bg-navy p-8 text-white">
+          <div className="sticky top-[calc(120px+var(--promo-h,0px))] rounded-lg bg-navy p-8 text-white">
             <p className="t-label uppercase text-cyan">{t.yourAccount}</p>
             <ul className="mt-6 space-y-6">
               {t.points.map((p) => (

@@ -43,7 +43,7 @@ export async function AnnouncementBar() {
 
   if (announcement.still) {
     return (
-      <div className="bg-navy text-white">
+      <div data-promo-bar className="bg-navy text-white">
         <div className="container-page flex min-h-10 items-center justify-center py-2 text-center t-small">
           {wrap(
             <span className="font-medium" lang={lang}>
