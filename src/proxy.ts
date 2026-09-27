@@ -122,5 +122,6 @@ function toLogin(request: NextRequest, locale: "en" | "bn") {
 
 export const config = {
   // Every page request except APIs, admin, redirects, Next internals and files.
-  matcher: ["/((?!api/|admin|go/|auth/|_next/|opengraph-image|twitter-image|.*\\.[a-zA-Z0-9]{2,5}$).*)"],
+  // manifest.webmanifest: the app manifest's extension is longer than the file-extension rule allows.
+  matcher: ["/((?!api/|admin|go/|auth/|_next/|opengraph-image|twitter-image|manifest\\.webmanifest$|.*\\.[a-zA-Z0-9]{2,5}$).*)"],
 };

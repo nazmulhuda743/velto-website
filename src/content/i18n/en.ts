@@ -296,6 +296,12 @@ export const en = {
    * content/seo-routes.ts (plus admin overrides), so this stays empty here.
    */
   seo: {} as Record<string, { title: string; description: string }>,
+  offline: {
+    title: "You’re offline.",
+    body: "This page needs an internet connection. Check your mobile data or Wi-Fi, then try again. Pages you opened recently may still work.",
+    retry: "Try again",
+    whatsappNote: "You can still write to Velto on WhatsApp; the message is sent as soon as you’re back online.",
+  },
   notFound: {
     title: "We can’t find that page.",
     body: "The link may be old, or the page may have moved. You can still book a pickup, look through Velto’s services or go back to the homepage.",

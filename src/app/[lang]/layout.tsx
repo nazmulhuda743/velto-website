@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { LocaleProvider } from "@/components/i18n/LocaleProvider";
+import { ServiceWorker } from "@/components/pwa/ServiceWorker";
 import { dictionary } from "@/content/i18n";
 import { isLocale, LOCALES } from "@/lib/i18n/config";
 import { loadCopy } from "@/lib/i18n/server";
@@ -29,6 +30,9 @@ export async function generateMetadata({ params }: Omit<Props, "children">): Pro
   return {
     metadataBase: new URL(SITE_URL),
     applicationName: t.siteName,
+    // Installable app (app/manifest.ts). Named explicitly: root metadata files aren't attached here.
+    manifest: "/manifest.webmanifest",
+    appleWebApp: { capable: true, title: "Velto", statusBarStyle: "default" },
     title: t.title,
     description: t.description,
     openGraph: {
@@ -66,6 +70,7 @@ export default async function LangRootLayout({ children, params }: Props) {
         <LocaleProvider locale={lang} copy={copy[lang]}>
           {children}
         </LocaleProvider>
+        <ServiceWorker />
       </body>
     </html>
   );
