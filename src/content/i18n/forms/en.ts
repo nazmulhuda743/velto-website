@@ -105,6 +105,7 @@ export const formsEn = {
     summaryUnpricedOne: "1 item is priced at pickup.",
     summaryUnpricedMany: "{n} items are priced at pickup.",
     summaryNote: "An estimate from our price list. We confirm the final amount after counting at pickup.",
+    summaryOffer: "Offer:",
     failedNotConnectedTitle: "Online booking isn't switched on yet.",
     failedTitle: "We couldn't send your booking just now.",
     failedNotConnectedBody: "Nothing was sent. Send the same details on WhatsApp instead. They're already filled in.",

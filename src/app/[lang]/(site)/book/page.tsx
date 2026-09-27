@@ -14,6 +14,8 @@ import { format, localDigits } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
 import { getPickupChargeMinor } from "@/lib/booking-estimate";
 import { getServicePrices } from "@/lib/service-prices";
+import { getSiteContent } from "@/lib/site-content";
+import { keepBanglaSuffixes } from "@/lib/i18n/config";
 import { repeatItemsFor } from "@/lib/booking-repeat";
 
 /** Quick picks on /book: the everyday items customers send most, exactly as the Ops price list names them. */
@@ -32,16 +34,20 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
   // Development-only QA hook: simulate the adapter result without any backend.
   const preview = process.env.NODE_ENV !== "production" ? one(params.preview) : undefined;
   const previewOutcome = preview === "success" || preview === "error" ? preview : undefined;
-  const [session, popular, pickupChargeMinor] = await Promise.all([
+  const [session, popular, pickupChargeMinor, { settings }] = await Promise.all([
     getCustomerSession(),
     getServicePrices(POPULAR_ITEMS),
     getPickupChargeMinor(),
+    getSiteContent(),
   ]);
   const account = session.kind === "customer" && session.account.state === "ready" ? session.account : null;
   const returnTo = `/book${service ? `?service=${encodeURIComponent(service)}` : ""}`;
   const locale = await getLocale();
   const f = formText(locale);
   const t = f.bookPage;
+  // The top bar's offer, repeated in the order summary (Promo & popup in the admin).
+  const bar = settings.announcement;
+  const offer = bar.enabled ? (locale === "bn" && bar.bookingNoteBn.trim() ? keepBanglaSuffixes(bar.bookingNoteBn) : bar.bookingNote.trim()) : "";
   // "Book the same again" from the account: only a well-formed order number, only for a signed-in
   // customer, and only as a note the customer can edit (Ops staff see which order it repeats).
   let repeat: string | null = null;
@@ -102,6 +108,7 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
                 popularItems={popular.state === "live" ? popular.items : []}
                 repeatItems={repeatItems}
                 pickupChargeMinor={pickupChargeMinor}
+                offer={offer || undefined}
                 presetNote={joinNotes(routineNote ?? (repeat ? format(t.repeatNote, { n: repeat }) : t.presetNotes[service ?? ""]), prefs ? careNote(prefs.care, t.care) : "")}
                 savedAddresses={prefs?.addresses ?? []}
                 previewOutcome={previewOutcome}

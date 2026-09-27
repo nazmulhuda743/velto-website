@@ -86,6 +86,12 @@ test("the popup never opens on booking, sign-in, account, tracking or legal page
   }
 });
 
+test("the bar opens its own link, else the booking page when it carries an offer, else nothing", () => {
+  assert.equal(promo.barLink({ href: "/signup", bookingNote: "10% off" }), "/signup");
+  assert.equal(promo.barLink({ href: "", bookingNote: "10% off your first order" }), "/book?source=promo_bar");
+  assert.equal(promo.barLink({ href: "", bookingNote: "  " }), "");
+});
+
 test("bar messages split on | and the ticker speed follows the text length", () => {
   assert.deepEqual(promo.barMessages(" 10% off first order | Free pickup on ৳499+ ||"), ["10% off first order", "Free pickup on ৳499+"]);
   assert.deepEqual(promo.barMessages(""), []);

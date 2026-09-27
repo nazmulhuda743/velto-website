@@ -1,5 +1,6 @@
 import { ButtonLink } from "@/components/ui/Button";
 import { FREE_DELIVERY_THRESHOLD, bookHref } from "@/content/site";
+import { PopularPrices } from "./PopularPrices";
 import { PriceFinder } from "./PriceFinder";
 import { dictionary } from "@/content/i18n";
 import { fill } from "@/lib/i18n/config";
@@ -17,7 +18,9 @@ export async function FindAPrice() {
           <SectionIntro id="price-title" eyebrow={t.eyebrow} title={t.title}>
             <p>{t.intro}</p>
           </SectionIntro>
-          <div className="mt-(--space-intro-content)">
+          <div className="mt-(--space-intro-content) space-y-10">
+            {/* The everyday prices first, without typing; then the search for everything else. */}
+            <PopularPrices />
             {/* Each priced service can be booked straight from the result, like on /pricing. */}
             <PriceFinder bookFromResult={{ source: "home_pricing" }} />
           </div>

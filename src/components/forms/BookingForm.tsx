@@ -428,7 +428,7 @@ function ServiceChoices({
 }
 
 /** The order summary right above Confirm: items and prices, pickup & delivery, and the estimated total. */
-function OrderSummary({ s, t, locale, chargeMinor }: { s: FormState; t: Text; locale: Locale; chargeMinor: number | null }) {
+function OrderSummary({ s, t, locale, chargeMinor, offer }: { s: FormState; t: Text; locale: Locale; chargeMinor: number | null; offer?: string }) {
   const e = estimateOf(s, chargeMinor);
   const threshold = localDigits(FREE_DELIVERY_THRESHOLD, locale);
   const priced = e.subtotalMinor > 0;
@@ -488,6 +488,13 @@ function OrderSummary({ s, t, locale, chargeMinor }: { s: FormState; t: Text; lo
         ) : null}
         {priced && e.unpricedLines ? (
           <p className="text-secondary">{e.unpricedLines === 1 ? t.summaryUnpricedOne : fill(t.summaryUnpricedMany, { n: e.unpricedLines }, locale)}</p>
+        ) : null}
+        {offer ? (
+          // The website's current offer (the top bar), so it is still in view at the moment of booking.
+          <p className="font-semibold text-navy" data-offer>
+            <span className="text-secondary">{t.summaryOffer} </span>
+            {offer}
+          </p>
         ) : null}
         <p className="text-secondary">{t.summaryNote}</p>
       </div>
@@ -678,6 +685,7 @@ export function BookingForm({
   popularItems = [],
   pickupChargeMinor = null,
   repeatItems = [],
+  offer,
   savedAddresses = [],
 }: {
   /** Form text in the page language (formText(locale).booking), passed by the page. */
@@ -698,6 +706,8 @@ export function BookingForm({
   pickupChargeMinor?: number | null;
   /** "Book the same again": the earlier order's lines, with today's price-list entry when listed (signed-in customers). */
   repeatItems?: RepeatItem[];
+  /** The top bar's offer in one line (Promo & popup in the admin), repeated in the order summary. */
+  offer?: string;
   /** Signed-in customer's saved pickup addresses (Profile): one tap fills the area and address. */
   savedAddresses?: { label: string; address: string; area: string }[];
 }) {
@@ -1107,7 +1117,7 @@ export function BookingForm({
             <PhotoPicker t={t} c={c} locale={locale} photos={s.photos} onAdd={addPhotos} onRemove={removePhoto} error={errors.photos} />
           </Group>
 
-          <OrderSummary s={s} t={t} locale={locale} chargeMinor={pickupChargeMinor} />
+          <OrderSummary s={s} t={t} locale={locale} chargeMinor={pickupChargeMinor} offer={offer} />
           <MobileTotalBar s={s} t={t} locale={locale} chargeMinor={pickupChargeMinor} />
 
           {/* Confirm — status lives right where the thumb already is */}

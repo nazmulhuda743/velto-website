@@ -10,7 +10,8 @@ import { SectionIntro } from "./SectionIntro";
 
 /**
  * Four movements (mobile/tablet visual grouping). All eight stages stay in the
- * DOM; on desktop the grouping is transparent and the sticky story runs per stage.
+ * DOM; on desktop the grouping is transparent and the sticky story runs per stage,
+ * each stage just tall enough to cross the sync line (~17vh), so the section stays compact.
  * Stage and movement text lives in the UI dictionary (home.process).
  */
 const MOVEMENTS = [
@@ -50,7 +51,7 @@ export async function ProcessStory({
           {/* Sticky visual — desktop/laptop only */}
           <div className="hidden lg:col-span-4 lg:block xl:col-span-7" aria-hidden="true">
             <div className="sticky top-[calc(100px+var(--promo-h,0px))]">
-              <div className="relative h-[min(72vh,720px)] min-h-[440px] overflow-hidden rounded-md">
+              <div className="relative h-[min(58vh,560px)] min-h-[400px] overflow-hidden rounded-md">
                 {IMAGES.process.map((image, i) => (
                   <div
                     key={i}
@@ -90,7 +91,7 @@ export async function ProcessStory({
           </div>
 
           {/* Narrative */}
-          <div className="col-span-4 md:col-span-8 lg:col-span-4 lg:pb-[24vh] xl:col-span-5">
+          <div className="col-span-4 md:col-span-8 lg:col-span-4 lg:pb-[10vh] xl:col-span-5">
             {MOVEMENTS.map((movement, g) => (
               <div
                 key={g}
@@ -116,17 +117,17 @@ export async function ProcessStory({
                         key={i}
                         data-stage={i}
                         data-active={i === 0}
-                        className="process-stage relative border-t border-line py-2.5 lg:flex lg:min-h-[30vh] lg:flex-col lg:pb-10 lg:pt-6"
+                        className="process-stage relative border-t border-line py-2.5 lg:flex lg:min-h-[17vh] lg:flex-col lg:pb-6 lg:pt-5"
                       >
                         <span
                           aria-hidden="true"
                           className="process-marker absolute -top-px left-0 hidden h-0.5 w-full bg-blue lg:block"
                         />
                         <span className="process-num hidden t-label text-secondary lg:block">{num(i)}</span>
-                        <h3 className="process-title inline text-[15px] font-semibold leading-snug text-navy lg:mt-3 lg:block lg:t-h4">
+                        <h3 className="process-title inline text-[15px] font-semibold leading-snug text-navy lg:mt-2 lg:block lg:t-h4">
                           {stage(i).title}
                         </h3>
-                        <p className="ml-1.5 inline t-small text-secondary lg:mt-2 lg:ml-0 lg:block lg:max-w-[40ch] lg:t-body">
+                        <p className="ml-1.5 inline t-small text-secondary lg:mt-1.5 lg:ml-0 lg:block lg:max-w-[40ch] lg:t-body">
                           {stage(i).copy}
                         </p>
                       </li>

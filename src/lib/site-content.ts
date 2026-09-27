@@ -24,7 +24,16 @@ export type SiteSettings = {
    * The bar moves by default (a continuous ticker; several messages separated by "|");
    * still: true keeps it as one still line.
    */
-  announcement: { enabled: boolean; still: boolean; text: string; textBn: string; href: string };
+  announcement: {
+    enabled: boolean;
+    still: boolean;
+    text: string;
+    textBn: string;
+    href: string;
+    /** The offer as one line in the booking order summary, so it is still there at the moment of booking. */
+    bookingNote: string;
+    bookingNoteBn: string;
+  };
   outlets: Record<LocationId, { rating: string; reviewCount: number; hours: string }>;
   /**
    * Pickup & delivery charge for orders under ৳499, in whole taka (spec §4: operational data,
@@ -57,7 +66,7 @@ export type SiteContent = {
 
 export const DEFAULT_SETTINGS: SiteSettings = {
   whatsappNumber: "8801605162788",
-  announcement: { enabled: false, still: false, text: "", textBn: "", href: "" },
+  announcement: { enabled: false, still: false, text: "", textBn: "", href: "", bookingNote: "", bookingNoteBn: "" },
   outlets: Object.fromEntries(
     LOCATIONS.map((l) => [l.id, { rating: l.rating, reviewCount: l.reviewCount, hours: l.hours }]),
   ) as SiteSettings["outlets"],
@@ -85,6 +94,8 @@ function parseSettings(v: unknown): SiteSettings {
       text: str(a.text, 400) ?? "",
       textBn: str(a.textBn, 400) ?? "",
       href: str(a.href, 300) ?? "",
+      bookingNote: str(a.bookingNote, 160) ?? "",
+      bookingNoteBn: str(a.bookingNoteBn, 160) ?? "",
     },
     outlets: Object.fromEntries(
       LOCATIONS.map((l) => {

@@ -2,7 +2,7 @@ import Link from "@/components/i18n/Link";
 import { dictionary } from "@/content/i18n";
 import { keepBanglaSuffixes } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
-import { barMessages, tickerCopies, tickerSeconds } from "@/lib/promo";
+import { barLink, barMessages, tickerCopies, tickerSeconds } from "@/lib/promo";
 import { getSiteContent } from "@/lib/site-content";
 import { TickerControl } from "./TickerControl";
 
@@ -17,7 +17,8 @@ export async function AnnouncementBar() {
   if (!announcement.enabled || !announcement.text.trim()) return null;
   const locale = await getLocale();
   const t = dictionary(locale).promo;
-  const external = /^https?:\/\//.test(announcement.href);
+  const href = barLink(announcement);
+  const external = /^https?:\/\//.test(href);
   // Bangla pages show the Bangla text when there is one; otherwise the English, marked as English.
   const onBangla = locale === "bn";
   const bangla = onBangla && announcement.textBn.trim() ? keepBanglaSuffixes(announcement.textBn) : null;
@@ -27,13 +28,13 @@ export async function AnnouncementBar() {
   if (!messages.length) return null;
 
   const wrap = (content: React.ReactNode, className: string) =>
-    announcement.href ? (
+    href ? (
       external ? (
-        <a href={announcement.href} target="_blank" rel="noopener noreferrer" className={className}>
+        <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
           {content}
         </a>
       ) : (
-        <Link href={announcement.href} className={className}>
+        <Link href={href} className={className}>
           {content}
         </Link>
       )
@@ -49,7 +50,7 @@ export async function AnnouncementBar() {
             <span className="font-medium" lang={lang}>
               {messages.join(" · ")}
             </span>,
-            announcement.href ? "underline decoration-cyan underline-offset-4" : "",
+            href ? "underline decoration-cyan underline-offset-4" : "",
           )}
         </div>
       </div>
@@ -87,7 +88,7 @@ export async function AnnouncementBar() {
             <span className="font-medium" lang={lang}>
               {messages.join(" · ")}
             </span>,
-            announcement.href ? "underline decoration-cyan underline-offset-4" : "",
+            href ? "underline decoration-cyan underline-offset-4" : "",
           )}
         </div>
       </div>
