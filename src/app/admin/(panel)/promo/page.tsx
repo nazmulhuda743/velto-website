@@ -39,11 +39,11 @@ export default async function PromoPage({ searchParams }: { searchParams: Search
           <h2 id="bar-title" className="t-h4 text-navy">
             Top bar
           </h2>
-          <Badge tone={bar.enabled ? "green" : "neutral"}>{bar.enabled ? (bar.moving ? "Live · moving" : "Live · still") : "Off"}</Badge>
+          <Badge tone={bar.enabled ? "green" : "neutral"}>{bar.enabled ? (bar.still ? "Live · still" : "Live · moving") : "Off"}</Badge>
         </div>
         <p className="mt-1 t-small text-secondary">
-          A thin navy bar above the header on every page. Moving: the messages glide across continuously like a promo ticker and pause when a
-          visitor hovers, focuses or taps pause. Readers who ask their device for less motion see the still version.
+          A thin navy bar above the header on every page. The messages glide across continuously like a promo ticker and pause when a
+          visitor hovers, focuses or taps pause; tick &ldquo;Keep it still&rdquo; for one centred line instead. Readers who ask their device for less motion see the still version.
         </p>
 
         {bar.enabled && messages.length ? (
@@ -64,8 +64,8 @@ export default async function PromoPage({ searchParams }: { searchParams: Search
               <span className="font-semibold text-navy">Show the top bar</span>
             </label>
             <label className="flex items-center gap-3">
-              <input type="checkbox" name="moving" defaultChecked={bar.moving} className="size-4" />
-              <span className="font-semibold text-navy">Moving (ticker)</span>
+              <input type="checkbox" name="still" defaultChecked={bar.still} className="size-4" />
+              <span className="font-semibold text-navy">Keep it still (no movement)</span>
             </label>
           </div>
           <div className="grid gap-4 md:grid-cols-2">

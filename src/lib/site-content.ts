@@ -20,9 +20,10 @@ export type SiteSettings = {
   whatsappNumber: string;
   /**
    * Top bar. textBn is shown on Bangla pages; empty means the English text is shown there too.
-   * moving: a continuous ticker (several messages separated by "|") instead of one still line.
+   * The bar moves by default (a continuous ticker; several messages separated by "|");
+   * still: true keeps it as one still line.
    */
-  announcement: { enabled: boolean; moving: boolean; text: string; textBn: string; href: string };
+  announcement: { enabled: boolean; still: boolean; text: string; textBn: string; href: string };
   outlets: Record<LocationId, { rating: string; reviewCount: number; hours: string }>;
   /**
    * Pickup & delivery charge for orders under ৳499, in whole taka (spec §4: operational data,
@@ -53,7 +54,7 @@ export type SiteContent = {
 
 export const DEFAULT_SETTINGS: SiteSettings = {
   whatsappNumber: "8801605162788",
-  announcement: { enabled: false, moving: false, text: "", textBn: "", href: "" },
+  announcement: { enabled: false, still: false, text: "", textBn: "", href: "" },
   outlets: Object.fromEntries(
     LOCATIONS.map((l) => [l.id, { rating: l.rating, reviewCount: l.reviewCount, hours: l.hours }]),
   ) as SiteSettings["outlets"],
@@ -77,7 +78,7 @@ function parseSettings(v: unknown): SiteSettings {
     whatsappNumber: /^\d{8,15}$/.test(String(s.whatsappNumber ?? "")) ? String(s.whatsappNumber) : DEFAULT_SETTINGS.whatsappNumber,
     announcement: {
       enabled: a.enabled === true,
-      moving: a.moving === true,
+      still: a.still === true,
       text: str(a.text, 400) ?? "",
       textBn: str(a.textBn, 400) ?? "",
       href: str(a.href, 300) ?? "",
