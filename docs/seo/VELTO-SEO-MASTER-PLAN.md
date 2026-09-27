@@ -188,10 +188,12 @@ Anchors are descriptive ("Check laundry and dry cleaning prices", the service na
 
 ## 8. Needs owner confirmation
 
+Meta descriptions were trimmed to under 155 characters on 2026-09-27 (English and Bangla), so Google shows them whole.
+
 - **Callable phone number.** If one exists, it would go into the schema, the Business Profiles and the citations.
 - **Opening days** for both outlets. The hours are verified but the days aren't. Once confirmed, add `openingHoursSpecification`.
-- **Outlet coordinates** from the Business Profile, for `geo`.
+- ~~**Outlet coordinates**~~ Done 2026-09-25 (`geo` from each Business Profile).
 - **Official social profiles** (Facebook page etc.) for `sameAs`.
-- **Business Profile URLs.** `reviewsUrl`/`directionsUrl` are Maps *search* links (TODO_VERIFY in `src/content/site.ts`); replace them with the real profile / place URLs.
-- **Postal code.** Uttara uses several (Sector 11 and Sector 18 may differ). Add `postalCode` once verified.
+- ~~**Business Profile URLs.**~~ Done 2026-09-27: Reviews links open each outlet's own Business Profile (by place id) and Directions route to its verified pin.
+- ~~**Postal code.**~~ Done 2026-09-25 (1230 for both, from the Business Profiles).
 - Whether Velto ever plans pickup beyond Uttara. The architecture keeps a Dhaka page out until it does.

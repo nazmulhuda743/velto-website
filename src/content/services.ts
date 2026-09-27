@@ -217,7 +217,7 @@ export const SERVICE_PAGES: ServiceContent[] = [
     meta: {
       title: "Dry Cleaning in Uttara: Suits, Saris & Sherwanis | Velto",
       description:
-        "Dry cleaning with pickup across Uttara Sectors 1–18. Garments are tagged and checked for stains before cleaning. See current prices for suits, blazers and saris.",
+        "Dry cleaning with pickup across Uttara Sectors 1–18. Garments are tagged and checked for stains first. See current prices for suits, blazers and saris.",
     },
   },
   {
@@ -677,7 +677,7 @@ export const SERVICE_PAGES: ServiceContent[] = [
     meta: {
       title: "Express Laundry & Dry Cleaning in Uttara | Velto",
       description:
-        "Need laundry or dry cleaning back sooner in Uttara? Express depends on the item, service and workload, and carries an extra charge. Velto confirms before pickup.",
+        "Need laundry or dry cleaning back sooner in Uttara? Express depends on the item and workload and costs extra. Velto confirms before pickup.",
     },
   },
 ];
