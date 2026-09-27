@@ -33,6 +33,13 @@ const ESSENTIAL: Row[] = [
     setBy: "Velto",
   },
   {
+    name: "Velto app files (service worker and Cache Storage)",
+    purpose:
+      "If your browser supports it, the website keeps copies of its own design files, photos and recently opened public pages on your device, so it opens quickly, can be installed as an app and shows an offline page without a connection. Account, booking and sign-in pages are never stored. No identifier or personal information.",
+    duration: "Replaced with each website update; cleared with your browser data",
+    setBy: "Velto",
+  },
+  {
     name: "velto_admin, velto_admin_seen",
     purpose: "Sign Velto staff into the website dashboard and remember which dashboard notifications they have seen. Never set for customers.",
     duration: "12 hours / 90 days",

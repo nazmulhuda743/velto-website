@@ -24,6 +24,8 @@ export const ANALYTICS_EVENTS = [
   "consent_accept_all",
   "consent_reject_nonessential",
   "consent_preferences_saved",
+  // Installed app (PWA): opened from the home screen, once per session.
+  "app_launch",
 ] as const;
 
 export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[number];
