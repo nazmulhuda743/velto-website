@@ -7,12 +7,13 @@ import { Alert } from "@/components/account/Alert";
 import { LinkHistoryCard } from "@/components/account/LinkHistoryCard";
 import { LoyaltyCard } from "@/components/account/LoyaltyCard";
 import { NextPickupCard } from "@/components/account/NextPickupCard";
+import { UpcomingPickups } from "@/components/account/UpcomingPickups";
 import { OrderProgress } from "@/components/account/OrderProgress";
 import { OrderRow } from "@/components/account/OrderRow";
 import { ButtonLink, WhatsAppButton } from "@/components/ui/Button";
 import { serviceLabel } from "@/content/order-status";
 import { WHATSAPP_URL } from "@/content/site";
-import { getCustomerSession, getFeedbackList, getLoyaltyCounts, getPortalOrders, type PortalOrder } from "@/lib/customer/portal";
+import { getCustomerSession, getFeedbackList, getLoyaltyCounts, getPickups, getPortalOrders, type PortalOrder } from "@/lib/customer/portal";
 import { orderToRate } from "@/lib/customer/extras";
 import { getSiteContent } from "@/lib/site-content";
 import { laundryRhythm, ROUTINE_DAYS } from "@/lib/customer/rhythm";
@@ -87,7 +88,8 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
   if (session.kind !== "customer" || session.account.state !== "ready") redirect(await loginRedirectPath("/account"));
   const account = session.account;
   const linked = account.link.status === "linked";
-  const { loyalty } = await getSiteContent();
+  const [{ loyalty }, pickupData] = await Promise.all([getSiteContent(), getPickups()]);
+  const pickups = pickupData?.verified ? pickupData.pickups : [];
   const [orders, counts, feedback] = linked
     ? await Promise.all([getPortalOrders(), loyalty.enabled ? getLoyaltyCounts(loyalty.windowMonths) : null, getFeedbackList()])
     : [[], null, []];
@@ -128,6 +130,9 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
       {params.welcome ? <Alert tone="success">{t.welcome}</Alert> : null}
       {orders === null ? <Alert tone="error">{t.ordersFailed}</Alert> : null}
 
+      {/* 0. A pickup already booked on the website: when it is, and change or cancel it. */}
+      {pickups.length ? <UpcomingPickups pickups={pickups} locale={locale} /> : null}
+
       {/* 1. What's happening with my laundry, or 2. the next pickup (first → the same again) */}
       {active[0] ? (
         <>
@@ -141,7 +146,7 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
             </ButtonLink>
           </div>
         </>
-      ) : orders !== null ? (
+      ) : orders !== null && !pickups.length ? (
         <NextPickupCard rhythm={rhythm} locale={locale} firstTime={linked} />
       ) : null}
 
