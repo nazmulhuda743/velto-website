@@ -77,7 +77,7 @@ test("legacy Ops guard strips the analytics session and raw click ids until the 
     phone: "01712 345678",
     area: "Sector 11",
     address: "House 2, Road 14",
-    preferredPickup: "Today Thu 24 Sep, 4 PM – 7 PM",
+    preferredPickup: "Today Thu 24 Sep, Evening",
     attribution: {
       utm_campaign: "curtain_sep26",
       fbclid: "IwAR-raw-value",
@@ -108,7 +108,7 @@ test("legacy Ops guard strips the analytics session and raw click ids until the 
   }
 });
 
-const base = { name: "Customer Name", phone: "01712 345678", area: "Uttara Sector 11", address: "House 2, Road 14", preferredPickup: "Tomorrow Fri 25 Sep, 1 PM – 4 PM" };
+const base = { name: "Customer Name", phone: "01712 345678", area: "Uttara Sector 11", address: "House 2, Road 14", preferredPickup: "Tomorrow Fri 25 Sep, Afternoon" };
 
 test("booking items are validated and written into the notes", () => {
   const result = validateBookingSubmission({

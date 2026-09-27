@@ -5,7 +5,7 @@ const test = require("node:test");
 const { validateBookingSubmission, readBackBy } = require("../.foundation-test-build/integrations/ops/validation.js");
 const { estimateBooking, composeBookingNotes } = require("../.foundation-test-build/booking-items.js");
 
-const base = { name: "Customer Name", phone: "01712 345678", area: "Uttara Sector 11", address: "House 2, Road 14", preferredPickup: "Tomorrow Fri 25 Sep, 1 PM – 4 PM" };
+const base = { name: "Customer Name", phone: "01712 345678", area: "Uttara Sector 11", address: "House 2, Road 14", preferredPickup: "Tomorrow Fri 25 Sep, Afternoon" };
 const NOW = new Date("2026-09-26T04:00:00Z"); // 10:00 in Dhaka
 
 test("estimate: priced lines add up; ৳499+ is free, below uses the admin charge", () => {
@@ -93,7 +93,7 @@ test("pickup day and time are required", () => {
   assert.equal(missing.ok, false);
   assert.deepEqual(missing.issues, [{ field: "preferredPickup", code: "required" }]);
   const ok = validateBookingSubmission(base, { now: NOW });
-  assert.equal(ok.value.preferredPickup, "Tomorrow Fri 25 Sep, 1 PM – 4 PM");
+  assert.equal(ok.value.preferredPickup, "Tomorrow Fri 25 Sep, Afternoon");
 });
 
 test("photo ids become links in the notes; anything else is rejected", () => {

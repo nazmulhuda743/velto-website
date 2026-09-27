@@ -53,17 +53,17 @@ const DAYS = ["today", "tomorrow", "other"] as const;
 type Day = (typeof DAYS)[number];
 
 /**
- * Pickup time windows, inside the hours both outlets are open (10 AM–9 PM). `en` is what
- * Velto Ops receives; the customer sees t.slots[id].
+ * Preferred part of the day. No clock times: the Velto team calls to confirm the exact time.
+ * `en` is what Velto Ops receives; the customer sees t.slots[id]. `end` (Dhaka hour) only
+ * rules out a part of today that has already passed.
  */
 const SLOTS = [
-  { id: "10-13", en: "10 AM – 1 PM", end: 13 },
-  { id: "13-16", en: "1 PM – 4 PM", end: 16 },
-  { id: "16-19", en: "4 PM – 7 PM", end: 19 },
-  { id: "19-21", en: "7 PM – 9 PM", end: 21 },
+  { id: "morning", en: "Morning", end: 12 },
+  { id: "afternoon", en: "Afternoon", end: 17 },
+  { id: "evening", en: "Evening", end: 21 },
 ] as const;
 
-/** A window can still be booked for today until an hour before it ends (Dhaka time). */
+/** A part of the day can still be chosen for today until an hour before it ends (Dhaka time). */
 const slotOpenToday = (end: number) => (new Date().getUTCHours() + 6) % 24 < end - 1;
 
 type Photo = { key: string; preview: string; status: "uploading" | "done" | "failed"; id?: string };
@@ -179,7 +179,7 @@ const servicesText = (s: FormState, t: Text) =>
 const whatLabel = (s: FormState, t: Text, locale: Locale) => (s.items.length ? itemsText(itemsOf(s), t, locale) : servicesText(s, t));
 
 /**
- * Pickup day and time, e.g. "Tomorrow Fri 25 Sep, 1 PM – 4 PM". With OPS_WORDS (and no `slots`)
+ * Pickup day and part of the day, e.g. "Tomorrow Fri 25 Sep, Afternoon". With OPS_WORDS (and no `slots`)
  * this is the contract's preferredPickup string; the customer's version uses t.slots.
  */
 function pickupLabel(s: FormState, w: DateWords = OPS_WORDS, slots?: Record<string, string>) {
@@ -999,7 +999,7 @@ export function BookingForm({
                   options={SLOTS.map((x) => ({ value: x.id, label: t.slots[x.id], disabled: s.day === "today" && !slotOpenToday(x.end) }))}
                   value={s.slot || null}
                   onChange={(v) => update("slot", v)}
-                  columns="grid-cols-2"
+                  columns="grid-cols-3"
                   firstId="booking-slot"
                   error={errors.slot ? "booking-slot-error" : undefined}
                 />
