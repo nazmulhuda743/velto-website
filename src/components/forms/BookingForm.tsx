@@ -18,11 +18,15 @@ import {
   type BookingEstimate,
   type BookingItem,
   type GarmentService,
+  type ItemService,
 } from "@/lib/booking-items";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import type { FormText } from "@/content/i18n/forms/en";
 import { fill, format, localDigits, type Locale } from "@/lib/i18n/config";
-import { BookingItems, lineUnit, money, type ItemLine, type PriceItem } from "./BookingItems";
+import { BookingItems, lineUnit, money, repeatLine, type ItemLine, type PriceItem } from "./BookingItems";
+
+/** One line of an earlier order, as the book page reads it on the server. */
+export type RepeatItem = { item: string; service: ItemService | ""; quantity: number; listed?: PriceItem };
 import { normalisePhone, phoneOk } from "./fields";
 import { submitBooking, type BookingFormData, type SubmitResult } from "./submit";
 
@@ -234,25 +238,6 @@ const inputBase =
   "block w-full rounded-md border border-line-strong bg-white px-4 text-base text-navy placeholder:text-secondary/80 hover:border-navy/50 focus:border-blue focus:outline-1 focus:outline-offset-0 focus:outline-blue aria-[invalid=true]:border-error";
 const inputHeight = "h-[54px] md:h-[52px]";
 
-/** The form really is four groups, so show it. Each step fills in as it's answered. */
-function StepProgress({ done, t, locale }: { done: boolean[]; t: Text; locale: Locale }) {
-  return (
-    <ol aria-label={t.stepsAria} className="grid grid-cols-4 gap-2">
-      {t.steps.map((label, i) => (
-        <li
-          key={label}
-          className={`border-t-2 pt-2 t-label transition-colors duration-200 motion-reduce:transition-none ${
-            done[i] ? "border-action text-navy" : "border-line text-secondary"
-          }`}
-        >
-          <span className="tabular-nums">{localDigits(i + 1, locale)}</span> {label}
-          <span className="sr-only">{done[i] ? t.stepDone : t.stepTodo}</span>
-        </li>
-      ))}
-    </ol>
-  );
-}
-
 function Group({
   step,
   title,
@@ -456,6 +441,44 @@ function OrderSummary({ s, t, locale, chargeMinor }: { s: FormState; t: Text; lo
   );
 }
 
+/**
+ * Phones only: once items are added, a slim bar keeps the count and estimate in view while the
+ * customer fills in the rest, and jumps to the order summary. Hidden from md up, where the
+ * summary sits close to the form.
+ */
+function MobileTotalBar({ s, t, locale, chargeMinor }: { s: FormState; t: Text; locale: Locale; chargeMinor: number | null }) {
+  // Steps aside once the summary is on screen, so it never covers the summary, Confirm or the footer.
+  const [beforeSummary, setBeforeSummary] = useState(true);
+  useEffect(() => {
+    const summary = document.getElementById("booking-summary-title");
+    if (!summary) return;
+    const check = () => setBeforeSummary(summary.getBoundingClientRect().top > window.innerHeight);
+    check();
+    window.addEventListener("scroll", check, { passive: true });
+    window.addEventListener("resize", check);
+    return () => {
+      window.removeEventListener("scroll", check);
+      window.removeEventListener("resize", check);
+    };
+  }, []);
+  if (!s.items.length || !beforeSummary) return null;
+  const e = estimateOf(s, chargeMinor);
+  const count = s.items.reduce((n, l) => n + l.quantity, 0);
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white/95 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-8px_24px_rgba(0,49,83,0.08)] backdrop-blur md:hidden" data-total-bar>
+      <div className="flex items-center justify-between gap-3">
+        <p className="min-w-0 t-small text-body">
+          {count === 1 ? t.barItemsOne : fill(t.barItems, { n: count }, locale)}
+          {e.subtotalMinor > 0 ? <span className="ml-2 font-semibold tabular-nums text-navy">{money(e.totalMinor, locale)}</span> : null}
+        </p>
+        <a href="#booking-summary-title" className="inline-flex h-11 shrink-0 items-center rounded-md bg-action px-5 font-semibold text-white hover:bg-action-hover">
+          {t.barReview}
+        </a>
+      </div>
+    </div>
+  );
+}
+
 function WhatsAppFallback({
   href,
   placement,
@@ -498,6 +521,7 @@ export function BookingForm({
   initialContact,
   popularItems = [],
   pickupChargeMinor = null,
+  repeatItems = [],
 }: {
   /** Form text in the page language (formText(locale).booking), passed by the page. */
   t: Text;
@@ -515,13 +539,21 @@ export function BookingForm({
   popularItems?: PriceItem[];
   /** Pickup & delivery charge below ৳499 from the admin, or null when not set (Velto confirms it). */
   pickupChargeMinor?: number | null;
+  /** "Book the same again": the earlier order's lines, with today's price-list entry when listed (signed-in customers). */
+  repeatItems?: RepeatItem[];
 }) {
   const locale = useLocale();
+  const [initialItems] = useState(() => repeatItems.map((r) => repeatLine(r.item, r.service, r.quantity, r.listed)));
   const service = initialService && BOOKING_SERVICES.includes(initialService) ? initialService : null;
   const [s, setS] = useState<FormState>({
     service,
-    services: isGarmentService(service) ? [service] : [],
-    items: [],
+    // Repeating an order: its lines, and the services they use; otherwise the page's service.
+    services: initialItems.length
+      ? GARMENT_SERVICES.filter((g) => initialItems.some((l) => l.service === g))
+      : isGarmentService(service)
+        ? [service]
+        : [],
+    items: initialItems,
     sector: initialContact && (SECTORS.map(String).includes(initialContact.sector) || initialContact.sector === OUTSIDE) ? initialContact.sector : "",
     address: initialContact?.address ?? "",
     day: "any",
@@ -615,18 +647,6 @@ export function BookingForm({
         {t.title}
       </h1>
       <p className="mt-3 t-body text-body md:mt-4 md:t-body-lg">{intro}</p>
-      <div className="mt-6 md:mt-8">
-        <StepProgress
-          t={t}
-          locale={locale}
-          done={[
-            s.services.length > 0 || isHousehold(s),
-            s.items.length > 0,
-            Boolean(s.name.trim() && phoneOk(s.phone) && s.sector && s.address.trim()),
-            s.day !== "any" || Boolean(s.backBy || s.notes.trim()),
-          ]}
-        />
-      </div>
       <div className="mt-8 md:mt-10">
         <form
           noValidate
@@ -756,7 +776,7 @@ export function BookingForm({
             </div>
           </Group>
 
-          <Group step={4} title={t.datesTitle} hint={t.datesHint} stepOf={t.stepOf} locale={locale}>
+          <Group step={4} title={t.datesTitle} stepOf={t.stepOf} locale={locale}>
             <div>
               <p className="text-[15px] font-semibold text-navy">
                 {t.dayLabel}
@@ -833,6 +853,7 @@ export function BookingForm({
           </Group>
 
           <OrderSummary s={s} t={t} locale={locale} chargeMinor={pickupChargeMinor} />
+          <MobileTotalBar s={s} t={t} locale={locale} chargeMinor={pickupChargeMinor} />
 
           {/* Confirm — status lives right where the thumb already is */}
           <div>
