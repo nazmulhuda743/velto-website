@@ -10,7 +10,8 @@ import { isSupabaseConfigured, supabaseRpc } from "@/lib/supabase-server";
  * checks per phone.
  * Fails closed: if the limiter can't answer, no SMS is sent.
  */
-export type OtpBucket = "phone" | "ip" | "global" | "verify";
+/** "photo": booking photo uploads per IP (20 per hour), sharing the same durable limiter. */
+export type OtpBucket = "phone" | "ip" | "global" | "verify" | "photo";
 
 export async function otpAllowed(bucket: OtpBucket, value: string): Promise<boolean> {
   if (!isSupabaseConfigured()) return false;

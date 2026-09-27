@@ -5,7 +5,7 @@ const test = require("node:test");
 const { validateBookingSubmission, readBackBy } = require("../.foundation-test-build/integrations/ops/validation.js");
 const { estimateBooking, composeBookingNotes } = require("../.foundation-test-build/booking-items.js");
 
-const base = { name: "Customer Name", phone: "01712 345678", area: "Uttara Sector 11", address: "House 2, Road 14" };
+const base = { name: "Customer Name", phone: "01712 345678", area: "Uttara Sector 11", address: "House 2, Road 14", preferredPickup: "Tomorrow Fri 25 Sep, 1 PM – 4 PM" };
 const NOW = new Date("2026-09-26T04:00:00Z"); // 10:00 in Dhaka
 
 test("estimate: priced lines add up; ৳499+ is free, below uses the admin charge", () => {
@@ -84,4 +84,29 @@ test("a full notes field drops the estimate instead of rejecting the booking", (
   assert.equal(result.ok, true);
   assert.ok(!result.value.notes.includes("Website estimate"));
   assert.ok(result.value.notes.length <= 1000);
+});
+
+test("pickup day and time are required", () => {
+  const { preferredPickup, ...noPickup } = base;
+  assert.ok(preferredPickup);
+  const missing = validateBookingSubmission(noPickup, { now: NOW });
+  assert.equal(missing.ok, false);
+  assert.deepEqual(missing.issues, [{ field: "preferredPickup", code: "required" }]);
+  const ok = validateBookingSubmission(base, { now: NOW });
+  assert.equal(ok.value.preferredPickup, "Tomorrow Fri 25 Sep, 1 PM – 4 PM");
+});
+
+test("photo ids become links in the notes; anything else is rejected", () => {
+  const ids = ["0123456789abcdef0123456789abcdef", "fedcba9876543210fedcba9876543210"];
+  const result = validateBookingSubmission({ ...base, photos: ids, notes: "Stain on the collar" }, { now: NOW, siteUrl: "https://www.velto.com.bd/" });
+  assert.equal(result.ok, true);
+  assert.equal(
+    result.value.notes,
+    `Photos: https://www.velto.com.bd/go/photo/${ids[0]} https://www.velto.com.bd/go/photo/${ids[1]} Note: Stain on the collar`,
+  );
+  for (const photos of [["../etc/passwd"], ["ABCDEF0123456789ABCDEF0123456789"], "x", [ids[0], ids[1], ids[0].replace("0", "1"), ids[1].replace("f", "e")]]) {
+    const bad = validateBookingSubmission({ ...base, photos }, { now: NOW });
+    assert.equal(bad.ok, false, JSON.stringify(photos));
+    assert.deepEqual(bad.issues, [{ field: "photos", code: "invalid" }]);
+  }
 });
