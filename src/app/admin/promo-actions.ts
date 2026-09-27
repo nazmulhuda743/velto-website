@@ -15,7 +15,7 @@ const failure = (error: unknown) => (error instanceof Error ? error.message : "S
 
 /* ---------- top bar ---------- */
 
-/** The announcement bar above the header: still or moving, one or several messages. */
+/** The announcement bar above the header: moving (default) or still, one or several messages. */
 export async function savePromoBarAction(form: FormData) {
   const admin = await requireSection("promo");
   const { settings } = await getSiteContent();
@@ -25,7 +25,7 @@ export async function savePromoBarAction(form: FormData) {
     ...settings,
     announcement: {
       enabled: form.get("enabled") === "on",
-      moving: form.get("moving") === "on",
+      still: form.get("still") === "on",
       text: text(form, "text", 400),
       textBn: text(form, "textBn", 400),
       href,
@@ -40,7 +40,7 @@ export async function savePromoBarAction(form: FormData) {
   }
   const before = settings.announcement;
   const after = next.announcement;
-  const state = !after.enabled ? "off" : after.moving ? "moving" : "still";
+  const state = !after.enabled ? "off" : after.still ? "still" : "moving";
   await logActivity(admin, {
     section: "promo",
     action: "promo_bar_saved",
