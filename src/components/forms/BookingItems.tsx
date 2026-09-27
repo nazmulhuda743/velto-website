@@ -45,10 +45,24 @@ export const lineUnit = (l: ItemLine) => (l.service ? (l.prices[l.service] ?? nu
 export const money = (minor: number, locale: Locale) => localDigits(formatAmount(minor), locale);
 
 let lineCounter = 0;
-function newLine(item: string, options: ItemService[], service: ItemService | "", prices: ItemLine["prices"] = {}): ItemLine {
+function newLine(item: string, options: ItemService[], service: ItemService | "", prices: ItemLine["prices"] = {}, quantity = 1): ItemLine {
   lineCounter += 1;
-  return { id: `line-${lineCounter}`, item, service, quantity: 1, options, prices };
+  return { id: `line-${lineCounter}`, item, service, quantity, options, prices };
 }
+
+/**
+ * A line for an item the customer has sent before ("Book the same again"): today's prices when the
+ * item is on the price list, otherwise priced at pickup like any typed item.
+ */
+export function repeatLine(item: string, service: ItemService | "", quantity: number, listed?: PriceItem): ItemLine {
+  const options = listed ? listed.services.map((s) => s.slug).filter(isItemService) : [...GARMENT_SERVICES];
+  const prices = listed ? Object.fromEntries(listed.services.filter((s) => isItemService(s.slug)).map((s) => [s.slug, unitPrice(s)])) : {};
+  const svc = service && (options.includes(service) || !listed) ? service : "";
+  return newLine(item, svc && !options.includes(svc) ? [...options, svc] : options, svc, prices, Math.min(MAX_ITEM_QUANTITY, Math.max(1, quantity)));
+}
+
+/** Popular items shown before "More items". */
+const POPULAR_FIRST = 6;
 
 const control =
   "rounded-md border border-line-strong bg-white text-base text-navy hover:border-navy/50 focus:border-blue focus:outline-1 focus:outline-offset-0 focus:outline-blue";
@@ -86,6 +100,7 @@ export function BookingItems({
   // Results remember the query they answer, so a slower earlier search never shows for a newer one.
   const [results, setResults] = useState<{ q: string; items: PriceItem[] }>({ q: "", items: [] });
   const [status, setStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [allPopular, setAllPopular] = useState(false);
   const id = useId();
   const offered: ItemService[] = chosen.length ? chosen : [...GARMENT_SERVICES];
   const itemName = (item: string) => (item === MIXED_ITEM ? mixedLabel : item);
@@ -125,7 +140,9 @@ export function BookingItems({
     });
 
   const shownRaw = searching ? (results.q === q ? results.items : []) : popular;
-  const shown = shownRaw.filter((p) => pricesFor(p).length);
+  const matching = shownRaw.filter((p) => pricesFor(p).length);
+  const moreHidden = !searching && !allPopular && matching.length > POPULAR_FIRST;
+  const shown = moreHidden ? matching.slice(0, POPULAR_FIRST) : matching;
   const exact = shownRaw.some((r) => r.name.toLowerCase() === q.toLowerCase());
 
   function addPriced(p: PriceItem, service: ItemService) {
@@ -155,7 +172,7 @@ export function BookingItems({
     // Never submit the booking from the item search; Enter adds the typed item when nothing matches.
     if (e.key !== "Enter") return;
     e.preventDefault();
-    if (typed && status === "ready" && results.q === q && !shown.length) addUnpriced(typed);
+    if (typed && status === "ready" && results.q === q && !matching.length) addUnpriced(typed);
   };
 
   const count = lines.reduce((n, l) => n + l.quantity, 0);
@@ -167,7 +184,7 @@ export function BookingItems({
       ? t.searching
       : status === "error"
         ? t.error
-        : results.q === q && !shown.length && typed
+        : results.q === q && !matching.length && typed
           ? shownRaw.length
             ? t.noneForServices
             : t.notListed
@@ -184,7 +201,7 @@ export function BookingItems({
                 <li
                   key={l.id}
                   data-item-line
-                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 py-3 md:grid-cols-[minmax(0,1fr)_12.5rem_auto_5.5rem_auto]"
+                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 py-3 md:grid-cols-[minmax(0,1fr)_11rem_auto_6rem_auto]"
                 >
                   <span className="min-w-0 break-words font-semibold text-navy md:order-1">{itemName(l.item)}</span>
                   <button
@@ -205,15 +222,11 @@ export function BookingItems({
                       className={`${control} h-11 w-full appearance-none pl-3 pr-9 text-[15px]`}
                     >
                       <option value="">{t.notSure}</option>
-                      {l.options.map((slug) => {
-                        const p = l.prices[slug];
-                        return (
-                          <option key={slug} value={slug}>
-                            {services[slug] ?? ITEM_SERVICES[slug]}
-                            {typeof p === "number" ? ` · ${money(p, locale)}` : ""}
-                          </option>
-                        );
-                      })}
+                      {l.options.map((slug) => (
+                        <option key={slug} value={slug}>
+                          {services[slug] ?? ITEM_SERVICES[slug]}
+                        </option>
+                      ))}
                     </select>
                     <svg viewBox="0 0 16 16" aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-navy">
                       <path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -249,8 +262,11 @@ export function BookingItems({
                       <span className="sr-only">{t.more}</span>
                     </button>
                   </div>
-                  <span className={`text-right tabular-nums md:order-4 ${unit === null ? "t-small text-secondary" : "font-semibold text-navy"}`}>
-                    {unit === null ? t.atPickup : money(unit * l.quantity, locale)}
+                  <span className="col-span-2 -mt-1 flex items-baseline justify-between gap-3 tabular-nums md:order-4 md:col-span-1 md:mt-0 md:block md:text-right">
+                    <span className="t-small text-secondary md:block md:text-[13px]">{unit === null ? "" : `${money(unit, locale)} ${t.each}`}</span>
+                    <span className={unit === null ? "t-small text-secondary" : "font-semibold text-navy"}>
+                      {unit === null ? t.atPickup : money(unit * l.quantity, locale)}
+                    </span>
                   </span>
                 </li>
               );
@@ -297,9 +313,9 @@ export function BookingItems({
               </h3>
               <ul id={`${id}-list`} aria-labelledby={`${id}-heading`} className="mt-2 divide-y divide-line rounded-md border border-line bg-white" data-price-list>
                 {shown.map((p) => (
-                  <li key={p.slug} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3.5 py-2.5 md:px-4">
+                  <li key={p.slug} className="grid gap-2 px-3.5 py-2.5 sm:flex sm:items-center sm:justify-between sm:gap-3 md:px-4">
                     <span className="min-w-0 font-medium text-navy">{p.name}</span>
-                    <span className="flex flex-wrap justify-end gap-2">
+                    <span className="grid auto-cols-fr grid-flow-col gap-2 sm:flex sm:justify-end">
                       {pricesFor(p).map(({ slug, s }) => {
                         const unit = unitPrice(s);
                         const price = s.amountMinor === null ? t.atPickup : `${money(s.amountMinor, locale)}${s.unitLabel ? ` ${s.unitLabel}` : ""}`;
@@ -311,12 +327,12 @@ export function BookingItems({
                             onClick={() => addPriced(p, slug)}
                             disabled={full && !inList}
                             aria-label={format(t.addAt, { item: p.name, service: services[slug] ?? slug, price })}
-                            className={`inline-flex min-h-10 items-center gap-2 rounded-md border px-3 text-[14px] transition-colors disabled:opacity-40 ${
+                            className={`inline-flex min-h-11 items-center justify-center gap-x-2 rounded-md border px-2.5 text-[14px] transition-colors disabled:opacity-40 max-sm:flex-wrap max-sm:py-1.5 max-sm:leading-tight ${
                               inList ? "border-blue bg-[#f0f7fc] text-navy" : "border-line-strong text-navy hover:border-navy/50"
                             }`}
                             data-add-service={slug}
                           >
-                            {offered.length > 1 ? <span className="text-secondary">{services[slug]}</span> : null}
+                            {offered.length > 1 ? <span className="text-secondary max-sm:w-full max-sm:text-center max-sm:text-[12px]">{services[slug]}</span> : null}
                             <span className={unit === null ? "text-secondary" : "font-semibold tabular-nums"}>{price}</span>
                             <span aria-hidden="true" className="font-semibold text-action">
                               {inList ? `×${localDigits(inList.quantity, locale)}` : "+"}
@@ -332,6 +348,15 @@ export function BookingItems({
           ) : null}
 
           <div className="mt-3 flex flex-wrap gap-2">
+            {moreHidden ? (
+              <button
+                type="button"
+                onClick={() => setAllPopular(true)}
+                className="inline-flex min-h-11 items-center gap-2 rounded-md px-3 text-[15px] font-semibold text-navy underline decoration-blue/60 underline-offset-[6px] hover:decoration-blue"
+              >
+                {t.showMore}
+              </button>
+            ) : null}
             {typed && searching && !exact && status !== "loading" ? (
               <button
                 type="button"

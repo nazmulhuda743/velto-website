@@ -13,6 +13,7 @@ import { format, localDigits } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
 import { getPickupChargeMinor } from "@/lib/booking-estimate";
 import { getServicePrices } from "@/lib/service-prices";
+import { repeatItemsFor } from "@/lib/booking-repeat";
 
 /** Quick picks on /book: the everyday items customers send most, exactly as the Ops price list names them. */
 const POPULAR_ITEMS = ["Shirt", "Pant", "T-Shirt", "Panjabi", "Kamiz", "Salwar", "Sari (Cotton)", "Jeans", "Blazer", "Bed Sheet (Medium)"];
@@ -48,6 +49,8 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
   } catch {
     // A malformed escape in the query: ignore it, it's only a note.
   }
+  // One tap to repeat: the earlier order's items are filled in (the customer still reviews them).
+  const repeatItems = repeat ? await repeatItemsFor(repeat) : [];
   // "Make it a routine" from the account: a request note Ops confirms by phone, never a contract.
   const routine = parseRoutine(one(params.routine), one(params.day));
   const routineNote = routine
@@ -75,7 +78,7 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
                       </span>
                     ) : repeat ? (
                       <span className="mt-3 block t-small font-semibold text-navy" data-repeat>
-                        {format(t.repeatIntro, { n: repeat })}
+                        {format(repeatItems.length ? t.repeatIntro : t.repeatIntroNote, { n: repeat })}
                       </span>
                     ) : account ? (
                       <span className="mt-3 block t-small text-secondary" data-prefilled>
@@ -94,6 +97,7 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
                 }
                 initialService={service}
                 popularItems={popular.state === "live" ? popular.items : []}
+                repeatItems={repeatItems}
                 pickupChargeMinor={pickupChargeMinor}
                 presetNote={routineNote ?? (repeat ? format(t.repeatNote, { n: repeat }) : t.presetNotes[service ?? ""])}
                 previewOutcome={previewOutcome}
