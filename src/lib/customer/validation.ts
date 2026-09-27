@@ -80,6 +80,10 @@ export function validOrderNumber(raw: string): string | null {
 export const displayBdPhone = (phone: string | null | undefined) =>
   phone && /^01\d{9}$/.test(phone) ? `${phone.slice(0, 5)} ${phone.slice(5)}` : (phone ?? "");
 
+/** How to name a signed-in customer: their email, or the mobile they sign in with by SMS code. */
+export const signedInAs = (user: { email?: string | null; phone?: string | null }) =>
+  user.email || displayBdPhone(normaliseBdPhone(user.phone ?? "") ?? user.phone ?? "");
+
 /** Words that are never someone's first name (placeholders, test data, roles). */
 const NOT_A_NAME = new Set(["portal", "qa", "test", "tester", "velto", "customer", "user", "admin", "staff", "staging", "demo", "guest", "unknown", "na", "n/a", "none", "null", "mr", "mrs", "ms", "md", "dr"]);
 

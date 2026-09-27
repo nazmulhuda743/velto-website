@@ -13,7 +13,7 @@ export default async function ProfilePage() {
   const session = await getCustomerSession();
   if (session.kind !== "customer" || session.account.state !== "ready") redirect(await loginRedirectPath("/account/profile"));
   const a = session.account;
-  const locked = a.link.status === "linked" ? "linked" : a.link.status === "pending" ? "pending" : null;
+  const locked = a.phoneVerified ? "verified" : a.link.status === "linked" ? "linked" : a.link.status === "pending" ? "pending" : null;
   const text = accountText(await getLocale());
   const t = text.profile;
 
@@ -38,21 +38,32 @@ export default async function ProfilePage() {
           {t.signIn}
         </h2>
         <dl className="mt-4 max-w-[560px] space-y-4">
-          <div>
-            <dt className="text-[15px] font-semibold text-navy">{t.email}</dt>
-            <dd className="mt-1 text-body">{a.email}</dd>
-            <dd className="mt-1 t-small text-secondary">
-              {t.changeEmailBefore}
-              <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="font-semibold text-navy underline underline-offset-4">
-                {t.messageVelto}
-              </a>
-              {t.changeEmailAfter}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-[15px] font-semibold text-navy">{t.password}</dt>
-            <dd className="mt-1 t-small text-secondary">{t.passwordBody}</dd>
-          </div>
+          {a.phoneVerified ? (
+            <div>
+              <dt className="text-[15px] font-semibold text-navy">{t.signInPhone}</dt>
+              <dd className="mt-1 text-body">{displayBdPhone(a.phone)}</dd>
+              <dd className="mt-1 t-small text-secondary">{t.signInPhoneBody}</dd>
+            </div>
+          ) : null}
+          {a.email ? (
+            <>
+              <div>
+                <dt className="text-[15px] font-semibold text-navy">{t.email}</dt>
+                <dd className="mt-1 text-body">{a.email}</dd>
+                <dd className="mt-1 t-small text-secondary">
+                  {t.changeEmailBefore}
+                  <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="font-semibold text-navy underline underline-offset-4">
+                    {t.messageVelto}
+                  </a>
+                  {t.changeEmailAfter}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-[15px] font-semibold text-navy">{t.password}</dt>
+                <dd className="mt-1 t-small text-secondary">{t.passwordBody}</dd>
+              </div>
+            </>
+          ) : null}
         </dl>
         <form action={signOutAction} className="mt-6">
           <button type="submit" className="inline-flex h-12 items-center rounded-md border border-line-strong bg-white px-5 font-semibold text-navy hover:border-navy">

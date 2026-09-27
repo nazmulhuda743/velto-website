@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
+import type { InputHTMLAttributes, ReactNode, Ref, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
 
 /**
  * Form primitives — spec §17: visible labels (no floating labels), ~52/54px
@@ -46,7 +46,7 @@ const describedBy = (id: string, helper?: ReactNode, error?: string) =>
 
 type Common = { id: string; label: string; optional?: boolean; optionalText?: string; helper?: ReactNode; error?: string };
 
-export function TextField({ id, label, optional, optionalText, helper, error, ...rest }: Common & InputHTMLAttributes<HTMLInputElement>) {
+export function TextField({ id, label, optional, optionalText, helper, error, ...rest }: Common & InputHTMLAttributes<HTMLInputElement> & { ref?: Ref<HTMLInputElement> }) {
   return (
     <FieldShell id={id} label={label} optional={optional} optionalText={optionalText} helper={helper} error={error}>
       <input

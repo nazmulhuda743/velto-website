@@ -17,6 +17,7 @@ const KIND_LABELS: Record<string, string> = {
   not_found: "Page not found (404)",
   media_upload_error: "Media upload failed",
   content_save_error: "Content save failed",
+  otp_error: "Sign-in SMS failed",
 };
 
 export default async function HealthPage() {

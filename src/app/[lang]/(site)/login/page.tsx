@@ -3,9 +3,9 @@ import { Alert } from "@/components/account/Alert";
 import { AuthShell } from "@/components/account/AuthShell";
 import { SignInForm } from "@/components/account/forms";
 import { AccountsUnavailable, SignedInNotice, StaffAccountNotice } from "@/components/account/SignedInNotice";
-import { googleSignInEnabled } from "@/lib/customer/google";
+import { authProviders } from "@/lib/customer/providers";
 import { getCustomerSession } from "@/lib/customer/portal";
-import { safeNextPath } from "@/lib/customer/validation";
+import { signedInAs, safeNextPath } from "@/lib/customer/validation";
 import { alternatesFor } from "@/lib/seo/page-metadata";
 import { accountText } from "@/content/i18n/account";
 import { getLocale } from "@/lib/i18n/server";
@@ -27,7 +27,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
   const t = a.pages;
   const code = one(params.error) ?? "";
   const notice = NOTICE_TONES[code] ? { tone: NOTICE_TONES[code], text: t.notices[code] } : undefined;
-  const session = await getCustomerSession();
+  const [session, providers] = await Promise.all([getCustomerSession(), authProviders()]);
 
   if (session.kind === "disabled") {
     return (
@@ -39,7 +39,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
   if (session.kind === "customer" || session.kind === "staff") {
     return (
       <AuthShell title={t.signInTitle}>
-        {session.kind === "staff" ? <StaffAccountNotice /> : <SignedInNotice email={session.user.email ?? ""} next={next} />}
+        {session.kind === "staff" ? <StaffAccountNotice /> : <SignedInNotice email={signedInAs(session.user)} next={next} />}
       </AuthShell>
     );
   }
@@ -48,7 +48,8 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
       <SignInForm
         t={a.forms}
         next={next}
-        google={await googleSignInEnabled()}
+        google={providers.google}
+        phone={providers.phone}
         notice={
           session.kind === "unavailable" ? (
             <Alert tone="error">{t.signInUnavailable}</Alert>

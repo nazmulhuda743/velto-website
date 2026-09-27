@@ -96,7 +96,12 @@ export default async function AccountLayout({ children }: { children: React.Reac
         <h1 className="t-h2 text-navy">{t.finishTitle}</h1>
         <p className="mt-3 text-body">{t.finishBody}</p>
         <div className="mt-6 rounded-lg border border-line bg-white p-5 md:p-7">
-          <ProfileForm t={a.forms} completing phoneLocked={null} initial={{ fullName: metaName.trim().slice(0, 80), phone: "", address: "", area: "" }} />
+          <ProfileForm
+            t={a.forms}
+            completing
+            phoneLocked={session.account.phoneVerified && session.account.phone ? "verified" : null}
+            initial={{ fullName: metaName.trim().slice(0, 80), phone: session.account.phone ?? "", address: "", area: "" }}
+          />
         </div>
       </Frame>
     );

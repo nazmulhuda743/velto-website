@@ -7,6 +7,8 @@ import { getLocale, localHref, loginRedirectPath } from "@/lib/i18n/server";
 import { accountText } from "@/content/i18n/account";
 import { fill } from "@/lib/i18n/config";
 import { SITE_URL } from "@/lib/site-url";
+import { otpAllowed } from "@/lib/sms/limits";
+import { bdPhoneToE164, validOtp } from "@/lib/sms/otp";
 import { ACCOUNT_HINT_COOKIE, RECOVERY_COOKIE } from "./config";
 import { AUTH_COOKIE_OPTIONS, customerSupabase } from "./supabase";
 import {
@@ -21,7 +23,7 @@ import {
   validName,
 } from "./validation";
 
-export type FieldErrors = Partial<Record<"fullName" | "email" | "phone" | "password" | "confirm" | "terms" | "address" | "area", string>>;
+export type FieldErrors = Partial<Record<"fullName" | "email" | "phone" | "password" | "confirm" | "terms" | "address" | "area" | "code", string>>;
 
 export type AuthFormState =
   | { status: "idle" }
@@ -32,7 +34,9 @@ export type AuthFormState =
   | { status: "verify-required"; email: string }
   | { status: "sent" }
   | { status: "expired" }
-  | { status: "saved" };
+  | { status: "saved" }
+  /** An SMS code is on its way to `phone`; `message` reports a problem on this step (e.g. resend refused). */
+  | { status: "code-sent"; phone: string; resent?: boolean; sentAt?: number; message?: string; errors?: FieldErrors };
 
 const UNAVAILABLE: AuthFormState = { status: "unavailable" };
 
@@ -62,8 +66,10 @@ const str = (form: FormData, key: string, max = 300) => String(form.get(key) ?? 
 const WINDOWS = { signin: [10, 10 * 60_000], signup: [5, 60 * 60_000], recover: [5, 60 * 60_000], resend: [3, 60 * 60_000] } as const;
 const hits = new Map<string, number[]>();
 
+const requesterIp = async () => (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+
 async function throttled(kind: keyof typeof WINDOWS) {
-  const ip = (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const ip = await requesterIp();
   const [max, windowMs] = WINDOWS[kind];
   const key = `${kind}:${ip}`;
   const now = Date.now();
@@ -198,6 +204,83 @@ export async function signInAction(_prev: AuthFormState, form: FormData): Promis
     if (error.code === "email_not_confirmed") return { status: "verify-required", email: email! };
     // One message for an unknown email and a wrong password, in either language.
     return { status: "error", message: m.t.wrongCredentials, values };
+  }
+  await supabase.rpc("portal_touch_login");
+  await setAccountHint(true);
+  redirect(next);
+}
+
+/* ---------- Sign in with a mobile number (SMS code) ---------- */
+
+/**
+ * Step 1: text a sign-in code. One flow for new and returning customers: Supabase Auth creates
+ * the account on first use. From the sign-up form, the name and accepted terms travel as
+ * metadata so the account is ready straight away; otherwise /account asks for them once.
+ * Supabase makes the code and delivers it through the Send SMS hook (/api/auth/sms-hook),
+ * which also applies the per-phone and site-wide limits.
+ */
+export async function sendPhoneCodeAction(_prev: AuthFormState, form: FormData): Promise<AuthFormState> {
+  const m = await messages();
+  const signup = form.get("mode") === "signup";
+  const resend = form.get("resend") === "1";
+  // Field names differ from the email forms' so both can sit on one page.
+  const values = { otpPhone: str(form, "otpPhone", 30), otpName: str(form, "otpName", 120) };
+  const phone = normaliseBdPhone(values.otpPhone);
+  const errors: FieldErrors = {};
+  if (!phone) errors.phone = m.t.phone;
+  const fullName = signup && !resend ? validName(values.otpName) : null;
+  if (signup && !resend) {
+    if (!fullName) errors.fullName = m.t.name;
+    if (form.get("otpTerms") !== "on") errors.terms = m.t.terms;
+  }
+  if (Object.keys(errors).length) return { status: "invalid", errors, values };
+  // On a resend, problems are shown on the code step instead of sending the customer back.
+  const problem = (state: AuthFormState): AuthFormState =>
+    resend ? { status: "code-sent", phone: phone!, message: "message" in state ? state.message : m.t.smsFailed } : state;
+
+  const supabase = await customerSupabase();
+  if (!supabase) return m.disabled;
+  if (!(await otpAllowed("ip", await requesterIp()))) return problem(m.tooMany);
+
+  const { error } = await supabase.auth.signInWithOtp({
+    phone: bdPhoneToE164(phone!),
+    options: {
+      shouldCreateUser: true,
+      channel: "sms",
+      data: fullName
+        ? { full_name: fullName, terms_version: TERMS_VERSION, terms_accepted_at: new Date().toISOString(), locale: await getLocale() }
+        : undefined,
+    },
+  });
+  if (error) {
+    const mapped = authFailure(error, m.tooMany);
+    if (mapped) return mapped.status === "unavailable" ? mapped : problem(mapped);
+    // Only Bangladeshi mobiles reach this point, so what's left is the SMS provider or setup.
+    console.error("customer_otp_send_failed", error.code ?? error.status);
+    return problem({ status: "error", message: error.code === "phone_provider_disabled" ? m.t.disabled : m.t.smsFailed, values });
+  }
+  return { status: "code-sent", phone: phone!, resent: resend, sentAt: Date.now() };
+}
+
+/** Step 2: check the code. A correct code signs the customer in (and creates the account if new). */
+export async function verifyPhoneCodeAction(_prev: AuthFormState, form: FormData): Promise<AuthFormState> {
+  const m = await messages();
+  const phone = normaliseBdPhone(str(form, "otpPhone", 30));
+  const code = validOtp(str(form, "otpCode", 20));
+  const next = await localHref(safeNextPath(str(form, "next", 300)));
+  if (!phone) return { status: "invalid", errors: { phone: m.t.phone } };
+  if (!code) return { status: "code-sent", phone, errors: { code: m.t.code } };
+
+  const supabase = await customerSupabase();
+  if (!supabase) return m.disabled;
+  if (!(await otpAllowed("verify", phone))) return { status: "code-sent", phone, message: m.t.tooMany };
+
+  const { error } = await supabase.auth.verifyOtp({ phone: bdPhoneToE164(phone), token: code, type: "sms" });
+  if (error) {
+    const mapped = authFailure(error, m.tooMany);
+    if (mapped?.status === "unavailable") return mapped;
+    if (mapped) return { status: "code-sent", phone, message: m.t.tooMany };
+    return { status: "code-sent", phone, errors: { code: m.t.codeWrong } };
   }
   await supabase.rpc("portal_touch_login");
   await setAccountHint(true);
