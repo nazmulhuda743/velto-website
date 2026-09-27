@@ -49,7 +49,12 @@ export default async function RequestsPage({ searchParams }: { searchParams: Sea
       <NotificationRefresher />
       <AdminHeader
         title="Bookings & quotes"
-        intro="Every pickup booking and household quote sent from the website. They live in the Velto Ops task list, where staff assign and complete them. Status here is read from Ops."
+        intro="Every pickup booking and household quote sent from the website. They live in the Velto Ops task list. Status here is read from Ops."
+        actions={
+          <Link href="/admin/dispatch" className="admin-btn">
+            Plan pickups & deliveries
+          </Link>
+        }
       />
 
       {loaded.state !== "ok" ? (

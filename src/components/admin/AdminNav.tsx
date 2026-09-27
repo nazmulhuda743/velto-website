@@ -28,6 +28,13 @@ const I = {
       <path d="M8 3.5v3M16 3.5v3M4 10h16M8.5 14h3M8.5 17h6" />
     </>
   ),
+  dispatch: (
+    <>
+      <path d="M3.5 7h10v9h-10zM13.5 10h4l3 3v3h-7" />
+      <circle cx="7" cy="17.5" r="1.8" />
+      <circle cx="17" cy="17.5" r="1.8" />
+    </>
+  ),
   accounts: (
     <>
       <circle cx="12" cy="8.5" r="3.5" />
@@ -113,6 +120,7 @@ const GROUPS: { label: string; items: Item[] }[] = [
     label: "Operations",
     items: [
       { href: "/admin/requests", label: "Bookings & quotes", icon: "requests" },
+      { href: "/admin/dispatch", label: "Pickup & delivery", icon: "dispatch" },
       { href: "/admin/retention", label: "Bring customers back", icon: "retention" },
       { href: "/admin/accounts", label: "Customer accounts", icon: "accounts" },
       { href: "/admin/health", label: "Website health", icon: "health" },
