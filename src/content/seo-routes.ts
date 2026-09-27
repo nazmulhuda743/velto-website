@@ -8,6 +8,12 @@ import { LOCATIONS } from "./site";
 
 export type SeoRoute = { path: string; label: string; group: string; title: string; description: string };
 
+/** The recognisable part of each outlet's address, for descriptions that must stay short. */
+export const SHORT_ADDRESS: Record<string, string> = {
+  "sector-11": "House 2, Road 14, Sector 11, Uttara",
+  "sector-18": "RUAP, Poncoboti Bazar, Sector 18, Uttara",
+};
+
 export const SEO_ROUTES: SeoRoute[] = [
   {
     path: "/",
@@ -23,7 +29,7 @@ export const SEO_ROUTES: SeoRoute[] = [
     group: "Main",
     title: "Velto Services: Dry Cleaning, Wash & Iron, Curtains & More",
     description:
-      "Dry cleaning, Wash & Iron, ironing, curtains, carpets, blankets and Express, with pickup across Uttara Sectors 1–18. Find the right service for what you're sending.",
+      "Dry cleaning, Wash & Iron, ironing, curtains, carpets, blankets and Express, with pickup across Uttara Sectors 1–18. Find the right service.",
   },
   ...SERVICE_PAGES.map((s) => ({
     path: `/services/${s.slug}`,
@@ -68,7 +74,8 @@ export const SEO_ROUTES: SeoRoute[] = [
     label: `Location: ${l.name}`,
     group: "Locations",
     title: `Laundry & Dry Cleaning in Uttara ${l.name}${l.id === "sector-18" ? ", RUAP" : ""} | Velto`,
-    description: `Velto ${l.name}: ${l.address}. Open ${l.hours}. Drop off laundry and dry cleaning here, or book a pickup anywhere in Uttara Sectors 1–18.`,
+    // Under ~155 characters, so Google shows it whole: the landmark part of the address, the hours, the two ways to use it.
+    description: `Velto at ${SHORT_ADDRESS[l.id]}. Open ${l.hours}. Drop off laundry and dry cleaning, or book pickup across Sectors 1–18.`,
   })),
   {
     path: "/about",

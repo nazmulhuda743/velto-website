@@ -17,6 +17,7 @@ const { accountEn } = requireTs("src/content/i18n/account/en.ts");
 const { accountBn } = requireTs("src/content/i18n/account/bn.ts");
 const { SERVICE_PAGES, servicePages } = requireTs("src/content/services.ts");
 const { BANGLA_READY_PATHS } = requireTs("src/lib/i18n/config.ts");
+const { SHORT_ADDRESS } = requireTs("src/content/seo-routes.ts");
 const { IMAGE_SLOTS } = requireTs("src/content/mock.ts");
 const { LOCATIONS } = requireTs("src/content/site.ts");
 
@@ -112,7 +113,7 @@ const DATA_KEYS =
 function untranslated(english, bangla, path = "", found = []) {
   if (typeof bangla === "string") {
     // Street addresses stay as written (they match Google Maps and what riders use).
-    const copy = LOCATIONS.reduce((text, l) => text.replaceAll(l.address, ""), bangla);
+    const copy = LOCATIONS.reduce((text, l) => text.replaceAll(l.address, "").replaceAll(SHORT_ADDRESS[l.id], ""), bangla);
     if (!DATA_KEYS.test(path) && /[A-Za-z]{3,}/.test(copy.replace(LATIN_OK, "").replace(/\{\w+\}/g, ""))) found.push(`${path}: ${bangla}`);
   } else if (bangla && typeof bangla === "object") {
     for (const k of Object.keys(bangla)) untranslated(english?.[k], bangla[k], Array.isArray(bangla) ? `${path}[${k}]` : path ? `${path}.${k}` : k, found);
