@@ -8,7 +8,10 @@ import { accountText } from "@/content/i18n/account";
 import { fill } from "@/lib/i18n/config";
 import { SITE_URL } from "@/lib/site-url";
 import { otpAllowed } from "@/lib/sms/limits";
-import { bdPhoneToE164, validOtp } from "@/lib/sms/otp";
+import { bdPhoneToE164, linkCodeMessage, validOtp } from "@/lib/sms/otp";
+import { sendSms } from "@/lib/sms/send";
+import { supabaseRpc } from "@/lib/supabase-server";
+import { LINK_CODE_COOKIE, LINK_CODE_TTL_SECONDS, checkLinkCode, issueLinkCode } from "./sms-link";
 import { ACCOUNT_HINT_COOKIE, RECOVERY_COOKIE } from "./config";
 import { AREA, cleanIssues, happy, parsePreferences } from "./extras";
 import { AUTH_COOKIE_OPTIONS, customerSupabase } from "./supabase";
@@ -38,7 +41,9 @@ export type AuthFormState =
   | { status: "expired" }
   | { status: "saved" }
   /** An SMS code is on its way to `phone`; `message` reports a problem on this step (e.g. resend refused). */
-  | { status: "code-sent"; phone: string; resent?: boolean; sentAt?: number; message?: string; errors?: FieldErrors };
+  | { status: "code-sent"; phone: string; resent?: boolean; sentAt?: number; message?: string; errors?: FieldErrors }
+  /** "Show my past orders": the phone is proven; `result` says what was found under it. */
+  | { status: "linked"; result: "linked" | "no_orders" | "pending" };
 
 const UNAVAILABLE: AuthFormState = { status: "unavailable" };
 
@@ -480,3 +485,77 @@ export async function savePreferencesAction(_prev: PreferencesState, form: FormD
   revalidatePath("/account", "layout");
   return { status: "saved" };
 }
+
+/* ---------- Show my past orders: prove the account's phone with an SMS code ---------- */
+
+/**
+ * Email and Google accounts: text a code to the phone on the account. The code is bound to this
+ * login and phone by a signed httpOnly cookie (lib/customer/sms-link.ts); same database limits as
+ * sign-in codes (5 per phone and 10 per IP an hour, 300 site-wide).
+ */
+export async function sendLinkCodeAction(_prev: AuthFormState, form: FormData): Promise<AuthFormState> {
+  const m = await messages();
+  const resend = form.get("resend") === "1";
+  const supabase = await customerSupabase();
+  if (!supabase) return m.disabled;
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect(await loginRedirectPath("/account"));
+  const me = await supabase.rpc("portal_me");
+  const phone = (me.data as { state?: string; phone?: string } | null)?.state === "ready" ? (me.data as { phone: string }).phone : null;
+  if (!phone) return { status: "error", message: m.t.saveFailed };
+  const fail = (message: string): AuthFormState => (resend ? { status: "code-sent", phone, message } : { status: "error", message });
+
+  const [perPhone, perIp, global] = await Promise.all([
+    otpAllowed("phone", phone),
+    otpAllowed("ip", await requesterIp()),
+    otpAllowed("global", "site"),
+  ]);
+  if (!perPhone || !perIp || !global) return fail(m.t.tooMany);
+
+  const issued = issueLinkCode(data.user.id, phone);
+  if (!issued) return fail(m.t.smsFailed);
+  const sent = await sendSms(phone, linkCodeMessage(issued.code));
+  if (!sent.ok) {
+    console.error("link_code_sms_failed", sent.provider, sent.code);
+    return fail(m.t.smsFailed);
+  }
+  (await cookies()).set(LINK_CODE_COOKIE, issued.cookie, {
+    ...AUTH_COOKIE_OPTIONS,
+    path: "/",
+    maxAge: LINK_CODE_TTL_SECONDS,
+  });
+  return { status: "code-sent", phone, resent: resend, sentAt: Date.now() };
+}
+
+/** Check the code; a right one links the history (or reports that none was found). */
+export async function confirmLinkCodeAction(_prev: AuthFormState, form: FormData): Promise<AuthFormState> {
+  const m = await messages();
+  const code = validOtp(str(form, "linkCode", 20));
+  const supabase = await customerSupabase();
+  if (!supabase) return m.disabled;
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect(await loginRedirectPath("/account"));
+  const store = await cookies();
+  const pending = store.get(LINK_CODE_COOKIE)?.value;
+  const phone = pending?.split(".")[0] ?? "";
+  if (!code) return { status: "code-sent", phone, errors: { code: m.t.code } };
+  if (!(await otpAllowed("verify", phone || data.user.id))) return { status: "code-sent", phone, message: m.t.tooMany };
+
+  const checked = checkLinkCode(data.user.id, pending, code);
+  if (!checked || "expired" in checked) return { status: "code-sent", phone, errors: { code: m.t.codeWrong } };
+
+  try {
+    const r = await supabaseRpc<{ ok?: boolean; result?: string; reason?: string }>("portal_link_verified_phone", {
+      p_auth_user_id: data.user.id,
+      p_phone: checked.phone,
+    });
+    if (!r.ok || !r.result) return { status: "error", message: m.t.saveFailed };
+    store.delete(LINK_CODE_COOKIE);
+    revalidatePath("/account", "layout");
+    return { status: "linked", result: r.result === "linked" ? "linked" : r.result === "pending" ? "pending" : "no_orders" };
+  } catch (error) {
+    console.error("portal_link_verified_phone_failed", error instanceof Error ? error.message : "unknown");
+    return { status: "error", message: m.t.saveFailed };
+  }
+}
+

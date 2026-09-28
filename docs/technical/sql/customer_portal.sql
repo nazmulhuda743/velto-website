@@ -81,7 +81,9 @@ grant execute on function public.cockpit_stats() to authenticated;
 
 create table if not exists public.customer_accounts (
   auth_user_id      uuid primary key references auth.users (id) on delete cascade,
-  customer_id       uuid unique references public.customers (id) on delete set null,
+  -- Not unique: several logins (email, Google, phone) of the same person may each prove the
+  -- phone and see the same history.
+  customer_id       uuid references public.customers (id) on delete set null,
   full_name         text not null check (char_length(btrim(full_name)) between 2 and 80),
   phone             text not null check (phone ~ '^01[3-9][0-9]{8}$'),
   verified_phone    text check (verified_phone is null or verified_phone ~ '^01[3-9][0-9]{8}$'),
@@ -108,6 +110,7 @@ comment on column public.customer_accounts.phone is
 comment on column public.customer_accounts.verified_phone is
   'Ops customer phone confirmed by staff callback or SMS OTP when the link was approved.';
 
+create index if not exists customer_accounts_customer_idx on public.customer_accounts (customer_id);
 create index if not exists customer_accounts_pending_idx
   on public.customer_accounts (link_requested_at) where link_status = 'pending';
 
@@ -222,8 +225,9 @@ as $$
 $$;
 
 -- Link order history automatically when the account's phone was proven by SMS code and
--- exactly one Velto customer has that phone (not already linked to another account).
--- Anything ambiguous stays with staff (portal_link_decide). Staff rejections are respected.
+-- exactly one Velto customer has that phone. Proving the phone is proof enough, so another
+-- login of the same person may already be linked to that customer. Anything ambiguous stays
+-- with staff (portal_link_decide). Staff rejections are respected.
 create or replace function public.portal_auto_link(p_uid uuid)
 returns void
 language plpgsql
@@ -246,14 +250,56 @@ begin
     return;
   end if;
   select id into v_customer_id from public.customers where phone = v_phone;
-  if exists (select 1 from public.customer_accounts where customer_id = v_customer_id and auth_user_id <> p_uid) then
-    return;
-  end if;
   update public.customer_accounts
      set customer_id = v_customer_id, verified_phone = v_phone, link_status = 'linked', link_method = 'sms_otp',
          link_requested_at = coalesce(link_requested_at, now()), link_decided_at = now(),
          link_decided_by = 'SMS sign-in code', updated_at = now()
    where auth_user_id = p_uid;
+end;
+$$;
+
+-- Website server only (service role): an email or Google account proved its phone with an SMS
+-- code sent by the website (lib/customer/sms-link.ts). Links the history when exactly one
+-- Velto customer has that phone; several matches go to staff as a pending request.
+create or replace function public.portal_link_verified_phone(p_auth_user_id uuid, p_phone text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_acc public.customer_accounts;
+  v_phone text := public.portal_local_phone(p_phone);
+  v_matches integer;
+  v_customer_id uuid;
+begin
+  select * into v_acc from public.customer_accounts where auth_user_id = p_auth_user_id for update;
+  if v_acc.auth_user_id is null then
+    return jsonb_build_object('ok', false, 'reason', 'no_account');
+  end if;
+  if v_phone is null or v_phone <> v_acc.phone then
+    return jsonb_build_object('ok', false, 'reason', 'phone_changed');
+  end if;
+  if v_acc.link_status = 'linked' then
+    return jsonb_build_object('ok', true, 'result', 'linked');
+  end if;
+  select count(*) into v_matches from public.customers where phone = v_phone;
+  if v_matches = 0 then
+    return jsonb_build_object('ok', true, 'result', 'no_orders');
+  end if;
+  if v_matches > 1 then
+    update public.customer_accounts
+       set link_status = 'pending', link_requested_at = coalesce(link_requested_at, now()), updated_at = now()
+     where auth_user_id = p_auth_user_id and link_status <> 'pending';
+    return jsonb_build_object('ok', true, 'result', 'pending');
+  end if;
+  select id into v_customer_id from public.customers where phone = v_phone;
+  update public.customer_accounts
+     set customer_id = v_customer_id, verified_phone = v_phone, link_status = 'linked', link_method = 'sms_otp',
+         link_requested_at = coalesce(link_requested_at, now()), link_decided_at = now(),
+         link_decided_by = 'SMS code (website)', updated_at = now()
+   where auth_user_id = p_auth_user_id;
+  return jsonb_build_object('ok', true, 'result', 'linked');
 end;
 $$;
 
@@ -562,9 +608,6 @@ begin
     if v_customer.id is null then
       raise exception 'no Velto customer with this phone' using errcode = 'P0002';
     end if;
-    if exists (select 1 from public.customer_accounts where customer_id = v_customer.id and auth_user_id <> v_acc.auth_user_id) then
-      raise exception 'customer already linked to another account' using errcode = '23505';
-    end if;
     update public.customer_accounts
        set customer_id = v_customer.id, verified_phone = v_customer.phone, link_status = 'linked',
            link_method = p_method, link_decided_at = now(), link_decided_by = v_by, updated_at = now()
@@ -612,6 +655,8 @@ grant execute on function public.portal_order_get(text) to authenticated;
 
 revoke all on function public.portal_link_requests(text) from public, anon, authenticated;
 revoke all on function public.portal_link_decide(uuid, text, text, text) from public, anon, authenticated;
+revoke all on function public.portal_link_verified_phone(uuid, text) from public, anon, authenticated;
+grant execute on function public.portal_link_verified_phone(uuid, text) to service_role;
 grant execute on function public.portal_link_requests(text) to service_role;
 grant execute on function public.portal_link_decide(uuid, text, text, text) to service_role;
 

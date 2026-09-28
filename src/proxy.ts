@@ -53,9 +53,12 @@ export async function proxy(request: NextRequest) {
   };
 
   const auth = customerAuthConfig();
+  const protectedRoute = path === "/account" || path.startsWith("/account/");
+  // Accounts switched off: redirect here too. The account pages stream behind a loading
+  // skeleton, so a redirect from their layout would arrive after a 200, not as a real one.
+  if (!auth && protectedRoute) return toLogin(request, locale);
   if (!auth || !AUTH_PATH.test(path)) return pass();
 
-  const protectedRoute = path === "/account" || path.startsWith("/account/");
   const hasSessionCookie = request.cookies.getAll().some((c) => c.name.startsWith("sb-"));
   if (!hasSessionCookie) {
     if (protectedRoute) return toLogin(request, locale);

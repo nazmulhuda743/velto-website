@@ -155,21 +155,26 @@ was already used" with a new-link button. Tokens are never logged.
 
 Constraint: `linked ⇔ customer_id and verified_phone are set`.
 
-**Typing a phone number never unlocks history.** There is no SMS/OTP provider in the project
-(`sms_provider` is configured as twilio, but phone auth is disabled and there are no OTP tables or
-functions), so OTP is not faked. Instead:
+**Typing a phone number never unlocks history; proving it by SMS code does.**
 
-1. The customer taps **Link my Velto history** → `pending`. Their phone is then locked.
+- **Signed in with the mobile number:** the phone is already proven; `portal_auto_link` links at once.
+- **Email or Google account:** the account card offers **Show my past orders** → the website
+  texts a 6-digit code to the account's phone (`src/lib/customer/sms-link.ts`, signed cookie,
+  10-minute expiry, database rate limits) → `portal_link_verified_phone` (service role) links it.
+- Several logins of the same person (email, Google, phone) may be linked to the same Ops
+  customer: each proved the phone. `customer_id` is therefore not unique.
+- Several Ops customers with the same phone, or no SMS access: staff decide, as below.
+
+1. The customer taps **Ask Velto to check by phone** → `pending`. Their phone is then locked.
 2. Staff open **/admin/accounts**. For each request they see the account and the only Ops
    customer whose phone equals the claimed phone, with order count, last order and whether it's
    already linked.
 3. Staff call the number **on the Ops record**, confirm the person created the account, tick
-   the confirmation box and **Approve**. The database re-checks the phone match and the
-   one-account-per-customer rule. **Reject** and **Unlink** are also available.
+   the confirmation box and **Approve**. The database re-checks the phone match. **Reject** and **Unlink** are also available.
 
 **Sign in with a mobile number** (docs/technical/PHONE-SIGN-IN.md) proves the phone with an SMS
 code. When the account's phone was proven that way and exactly one Ops customer has that phone
-(not linked to another account), `portal_auto_link` links the history at once with
+`portal_auto_link` links the history at once with
 `link_method = 'sms_otp'`. Anything ambiguous still goes to staff as above.
 
 ---

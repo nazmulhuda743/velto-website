@@ -74,7 +74,7 @@ expect(/auth\.getUser\(\)/.test(proxy), "src/proxy.ts: sessions must be verified
 // 6. Redirect targets and order URLs are validated.
 expect(read("src/app/auth/confirm/route.ts").includes("safeNextPath("), "auth/confirm must validate next= with safeNextPath");
 expect(read("src/lib/customer/actions.ts").includes("safeNextPath("), "sign-in must validate next= with safeNextPath");
-expect(read("src/app/[lang]/(site)/account/orders/[id]/page.tsx").includes("validOrderNumber("), "order detail must accept order numbers only");
+expect(read("src/app/[lang]/(site)/(portal)/account/orders/[id]/page.tsx").includes("validOrderNumber("), "order detail must accept order numbers only");
 
 // 7. Consent-first GTM (PR #19's canonical implementation) with the portal privacy guards.
 const tracking = read("src/components/layout/TrackingScripts.tsx").replace(/\/\*[\s\S]*?\*\//g, "");
