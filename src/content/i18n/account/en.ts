@@ -184,7 +184,10 @@ export const accountEn = {
     signOut: "Sign out",
   },
   layout: {
-    nav: { overview: "Overview", orders: "My Orders", profile: "Profile", aria: "Account" },
+    nav: { overview: "Overview", orders: "My Orders", rewards: "Rewards", profile: "Profile", aria: "Account" },
+    privacy: "Privacy",
+    terms: "Terms",
+    cookies: "Cookie settings",
     support: "Support on WhatsApp",
     signOut: "Sign out",
     yourAccount: "Your account",
@@ -340,6 +343,32 @@ export const accountEn = {
     progressAria: "{done} of {total} orders to {tier}",
     stampAria: "{done} of {n} orders",
   },
+  /** Planned pickup / delivery windows from the dispatch board (account home). */
+  plan: {
+    pickup: "Pickup",
+    delivery: "Delivery",
+    today: "Today",
+    tomorrow: "Tomorrow",
+    slots: { morning: "Morning, until 12 PM", afternoon: "Afternoon, 12–5 PM", evening: "Evening, 5–9 PM" },
+    with: "with {name}",
+    pickupBody: "Please have your laundry ready. The rider calls when nearby.",
+    deliveryBody: "Your order is on its way back. The rider calls when nearby.",
+    windowLabel: "Delivery window",
+  },
+  /** The Rewards tab and the short strip on the account home. */
+  rewards: {
+    title: "Rewards",
+    intro: "Your monthly goal, your tier and the rewards you hold. Velto applies them when we confirm your order.",
+    strip: "Your rewards",
+    open: "See rewards",
+    couponsOne: "1 reward to use",
+    couponsMany: "{n} rewards to use",
+    goalLine: "৳{n} more this month → {reward}",
+    goalTop: "Top reward reached for {month}",
+    tierLine: "{tier} · {n} more orders to {next}",
+    tierTop: "{tier} · highest tier",
+    none: "Nothing to show yet. Rewards start with your first order.",
+  },
   /** Monthly goal card on the account home (components/account/GoalCard.tsx). */
   goal: {
     label: "Your {month} goal",
@@ -413,6 +442,7 @@ export const accountEn = {
     area: "Area",
     areaNone: "Choose area",
     save: "Save preferences",
+    addAddress: "+ Add another address",
     saving: "Saving…",
     saved: "Saved. Your next booking will include this.",
   },

@@ -17,7 +17,7 @@ for (const route of ["/login", "/signup", "/forgot-password", "/reset-password",
 }
 
 // Account pages never render without a verified session; order URLs are no exception.
-for (const route of ["/account", "/account/orders", "/account/orders/VEL-00001", "/account/profile"]) {
+for (const route of ["/account", "/account/orders", "/account/orders/VEL-00001", "/account/rewards", "/account/profile"]) {
   const response = await request(route);
   assert.ok([302, 303, 307, 308].includes(response.status), `${route} should redirect when signed out, got ${response.status}`);
   assert.match(response.headers.get("location") ?? "", /\/login/, `${route} should redirect to /login`);

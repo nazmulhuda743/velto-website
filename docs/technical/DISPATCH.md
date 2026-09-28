@@ -29,6 +29,10 @@ The rules (slots, capacity, overlaps, suggested slot) are pure functions in `src
 
 Status: applied and tested on **staging**; applied on **production** 2026-09-27 (owner-approved). The test script stays staging-only.
 
+## In the customer account
+
+`portal_dispatch_plans()` (docs/technical/sql/website_dispatch_portal.sql) gives a linked customer their own planned stops: deliveries by their orders' numbers, pickups by their verified phone. The account home shows a "Today / Tomorrow, Evening 5–9 PM · with Rakib" banner and the delivery window on the active order card. Nothing shows until a manager has planned the stop.
+
 ## Later: the Velto Ops engine
 
 The planned Ops engine (velto-ops-engine, design stage) replaces the legacy `tasks` list with `ops_tasks`, route templates and rider capacity. When it goes live, `website_dispatch_plan` should place jobs on its routes instead of writing `tasks`; the board and the overlap rules stay the same.

@@ -124,6 +124,25 @@ export const getLoyaltyCounts = cache(async (months: number): Promise<{ recent: 
   return d.linked ? { recent: Number(d.recent) || 0, total: Number(d.total) || 0 } : null;
 });
 
+export type DispatchPlan = { kind: "pickup" | "delivery"; orderNumber: string | null; slotDate: string; slot: "morning" | "afternoon" | "evening"; assigneeName: string | null };
+
+/** Planned pickups and deliveries from the dispatch board (day + window + person); [] when none or unavailable. */
+export const getDispatchPlans = cache(async (): Promise<DispatchPlan[]> => {
+  const supabase = await customerSupabase();
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc("portal_dispatch_plans");
+  if (error) {
+    if (error.code !== "PGRST202") console.error("portal_dispatch_plans_failed", error.code);
+    return [];
+  }
+  if (!Array.isArray(data)) return [];
+  return data.filter(
+    (p): p is DispatchPlan =>
+      !!p && typeof p === "object" && ((p as DispatchPlan).kind === "pickup" || (p as DispatchPlan).kind === "delivery") &&
+      /^\d{4}-\d{2}-\d{2}$/.test(String((p as DispatchPlan).slotDate)) && ["morning", "afternoon", "evening"].includes(String((p as DispatchPlan).slot)),
+  );
+});
+
 export type GoalRead = { month: string; today: string; spend: number; orders: number; firstDoubled: number; coupons: GoalCoupon[] };
 
 /** This month's spend and the coupons still valid; null when unavailable (not installed, not linked, or an error). */

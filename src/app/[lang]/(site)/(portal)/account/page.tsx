@@ -5,15 +5,15 @@ import { accountText, orderFormat, type AccountText } from "@/content/i18n/accou
 import { fill, format, localizeHref, type Locale } from "@/lib/i18n/config";
 import { Alert } from "@/components/account/Alert";
 import { LinkHistoryCard } from "@/components/account/LinkHistoryCard";
-import { GoalCard } from "@/components/account/GoalCard";
-import { LoyaltyCard } from "@/components/account/LoyaltyCard";
+import { PlanBanner, planWhen } from "@/components/account/PlanBanner";
+import { RewardsStrip } from "@/components/account/RewardsStrip";
 import { NextPickupCard } from "@/components/account/NextPickupCard";
 import { OrderProgress } from "@/components/account/OrderProgress";
 import { OrderRow } from "@/components/account/OrderRow";
 import { ButtonLink, WhatsAppButton } from "@/components/ui/Button";
 import { serviceLabel } from "@/content/order-status";
 import { WHATSAPP_URL } from "@/content/site";
-import { getCustomerSession, getFeedbackList, getGoal, getLoyaltyCounts, getPortalOrders, type PortalOrder } from "@/lib/customer/portal";
+import { getCustomerSession, getDispatchPlans, getFeedbackList, getGoal, getLoyaltyCounts, getPortalOrders, type DispatchPlan, type PortalOrder } from "@/lib/customer/portal";
 import { orderToRate } from "@/lib/customer/extras";
 import { getSiteContent } from "@/lib/site-content";
 import { laundryRhythm, ROUTINE_DAYS } from "@/lib/customer/rhythm";
@@ -33,9 +33,12 @@ function greeting(t: Home) {
 const areaText = (area: string | null | undefined, locale: Locale, t: AccountText["forms"]) =>
   locale === "en" ? areaLabel(area) : !area ? null : area === "outside" ? t.areaOutside : fill(t.areaSector, { n: area }, locale);
 
-function ActiveOrderCard({ order, more, t, locale }: { order: PortalOrder; more: number; t: Home; locale: Locale }) {
+function ActiveOrderCard({ order, more, t, locale, plan }: { order: PortalOrder; more: number; t: Home; locale: Locale; plan?: DispatchPlan }) {
   const { day, taka, statusTitle } = orderFormat(locale);
   const expected = order.promisedAt ?? order.deliveryDate;
+  const p = accountText(locale).plan;
+  // The planned delivery window from the dispatch board, when a manager has set one.
+  const window = plan ? (planWhen(plan, locale) ?? `${day(plan.slotDate)}, ${p.slots[plan.slot]}${plan.assigneeName ? ` · ${fill(p.with, { name: plan.assigneeName }, locale)}` : ""}`) : null;
   return (
     <section aria-labelledby="active-title" className="rounded-lg border border-line bg-white p-5 shadow-[0_12px_32px_-26px_rgba(0,43,78,0.45)] md:p-7" data-active-order>
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
@@ -52,9 +55,11 @@ function ActiveOrderCard({ order, more, t, locale }: { order: PortalOrder; more:
         <OrderProgress status={order.status} compact />
       </div>
       <dl className="mt-7 grid grid-cols-2 gap-x-6 gap-y-4 border-t border-line pt-5 md:grid-cols-3">
-        <div>
-          <dt className="t-caption uppercase tracking-[0.04em] text-secondary">{t.expectedBack}</dt>
-          <dd className="mt-0.5 font-semibold text-navy">{day(expected) ?? t.weConfirm}</dd>
+        <div className={window ? "col-span-2 md:col-span-3" : ""}>
+          <dt className="t-caption uppercase tracking-[0.04em] text-secondary">{window ? p.windowLabel : t.expectedBack}</dt>
+          <dd className="mt-0.5 font-semibold text-navy" data-delivery-window={window ? "" : undefined}>
+            {window ?? day(expected) ?? t.weConfirm}
+          </dd>
         </div>
         <div>
           <dt className="t-caption uppercase tracking-[0.04em] text-secondary">{order.due > 0 ? t.amountDue : t.payment}</dt>
@@ -89,9 +94,9 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
   const account = session.account;
   const linked = account.link.status === "linked";
   const { loyalty } = await getSiteContent();
-  const [orders, counts, feedback, goal] = linked
-    ? await Promise.all([getPortalOrders(), loyalty.enabled ? getLoyaltyCounts(loyalty.windowMonths) : null, getFeedbackList(), loyalty.goal.enabled ? getGoal(loyalty.goal.doubleFirst) : null])
-    : [[], null, [], null];
+  const [orders, counts, feedback, goal, plans] = linked
+    ? await Promise.all([getPortalOrders(), loyalty.enabled ? getLoyaltyCounts(loyalty.windowMonths) : null, getFeedbackList(), loyalty.goal.enabled ? getGoal(loyalty.goal.doubleFirst) : null, getDispatchPlans()])
+    : [[], null, [], null, []];
   // A delivered order from the last two weeks that isn't rated yet: ask once, on the home.
   const toRate = orderToRate(orders ?? [], new Set(feedback.map((f) => f.orderNumber)));
   const active = (orders ?? []).filter((o) => o.active);
@@ -129,10 +134,13 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
       {params.welcome ? <Alert tone="success">{t.welcome}</Alert> : null}
       {orders === null ? <Alert tone="error">{t.ordersFailed}</Alert> : null}
 
+      {/* 0. The rider is coming today or tomorrow: say so first. */}
+      <PlanBanner plans={plans} locale={locale} />
+
       {/* 1. What's happening with my laundry, or 2. the next pickup (first → the same again) */}
       {active[0] ? (
         <>
-          <ActiveOrderCard order={active[0]} more={active.length - 1} t={t} locale={locale} />
+          <ActiveOrderCard order={active[0]} more={active.length - 1} t={t} locale={locale} plan={plans.find((x) => x.kind === "delivery" && x.orderNumber === active[0].orderNumber)} />
           <div className="flex flex-col gap-3 sm:flex-row">
             <ButtonLink href="/book?source=account" event="book_pickup_click" placement="account_home" className="sm:!px-8">
               {t.bookAnother}
@@ -160,8 +168,7 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
         </section>
       ) : null}
 
-      {loyalty.goal.enabled && goal ? <GoalCard settings={loyalty.goal} goal={goal} locale={locale} /> : null}
-      {loyalty.enabled && counts ? <LoyaltyCard settings={loyalty} counts={counts} locale={locale} /> : null}
+      {linked ? <RewardsStrip loyalty={loyalty} counts={counts} goal={goal} locale={locale} /> : null}
 
       {linked && recent.length ? (
         <section aria-labelledby="recent-title">
@@ -228,24 +235,24 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
       <LinkHistoryCard account={account} />
 
       {suggestRegular ? (
-        <section aria-labelledby="regular-title" className="rounded-lg bg-navy p-5 text-white md:p-6" data-routine>
-          <h2 id="regular-title" className="text-[20px] font-semibold tracking-[-0.01em]">
+        <section aria-labelledby="regular-title" className="rounded-lg border border-line bg-white p-5 md:p-6" data-routine>
+          <h2 id="regular-title" className="text-[20px] font-semibold tracking-[-0.01em] text-navy">
             {t.regularTitle}
           </h2>
-          <p className="mt-1.5 max-w-[56ch] t-small text-white/80">{t.regularBody}</p>
+          <p className="mt-1.5 max-w-[56ch] t-small text-body">{t.regularBody}</p>
           {/* A plain GET form: no script needed, and /book re-validates both values. */}
           <form action={localizeHref("/book", locale)} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
             <input type="hidden" name="source" value="account_routine" />
-            <label className="block t-small font-semibold">
+            <label className="block t-small font-semibold text-navy">
               {t.routineEvery}
-              <select name="routine" defaultValue={(rhythm.everyDays ?? 7) > 10 ? "fortnightly" : "weekly"} className="mt-1 block h-11 w-full rounded-md border border-white/40 bg-navy px-3 text-white sm:w-48">
+              <select name="routine" defaultValue={(rhythm.everyDays ?? 7) > 10 ? "fortnightly" : "weekly"} className="mt-1 block h-11 w-full rounded-md border border-line-strong bg-white px-3 text-navy sm:w-48">
                 <option value="weekly">{t.routineWeekly}</option>
                 <option value="fortnightly">{t.routineFortnightly}</option>
               </select>
             </label>
-            <label className="block t-small font-semibold">
+            <label className="block t-small font-semibold text-navy">
               {t.routineDay}
-              <select name="day" defaultValue={ROUTINE_DAYS[rhythm.usualWeekday ?? 6]} className="mt-1 block h-11 w-full rounded-md border border-white/40 bg-navy px-3 text-white sm:w-44">
+              <select name="day" defaultValue={ROUTINE_DAYS[rhythm.usualWeekday ?? 6]} className="mt-1 block h-11 w-full rounded-md border border-line-strong bg-white px-3 text-navy sm:w-44">
                 {ROUTINE_DAYS.map((d, i) => (
                   <option key={d} value={d}>
                     {f.bookPage.routineDays[i]}
@@ -253,11 +260,11 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
                 ))}
               </select>
             </label>
-            <button type="submit" data-analytics="book_pickup_click" data-placement="account_routine" className="inline-flex h-11 items-center justify-center rounded-md bg-white px-5 font-semibold text-navy hover:bg-white/90">
+            <button type="submit" data-analytics="book_pickup_click" data-placement="account_routine" className="inline-flex h-11 items-center justify-center rounded-md bg-action px-5 font-semibold text-white hover:bg-action-hover">
               {t.routineButton}
             </button>
           </form>
-          <Link href="/regular-laundry" className="mt-3 inline-block t-small font-semibold text-white underline decoration-white/50 underline-offset-4 hover:decoration-white">
+          <Link href="/regular-laundry" className="mt-3 inline-block t-small font-semibold text-navy underline decoration-blue/50 underline-offset-4 hover:decoration-blue">
             {t.routineMore}
           </Link>
         </section>

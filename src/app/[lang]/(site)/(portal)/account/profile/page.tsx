@@ -6,7 +6,6 @@ import { ProfileForm } from "@/components/account/forms";
 import { LinkHistoryCard } from "@/components/account/LinkHistoryCard";
 import { PreferencesForm } from "@/components/account/PreferencesForm";
 import { WHATSAPP_URL } from "@/content/site";
-import { signOutAction } from "@/lib/customer/actions";
 import { getCustomerSession, getPreferences } from "@/lib/customer/portal";
 import { fill } from "@/lib/i18n/config";
 import { displayBdPhone } from "@/lib/customer/validation";
@@ -83,11 +82,6 @@ export default async function ProfilePage() {
             </>
           ) : null}
         </dl>
-        <form action={signOutAction} className="mt-6">
-          <button type="submit" className="inline-flex h-12 items-center rounded-md border border-line-strong bg-white px-5 font-semibold text-navy hover:border-navy">
-            {t.signOut}
-          </button>
-        </form>
       </section>
 
       {a.link.status !== "linked" ? (
