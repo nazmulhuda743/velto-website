@@ -18,6 +18,7 @@ execFileSync(
     "src/lib/analytics/collect-validation.ts",
     "src/lib/admin/insights.ts",
     "src/lib/admin/request-intel.ts",
+    "src/lib/admin/request-outcomes.ts",
     "src/lib/admin/revenue.ts",
     "src/lib/attribution.ts",
     "src/lib/admin/permissions.ts",

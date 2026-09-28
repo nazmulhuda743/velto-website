@@ -857,6 +857,7 @@ export function BookingForm({
   const [extrasOpen, setExtrasOpen] = useState(Boolean(presetNote));
   const [status, setStatus] = useState<Status>({ state: "idle" });
   const started = useRef(false);
+  const phoneEntered = useRef(false);
   const statusRef = useRef<HTMLDivElement>(null);
   const successRef = useRef<HTMLHeadingElement>(null);
 
@@ -872,6 +873,10 @@ export function BookingForm({
     if (!started.current) {
       started.current = true;
       track("booking_start", { section: "booking-form" });
+    }
+    if (key === "phone" && !phoneEntered.current && phoneOk(String(value))) {
+      phoneEntered.current = true;
+      track("phone_entered", { section: "booking-form" });
     }
     setS((prev) => ({ ...prev, [key]: value }));
     if (key in errors) setErrors((prev) => ({ ...prev, [key]: undefined }));

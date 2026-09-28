@@ -85,6 +85,7 @@ export function QuoteForm({
         : { state: "idle" },
   );
   const started = useRef(false);
+  const phoneEntered = useRef(false);
   const summaryRef = useRef<HTMLDivElement>(null);
   const failedRef = useRef<HTMLDivElement>(null);
   const successRef = useRef<HTMLDivElement>(null);
@@ -110,6 +111,10 @@ export function QuoteForm({
       if (!started.current) {
         started.current = true;
         track("quote_start", { section: "quote-form" });
+      }
+      if (key === "phone" && !phoneEntered.current && phoneOk(e.target.value)) {
+        phoneEntered.current = true;
+        track("phone_entered", { section: "quote-form" });
       }
       setData((d) => ({ ...d, [key]: e.target.value }));
       if (key in errors) setErrors((x) => ({ ...x, [key]: undefined }));

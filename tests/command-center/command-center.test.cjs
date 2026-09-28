@@ -103,13 +103,17 @@ test("funnel counts each session at its furthest stage and stays monotonic", () 
     session({ session_id: "a", paths: ["/services/dry-cleaning"], events_seen: ["page_view", "service_view"], services: ["dry-cleaning"] }),
     session({ session_id: "b", paths: ["/book"], events_seen: ["page_view", "booking_start", "booking_success"] }),
     session({ session_id: "c", paths: ["/", "/pricing"], events_seen: ["page_view", "pricing_search", "whatsapp_click"] }),
+    session({ session_id: "d", paths: ["/", "/book"], events_seen: ["page_view", "book_pickup_click", "booking_start", "phone_entered"] }),
+    session({ session_id: "e", paths: ["/"], events_seen: ["page_view", "book_pickup_click"] }),
   ];
   const f = insights.funnel(rows);
-  assert.deepEqual(f.steps.map((s) => s.count), [4, 3, 2, 1, 1]);
-  assert.equal(f.steps[4].ofTotal, 0.25);
+  assert.deepEqual(f.steps.map((s) => s.key), ["landing", "service", "pricing", "clicked", "started", "phone", "success"]);
+  assert.deepEqual(f.steps.map((s) => s.count), [6, 5, 4, 3, 2, 2, 1]);
+  assert.equal(f.steps[6].ofTotal, 1 / 6);
+  assert.equal(f.steps[6].fromPrevious, 0.5, "half of those who typed a phone sent the request");
   assert.equal(f.whatsappFallback, 1);
   for (let i = 1; i < f.steps.length; i++) assert.ok(f.steps[i].count <= f.steps[i - 1].count);
-  assert.deepEqual(insights.funnel([]).steps.map((s) => s.ofTotal), [null, null, null, null, null], "no invented rates for empty data");
+  assert.deepEqual(insights.funnel([]).steps.map((s) => s.ofTotal), [null, null, null, null, null, null, null], "no invented rates for empty data");
 });
 
 test("overview and UTM table only report what sessions carried", () => {
