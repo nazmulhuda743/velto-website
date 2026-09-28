@@ -1,21 +1,600 @@
 import Link from "next/link";
 import { BarList, fmt } from "@/components/admin/charts";
 import { NotificationRefresher } from "@/components/admin/NotificationRefresher";
-import { AdminHeader, Badge, one, type SearchParams } from "@/components/admin/ui";
+import { AdminHeader, Badge, DataNotice, one, type SearchParams } from "@/components/admin/ui";
+import { WhatsAppSend } from "@/components/admin/WhatsAppSend";
 import { CHANNEL_LABELS } from "@/lib/analytics/classify";
 import { getRequests } from "@/lib/admin/analytics-data";
+import { getRequestContext, getRequestJobs, getStaff, type StaffMember } from "@/lib/admin/dispatch";
+import { addDays, CANCEL_REASONS, dayName, dhakaToday, isOpen, SLOTS, slotLabel, suggestedSlot, type DispatchJob, type SlotId } from "@/lib/admin/dispatch-logic";
 import { pageLabel } from "@/lib/admin/insights";
+import { can } from "@/lib/admin/permissions";
 import { requestDate } from "@/lib/admin/request-details";
-import { QUICK_FILTERS, analyseRequest, formatAge, matchesQuickFilter, requestSummary } from "@/lib/admin/request-intel";
+import {
+  callTimer,
+  confirmMessage,
+  duplicateOf,
+  FLOW,
+  flowState,
+  minutesLabel,
+  needsAction,
+  orderCandidates,
+  pickedMessage,
+  priorOrders,
+  readyMessage,
+  type CustomerContext,
+  type FlowKey,
+  type FlowState,
+  type LinkedOrder,
+} from "@/lib/admin/request-flow";
+import { QUICK_FILTERS, analyseRequest, matchesQuickFilter, requestSummary, type RequestInsight } from "@/lib/admin/request-intel";
+import { whatsappLink } from "@/lib/admin/retention-messages";
 import { requireSection } from "@/lib/admin/session";
+import { closeAction, mergeAction, planAction } from "../../dispatch-actions";
+import { contactAction, linkOrderAction, noteAction, pickAction } from "../../request-actions";
 
 export const metadata = { title: "Bookings & quotes · Velto Command Center" };
 
-const waLink = (phone: string) => {
-  const d = phone.replace(/\D/g, "");
-  const intl = d.startsWith("880") ? d : d.startsWith("0") ? `88${d}` : d;
-  return `https://wa.me/${intl}`;
+const SAVED: Record<string, string> = {
+  confirmed: "Confirmed with the customer. Next: give it to someone.",
+  no_answer: "Call attempt saved.",
+  planned: "Saved. The person sees it in Velto Ops under “Assigned to me”.",
+  picked: "Marked as picked up. The Velto Ops task is closed.",
+  linked: "Order linked. The card now follows it in Velto Ops.",
+  unlinked: "Order unlinked.",
+  note: "Note added.",
+  cancelled: "Cancelled. The Velto Ops task is closed with your reason.",
+  merged: "Merged. The repeat request is closed in Velto Ops; this one carries on.",
 };
+
+/** Stage filters, in the order work happens. */
+const STAGE_FILTERS: { key: string; label: string; match: (c: Card) => boolean }[] = [
+  { key: "action", label: "Needs action", match: (c) => needsAction(c.state) },
+  { key: "new", label: "To call", match: (c) => !c.state.closed && c.state.key === "new" },
+  { key: "confirmed", label: "Confirmed", match: (c) => !c.state.closed && c.state.key === "confirmed" },
+  { key: "assigned", label: "Assigned", match: (c) => !c.state.closed && c.state.key === "assigned" },
+  { key: "picked", label: "Order to link", match: (c) => !c.state.closed && c.state.key === "picked" },
+  { key: "process", label: "In process", match: (c) => !c.state.closed && c.state.key === "process" },
+  { key: "ready", label: "Ready / delivery", match: (c) => !c.state.closed && (c.state.key === "ready" || c.state.key === "delivery") },
+  { key: "delivered", label: "Delivered", match: (c) => c.state.key === "delivered" },
+  { key: "closed", label: "Cancelled", match: (c) => Boolean(c.state.closed) },
+  { key: "all", label: "All", match: () => true },
+];
+
+type Card = {
+  job: DispatchJob;
+  insight: RequestInsight | null;
+  order: LinkedOrder | null;
+  delivery: DispatchJob | null;
+  customer: CustomerContext | null;
+  state: FlowState;
+  /** The first open request from the same phone, when this one repeats it. */
+  duplicateOf: DispatchJob | null;
+};
+
+/** Work order: to call first (oldest first), then each later step; finished ones last, newest first. */
+const RANK: Partial<Record<FlowKey, number>> = { new: 0, confirmed: 1, assigned: 2, picked: 3, ready: 4, delivery: 5, process: 6 };
+function sortCards(cards: Card[]) {
+  const rank = (c: Card) => (c.state.closed ? 9 : (RANK[c.state.key] ?? 8));
+  return [...cards].sort((a, b) => {
+    const r = rank(a) - rank(b);
+    if (r) return r;
+    return rank(a) >= 8 ? b.job.created_at.localeCompare(a.job.created_at) : a.job.created_at.localeCompare(b.job.created_at);
+  });
+}
+
+const tel = (phone: string) => `tel:${phone.replace(/[^\d+]/g, "")}`;
+const taka = (n: number | null) => (n === null ? "—" : `৳${fmt(n)}`);
+const cardLabel = (j: DispatchJob) => `${j.source === "website_quote" ? "the quote" : "the pickup"} for ${j.customer_name ?? "a customer"}`;
+const when = (date: string | null, slot: string | null, today: string) =>
+  date ? `${date === today ? "Today" : date === addDays(today, 1) ? "Tomorrow" : dayName(date)}, ${slotLabel(slot).toLowerCase()}` : null;
+
+/* ---------- pieces ---------- */
+
+function StageBar({ state }: { state: FlowState }) {
+  return (
+    <ol aria-label="Progress" className="flex flex-wrap gap-1.5">
+      {FLOW.map((s, i) => {
+        const done = i < state.index || (i === state.index && s.key === "delivered");
+        const current = i === state.index && s.key !== "delivered";
+        const tone = state.closed && current
+          ? "border-error/40 bg-error-soft text-error"
+          : current
+            ? "border-navy bg-navy text-white"
+            : done
+              ? "border-success/30 bg-success-soft text-success"
+              : "border-line bg-white text-secondary";
+        return (
+          <li key={s.key} aria-current={current ? "step" : undefined} className={`rounded-md border px-2.5 py-1 t-caption font-semibold ${tone}`}>
+            {done ? "✓ " : ""}
+            {s.label}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function DaySlotFields({ today, day, slot, idPrefix }: { today: string; day: string; slot: string; idPrefix: string }) {
+  const days = Array.from({ length: 7 }, (_, i) => addDays(today, i));
+  if (day && !days.includes(day)) days.push(day);
+  return (
+    <>
+      <label className="block t-caption font-semibold text-secondary" htmlFor={`${idPrefix}-day`}>
+        Day
+        <select id={`${idPrefix}-day`} name="day" defaultValue={day} className="admin-input mt-1" required>
+          <option value="">Choose a day</option>
+          {days.map((d) => (
+            <option key={d} value={d}>
+              {d === today ? `Today, ${dayName(d)}` : d === addDays(today, 1) ? `Tomorrow, ${dayName(d)}` : dayName(d)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="block t-caption font-semibold text-secondary" htmlFor={`${idPrefix}-slot`}>
+        Time of day
+        <select id={`${idPrefix}-slot`} name="slot" defaultValue={slot} className="admin-input mt-1" required>
+          <option value="">Choose</option>
+          {SLOTS.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.label} ({s.hours})
+            </option>
+          ))}
+        </select>
+      </label>
+    </>
+  );
+}
+
+function Hidden({ job, ret, label, card }: { job: string; ret: string; label: string; card?: string }) {
+  return (
+    <>
+      <input type="hidden" name="job" value={job} />
+      <input type="hidden" name="return" value={ret} />
+      <input type="hidden" name="label" value={label} />
+      {card ? <input type="hidden" name="card" value={card} /> : null}
+    </>
+  );
+}
+
+/** Person + day + time of day for a stop (the pickup, or the order's delivery). */
+function PlanForm({
+  job,
+  card,
+  staff,
+  today,
+  ret,
+  label,
+  submit,
+  suggest,
+}: {
+  job: DispatchJob;
+  card: string;
+  staff: StaffMember[];
+  today: string;
+  ret: string;
+  label: string;
+  submit: string;
+  suggest?: { date: string | null; slot: string | null };
+}) {
+  const suggestion = suggest ?? (job.kind === "pickup" ? suggestedSlot(job.requested, job.created_at, today) : { date: null, slot: null });
+  return (
+    <form action={planAction} className="grid gap-2 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">
+      <Hidden job={job.id} ret={ret} label={label} card={card} />
+      <label className="block t-caption font-semibold text-secondary" htmlFor={`p-${job.id}-person`}>
+        Person
+        <select id={`p-${job.id}-person`} name="person" defaultValue={job.assignee_id ?? ""} className="admin-input mt-1" required>
+          <option value="">Choose someone</option>
+          {staff.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <DaySlotFields today={today} day={job.slot_date ?? suggestion.date ?? ""} slot={job.slot ?? suggestion.slot ?? ""} idPrefix={`p-${job.id}`} />
+      <button type="submit" className="admin-btn">
+        {submit}
+      </button>
+    </form>
+  );
+}
+
+function NextStep({ card, staff, today, ret, canPlan }: { card: Card; staff: StaffMember[]; today: string; ret: string; canPlan: boolean }) {
+  const { job, state, order, delivery, customer } = card;
+  const label = cardLabel(job);
+  const name = job.customer_name;
+  const wa = (text: { bn: string; en: string }) => {
+    const bn = whatsappLink(job.phone, text.bn);
+    const en = whatsappLink(job.phone, text.en);
+    return bn && en ? { bn, en } : null;
+  };
+
+  if (state.closed) {
+    return (
+      <p className="t-small text-error">
+        {state.closed === "merged" ? "Merged into another request from the same customer." : `Cancelled${job.stage === "cancelled" && job.reason ? `: ${job.reason}` : order?.status === "Cancelled" ? ": the order was cancelled in Velto Ops" : ""}.`}
+      </p>
+    );
+  }
+
+  if (state.key === "new") {
+    const suggestion = suggestedSlot(job.requested, job.created_at, today);
+    return (
+      <div className="space-y-3">
+        <p className="font-semibold text-navy">Call the customer and agree a day and time of day.</p>
+        <p className="t-small text-secondary">
+          Asked for: {job.requested ?? "no preference"}
+          {job.contact_attempts ? ` · ${job.contact_attempts} call${job.contact_attempts === 1 ? "" : "s"} without an answer so far` : ""}
+        </p>
+        {job.phone ? (
+          <div className="flex flex-wrap gap-2">
+            <a href={tel(job.phone)} className="admin-btn-secondary">
+              Call {job.phone}
+            </a>
+            {whatsappLink(job.phone, "") ? (
+              <a href={whatsappLink(job.phone, "")!} target="_blank" rel="noopener noreferrer" className="admin-btn-secondary">
+                Open WhatsApp chat
+              </a>
+            ) : null}
+          </div>
+        ) : null}
+        <form action={contactAction} className="grid gap-2 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+          <Hidden job={job.id} ret={ret} label={label} />
+          <input type="hidden" name="outcome" value="confirmed" />
+          <DaySlotFields today={today} day={suggestion.date ?? ""} slot={suggestion.slot ?? ""} idPrefix={`c-${job.id}`} />
+          <button type="submit" className="admin-btn">
+            Confirmed with customer
+          </button>
+        </form>
+        <form action={contactAction}>
+          <Hidden job={job.id} ret={ret} label={label} />
+          <input type="hidden" name="outcome" value="no_answer" />
+          <button type="submit" className="admin-btn-secondary">
+            No answer (call {job.contact_attempts + 1})
+          </button>
+          {job.contact_attempts >= 3 ? <span className="ml-3 t-small text-secondary">Three calls without an answer: send a WhatsApp, or cancel with “No answer after 3 calls”.</span> : null}
+        </form>
+      </div>
+    );
+  }
+
+  if (state.key === "confirmed") {
+    const msg = job.slot_date && job.slot ? wa({ bn: confirmMessage({ name, date: job.slot_date, slot: job.slot as SlotId, rider: null }, "bn"), en: confirmMessage({ name, date: job.slot_date, slot: job.slot as SlotId, rider: null }, "en") }) : null;
+    return (
+      <div className="space-y-3">
+        <p className="font-semibold text-navy">
+          Confirmed for {when(job.slot_date, job.slot, today) ?? "a day to choose"}. Give it to someone.
+        </p>
+        {canPlan ? <PlanForm job={job} card={job.id} staff={staff} today={today} ret={ret} label={label} submit="Assign" /> : <p className="t-small text-secondary">Assigning is on Pickup &amp; delivery.</p>}
+        {msg ? <WhatsAppSend job={job.id} kind="confirm" label="Send the confirmation on WhatsApp:" links={msg} /> : null}
+      </div>
+    );
+  }
+
+  if (state.key === "assigned") {
+    const msg = job.slot_date && job.slot ? wa({ bn: confirmMessage({ name, date: job.slot_date, slot: job.slot as SlotId, rider: job.assignee_name }, "bn"), en: confirmMessage({ name, date: job.slot_date, slot: job.slot as SlotId, rider: job.assignee_name }, "en") }) : null;
+    return (
+      <div className="space-y-3">
+        <p className="font-semibold text-navy">
+          {job.assignee_name ?? "Someone"} collects it {when(job.slot_date, job.slot, today)?.replace(/^(\w)/, (c) => c.toLowerCase()) ?? ""}. When it is collected, mark it picked up.
+        </p>
+        <form action={pickAction} className="flex flex-wrap items-end gap-2">
+          <Hidden job={job.id} ret={ret} label={label} />
+          <label className="block t-caption font-semibold text-secondary" htmlFor={`k-${job.id}-order`}>
+            Ops order number (if made already)
+            <input id={`k-${job.id}-order`} name="order" placeholder="VEL-01952" pattern="[Vv][Ee][Ll][Rr]?-[0-9]{3,6}" maxLength={11} className="admin-input mt-1 w-44 uppercase" />
+          </label>
+          <button type="submit" className="admin-btn">
+            Picked up
+          </button>
+        </form>
+        {msg ? <WhatsAppSend job={job.id} kind="confirm" label="Send the confirmation on WhatsApp:" links={msg} /> : null}
+        {canPlan ? (
+          <details>
+            <summary className="cursor-pointer t-small font-semibold text-navy underline underline-offset-4">Change the person or time</summary>
+            <div className="mt-2">
+              <PlanForm job={job} card={job.id} staff={staff} today={today} ret={ret} label={label} submit="Save" />
+            </div>
+          </details>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (state.key === "picked" && job.order_number) {
+    // Linked, but the order couldn't be read (Ops unreachable, or the number was changed in Ops).
+    return (
+      <div className="space-y-3">
+        <p className="font-semibold text-navy">Picked up and linked to {job.order_number}. Its status in Velto Ops can&apos;t be read right now.</p>
+        <form action={linkOrderAction} className="inline">
+          <Hidden job={job.id} ret={ret} label={label} />
+          <input type="hidden" name="clear" value="1" />
+          <button type="submit" className="t-small font-semibold text-secondary underline underline-offset-4 hover:text-navy">
+            Wrong order? Unlink {job.order_number}
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  if (state.key === "picked") {
+    const candidates = orderCandidates(job, customer);
+    const msg = wa({ bn: pickedMessage({ name, orderNumber: null }, "bn"), en: pickedMessage({ name, orderNumber: null }, "en") });
+    return (
+      <div className="space-y-3">
+        <p className="font-semibold text-navy">Picked up{job.picked_at ? ` ${requestDate(job.picked_at)}` : ""}. Link the order made in Velto Ops, so this card can follow it.</p>
+        {candidates.length ? (
+          <div className="flex flex-wrap gap-2">
+            {candidates.map((o) => (
+              <form key={o.orderNumber} action={linkOrderAction}>
+                <Hidden job={job.id} ret={ret} label={label} />
+                <input type="hidden" name="order" value={o.orderNumber} />
+                <button type="submit" className="admin-btn">
+                  Link {o.orderNumber} <span className="font-normal opacity-80">({o.status}, made {requestDate(o.createdAt)})</span>
+                </button>
+              </form>
+            ))}
+          </div>
+        ) : (
+          <p className="t-small text-secondary">No new order for this phone in Velto Ops yet.</p>
+        )}
+        <form action={linkOrderAction} className="flex flex-wrap items-end gap-2">
+          <Hidden job={job.id} ret={ret} label={label} />
+          <label className="block t-caption font-semibold text-secondary" htmlFor={`l-${job.id}-order`}>
+            Or type the order number
+            <input id={`l-${job.id}-order`} name="order" placeholder="VEL-01952" required pattern="[Vv][Ee][Ll][Rr]?-[0-9]{3,6}" maxLength={11} className="admin-input mt-1 w-44 uppercase" />
+          </label>
+          <button type="submit" className="admin-btn-secondary">
+            Link order
+          </button>
+        </form>
+        {msg ? <WhatsAppSend job={job.id} kind="picked" label="Tell the customer on WhatsApp:" links={msg} /> : null}
+      </div>
+    );
+  }
+
+  // Following the linked order.
+  const number = job.order_number!;
+  const orderLine = order ? (
+    <p className="t-small text-secondary">
+      {number} · {order.status} in Velto Ops{order.items ? ` · ${order.items} item${order.items === 1 ? "" : "s"}` : ""} · {taka(order.total)}
+      {order.due ? <span className="font-semibold text-navy"> · due {taka(order.due)}</span> : order.total ? " · paid" : ""}
+    </p>
+  ) : null;
+  const unlink = (
+    <form action={linkOrderAction} className="inline">
+      <Hidden job={job.id} ret={ret} label={label} />
+      <input type="hidden" name="clear" value="1" />
+      <button type="submit" className="t-small font-semibold text-secondary underline underline-offset-4 hover:text-navy">
+        Wrong order? Unlink {number}
+      </button>
+    </form>
+  );
+
+  if (state.key === "process") {
+    const msg = wa({ bn: pickedMessage({ name, orderNumber: number }, "bn"), en: pickedMessage({ name, orderNumber: number }, "en") });
+    return (
+      <div className="space-y-3">
+        <p className="font-semibold text-navy">At the outlet. Nothing to do until the order is Ready in Velto Ops.</p>
+        {orderLine}
+        {msg ? <WhatsAppSend job={job.id} kind="picked" label="Tell the customer on WhatsApp:" links={msg} /> : null}
+        {unlink}
+      </div>
+    );
+  }
+
+  if (state.key === "ready" || state.key === "delivery") {
+    const planned = delivery && delivery.assignee_id && delivery.slot_date;
+    const msg = wa({
+      bn: readyMessage({ name, orderNumber: number, date: planned ? delivery!.slot_date : null, slot: planned ? (delivery!.slot as SlotId) : null }, "bn"),
+      en: readyMessage({ name, orderNumber: number, date: planned ? delivery!.slot_date : null, slot: planned ? (delivery!.slot as SlotId) : null }, "en"),
+    });
+    return (
+      <div className="space-y-3">
+        <p className="font-semibold text-navy">
+          {planned ? `Delivery: ${delivery!.assignee_name ?? "someone"}, ${when(delivery!.slot_date, delivery!.slot, today)?.toLowerCase()}.` : "Ready. Plan the delivery."}
+        </p>
+        {orderLine}
+        {delivery && isOpen(delivery) && canPlan ? (
+          planned ? (
+            <details>
+              <summary className="cursor-pointer t-small font-semibold text-navy underline underline-offset-4">Change the delivery person or time</summary>
+              <div className="mt-2">
+                <PlanForm job={delivery} card={job.id} staff={staff} today={today} ret={ret} label={`Delivery ${number} – ${name ?? "customer"}`} submit="Save" />
+              </div>
+            </details>
+          ) : (
+            <PlanForm
+              job={delivery}
+              card={job.id}
+              staff={staff}
+              today={today}
+              ret={ret}
+              label={`Delivery ${number} – ${name ?? "customer"}`}
+              submit="Plan delivery"
+              suggest={{ date: order?.deliveryDate && order.deliveryDate >= today ? order.deliveryDate : null, slot: null }}
+            />
+          )
+        ) : !delivery ? (
+          <p className="t-small text-secondary">The delivery appears here once the order is on the delivery board (refresh in a moment).</p>
+        ) : null}
+        {msg ? <WhatsAppSend job={job.id} kind="ready" label="Tell the customer on WhatsApp:" links={msg} /> : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="font-semibold text-success">Delivered. All done.</p>
+      {orderLine}
+    </div>
+  );
+}
+
+const linkify = (value: string) =>
+  value.split(/(\s+)/).map((part, i) =>
+    /^https:\/\/\S+$/.test(part) ? (
+      <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="font-semibold underline underline-offset-4">
+        {part.includes("/go/photo/") ? "Photo" : "Link"}
+      </a>
+    ) : (
+      part
+    ),
+  );
+
+function RequestCard({ card, staff, today, ret, open, canPlan }: { card: Card; staff: StaffMember[]; today: string; ret: string; open: boolean; canPlan: boolean }) {
+  const { job, insight, state, customer } = card;
+  const prior = priorOrders(job, customer);
+  const timer = callTimer(job);
+  const current = FLOW[state.index];
+  const d = insight?.details ?? {};
+  const label = cardLabel(job);
+  return (
+    <li id={`r-${job.id}`} className={`admin-card scroll-mt-24 ${timer?.tone === "late" ? "border-error/40" : timer?.tone === "soon" ? "border-[#f0d49a]" : ""}`}>
+      <details className="group" open={open || undefined}>
+        <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-5 py-4">
+          <Badge tone={job.source === "website_quote" ? "amber" : "blue"}>{job.source === "website_quote" ? "Quote" : "Booking"}</Badge>
+          <span className="font-semibold text-navy">{job.customer_name ?? "Customer"}</span>
+          <span className="t-small text-secondary">{job.phone}</span>
+          <span className="t-small text-secondary">{insight?.service ?? ""}</span>
+          <span className="t-small text-secondary">{job.area ?? ""}</span>
+          <span className="ml-auto flex items-center gap-2 t-small text-secondary">
+            {timer ? (
+              <span className={`rounded-full px-2 py-0.5 t-caption font-semibold ${timer.tone === "late" ? "bg-error-soft text-error" : timer.tone === "soon" ? "bg-[#fff1d6] text-[#8a5a00]" : "bg-soft text-navy"}`}>
+                Waiting {minutesLabel(timer.minutes)}
+              </span>
+            ) : null}
+            <span className={`rounded-full px-2 py-0.5 t-caption font-semibold ${state.closed ? "bg-error-soft text-error" : state.key === "delivered" ? "bg-success-soft text-success" : "bg-navy text-white"}`}>
+              {state.closed ? (state.closed === "merged" ? "Merged" : "Cancelled") : current.label}
+            </span>
+          </span>
+        </summary>
+        <div className="space-y-5 border-t border-line px-5 py-5">
+          <StageBar state={state} />
+
+          {card.duplicateOf ? (
+            <div className="rounded-md border border-[#f0d49a] bg-[#fff8eb] px-4 py-3 t-small text-navy">
+              <p>
+                The same number sent another request {requestDate(card.duplicateOf.created_at)} ({card.duplicateOf.requested ?? "no preferred time"}). One visit is enough.
+              </p>
+              {canPlan ? (
+                <form action={mergeAction} className="mt-2">
+                  <input type="hidden" name="keep_job" value={card.duplicateOf.id} />
+                  <input type="hidden" name="remove_job" value={job.id} />
+                  <input type="hidden" name="card" value={card.duplicateOf.id} />
+                  <input type="hidden" name="label" value={job.customer_name ?? ""} />
+                  <input type="hidden" name="return" value={ret} />
+                  <button type="submit" className="admin-btn-secondary">
+                    Merge this into the first request
+                  </button>
+                </form>
+              ) : null}
+            </div>
+          ) : null}
+
+          <section aria-label="Next step" className={`rounded-md border p-4 ${state.closed ? "border-error/30 bg-error-soft/40" : "border-blue/30 bg-[#f0f7fc]"}`}>
+            <NextStep card={card} staff={staff} today={today} ret={ret} canPlan={canPlan} />
+          </section>
+
+          <dl className="grid gap-x-8 gap-y-2 md:grid-cols-2 xl:grid-cols-3">
+            <div>
+              <dt className="t-caption uppercase tracking-[0.04em] text-secondary">Customer</dt>
+              <dd className="text-navy">
+                {prior.count > 0 ? (
+                  <>
+                    Returning · {prior.count} earlier order{prior.count === 1 ? "" : "s"}
+                    {prior.last ? <span className="text-secondary"> · last {prior.last}</span> : null}
+                  </>
+                ) : (
+                  "New to Velto (no earlier orders on this number)"
+                )}
+              </dd>
+            </div>
+            <div>
+              <dt className="t-caption uppercase tracking-[0.04em] text-secondary">Address</dt>
+              <dd className="text-navy [overflow-wrap:anywhere]">{[job.address, job.area].filter(Boolean).join(", ") || "Not given"}</dd>
+            </div>
+            <div>
+              <dt className="t-caption uppercase tracking-[0.04em] text-secondary">Came in</dt>
+              <dd className="text-navy">{requestDate(job.created_at)}</dd>
+            </div>
+            {Object.entries(d)
+              .filter(([k]) => !["Campaign", "Name", "Phone", "Area", "Address"].includes(k))
+              .map(([k, v]) => (
+                <div key={k}>
+                  <dt className="t-caption uppercase tracking-[0.04em] text-secondary">{k}</dt>
+                  <dd className="text-navy [overflow-wrap:anywhere]">{linkify(v)}</dd>
+                </div>
+              ))}
+            {insight ? (
+              <div>
+                <dt className="t-caption uppercase tracking-[0.04em] text-secondary">Source</dt>
+                <dd className="text-navy">
+                  {CHANNEL_LABELS[insight.channel]}
+                  {insight.landing ? ` · ${pageLabel(insight.landing)}` : ""}
+                  {insight.device ? ` · ${insight.device}` : ""}
+                </dd>
+              </div>
+            ) : null}
+          </dl>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <form action={noteAction} className="flex items-end gap-2">
+              <Hidden job={job.id} ret={ret} label={label} />
+              <label className="block min-w-0 flex-1 t-caption font-semibold text-secondary" htmlFor={`n-${job.id}`}>
+                Note for the team
+                <input id={`n-${job.id}`} name="note" maxLength={300} required placeholder="e.g. Call before coming, 3rd floor" className="admin-input mt-1" />
+              </label>
+              <button type="submit" className="admin-btn-secondary">
+                Add
+              </button>
+            </form>
+            {isOpen(job) && canPlan ? (
+              <details className="lg:justify-self-end">
+                <summary className="admin-btn-danger cursor-pointer list-none">Cancel…</summary>
+                <form action={closeAction} className="mt-2 grid gap-2 rounded-md border border-line bg-soft p-3 sm:w-[340px]">
+                  <Hidden job={job.id} ret={ret} label={`${job.source === "website_quote" ? "Quote" : "Pickup"} – ${job.customer_name ?? "customer"}`} />
+                  <input type="hidden" name="outcome" value="cancelled" />
+                  <label className="block t-caption font-semibold text-secondary" htmlFor={`x-${job.id}-reason`}>
+                    Reason
+                    <select id={`x-${job.id}-reason`} name="reason" className="admin-input mt-1" defaultValue={job.contact_attempts >= 3 ? CANCEL_REASONS[1] : CANCEL_REASONS[0]}>
+                      {CANCEL_REASONS.map((r) => (
+                        <option key={r}>{r}</option>
+                      ))}
+                      <option value="other">Other (write below)</option>
+                    </select>
+                  </label>
+                  <input name="other" maxLength={200} placeholder="Other reason" className="admin-input" aria-label="Other reason" />
+                  <button type="submit" className="admin-btn-danger">
+                    Cancel this request
+                  </button>
+                </form>
+              </details>
+            ) : null}
+          </div>
+
+          {job.history.length ? (
+            <section aria-label="Timeline" className="border-t border-line pt-4">
+              <h3 className="t-caption font-semibold uppercase tracking-[0.04em] text-secondary">Timeline</h3>
+              <ol className="mt-2 space-y-1.5">
+                {[...job.history].reverse().map((h, i) => (
+                  <li key={i} className="grid grid-cols-[7.5rem_minmax(0,1fr)] gap-3 t-small">
+                    <span className="tabular-nums text-secondary">{requestDate(h.at)}</span>
+                    <span className="text-navy [overflow-wrap:anywhere]">
+                      <span className="font-semibold">{h.by}</span> · {h.action}
+                      {h.detail ? <span className="text-secondary"> — {h.detail}</span> : null}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          ) : null}
+        </div>
+      </details>
+    </li>
+  );
+}
 
 function Breakdown({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -31,59 +610,174 @@ const bars = (list: { label: string; count: number }[], limit = 6) => list.slice
 const PAGE_SIZE = 30;
 
 export default async function RequestsPage({ searchParams }: { searchParams: SearchParams }) {
-  await requireSection("requests");
+  const admin = await requireSection("requests");
+  const canPlan = can(admin.role, "dispatch");
   const params = await searchParams;
+  const stage = one(params.stage) ?? "action";
   const filter = one(params.filter) ?? "all";
   const q = (one(params.q) ?? "").trim().toLowerCase().slice(0, 60);
+  const openId = one(params.open) ?? "";
+  const saved = one(params.saved);
+  const error = one(params.error);
+  const today = dhakaToday();
 
-  const loaded = await getRequests(500);
-  const all = loaded.state === "ok" ? loaded.data.map((r) => analyseRequest(r)) : [];
-  const summary = requestSummary(all);
-  const rows = all.filter((i) => matchesQuickFilter(i, filter) && (!q || `${i.request.title} ${i.request.description ?? ""}`.toLowerCase().includes(q)));
-  // Show the newest first in pages of 30, so the list stays quick to scan on a phone.
+  const [loaded, jobsLoaded, staff] = await Promise.all([getRequests(500), getRequestJobs(), getStaff()]);
+  const tasks = loaded.state === "ok" ? loaded.data : [];
+  const insights = tasks.map((r) => analyseRequest(r));
+  const byTask = new Map(insights.map((i) => [i.request.id, i]));
+  const pickups = jobsLoaded.state === "ok" ? jobsLoaded.data.pickups : [];
+  const deliveries = jobsLoaded.state === "ok" ? jobsLoaded.data.deliveries : [];
+  const deliveryFor = new Map<string, DispatchJob>();
+  for (const dj of deliveries) {
+    if (!dj.order_number || dj.stage === "cancelled" || dj.stage === "merged") continue;
+    const had = deliveryFor.get(dj.order_number);
+    if (!had || had.created_at < dj.created_at) deliveryFor.set(dj.order_number, dj);
+  }
+  const context = await getRequestContext(
+    [...new Set(pickups.map((j) => j.phone_key).filter((k): k is string => Boolean(k)))],
+    [...new Set(pickups.map((j) => j.order_number).filter((o): o is string => Boolean(o)))],
+  );
+
+  const duplicates = duplicateOf(pickups);
+  const cards: Card[] = pickups.map((job) => {
+    const order = job.order_number ? (context.orders[job.order_number] ?? null) : null;
+    const delivery = job.order_number ? (deliveryFor.get(job.order_number) ?? null) : null;
+    return {
+      job,
+      insight: job.task_id ? (byTask.get(job.task_id) ?? null) : null,
+      order,
+      delivery,
+      customer: job.phone_key ? (context.customers[job.phone_key] ?? null) : null,
+      state: flowState(job, order, delivery),
+      duplicateOf: duplicates.get(job.id) ?? null,
+    };
+  });
+  const onBoard = new Set(pickups.map((j) => j.task_id).filter(Boolean));
+  const older = insights.filter((i) => !onBoard.has(i.request.id));
+
+  const stageFilter = STAGE_FILTERS.find((f) => f.key === stage) ?? STAGE_FILTERS[0];
+  const matchesQ = (c: Card) => !q || `${c.job.customer_name ?? ""} ${c.job.phone ?? ""} ${c.job.phone_key ?? ""} ${c.job.area ?? ""} ${c.job.order_number ?? ""}`.toLowerCase().includes(q);
+  const matchesFilter = (c: Card) => filter === "all" || (c.insight ? matchesQuickFilter(c.insight, filter) : false);
+  const rows = sortCards(cards.filter((c) => stageFilter.match(c) && matchesQ(c) && matchesFilter(c)));
   const shown = Math.min(rows.length, Math.max(PAGE_SIZE, Math.min(Number(one(params.show)) || PAGE_SIZE, 500)));
-  const moreHref = `/admin/requests?${new URLSearchParams({ filter, ...(q ? { q } : {}), show: String(shown + PAGE_SIZE) })}`;
+  const base = { stage, ...(filter !== "all" ? { filter } : {}), ...(q ? { q } : {}) };
+  const ret = `/admin/requests?${new URLSearchParams({ ...base, ...(shown > PAGE_SIZE ? { show: String(shown) } : {}) })}`;
+  const moreHref = `/admin/requests?${new URLSearchParams({ ...base, show: String(shown + PAGE_SIZE) })}`;
+
+  const summary = requestSummary(insights);
+  const toCall = cards.filter((c) => !c.state.closed && c.state.key === "new");
+  const late = toCall.filter((c) => (callTimer(c.job)?.tone ?? "ok") !== "ok").length;
+  const action = cards.filter((c) => needsAction(c.state)).length;
+  const openCard = openId && rows.some((c) => c.job.id === openId) ? openId : rows.length === 1 ? rows[0].job.id : "";
 
   return (
     <>
       <NotificationRefresher />
       <AdminHeader
         title="Bookings & quotes"
-        intro="Every pickup booking and household quote sent from the website. They live in the Velto Ops task list. Status here is read from Ops."
+        intro="Every pickup booking and household quote from the website, from the first call to delivery. Open a request to see where it is and do the next step right there."
         actions={
-          <Link href="/admin/dispatch" className="admin-btn">
-            Plan pickups & deliveries
+          <Link href="/admin/dispatch" className="admin-btn-secondary">
+            Today&apos;s plan by person
           </Link>
         }
       />
 
-      {loaded.state !== "ok" ? (
+      {loaded.state === "error" || loaded.state === "not_configured" ? (
         <p role="alert" className="mt-6 t-small text-error">
           {loaded.state === "error" ? loaded.message : "Velto Ops is not connected on this server."}
+        </p>
+      ) : null}
+      {jobsLoaded.state === "error" ? (
+        <div className="mt-4">
+          <DataNotice state="error" message={jobsLoaded.message} />
+        </div>
+      ) : null}
+      {saved && SAVED[saved] ? (
+        <p role="status" className="mt-6 rounded-md border border-success/30 bg-success-soft px-4 py-3 t-small font-medium text-success">
+          {SAVED[saved]}
+        </p>
+      ) : null}
+      {error ? (
+        <p role="alert" className="mt-6 rounded-md border border-error/30 bg-error-soft px-4 py-3 t-small font-medium text-error">
+          {error}
         </p>
       ) : null}
 
       <section aria-label="Request totals" className="admin-card mt-6 grid grid-cols-2 divide-line md:grid-cols-5 md:divide-x">
         {[
-          { label: "Today", value: summary.today },
-          { label: "Last 7 days", value: summary.last7 },
-          { label: "Last 30 days", value: summary.last30 },
-          { label: "Bookings / quotes", value: `${fmt(summary.bookings)} / ${fmt(summary.quotes)}` },
-          {
-            label: "Open in Ops",
-            value: summary.open,
-            sub: summary.openOver24h ? `${summary.openOver24h} older than 24 h` : summary.oldestOpenHours !== null ? `oldest ${formatAge(summary.oldestOpenHours)}` : "none open",
-          },
+          { label: "Needs action", value: action, sub: action ? "open a request to do the next step" : "nothing waiting", alert: false },
+          { label: "Waiting for a call", value: toCall.length, sub: late ? `${late} waiting over 30 min` : toCall.length ? "all under 30 min" : "none", alert: late > 0 },
+          { label: "Today", value: summary.today, sub: null, alert: false },
+          { label: "Last 7 days", value: summary.last7, sub: null, alert: false },
+          { label: "Bookings / quotes", value: `${fmt(summary.bookings)} / ${fmt(summary.quotes)}`, sub: "last 500", alert: false },
         ].map((s, i) => (
           <div key={s.label} className={`p-5 ${i > 1 ? "border-t border-line md:border-t-0" : ""} ${i === 4 ? "col-span-2 md:col-span-1" : ""}`}>
             <p className="t-small text-secondary">{s.label}</p>
             <p className="mt-1 text-[28px] font-semibold leading-none tabular-nums text-navy">{typeof s.value === "number" ? fmt(s.value) : s.value}</p>
-            {"sub" in s && s.sub ? <p className={`mt-2 t-caption ${summary.openOver24h ? "font-semibold text-error" : "text-secondary"}`}>{s.sub}</p> : null}
+            {s.sub ? <p className={`mt-2 t-caption ${s.alert ? "font-semibold text-error" : "text-secondary"}`}>{s.sub}</p> : null}
           </div>
         ))}
       </section>
 
-      <details className="admin-card group mt-4">
+      <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Stage">
+          {STAGE_FILTERS.map((f) => {
+            const n = cards.filter(f.match).length;
+            const active = stageFilter.key === f.key;
+            return (
+              <Link
+                key={f.key}
+                href={`/admin/requests?${new URLSearchParams({ stage: f.key, ...(filter !== "all" ? { filter } : {}), ...(q ? { q } : {}) })}`}
+                aria-current={active ? "page" : undefined}
+                className={`rounded-full border px-3 py-1.5 t-small font-semibold ${active ? "border-navy bg-navy text-white" : "border-line bg-white text-navy hover:border-navy"}`}
+              >
+                {f.label} <span className={active ? "text-white/70" : "text-secondary"}>{n}</span>
+              </Link>
+            );
+          })}
+        </div>
+        <form className="flex shrink-0 gap-2">
+          <input type="hidden" name="stage" value={stage} />
+          {filter !== "all" ? <input type="hidden" name="filter" value={filter} /> : null}
+          <input name="q" defaultValue={q} placeholder="Name, phone, area or VEL-" className="admin-input lg:w-64" aria-label="Search requests" />
+          <button className="admin-btn-secondary" type="submit">
+            Search
+          </button>
+        </form>
+      </div>
+      <nav aria-label="More filters" className="mt-3 flex flex-wrap gap-x-4 gap-y-1 t-small">
+        <span className="text-secondary">Show only:</span>
+        {QUICK_FILTERS.filter((f) => !["new", "open", "done", "today"].includes(f.key)).map((f) => (
+          <Link
+            key={f.key}
+            href={`/admin/requests?${new URLSearchParams({ stage, ...(f.key !== "all" ? { filter: f.key } : {}), ...(q ? { q } : {}) })}`}
+            aria-current={filter === f.key ? "page" : undefined}
+            className={filter === f.key ? "font-semibold text-navy underline underline-offset-4" : "text-secondary hover:text-navy"}
+          >
+            {f.label}
+          </Link>
+        ))}
+      </nav>
+
+      <p className="mt-6 t-small text-secondary">
+        {rows.length > shown ? `Showing ${shown} of ${rows.length} requests` : `${rows.length} request${rows.length === 1 ? "" : "s"}`}
+        {stageFilter.key === "action" && !rows.length ? ". Everything is moving. New requests appear here first." : ""}
+      </p>
+      <ul className="mt-2 space-y-2">
+        {rows.slice(0, shown).map((c) => (
+          <RequestCard key={c.job.id} card={c} staff={staff} today={today} ret={ret} open={c.job.id === openCard} canPlan={canPlan} />
+        ))}
+      </ul>
+      {rows.length > shown ? (
+        <div className="mt-4 flex justify-center">
+          <Link href={moreHref} scroll={false} className="admin-btn-secondary">
+            Show {Math.min(PAGE_SIZE, rows.length - shown)} more
+          </Link>
+        </div>
+      ) : null}
+
+      <details className="admin-card group mt-8">
         <summary className="flex cursor-pointer list-none items-center justify-between px-5 py-4 font-semibold text-navy">
           Breakdown by service, area, source, landing page and device
           <span aria-hidden="true" className="text-secondary transition-transform group-open:rotate-180">
@@ -92,133 +786,41 @@ export default async function RequestsPage({ searchParams }: { searchParams: Sea
         </summary>
         <div className="grid gap-6 border-t border-line p-5 md:grid-cols-2 xl:grid-cols-3">
           <Breakdown title="Service">
-            <BarList items={bars(summary.byService)} total={all.length} />
+            <BarList items={bars(summary.byService)} total={insights.length} />
           </Breakdown>
           <Breakdown title="Area">
-            <BarList items={bars(summary.byArea)} total={all.length} />
+            <BarList items={bars(summary.byArea)} total={insights.length} />
           </Breakdown>
           <Breakdown title="Source">
-            <BarList items={bars(summary.byChannel)} total={all.length} />
+            <BarList items={bars(summary.byChannel)} total={insights.length} />
           </Breakdown>
           <Breakdown title="Landing page">
-            <BarList items={bars(summary.byLanding.map((l) => ({ ...l, label: l.label.startsWith("/") ? pageLabel(l.label) : l.label })))} total={all.length} />
+            <BarList items={bars(summary.byLanding.map((l) => ({ ...l, label: l.label.startsWith("/") ? pageLabel(l.label) : l.label })))} total={insights.length} />
           </Breakdown>
           <Breakdown title="Device">
-            <BarList items={bars(summary.byDevice)} total={all.length} />
+            <BarList items={bars(summary.byDevice)} total={insights.length} />
           </Breakdown>
         </div>
-        <p className="border-t border-line px-5 py-3 t-caption text-secondary">
-          Source, landing page and device come from the campaign context sent with each request. Requests sent before this was added show “Not recorded”.
-        </p>
       </details>
 
-      <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Quick filters">
-          {QUICK_FILTERS.map((f) => {
-            const n = f.key === "all" ? all.length : all.filter((i) => matchesQuickFilter(i, f.key)).length;
-            return (
-              <Link
-                key={f.key}
-                href={`/admin/requests?${new URLSearchParams({ filter: f.key, ...(q ? { q } : {}) })}`}
-                aria-current={filter === f.key ? "page" : undefined}
-                className={`rounded-full border px-3 py-1.5 t-small font-semibold ${
-                  filter === f.key ? "border-navy bg-navy text-white" : "border-line bg-white text-navy hover:border-navy"
-                }`}
-              >
-                {f.label} <span className={filter === f.key ? "text-white/70" : "text-secondary"}>{n}</span>
-              </Link>
-            );
-          })}
-        </div>
-        <form className="flex shrink-0 gap-2">
-          <input type="hidden" name="filter" value={filter} />
-          <input name="q" defaultValue={q} placeholder="Search name, phone, area" className="admin-input lg:w-64" aria-label="Search requests" />
-          <button className="admin-btn-secondary" type="submit">
-            Search
-          </button>
-        </form>
-      </div>
-
-      <p className="mt-6 t-small text-secondary">
-        {rows.length > shown ? `Showing ${shown} of ${rows.length} requests` : `${rows.length} request${rows.length === 1 ? "" : "s"}`}
-      </p>
-      <ul className="mt-2 space-y-2">
-        {rows.slice(0, shown).map((i) => {
-          const r = i.request;
-          const d = i.details;
-          return (
-            <li key={r.id} className="admin-card">
-              <details className="group">
-                <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-4 gap-y-1 px-5 py-4">
-                  <Badge tone={i.kind === "booking" ? "blue" : "amber"}>{i.kind === "booking" ? "Booking" : "Quote"}</Badge>
-                  <span className="font-semibold text-navy">{d.Name ?? r.title}</span>
-                  <span className="t-small text-secondary">{d.Phone}</span>
-                  <span className="t-small text-secondary">{i.service ?? ""}</span>
-                  <span className="t-small text-secondary">{i.area ?? ""}</span>
-                  <span className="ml-auto t-small text-secondary">
-                    {requestDate(r.created_at)}
-                    {i.open ? <span className={i.ageHours >= 24 ? "font-semibold text-error" : ""}> · open {formatAge(i.ageHours)}</span> : null}
-                  </span>
-                  <Badge tone={r.status === "done" ? "green" : "neutral"}>{r.status}</Badge>
-                </summary>
-                <div className="border-t border-line px-5 py-4">
-                  <dl className="grid gap-x-8 gap-y-2 md:grid-cols-2 xl:grid-cols-3">
-                    {Object.entries(d)
-                      .filter(([k]) => k !== "Campaign")
-                      .map(([k, v]) => (
-                        <div key={k}>
-                          <dt className="t-caption uppercase tracking-[0.04em] text-secondary">{k}</dt>
-                          <dd className="text-navy [overflow-wrap:anywhere]">{v}</dd>
-                        </div>
-                      ))}
-                    <div>
-                      <dt className="t-caption uppercase tracking-[0.04em] text-secondary">Outlet</dt>
-                      <dd className="text-navy">{r.outlet_code ?? "—"}</dd>
-                    </div>
-                    <div>
-                      <dt className="t-caption uppercase tracking-[0.04em] text-secondary">Source</dt>
-                      <dd className="text-navy">
-                        {CHANNEL_LABELS[i.channel]}
-                        {i.campaign.utm_campaign ? ` · ${i.campaign.utm_campaign}` : ""}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="t-caption uppercase tracking-[0.04em] text-secondary">Landing page</dt>
-                      <dd className="text-navy">{i.landing ? pageLabel(i.landing) : "Not recorded"}</dd>
-                    </div>
-                    <div>
-                      <dt className="t-caption uppercase tracking-[0.04em] text-secondary">Device</dt>
-                      <dd className="text-navy">{i.device ?? "Not recorded"}</dd>
-                    </div>
-                    {r.done_by_name ? (
-                      <div>
-                        <dt className="t-caption uppercase tracking-[0.04em] text-secondary">Done by</dt>
-                        <dd className="text-navy">{r.done_by_name}</dd>
-                      </div>
-                    ) : null}
-                  </dl>
-                  {d.Phone ? (
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <a href={`tel:${d.Phone.replace(/[^\d+]/g, "")}`} className="admin-btn-secondary">
-                        Call
-                      </a>
-                      <a href={waLink(d.Phone)} target="_blank" rel="noopener noreferrer" className="admin-btn-secondary">
-                        WhatsApp
-                      </a>
-                    </div>
-                  ) : null}
-                </div>
-              </details>
-            </li>
-          );
-        })}
-      </ul>
-      {rows.length > shown ? (
-        <div className="mt-4 flex justify-center">
-          <Link href={moreHref} scroll={false} className="admin-btn-secondary">
-            Show {Math.min(PAGE_SIZE, rows.length - shown)} more
-          </Link>
-        </div>
+      {older.length ? (
+        <details className="admin-card mt-4">
+          <summary className="cursor-pointer list-none px-5 py-4 font-semibold text-navy">
+            Older requests, before this flow ({older.length}) <span className="font-normal text-secondary">· status as in Velto Ops</span>
+          </summary>
+          <ul className="divide-y divide-line border-t border-line">
+            {older.slice(0, 100).map((i) => (
+              <li key={i.request.id} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3 t-small">
+                <Badge tone={i.kind === "booking" ? "blue" : "amber"}>{i.kind === "booking" ? "Booking" : "Quote"}</Badge>
+                <span className="font-semibold text-navy">{i.details.Name ?? i.request.title}</span>
+                <span className="text-secondary">{i.details.Phone}</span>
+                <span className="text-secondary">{i.service ?? ""}</span>
+                <span className="ml-auto text-secondary">{requestDate(i.request.created_at)}</span>
+                <Badge tone={i.request.status === "done" ? "green" : "neutral"}>{i.request.status}</Badge>
+              </li>
+            ))}
+          </ul>
+        </details>
       ) : null}
     </>
   );

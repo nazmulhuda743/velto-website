@@ -36,7 +36,9 @@ const SAVED: Record<string, string> = {
 
 const STAGE: Record<string, { label: string; tone: "neutral" | "blue" | "green" | "amber" }> = {
   new: { label: "New", tone: "amber" },
+  confirmed: { label: "Confirmed · needs a person", tone: "amber" },
   assigned: { label: "Needs a slot", tone: "amber" },
+  picked: { label: "Picked up", tone: "green" },
   scheduled: { label: "Scheduled", tone: "blue" },
   done: { label: "Done", tone: "green" },
   cancelled: { label: "Cancelled", tone: "neutral" },
@@ -177,16 +179,23 @@ function JobCard({ job, staff, today, keep, trip }: { job: DispatchJob; staff: S
               </div>
             ) : null}
           </dl>
-          {job.phone ? (
-            <div className="flex flex-wrap gap-2">
-              <a href={`tel:${job.phone.replace(/[^\d+]/g, "")}`} className="admin-btn-secondary">
-                Call {job.phone}
-              </a>
-              <a href={waLink(job.phone)} target="_blank" rel="noopener noreferrer" className="admin-btn-secondary">
-                WhatsApp
-              </a>
-            </div>
-          ) : null}
+          <div className="flex flex-wrap gap-2">
+            {job.phone ? (
+              <>
+                <a href={`tel:${job.phone.replace(/[^\d+]/g, "")}`} className="admin-btn-secondary">
+                  Call {job.phone}
+                </a>
+                <a href={waLink(job.phone)} target="_blank" rel="noopener noreferrer" className="admin-btn-secondary">
+                  WhatsApp
+                </a>
+              </>
+            ) : null}
+            {job.kind === "pickup" ? (
+              <Link href={`/admin/requests?${new URLSearchParams({ stage: "all", open: job.id })}#r-${job.id}`} className="admin-btn-secondary">
+                Open the booking
+              </Link>
+            ) : null}
+          </div>
           {isOpen(job) ? (
             <>
               <PlanForm job={job} staff={staff} today={today} keep={keep} suggestion={suggestion} />

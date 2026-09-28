@@ -2,6 +2,31 @@
 
 `/admin/dispatch`, for Owners, Managers and Customer support.
 
+## One card per booking (`/admin/requests`)
+
+Every website booking and quote is one card, from the first call to delivery, with the next step
+done on the card itself:
+
+| Step | Who | On the card |
+|---|---|---|
+| New | website | A call timer: fine for 30 min, amber after, red after 24 h. **Confirmed with customer** (day + time of day, the customer's choice pre-filled) or **No answer** (attempts counted; after 3, cancel with "No answer after 3 calls") |
+| Confirmed | staff | **Assign** a person (day and time of day kept). WhatsApp confirmation, Bangla or English |
+| Assigned | staff | **Picked up**, with the Ops order number if it exists already. The Ops task closes. WhatsApp confirmation with the rider's name |
+| Picked up | staff | **Link** the Ops order: one tap on an order made for the same phone since the request, or type the number |
+| In process → Ready → Delivery planned → Delivered | Velto Ops | Read from the linked order and its delivery job. **Plan delivery** on the card (the order's delivery date pre-filled). WhatsApp "picked up" and "ready" messages |
+
+Also on every card: a repeat request from the same phone (**Merge**), a staff note, **Cancel** with a
+reason, the customer's earlier orders in Ops (New to Velto / Returning), the request's details and
+photos, and a timeline of every change and WhatsApp message opened. WhatsApp messages open with the
+text written out; staff send them from their own WhatsApp. Pickup & delivery stays as the day's plan
+by person and links back to each booking.
+
+Data: `docs/technical/sql/website_dispatch_stages.sql` (stages `confirmed` and `picked`, call
+attempts, notes, order link, `website_dispatch_context`). A pickup task finished in Velto Ops now
+means "picked". Delivery jobs are only created for orders that became Ready in the last 7 days or
+are due from yesterday on. Test: `docs/technical/sql/tests/website_dispatch_stages_test.sql`
+(staging only; rolls back). Rules: `src/lib/admin/request-flow.ts`, tested in `tests/request-flow.test.cjs`.
+
 ## The flow
 
 | Step | Pickups (website bookings and quotes) | Deliveries (orders Ready in Velto Ops) |

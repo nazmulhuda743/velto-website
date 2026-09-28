@@ -14,7 +14,12 @@
  */
 
 export type JobKind = "pickup" | "delivery";
-export type Stage = "new" | "assigned" | "scheduled" | "done" | "cancelled" | "merged";
+/**
+ * new → confirmed (customer called, day + slot agreed) → scheduled (person + slot) → picked.
+ * "assigned" is a partial plan (a person or a slot, not both, not confirmed). "done" is a
+ * finished delivery (or a pickup finished before "picked" existed).
+ */
+export type Stage = "new" | "confirmed" | "assigned" | "scheduled" | "picked" | "done" | "cancelled" | "merged";
 export type SlotId = "morning" | "afternoon" | "evening";
 
 export type DispatchJob = {
@@ -38,6 +43,11 @@ export type DispatchJob = {
   trip_key: string | null;
   merged_into: string | null;
   reason: string | null;
+  contact_attempts: number;
+  last_contact_at: string | null;
+  confirmed_at: string | null;
+  confirmed_by: string | null;
+  picked_at: string | null;
   history: { at: string; by: string; action: string; detail?: string | null }[];
   created_at: string;
   updated_at: string;
@@ -55,7 +65,7 @@ export const slotLabel = (id: string | null) => SLOTS.find((s) => s.id === id)?.
 /** Stops one person can do in one slot. A combined trip counts once. */
 export const DEFAULT_CAPACITY = 8;
 
-export const OPEN_STAGES: readonly Stage[] = ["new", "assigned", "scheduled"];
+export const OPEN_STAGES: readonly Stage[] = ["new", "confirmed", "assigned", "scheduled"];
 export const isOpen = (j: Pick<DispatchJob, "stage">) => OPEN_STAGES.includes(j.stage);
 /** Waiting for a manager: no person or no slot yet. */
 export const needsPlan = (j: DispatchJob) => isOpen(j) && (!j.assignee_id || !j.slot_date);
