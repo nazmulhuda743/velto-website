@@ -14,7 +14,7 @@
 -- Same rules as customer_portal.sql: customers reach their own rows only through the
 -- security-definer functions (caller = auth.uid(), via portal_caller()); the table has RLS on and
 -- no API grants. Requires customer_portal.sql. Idempotent: safe to run again.
--- Status: STAGING only until the owner approves production.
+-- Status: applied on staging and on production (owner-approved, 2026-09-28).
 
 begin;
 

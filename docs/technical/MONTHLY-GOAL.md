@@ -17,4 +17,4 @@ Issuing is manual on the 1st for now; a scheduled call to `website_goal_settle` 
 
 `docs/technical/sql/website_monthly_goal.sql`: table `customer_goal_coupons` (RLS, no API grants; service role reads through the functions) and `portal_goal` (customer), `website_goal_settle / preview / coupons / coupon_mark` (service role). Test: `docs/technical/sql/tests/website_monthly_goal_test.sql` (staging only; rolls back). Settings: `website_content.loyalty.goal` (`parseGoal` in `src/lib/customer/goal.ts`, tested in `tests/customer-goal.test.cjs`).
 
-Status: applied and tested on **staging**. Production: only after the owner approves.
+Status: applied and tested on **staging**; applied on **production** 2026-09-28 (owner-approved). The test script stays staging-only.
