@@ -196,3 +196,19 @@ export function duplicateOf(jobs: DispatchJob[]): Map<string, DispatchJob> {
   }
   return out;
 }
+
+/** "wash-and-iron" → "Wash and iron". */
+const serviceWords = (slug: string | undefined) => {
+  const t = (slug ?? "").trim().replace(/-/g, " ").slice(0, 30);
+  return t ? t[0].toUpperCase() + t.slice(1) : "";
+};
+
+/** The push staff get for a new website request: short enough for a lock screen. */
+export function newRequestPush(kind: "booking" | "quote", f: { name: string; area: string; when?: string; service?: string }, siteUrl: string) {
+  const bits = [f.name.trim().slice(0, 40), f.area.trim().slice(0, 40), (f.when ?? "").trim().slice(0, 40), serviceWords(f.service)].filter(Boolean);
+  return {
+    title: kind === "booking" ? "🧺 New pickup booking" : "📐 New quote request",
+    body: `${bits.join(" · ")}. Call within 30 min.`,
+    url: `${siteUrl.replace(/\/+$/, "")}/admin/requests?stage=new`,
+  };
+}

@@ -38,6 +38,15 @@ are due from yesterday on. Test: `docs/technical/sql/tests/website_dispatch_stag
 
 Changing a plan updates the same Ops task; nothing is created twice. Every change is in **Activity**.
 
+## New request push
+
+When a website booking or quote is saved, every active Ops **admin** and **manager** whose phone is
+subscribed to Velto Ops notifications gets a push: "🧺 New pickup booking · name · area · when ·
+service. Call within 30 min." (or "📐 New quote request"). It goes through the Ops `notify-push`
+function, one person at a time; people without a subscription are skipped (never the whole team).
+It is sent after the customer's response, so it never slows or fails a booking. The push links to
+`/admin/requests?stage=new`. Set `VELTO_NEW_REQUEST_PUSH=false` on the server to turn it off.
+
 ## The delivery board
 
 Deliveries waiting for a plan are grouped by the order's date in Velto Ops, most pressing first:

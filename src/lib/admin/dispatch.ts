@@ -195,7 +195,7 @@ export function splitJob(job: string, actor: string): Promise<DispatchResult> | 
  * A push to the person's phone through the Ops app's own notify-push function, only when they
  * have an active subscription (notify-push falls back to the whole team otherwise). Best effort.
  */
-export async function notifyAssignee(userId: string, title: string, body: string) {
+export async function notifyAssignee(userId: string, title: string, body: string, url = "/") {
   if (isAdminPreview() || !isSupabaseConfigured()) return;
   try {
     const q = new URLSearchParams({ select: "id", user_id: `eq.${userId}`, active: "eq.true", limit: "1" });
@@ -204,12 +204,30 @@ export async function notifyAssignee(userId: string, title: string, body: string
     const res = await supabaseFetch("/functions/v1/notify-push", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ target_user: userId, title, body, url: "/" }),
+      body: JSON.stringify({ target_user: userId, title, body, url }),
       cache: "no-store",
     });
     if (!res.ok) console.error("dispatch_push_failed", res.status);
   } catch (error) {
     console.error("dispatch_push_failed", error instanceof Error ? error.message.slice(0, 80) : "unknown");
+  }
+}
+
+/**
+ * A new website booking or quote: a push to every active Ops admin and manager whose phone is
+ * subscribed (people without a subscription are skipped, never the whole team). Best effort; the
+ * customer's request is already saved.
+ */
+export async function notifyNewRequest(push: { title: string; body: string; url: string }) {
+  if (isAdminPreview() || !isSupabaseConfigured() || process.env.VELTO_NEW_REQUEST_PUSH === "false") return;
+  try {
+    const q = new URLSearchParams({ select: "id", active: "eq.true", role: "in.(admin,manager)" });
+    const res = await supabaseFetch(`/rest/v1/profiles?${q}`, { cache: "no-store" });
+    if (!res.ok) return;
+    const people = (await res.json()) as { id: string }[];
+    await Promise.all(people.map((p) => notifyAssignee(p.id, push.title, push.body, push.url)));
+  } catch (error) {
+    console.error("new_request_push_failed", error instanceof Error ? error.message.slice(0, 80) : "unknown");
   }
 }
 

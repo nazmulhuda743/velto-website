@@ -18,6 +18,8 @@ import {
   type ValidationIssue,
 } from "@/lib/integrations/ops/validation";
 import { readBoundedJson } from "@/lib/security/json-request";
+import { notifyNewRequest } from "@/lib/admin/dispatch";
+import { newRequestPush } from "@/lib/admin/request-flow";
 import { SITE_URL } from "@/lib/site-url";
 
 /**
@@ -75,6 +77,8 @@ export async function POST(request: NextRequest) {
 
   try {
     const result = await gateway.createBooking(parsed.value, context.value);
+    // Tell the managers now, after the response is sent (best effort).
+    after(() => notifyNewRequest(newRequestPush("booking", { name: parsed.value.name, area: parsed.value.area, when: parsed.value.preferredPickup, service: parsed.value.service }, SITE_URL)));
     return NextResponse.json(
       { ok: true as const, reference: result.reference, requestId },
       { headers: { "Cache-Control": "no-store" } },
