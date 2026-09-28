@@ -24,6 +24,7 @@ import {
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import type { FormText } from "@/content/i18n/forms/en";
 import { fill, format, localDigits, type Locale } from "@/lib/i18n/config";
+import { progressToFree, suggestAddOns } from "@/lib/booking-upsell";
 import { BookingItems, lineUnit, money, repeatLine, type ItemLine, type PriceItem } from "./BookingItems";
 
 /** One line of an earlier order, as the book page reads it on the server. */
@@ -451,10 +452,31 @@ type Coupon = { code: string; kind: "delivery" | "taka"; amount: number };
 const withCoupon = (e: BookingEstimate, coupon?: Coupon): BookingEstimate =>
   coupon?.kind === "delivery" && !e.free ? { ...e, free: true, chargeMinor: 0, totalMinor: e.subtotalMinor } : e;
 
-function OrderSummary({ s, t, locale, chargeMinor, offer, coupon }: { s: FormState; t: Text; locale: Locale; chargeMinor: number | null; offer?: string; coupon?: Coupon }) {
+function OrderSummary({
+  s,
+  t,
+  locale,
+  chargeMinor,
+  offer,
+  coupon,
+  popular = [],
+  onAdd,
+}: {
+  s: FormState;
+  t: Text;
+  locale: Locale;
+  chargeMinor: number | null;
+  offer?: string;
+  coupon?: Coupon;
+  popular?: PriceItem[];
+  /** Adds one of an item on a service (the free-delivery add-ons). */
+  onAdd?: (item: PriceItem, service: ItemService) => void;
+}) {
   const e = withCoupon(estimateOf(s, chargeMinor), coupon);
   const threshold = localDigits(FREE_DELIVERY_THRESHOLD, locale);
   const priced = e.subtotalMinor > 0;
+  const gap = FREE_DELIVERY_MIN_MINOR - e.subtotalMinor;
+  const addOns = priced && !e.free && onAdd ? suggestAddOns(s.items, popular, gap, s.services) : [];
   const row = "flex items-baseline justify-between gap-4 py-2";
   return (
     <section aria-labelledby="booking-summary-title" className="rounded-md border border-line bg-soft p-4 md:p-5" data-order-summary>
@@ -503,8 +525,49 @@ function OrderSummary({ s, t, locale, chargeMinor, offer, coupon }: { s: FormSta
       ) : null}
       <div className="mt-2 space-y-1.5 t-small">
         {priced && !e.free ? (
-          <p className="text-navy">
-            {format(t.summaryChargeNote, { amount: threshold, more: money(FREE_DELIVERY_MIN_MINOR - e.subtotalMinor, locale) })}
+          <div data-free-progress>
+            <p className="font-semibold text-navy">{format(t.summaryChargeNote, { amount: threshold, more: money(gap, locale) })}</p>
+            <div
+              role="progressbar"
+              aria-label={t.freeProgressLabel}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={progressToFree(e.subtotalMinor, FREE_DELIVERY_MIN_MINOR)}
+              className="mt-2 h-2 overflow-hidden rounded-full bg-line"
+            >
+              <div className="h-full rounded-full bg-action" style={{ width: `${progressToFree(e.subtotalMinor, FREE_DELIVERY_MIN_MINOR)}%` }} />
+            </div>
+            <p className="mt-1 t-caption tabular-nums text-secondary">
+              {money(e.subtotalMinor, locale)} / {money(FREE_DELIVERY_MIN_MINOR, locale)}
+            </p>
+            {addOns.length ? (
+              <div className="mt-3" data-add-ons>
+                <p className="t-small font-semibold text-navy">{t.addOnsTitle}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {addOns.map((a) => {
+                    const listed = popular.find((p) => p.name === a.item);
+                    return (
+                      <button
+                        key={`${a.item}-${a.service}`}
+                        type="button"
+                        onClick={() => listed && onAdd?.(listed, a.service as ItemService)}
+                        className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-line-strong bg-white px-3.5 text-left t-small text-navy hover:border-navy"
+                      >
+                        <span aria-hidden="true" className="font-semibold text-action">+</span>
+                        <span className="font-semibold">{a.item}</span>
+                        <span className="text-secondary">
+                          · {t.services[a.service]} · {money(a.amountMinor, locale)}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : priced && e.free && !coupon ? (
+          <p className="font-semibold text-success" data-free-unlocked>
+            ✓ {t.freeUnlocked}
           </p>
         ) : !priced ? (
           <p className="text-navy">{format(t.summaryFreeNote, { amount: threshold })}</p>
@@ -661,6 +724,11 @@ function MobileTotalBar({ s, t, locale, chargeMinor, coupon }: { s: FormState; t
         <p className="min-w-0 t-small text-body">
           {count === 1 ? t.barItemsOne : fill(t.barItems, { n: count }, locale)}
           {e.subtotalMinor > 0 ? <span className="ml-2 font-semibold tabular-nums text-navy">{money(e.totalMinor, locale)}</span> : null}
+          {e.subtotalMinor > 0 && !e.free ? (
+            <span className="block t-caption text-action" data-bar-to-free>
+              {fill(t.barToFree, { more: money(FREE_DELIVERY_MIN_MINOR - e.subtotalMinor, locale) }, locale)}
+            </span>
+          ) : null}
         </p>
         <a href="#booking-summary-title" className="inline-flex h-11 shrink-0 items-center rounded-md bg-action px-5 font-semibold text-white hover:bg-action-hover">
           {t.barReview}
@@ -1210,7 +1278,23 @@ export function BookingForm({
           </Group>
 
           {s.items.length || coupon || offer ? (
-            <OrderSummary s={s} t={t} locale={locale} chargeMinor={pickupChargeMinor} offer={offer} coupon={coupon} />
+            <OrderSummary
+              s={s}
+              t={t}
+              locale={locale}
+              chargeMinor={pickupChargeMinor}
+              offer={offer}
+              coupon={coupon}
+              popular={popularItems}
+              onAdd={(item, service) => {
+                const at = s.items.findIndex((l) => l.item === item.name && l.service === service);
+                update(
+                  "items",
+                  at >= 0 ? s.items.map((l, i) => (i === at ? { ...l, quantity: l.quantity + 1 } : l)) : [...s.items, repeatLine(item.name, service, 1, item)],
+                );
+                track("booking_addon_add", { section: "booking-summary", service });
+              }}
+            />
           ) : (
             <p className="t-small text-navy" data-free-note>
               {format(t.summaryFreeNote, { amount: localDigits(FREE_DELIVERY_THRESHOLD, locale) })}

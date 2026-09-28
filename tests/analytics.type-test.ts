@@ -4,6 +4,7 @@ const approvedEvents = [
   "book_pickup_click",
   "booking_start",
   "booking_items_open",
+  "booking_addon_add",
   "booking_success",
   "booking_error",
   "whatsapp_click",
