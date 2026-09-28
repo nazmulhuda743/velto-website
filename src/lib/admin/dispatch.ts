@@ -81,6 +81,9 @@ function previewBoard(): DispatchJob[] {
     j({ customer_name: "Mahmud Karim", phone: "01717 121212", phone_key: "01717121212", address: "House 9, Road 1", area: "Uttara Sector 1", stage: "picked", picked_at: ago(100), order_number: "VEL-01948", confirmed_at: ago(104), created_at: ago(110) }),
     j({ customer_name: "Sadia Noor", phone: "01713 707070", phone_key: "01713707070", address: "House 3, Road 2", area: "Uttara Sector 6", stage: "picked", picked_at: ago(26), order_number: "VEL-01960", confirmed_at: ago(30), created_at: ago(34) }),
     j({ customer_name: "Kamal Uddin", phone: "01714 808080", phone_key: "01714808080", address: "House 6, Road 8", area: "Uttara Sector 10", stage: "picked", picked_at: ago(200), order_number: "VEL-01921", confirmed_at: ago(210), created_at: ago(220) }),
+    j({ kind: "delivery", source: "ops_order", order_number: "VEL-01930", customer_name: "Nusrat Jahan", phone: "01719 454545", phone_key: "01719454545", address: "House 11, Road 3", area: "Uttara", created_at: ago(72) }),
+    j({ kind: "delivery", source: "ops_order", order_number: "VEL-01880", customer_name: "Habib Rahman", phone: "01710 565656", phone_key: "01710565656", address: "House 7, Road 12", area: "Uttara", created_at: ago(400) }),
+    j({ kind: "delivery", source: "ops_order", order_number: "VEL-01872", customer_name: "Tania Akter", phone: "01711 676767", phone_key: "01711676767", address: "House 19, Road 5", area: "Uttara", created_at: ago(500) }),
     j({ customer_name: "Rahim Mia", phone: "01715 909090", phone_key: "01715909090", area: "Uttara Sector 12", stage: "cancelled", reason: "No answer after 3 calls", contact_attempts: 3, created_at: ago(60) }),
   ];
   return previewJobs;
@@ -252,10 +255,14 @@ export async function getRequestJobs(): Promise<Loaded<{ pickups: DispatchJob[];
 export type RequestContext = { customers: Record<string, CustomerContext>; orders: Record<string, LinkedOrder> };
 
 const PREVIEW_ORDERS: Record<string, LinkedOrder> = {
-  "VEL-01952": { status: "Ready", orderDate: null, deliveryDate: null, total: 1450, due: 1450, items: 9, updatedAt: new Date().toISOString() },
+  "VEL-01952": { status: "Ready", orderDate: null, deliveryDate: dhakaToday(), total: 1450, due: 1450, items: 9, updatedAt: new Date().toISOString() },
   "VEL-01948": { status: "Ready", orderDate: null, deliveryDate: null, total: 820, due: 0, items: 5, updatedAt: new Date().toISOString() },
   "VEL-01960": { status: "Picked", orderDate: null, deliveryDate: null, total: 640, due: 640, items: 4, updatedAt: new Date().toISOString() },
   "VEL-01963": { status: "Picked", orderDate: null, deliveryDate: null, total: 910, due: 910, items: 6, updatedAt: new Date().toISOString() },
+  "VEL-01944": { status: "Ready", orderDate: null, deliveryDate: addDays(dhakaToday(), 1), total: 560, due: 560, items: 4, updatedAt: new Date().toISOString() },
+  "VEL-01930": { status: "Ready", orderDate: null, deliveryDate: addDays(dhakaToday(), -2), total: 1200, due: 300, items: 7, updatedAt: new Date(Date.now() - 3 * 86_400_000).toISOString() },
+  "VEL-01880": { status: "Ready", orderDate: null, deliveryDate: addDays(dhakaToday(), -15), total: 950, due: 950, items: 6, updatedAt: new Date(Date.now() - 16 * 86_400_000).toISOString() },
+  "VEL-01872": { status: "Ready", orderDate: null, deliveryDate: null, total: 420, due: 420, items: 2, updatedAt: new Date(Date.now() - 21 * 86_400_000).toISOString() },
   "VEL-01921": { status: "Delivered", orderDate: null, deliveryDate: null, total: 380, due: 0, items: 3, updatedAt: new Date().toISOString() },
 };
 

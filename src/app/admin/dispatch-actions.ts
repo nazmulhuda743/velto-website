@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { logActivity } from "@/lib/admin/activity";
 import { closeJob, combineJobs, getStaff, mergeJobs, notifyAssignee, planJob, splitJob, type DispatchResult } from "@/lib/admin/dispatch";
-import { addDays, CANCEL_REASONS, dayName, dhakaToday, isSlot, slotLabel } from "@/lib/admin/dispatch-logic";
+import { addDays, CANCEL_REASONS, DELIVERY_CLOSE_REASONS, dayName, dhakaToday, isSlot, slotLabel } from "@/lib/admin/dispatch-logic";
 import { requireSection } from "@/lib/admin/session";
 
 /**
@@ -82,7 +82,7 @@ export async function closeAction(form: FormData) {
   const label = text(form, "label", 120);
   const picked = text(form, "reason", 120);
   const other = text(form, "other", 200);
-  const reason = picked === "other" ? other : CANCEL_REASONS.includes(picked) ? picked : other;
+  const reason = picked === "other" ? other : CANCEL_REASONS.includes(picked) || DELIVERY_CLOSE_REASONS.includes(picked) ? picked : other;
   if (!UUID.test(job) || (outcome !== "done" && outcome !== "cancelled")) back(form, { error: MESSAGES.invalid });
   if (outcome === "cancelled" && !reason) back(form, { error: MESSAGES.reason });
 
@@ -92,7 +92,7 @@ export async function closeAction(form: FormData) {
       section: "dispatch",
       action: outcome === "done" ? "stop_done" : "stop_cancelled",
       target: job,
-      summary: outcome === "done" ? `Marked ${label || "a stop"} done` : `Cancelled ${label || "a stop"}: ${reason}`,
+      summary: outcome === "done" ? `Marked ${label || "a stop"} done` : `${label.startsWith("Delivery") ? "Took off the board" : "Cancelled"} ${label || "a stop"}: ${reason}`,
     });
   }
   done(form, r, outcome);
