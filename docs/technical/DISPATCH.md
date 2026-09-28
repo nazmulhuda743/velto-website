@@ -38,6 +38,21 @@ are due from yesterday on. Test: `docs/technical/sql/tests/website_dispatch_stag
 
 Changing a plan updates the same Ops task; nothing is created twice. Every change is in **Activity**.
 
+## The delivery board
+
+Deliveries waiting for a plan are grouped by the order's date in Velto Ops, most pressing first:
+**Late**, **Due today**, **Due tomorrow**, **Due later**, **No delivery date**, and (folded)
+**Waiting at the outlet**: orders Ready for over a week whose date has passed. Each group shows what
+the riders collect. Each delivery card shows the order's items, total, **amount to collect** (red),
+its date in Ops and how long it has been Ready, and a WhatsApp "your order is ready" message (with the
+planned day once a person is set).
+
+**Take off the board** closes a delivery without delivering it ("Customer will collect from the
+outlet", "Couldn't reach the customer", "Already delivered (not planned here)", "Customer asked us to
+hold it", or another reason). The order stays Ready in Ops; it comes back to the board only if the
+order changes in Ops afterwards (`docs/technical/sql/website_dispatch_deliveries.sql`; test:
+`docs/technical/sql/tests/website_dispatch_deliveries_test.sql`, staging only).
+
 ## Overlaps
 
 The board finds them and offers one tap:

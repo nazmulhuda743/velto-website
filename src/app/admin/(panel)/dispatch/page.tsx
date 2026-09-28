@@ -1,13 +1,18 @@
 import Link from "next/link";
 import { NotificationRefresher } from "@/components/admin/NotificationRefresher";
 import { AdminHeader, Badge, DataNotice, one, type SearchParams } from "@/components/admin/ui";
-import { getDispatch, getStaff, type StaffMember } from "@/lib/admin/dispatch";
+import { WhatsAppSend } from "@/components/admin/WhatsAppSend";
+import { getDispatch, getRequestContext, getStaff, type StaffMember } from "@/lib/admin/dispatch";
 import {
   addDays,
   CANCEL_REASONS,
   dayName,
   dayPlan,
   DEFAULT_CAPACITY,
+  daysSince,
+  DELIVERY_BUCKETS,
+  DELIVERY_CLOSE_REASONS,
+  deliveryBucket,
   dhakaToday,
   findOverlaps,
   isOpen,
@@ -19,7 +24,10 @@ import {
   type DispatchJob,
   type JobKind,
   type Overlap,
+  type SlotId,
 } from "@/lib/admin/dispatch-logic";
+import { readyMessage, type LinkedOrder } from "@/lib/admin/request-flow";
+import { whatsappLink } from "@/lib/admin/retention-messages";
 import { requireSection } from "@/lib/admin/session";
 import { closeAction, combineAction, mergeAction, planAction, splitAction } from "../../dispatch-actions";
 
@@ -28,7 +36,7 @@ export const metadata = { title: "Pickup & delivery · Velto Command Center" };
 const SAVED: Record<string, string> = {
   planned: "Saved. The person sees it in Velto Ops under “Assigned to me”.",
   done: "Marked done.",
-  cancelled: "Cancelled. The Velto Ops task is closed with your reason.",
+  cancelled: "Closed with your reason. The Velto Ops task is closed too.",
   merged: "Merged. The duplicate is closed in Velto Ops.",
   combined: "Combined into one trip: same person, same slot.",
   split: "Taken out of the trip.",
@@ -116,7 +124,7 @@ function CloseForms({ job, keep }: { job: DispatchJob; keep: string }) {
         </form>
       ) : null}
       <details className="group/cancel">
-        <summary className="admin-btn-danger cursor-pointer list-none">Cancel…</summary>
+        <summary className="admin-btn-danger cursor-pointer list-none">{job.kind === "delivery" ? "Take off the board…" : "Cancel…"}</summary>
         <form action={closeAction} className="mt-2 grid gap-2 rounded-md border border-line bg-soft p-3 sm:w-[340px]">
           <input type="hidden" name="job" value={job.id} />
           <input type="hidden" name="outcome" value="cancelled" />
@@ -124,8 +132,8 @@ function CloseForms({ job, keep }: { job: DispatchJob; keep: string }) {
           <input type="hidden" name="keep" value={keep} />
           <label className="block t-caption font-semibold text-secondary">
             Reason
-            <select name="reason" className="admin-input mt-1" defaultValue={CANCEL_REASONS[0]}>
-              {CANCEL_REASONS.map((r) => (
+            <select name="reason" className="admin-input mt-1" defaultValue={(job.kind === "delivery" ? DELIVERY_CLOSE_REASONS : CANCEL_REASONS)[0]}>
+              {(job.kind === "delivery" ? DELIVERY_CLOSE_REASONS : CANCEL_REASONS).map((r) => (
                 <option key={r}>{r}</option>
               ))}
               <option value="other">Other (write below)</option>
@@ -133,15 +141,39 @@ function CloseForms({ job, keep }: { job: DispatchJob; keep: string }) {
           </label>
           <input name="other" maxLength={200} placeholder="Other reason" className="admin-input" aria-label="Other reason" />
           <button type="submit" className="admin-btn-danger">
-            Cancel this {job.kind === "delivery" ? "delivery" : "pickup"}
+            {job.kind === "delivery" ? "Take it off the board" : "Cancel this pickup"}
           </button>
+          {job.kind === "delivery" ? <p className="t-caption text-secondary">The order stays Ready in Velto Ops. It comes back here if the order changes in Ops.</p> : null}
         </form>
       </details>
     </div>
   );
 }
 
-function JobCard({ job, staff, today, keep, trip }: { job: DispatchJob; staff: StaffMember[]; today: string; keep: string; trip?: boolean }) {
+function OrderLine({ order, today }: { order: LinkedOrder; today: string }) {
+  const readyDays = daysSince(order.updatedAt);
+  return (
+    <p className="t-small text-navy">
+      {order.items ? `${order.items} item${order.items === 1 ? "" : "s"} · ` : ""}
+      {order.total !== null ? `৳${order.total.toLocaleString("en-US")}` : ""}
+      {order.due ? <span className="font-semibold text-error"> · collect ৳{order.due.toLocaleString("en-US")}</span> : order.total ? <span className="text-success"> · paid</span> : null}
+      <span className="text-secondary">
+        {order.deliveryDate ? ` · delivery date ${order.deliveryDate === today ? "today" : dayName(order.deliveryDate)}` : " · no delivery date in Ops"}
+        {readyDays >= 1 ? ` · ${order.status} for ${readyDays} day${readyDays === 1 ? "" : "s"}` : ""}
+      </span>
+    </p>
+  );
+}
+
+/** "Your order is ready" (with the planned delivery when there is one), Bangla or English. */
+function ReadyWhatsApp({ job }: { job: DispatchJob }) {
+  const facts = { name: job.customer_name, orderNumber: job.order_number!, date: job.assignee_id ? job.slot_date : null, slot: job.assignee_id ? (job.slot as SlotId | null) : null };
+  const bn = whatsappLink(job.phone, readyMessage(facts, "bn"));
+  const en = whatsappLink(job.phone, readyMessage(facts, "en"));
+  return bn && en ? <WhatsAppSend job={job.id} kind="ready" label="Tell the customer on WhatsApp:" links={{ bn, en }} /> : null;
+}
+
+function JobCard({ job, staff, today, keep, trip, order }: { job: DispatchJob; staff: StaffMember[]; today: string; keep: string; trip?: boolean; order?: LinkedOrder | null }) {
   const suggestion = suggestedSlot(job.requested, job.created_at, today);
   const stage = STAGE[job.stage];
   return (
@@ -154,11 +186,20 @@ function JobCard({ job, staff, today, keep, trip }: { job: DispatchJob; staff: S
           <span className="t-small text-secondary">{job.area ?? ""}</span>
           {trip ? <span className="t-caption font-semibold text-blue">⛓ One trip</span> : null}
           <span className="ml-auto t-small text-secondary">
-            {job.slot_date ? `${dayName(job.slot_date)} · ${slotLabel(job.slot)}` : job.requested ? `Asked: ${job.requested}` : `Waiting ${waited(job.created_at)}`}
+            {job.slot_date
+              ? `${dayName(job.slot_date)} · ${slotLabel(job.slot)}`
+              : job.kind === "delivery" && order
+                ? order.deliveryDate
+                  ? `Due ${order.deliveryDate === today ? "today" : dayName(order.deliveryDate)}`
+                  : "No delivery date"
+                : job.requested
+                  ? `Asked: ${job.requested}`
+                  : `Waiting ${waited(job.created_at)}`}
             {job.assignee_name ? ` · ${job.assignee_name}` : ""}
           </span>
         </summary>
         <div className="space-y-4 border-t border-line px-4 py-4">
+          {job.kind === "delivery" && order ? <OrderLine order={order} today={today} /> : null}
           <dl className="grid gap-x-6 gap-y-1 t-small sm:grid-cols-2">
             <div>
               <dt className="text-secondary">Address</dt>
@@ -166,7 +207,9 @@ function JobCard({ job, staff, today, keep, trip }: { job: DispatchJob; staff: S
             </div>
             <div>
               <dt className="text-secondary">{job.kind === "delivery" ? "Delivery" : "Customer asked for"}</dt>
-              <dd className="text-navy">{job.requested ?? "No preference"}</dd>
+              <dd className="text-navy">
+                {job.kind === "delivery" && order ? (order.deliveryDate ? `Date in Ops: ${dayName(order.deliveryDate)}` : "No date in Ops yet") : (job.requested ?? "No preference")}
+              </dd>
             </div>
             <div>
               <dt className="text-secondary">Came in</dt>
@@ -196,6 +239,7 @@ function JobCard({ job, staff, today, keep, trip }: { job: DispatchJob; staff: S
               </Link>
             ) : null}
           </div>
+          {job.kind === "delivery" && job.order_number && isOpen(job) ? <ReadyWhatsApp job={job} /> : null}
           {isOpen(job) ? (
             <>
               <PlanForm job={job} staff={staff} today={today} keep={keep} suggestion={suggestion} />
@@ -309,6 +353,16 @@ export default async function DispatchPage({ searchParams }: { searchParams: Sea
   const saved = one(params.saved);
   const error = one(params.error);
 
+  // Deliveries: the order's money, date and how long it has been Ready, and groups by urgency.
+  const { orders } = board === "delivery" ? await getRequestContext([], [...new Set(jobs.map((j) => j.order_number).filter((o): o is string => Boolean(o)))]) : { orders: {} as Record<string, LinkedOrder> };
+  const orderOf = (j: DispatchJob) => (j.order_number ? (orders[j.order_number] ?? null) : null);
+  const groups = DELIVERY_BUCKETS.map((b) => {
+    const list = waiting.filter((j) => deliveryBucket(orderOf(j), today) === b.id);
+    // Most pressing first inside a group: earliest delivery date, then oldest.
+    list.sort((a, c) => (orderOf(a)?.deliveryDate ?? "9999").localeCompare(orderOf(c)?.deliveryDate ?? "9999") || a.created_at.localeCompare(c.created_at));
+    return { ...b, list, due: list.reduce((sum, j) => sum + (orderOf(j)?.due ?? 0), 0) };
+  }).filter((g) => g.list.length);
+
   return (
     <>
       <NotificationRefresher />
@@ -362,9 +416,39 @@ export default async function DispatchPage({ searchParams }: { searchParams: Sea
             Needs a plan <span className="text-secondary">({waiting.length})</span>
           </h2>
           <p className="mt-1 t-small text-secondary">
-            {board === "pickup" ? "New requests from the website, oldest first. Call the customer, then give it a person and a slot." : "Orders that are Ready in Velto Ops. Give each one a person and a slot."}
+            {board === "pickup" ? "New requests from the website, oldest first. Call the customer, then give it a person and a slot." : "Orders that are Ready in Velto Ops, most urgent first. Give each one a person and a slot; red amounts are what the rider collects."}
           </p>
-          {waiting.length ? (
+          {waiting.length && board === "delivery" ? (
+            <div className="mt-3 space-y-5">
+              {groups.map((g) => {
+                const list = (
+                  <ul className="mt-2 space-y-2">
+                    {g.list.map((j) => (
+                      <JobCard key={j.id} job={j} staff={staff} today={today} keep={keep} order={orderOf(j)} />
+                    ))}
+                  </ul>
+                );
+                const heading = (
+                  <>
+                    <span className={g.id === "late" ? "text-error" : "text-navy"}>{g.label}</span> <span className="font-normal text-secondary">({g.list.length}{g.due ? ` · ৳${g.due.toLocaleString("en-US")} to collect` : ""})</span>
+                  </>
+                );
+                return g.id === "waiting" ? (
+                  <details key={g.id} className="rounded-md border border-[#f0d49a] bg-[#fff8eb] p-3">
+                    <summary className="cursor-pointer t-small font-semibold">{heading}</summary>
+                    <p className="mt-1 t-caption text-secondary">{g.hint}</p>
+                    {list}
+                  </details>
+                ) : (
+                  <div key={g.id}>
+                    <h3 className="t-small font-semibold">{heading}</h3>
+                    {g.hint ? <p className="t-caption text-secondary">{g.hint}</p> : null}
+                    {list}
+                  </div>
+                );
+              })}
+            </div>
+          ) : waiting.length ? (
             <ul className="mt-3 space-y-2">
               {waiting.map((j) => (
                 <JobCard key={j.id} job={j} staff={staff} today={today} keep={keep} />
@@ -417,7 +501,7 @@ export default async function DispatchPage({ searchParams }: { searchParams: Sea
                           </div>
                           <ul className="mt-2 space-y-2">
                             {p.jobs.map((j) => (
-                              <JobCard key={j.id} job={j} staff={staff} today={today} keep={keep} trip={Boolean(j.trip_key)} />
+                              <JobCard key={j.id} job={j} staff={staff} today={today} keep={keep} trip={Boolean(j.trip_key)} order={orderOf(j)} />
                             ))}
                           </ul>
                         </div>
@@ -437,7 +521,7 @@ export default async function DispatchPage({ searchParams }: { searchParams: Sea
           <summary className="cursor-pointer list-none px-5 py-4 font-semibold text-navy">Finished in the last 3 days ({closed.length})</summary>
           <ul className="space-y-2 border-t border-line p-4">
             {closed.map((j) => (
-              <JobCard key={j.id} job={j} staff={staff} today={today} keep={keep} />
+              <JobCard key={j.id} job={j} staff={staff} today={today} keep={keep} order={orderOf(j)} />
             ))}
           </ul>
         </details>
