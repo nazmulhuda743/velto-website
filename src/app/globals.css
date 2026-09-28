@@ -561,3 +561,8 @@ html[lang="bn"] :is(.t-h2, .t-h3) {
 html[lang="bn"] .t-h4 {
   line-height: 1.35;
 }
+
+/* Signed-in account pages carry their own short footer; the marketing footer steps aside. */
+body:has([data-account-frame]) footer[data-site-footer] {
+  display: none;
+}

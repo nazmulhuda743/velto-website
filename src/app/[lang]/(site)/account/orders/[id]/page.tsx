@@ -77,7 +77,7 @@ export default async function OrderPage({ params }: { params: Params }) {
         )}
 
         <dl className="mt-8 grid grid-cols-2 gap-x-6 border-t border-line pt-4 md:grid-cols-3">
-          <Fact label={t.ordered}>{day(order.orderDate, true)}</Fact>
+          <Fact label={t.ordered}>{day(order.orderDate)}</Fact>
           {order.pickupDate ? <Fact label={t.collected}>{day(order.pickupDate)}</Fact> : null}
           {order.deliveredAt ? (
             <Fact label={t.delivered}>{day(order.deliveredAt)}</Fact>

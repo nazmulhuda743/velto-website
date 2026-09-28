@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { savePreferencesAction, type PreferencesState } from "@/lib/customer/actions";
 import type { Preferences } from "@/lib/customer/extras";
 import type { AccountText } from "@/content/i18n/account";
@@ -31,6 +31,9 @@ function Choice({ name, label, options, value }: { name: string; label: string; 
 export function PreferencesForm({ initial, t, areas }: { initial: Preferences; t: Text; areas: { value: string; label: string }[] }) {
   const [state, action] = useActionState(savePreferencesAction, IDLE);
   const c = initial.care;
+  // Empty address slots stay folded (the inputs are still submitted); one tap opens the next.
+  const filled = initial.addresses.filter((a) => a?.address || a?.label).length;
+  const [shown, setShown] = useState(Math.max(1, filled));
   return (
     <form action={action} className="space-y-8" data-preferences-form>
       <div className="grid gap-4 sm:grid-cols-3">
@@ -61,7 +64,7 @@ export function PreferencesForm({ initial, t, areas }: { initial: Preferences; t
           {[0, 1, 2].map((i) => {
             const a = initial.addresses[i];
             return (
-              <div key={i} className="grid gap-3 rounded-md border border-line p-4 sm:grid-cols-[140px_1fr_180px]">
+              <div key={i} hidden={i >= shown} className="grid gap-3 rounded-md border border-line p-4 sm:grid-cols-[140px_1fr_180px]" data-address-slot={i}>
                 <label className="block">
                   <span className="block t-small font-semibold text-navy">{t.label}</span>
                   <input name={`label${i}`} defaultValue={a?.label ?? ""} maxLength={30} placeholder={t.labelPlaceholders[i]} className={field} />
@@ -84,6 +87,11 @@ export function PreferencesForm({ initial, t, areas }: { initial: Preferences; t
               </div>
             );
           })}
+          {shown < 3 ? (
+            <button type="button" onClick={() => setShown((n) => Math.min(3, n + 1))} className="inline-flex min-h-11 items-center rounded-sm t-small font-semibold text-navy underline decoration-blue/50 underline-offset-4 hover:decoration-blue">
+              {t.addAddress}
+            </button>
+          ) : null}
         </div>
       </fieldset>
 
