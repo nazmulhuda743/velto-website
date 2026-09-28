@@ -101,3 +101,14 @@ test("two open requests from one phone: the later one merges into the first", ()
   assert.equal(map.has("c"), false, "a picked request is not a duplicate");
   assert.equal(map.has("d"), false);
 });
+
+test("new request push: short, to the To-call list", () => {
+  const { newRequestPush } = require("../.foundation-test-build/admin/request-flow.js");
+  const p = newRequestPush("booking", { name: " Nadia Rahman ", area: "Uttara Sector 7", when: "Tomorrow, Afternoon", service: "dry-cleaning" }, "https://www.velto.com.bd/");
+  assert.equal(p.title, "🧺 New pickup booking");
+  assert.equal(p.body, "Nadia Rahman · Uttara Sector 7 · Tomorrow, Afternoon · Dry cleaning. Call within 30 min.");
+  assert.equal(p.url, "https://www.velto.com.bd/admin/requests?stage=new");
+  const q = newRequestPush("quote", { name: "A", area: "Sector 3" }, "https://x.test");
+  assert.equal(q.title, "📐 New quote request");
+  assert.equal(q.body, "A · Sector 3. Call within 30 min.");
+});
