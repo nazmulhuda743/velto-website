@@ -35,3 +35,8 @@ export const validOtp = (raw: string) => {
 export function otpMessage(code: string, host = "www.velto.com.bd") {
   return `Your sign-in code is ${code}. It expires in ${OTP_TTL_MINUTES} minutes. Never share it; Velto staff will never ask for it.\n\n@${host} #${code}`;
 }
+
+/** Text for "Show my past orders" (email and Google accounts proving their phone). */
+export function linkCodeMessage(code: string) {
+  return `Your code to show your Velto orders is ${code}. It expires in 10 minutes. Never share it; Velto staff will never ask for it.`;
+}

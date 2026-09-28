@@ -5,11 +5,13 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { SelectField, TextField } from "@/components/forms/fields";
 import {
+  confirmLinkCodeAction,
   forgotPasswordAction,
   googleSignInAction,
   resendVerificationAction,
   resetPasswordAction,
   saveProfileAction,
+  sendLinkCodeAction,
   sendPhoneCodeAction,
   signInAction,
   signUpAction,
@@ -680,3 +682,70 @@ export function ProfileForm({
     </form>
   );
 }
+
+/* ---------- Show my past orders (prove the account's phone by SMS) ---------- */
+
+type LinkText = AccountText["link"];
+
+/**
+ * Email and Google accounts: one tap texts a code to the phone on the account; the right code
+ * links the order history at once. Rendered inside LinkHistoryCard.
+ */
+export function LinkBySms({ t, phone }: { t: LinkText; phone: string }) {
+  const [sendState, sendAction] = useActionState(sendLinkCodeAction, IDLE);
+  const [state, confirmAction] = useActionState(confirmLinkCodeAction, IDLE);
+  const formRef = useRef<HTMLFormElement>(null);
+  useFocusFirstError(state, formRef);
+
+  if (state.status === "linked") {
+    return (
+      <Alert tone={state.result === "linked" ? "success" : "info"}>
+        {state.result === "linked" ? t.linkedDone : state.result === "pending" ? t.pendingDone : t.noOrders}
+      </Alert>
+    );
+  }
+
+  const codeStep = sendState.status === "code-sent" || state.status === "code-sent";
+  if (!codeStep) {
+    return (
+      <form action={sendAction} className="space-y-3">
+        {sendState.status === "error" ? <Alert tone="error">{sendState.message}</Alert> : null}
+        <SubmitButton pending={t.smsSending}>{t.smsButton}</SubmitButton>
+      </form>
+    );
+  }
+
+  const errors = state.status === "code-sent" ? (state.errors ?? {}) : {};
+  const message =
+    state.status === "code-sent" ? state.message : state.status === "error" ? state.message : sendState.status === "code-sent" ? sendState.message : undefined;
+  return (
+    <div className="space-y-4" data-link-code-step>
+      <p className="t-small text-body">
+        {t.codeSentBefore}
+        <strong className="whitespace-nowrap text-navy">{displayBdPhone(phone)}</strong>
+        {t.codeSentAfter}
+      </p>
+      {message ? <Alert tone="error">{message}</Alert> : null}
+      <form ref={formRef} action={confirmAction} noValidate className="space-y-4">
+        <TextField
+          id="linkCode"
+          label={t.codeLabel}
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          pattern="[0-9]*"
+          required
+          maxLength={6}
+          error={errors.code}
+        />
+        <SubmitButton pending={t.confirming}>{t.confirm}</SubmitButton>
+      </form>
+      <form action={sendAction}>
+        <input type="hidden" name="resend" value="1" />
+        <button type="submit" className="t-small font-semibold text-navy underline decoration-blue/50 underline-offset-4 hover:decoration-blue">
+          {t.resend}
+        </button>
+      </form>
+    </div>
+  );
+}
+
