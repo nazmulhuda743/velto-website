@@ -184,6 +184,7 @@ export const accountBn: AccountText = {
     support: "WhatsApp-এ সহায়তা",
     signOut: "সাইন আউট",
     yourAccount: "আপনার অ্যাকাউন্ট",
+    loading: "আপনার অ্যাকাউন্ট লোড হচ্ছে…",
     cantLoadTitle: "এই মুহূর্তে আপনার অ্যাকাউন্ট লোড করা যাচ্ছে না।",
     cantLoadBody: "একটু পরে রিফ্রেশ করুন। সাইন ইন ছাড়াও পিকআপ বুক বা অর্ডার ট্র্যাক করতে পারেন।",
     customerAccount: "গ্রাহক অ্যাকাউন্ট",
