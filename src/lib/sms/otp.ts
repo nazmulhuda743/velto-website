@@ -27,10 +27,11 @@ export const validOtp = (raw: string) => {
 
 /**
  * English on purpose: plain GSM-7 text fits one SMS (Bangla switches to Unicode and costs two
- * or three). Bangladeshi SMS gateways require OTP messages to start with the brand in brackets,
- * "(Velto) ...", and refuse Banglish. The last line is the WebOTP / Android format, so phones
- * can offer the code for autofill on www.velto.com.bd only.
+ * or three). Bangladeshi SMS gateways require OTP messages to start with the brand in brackets:
+ * the GreenWeb token's "OTP SMS Header" is set to "(Velto)" and the gateway adds it on top, so
+ * the text here doesn't repeat it (and Banglish is refused). The last line is the WebOTP /
+ * Android format, so phones can offer the code for autofill on www.velto.com.bd only.
  */
 export function otpMessage(code: string, host = "www.velto.com.bd") {
-  return `(Velto) Your code is ${code}. It expires in ${OTP_TTL_MINUTES} minutes. Never share it; Velto staff will never ask for it.\n\n@${host} #${code}`;
+  return `Your sign-in code is ${code}. It expires in ${OTP_TTL_MINUTES} minutes. Never share it; Velto staff will never ask for it.\n\n@${host} #${code}`;
 }

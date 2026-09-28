@@ -45,7 +45,8 @@ test("codes are six digits; the SMS is one plain segment with the WebOTP line", 
   assert.equal(validOtp("12345"), null);
   assert.equal(validOtp("12345a"), null);
   const sms = otpMessage("482913");
-  assert.match(sms, /^\(Velto\) /, "gateways require the brand in brackets first");
+  // The gateway adds the "(Velto)" header itself; repeating it here would show it twice.
+  assert.doesNotMatch(sms, /\(Velto\)/);
   assert.match(sms, /482913/);
   assert.match(sms, /\n@www\.velto\.com\.bd #482913$/);
   assert.ok(sms.length <= 160, `SMS is ${sms.length} characters`);
