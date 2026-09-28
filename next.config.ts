@@ -34,11 +34,12 @@ const nextConfig: NextConfig = {
   /**
    * Old Webflow URLs (from www.velto.com.bd/sitemap.xml, 25 Sep 2026), kept alive after the
    * DNS cutover so bookmarks, Google results and old ads land on the closest page.
-   * Old Webflow account URLs point at their Customer Portal equivalents. /reset-password is
-   * not redirected: the portal uses that path for its own password-reset emails.
+   * Old Webflow account URLs point at their Customer Portal equivalents. Customers sign in with
+   * a mobile number or Google, so the old password pages go to sign-in (temporary redirects).
    */
   async redirects() {
     const to = (source: string, destination: string) => ({ source, destination, permanent: true });
+    const moved = (source: string, destination: string) => ({ source, destination, permanent: false });
     return [
       to("/contact", "/locations"),
       to("/about-us", "/about"),
@@ -57,9 +58,13 @@ const nextConfig: NextConfig = {
       to("/services/home-and-lifestyle", "/services"),
       to("/log-in", "/login"),
       to("/sign-up", "/signup"),
-      to("/update-password", "/forgot-password"),
+      to("/update-password", "/login"),
       to("/access-denied", "/login"),
       to("/user-account", "/account"),
+      moved("/forgot-password", "/login"),
+      moved("/reset-password", "/login"),
+      moved("/bn/forgot-password", "/bn/login"),
+      moved("/bn/reset-password", "/bn/login"),
     ];
   },
   async headers() {

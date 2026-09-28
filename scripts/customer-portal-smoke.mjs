@@ -7,13 +7,20 @@ import assert from "node:assert/strict";
 const base = process.env.LAUNCH_BASE_URL || "http://127.0.0.1:3000";
 const request = (path, init) => fetch(new URL(path, base), { redirect: "manual", ...init });
 
-for (const route of ["/login", "/signup", "/forgot-password", "/reset-password", "/cookies"]) {
+for (const route of ["/login", "/signup", "/cookies"]) {
   const response = await request(route);
   assert.equal(response.status, 200, `${route} returned ${response.status}`);
   const body = await response.text();
   assert.match(body, /<main[^>]+id="main"/i, `${route} is missing the main landmark`);
   assert.match(body, /<h1\b/i, `${route} is missing an H1`);
   assert.match(body, /name="robots"[^>]+noindex|noindex[^>]+name="robots"/i, `${route} must be noindex`);
+}
+
+// Customers don't use passwords: the old password pages send people to sign-in.
+for (const route of ["/forgot-password", "/reset-password"]) {
+  const response = await request(route);
+  assert.ok([307, 308].includes(response.status), `${route} should redirect, got ${response.status}`);
+  assert.match(response.headers.get("location") ?? "", /\/login$/, `${route} should redirect to /login`);
 }
 
 // Account pages never render without a verified session; order URLs are no exception.

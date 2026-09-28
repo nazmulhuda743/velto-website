@@ -67,7 +67,7 @@ export function safeNextPath(raw: string | null | undefined, fallback = "/accoun
   }
   if (!raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) return fallback;
   // An optional /bn prefix keeps the reader in Bangla after signing in.
-  return /^(?:\/bn)?\/(account(\/|$|\?)|book(\/|$|\?)|quote(\/|$|\?)|track(\/|$|\?)|reset-password(\/|$|\?))/.test(path) ? path : fallback;
+  return /^(?:\/bn)?\/(account(\/|$|\?)|book(\/|$|\?)|quote(\/|$|\?)|track(\/|$|\?))/.test(path) ? path : fallback;
 }
 
 /** Order references in account URLs: VEL-01940 / VELR-00185. */

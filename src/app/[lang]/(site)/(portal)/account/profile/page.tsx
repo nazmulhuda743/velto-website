@@ -64,23 +64,17 @@ export default async function ProfilePage() {
             </div>
           ) : null}
           {a.email ? (
-            <>
-              <div>
-                <dt className="text-[15px] font-semibold text-navy">{t.email}</dt>
-                <dd className="mt-1 text-body">{a.email}</dd>
-                <dd className="mt-1 t-small text-secondary">
-                  {t.changeEmailBefore}
-                  <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="font-semibold text-navy underline underline-offset-4">
-                    {t.messageVelto}
-                  </a>
-                  {t.changeEmailAfter}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-[15px] font-semibold text-navy">{t.password}</dt>
-                <dd className="mt-1 t-small text-secondary">{t.passwordBody}</dd>
-              </div>
-            </>
+            <div>
+              <dt className="text-[15px] font-semibold text-navy">{t.email}</dt>
+              <dd className="mt-1 text-body">{a.email}</dd>
+              <dd className="mt-1 t-small text-secondary">
+                {t.changeEmailBefore}
+                <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="font-semibold text-navy underline underline-offset-4">
+                  {t.messageVelto}
+                </a>
+                {t.changeEmailAfter}
+              </dd>
+            </div>
           ) : null}
         </dl>
         <form action={signOutAction} className="mt-6">
