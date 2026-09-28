@@ -188,6 +188,7 @@ export const accountEn = {
     support: "Support on WhatsApp",
     signOut: "Sign out",
     yourAccount: "Your account",
+    loading: "Loading your account…",
     cantLoadTitle: "We can't load your account right now.",
     cantLoadBody: "Please refresh in a moment. You can still book a pickup or track an order without signing in.",
     customerAccount: "Customer account",
