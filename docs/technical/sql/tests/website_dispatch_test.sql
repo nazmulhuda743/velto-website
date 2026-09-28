@@ -10,7 +10,8 @@ declare
 begin
   select id, name into v_person, v_name from public.profiles where active order by name limit 1;
   select order_number into v_order from public.orders
-   where order_status = 'Ready' and order_number ~ '^VELR?-[0-9]{3,6}$' and updated_at > now() - interval '60 days'
+   where order_status = 'Ready' and order_number ~ '^VELR?-[0-9]{3,6}$'
+     and (updated_at > now() - interval '7 days' or delivery_date >= (now() at time zone 'Asia/Dhaka')::date - 1)
    order by created_at desc limit 1;
 
   insert into public.tasks (title, type, priority, status, due_at, description, assigned_by_name, source, source_ref, dedupe_key)

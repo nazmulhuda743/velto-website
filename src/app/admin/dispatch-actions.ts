@@ -26,6 +26,17 @@ const MESSAGES: Record<string, string> = {
 };
 
 function back(form: FormData, extra: Record<string, string>): never {
+  // Used from a Bookings card: go back there, with the card open.
+  const ret = text(form, "return", 300);
+  if (ret.startsWith("/admin/requests")) {
+    const url = new URL(ret, "http://local");
+    // A delivery planned from a booking's card reopens that card (the pickup), not the delivery.
+    const job = text(form, "card", 40) || text(form, "job", 40);
+    for (const k of ["saved", "error", "open"]) url.searchParams.delete(k);
+    if (/^[0-9a-f-]{36}$/i.test(job)) url.searchParams.set("open", job);
+    for (const [k, v] of Object.entries(extra)) url.searchParams.set(k, v);
+    redirect(`${url.pathname}?${url.searchParams}${/^[0-9a-f-]{36}$/i.test(job) ? `#r-${job}` : ""}`);
+  }
   const keep = new URLSearchParams(text(form, "keep", 300));
   for (const k of ["saved", "error", "job"]) keep.delete(k);
   for (const [k, v] of Object.entries(extra)) keep.set(k, v);
