@@ -6,6 +6,7 @@ import "server-only";
  * deployed site; every page renders a "Preview data" banner while in use.
  */
 import type { WebsiteRequest } from "./data";
+import type { OutcomeRow } from "./request-outcomes";
 import { dhakaDay, dhakaDayStart, type ConsentSummary, type SessionRow } from "./insights";
 
 function prng(seed: number) {
@@ -93,8 +94,11 @@ export function previewSessions(): SessionRow[] {
           paths.push(quote ? "/quote" : "/book");
           events.add(quote ? "quote_start" : "booking_start");
           if (!quote) events.add("book_pickup_click");
-          if (r() < 0.42) events.add(quote ? "quote_success" : "booking_success");
-          else if (r() < 0.35) events.add("whatsapp_click");
+          if (r() < 0.42) events.add(quote ? "quote_success" : "booking_success").add("phone_entered");
+          else {
+            if (r() < 0.4) events.add("phone_entered");
+            if (r() < 0.35) events.add("whatsapp_click");
+          }
         } else if (r() < 0.09) events.add("whatsapp_click");
       }
       if (r() < 0.04) {
@@ -184,4 +188,40 @@ export function previewRequests(): WebsiteRequest[] {
     } satisfies WebsiteRequest;
   });
   return rows.sort((a, b) => b.created_at.localeCompare(a.created_at));
+}
+
+/** "After the request": one row per request, older ones further along (a fresh request can't be delivered yet). */
+export function previewOutcomes(): OutcomeRow[] {
+  const r = prng(11);
+  const now = Date.now();
+  return Array.from({ length: 180 }, (_, i) => {
+    const created = now - Math.floor(i * 12 * 3_600_000 * (0.5 + r()));
+    const ageDays = (now - created) / 86_400_000;
+    const src = weighted(r, SOURCES);
+    const quote = r() < 0.3;
+    const cancelled = r() < 0.12;
+    const paid = src.utm_medium === "paid_social" || src.utm_medium === "cpc";
+    const picked = !cancelled && ageDays > 1 && r() < (paid ? 0.66 : 0.8);
+    const delivered = picked && ageDays > 3 && r() < 0.92;
+    const again = delivered && ageDays > 8 && r() < Math.min(0.45, ageDays / 60);
+    return {
+      lead_id: uuid(r),
+      created_at: new Date(created).toISOString(),
+      kind: quote ? "quote" : "booking",
+      service: pick(r, SERVICES),
+      device: weighted(r, [["mobile", 75], ["desktop", 25]] as [string, number][]),
+      utm_source: src.utm_source ?? null,
+      utm_medium: src.utm_medium ?? null,
+      utm_campaign: src.utm_campaign ?? null,
+      referrer_host: src.referrer_host ?? null,
+      click_id: src.click_id ?? null,
+      landing_page: src.landing_page ?? "/",
+      cancelled,
+      picked,
+      order_number: picked ? `VEL-${String(4000 + i).padStart(4, "0")}` : null,
+      delivered,
+      ordered_again: again,
+      returning_customer: picked ? r() < 0.3 : null,
+    } satisfies OutcomeRow;
+  }).sort((a, b) => b.created_at.localeCompare(a.created_at));
 }
