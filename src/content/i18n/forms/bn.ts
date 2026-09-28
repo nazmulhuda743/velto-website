@@ -148,6 +148,10 @@ export const formsBn: FormText = {
     barItems: "{n}টি আইটেম",
     barItemsOne: "১টি আইটেম",
     barReview: "অর্ডার দেখুন",
+    barToFree: "ফ্রি ডেলিভারির জন্য আর {more}",
+    freeProgressLabel: "ফ্রি পিকআপ ও ডেলিভারি পর্যন্ত অগ্রগতি",
+    addOnsTitle: "জনপ্রিয় আইটেম যোগ করুন",
+    freeUnlocked: "ফ্রি পিকআপ ও ডেলিভারি পাচ্ছেন।",
     whatsapp: {
       greeting: "হ্যালো Velto, আমি একটি পিকআপ বুক করতে চাই।",
       what: "যা নিতে হবে: {v}",
