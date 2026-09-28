@@ -32,6 +32,7 @@ const SECTION_LABEL: Record<Section, string> = {
   reviews: "Reviews",
   settings: "Site settings",
   feedback: "Customer feedback",
+  coupons: "Goal coupons",
   loyalty: "Loyalty",
   promo: "Promo & popup",
   prices: "Prices",

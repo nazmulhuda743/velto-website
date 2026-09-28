@@ -2,6 +2,9 @@ import { after, NextResponse, type NextRequest } from "next/server";
 import { logServerEvent } from "@/lib/analytics/store";
 import { bookingEstimateText } from "@/lib/booking-estimate";
 import { cleanBookingItems } from "@/lib/booking-items";
+import { couponNote, usableCoupon } from "@/lib/customer/goal";
+import { getCustomerSession, getGoal } from "@/lib/customer/portal";
+import { getSiteContent } from "@/lib/site-content";
 import {
   IntegrationError,
   integrationLogContext,
@@ -37,6 +40,17 @@ const fail = (
     { status, headers: { "Cache-Control": "no-store" } },
   );
 
+/** The signed-in customer's monthly-goal reward for today, worded for the Ops notes; undefined for everyone else. */
+async function couponForCaller(): Promise<string | undefined> {
+  const session = await getCustomerSession();
+  if (session.kind !== "customer" || session.account.state !== "ready" || session.account.link.status !== "linked") return undefined;
+  const { loyalty } = await getSiteContent();
+  if (!loyalty.goal.enabled) return undefined;
+  const goal = await getGoal(loyalty.goal.doubleFirst);
+  const c = goal ? usableCoupon(goal.coupons, goal.today) : null;
+  return c ? couponNote(c) : undefined;
+}
+
 export async function POST(request: NextRequest) {
   const requestId = crypto.randomUUID();
 
@@ -48,7 +62,8 @@ export async function POST(request: NextRequest) {
   const data = input.data && typeof input.data === "object" ? (input.data as Record<string, unknown>) : {};
   const items = cleanBookingItems(data.items);
   const estimate = items?.length ? await bookingEstimateText(items).catch(() => undefined) : undefined;
-  const parsed = validateBookingSubmission(input.data, { estimate, siteUrl: SITE_URL });
+  const coupon = await couponForCaller().catch(() => undefined);
+  const parsed = validateBookingSubmission(input.data, { estimate, siteUrl: SITE_URL, coupon });
   const context = validateSubmissionContext({ idempotencyKey: input.idempotencyKey, requestId });
   if (!parsed.ok || !context.ok) {
     const issues = [...(parsed.ok ? [] : parsed.issues), ...(context.ok ? [] : context.issues)];

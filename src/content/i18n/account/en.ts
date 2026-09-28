@@ -339,6 +339,26 @@ export const accountEn = {
     progressAria: "{done} of {total} orders to {tier}",
     stampAria: "{done} of {n} orders",
   },
+  /** Monthly goal card on the account home (components/account/GoalCard.tsx). */
+  goal: {
+    label: "Your {month} goal",
+    spent: "৳{spend} so far this month",
+    headStart: "Includes your first order counted twice: a head start of ৳{n}.",
+    toNext: "৳{n} more this month → {reward}",
+    reachedTop: "You've reached the top reward for {month}: {reward}",
+    reachedNext: "Reached: {reward}. ৳{n} more → {next}",
+    daysLeft: "{n} days left in {month}",
+    daysLeftOne: "Last day of {month} today",
+    rungs: "The ladder",
+    couponsTitle: "Your rewards",
+    couponOpen: "Valid until {date}",
+    couponUsed: "Used{order}",
+    couponOn: " on {n}",
+    couponHow: "Book a pickup as usual. Velto applies your reward when we confirm the order.",
+    bookWith: "Book with this reward",
+    howItWorks: "Spend counts every order in the month except cancelled ones. The reward arrives on the 1st and is good for that whole month.",
+    progressAria: "৳{done} of ৳{total} towards {reward}",
+  },
   /** Order rating (components/account/FeedbackForm.tsx) and the ask on the account home. */
   feedback: {
     askTitle: "How was order {n}?",

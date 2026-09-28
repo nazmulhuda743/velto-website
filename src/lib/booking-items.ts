@@ -133,6 +133,8 @@ export type BookingNoteExtras = {
   backBy?: string;
   /** Links to the customer's photos (opened by staff from the Ops task). */
   photos?: string[];
+  /** The customer's monthly-goal coupon, already worded ("Coupon VG-A1B2C3: ৳200 off (valid to 2026-10-31)"). */
+  coupon?: string;
 };
 
 /**
@@ -148,6 +150,7 @@ export function composeBookingNotes(items: BookingItem[], note?: string, extras:
         : "",
     extras.estimate ? `Website estimate: ${extras.estimate}.` : "",
     extras.backBy ? `Wanted back by: ${extras.backBy}.` : "",
+    extras.coupon ? `${extras.coupon}.` : "",
     // No full stop after a link: it would end up inside the link when the Ops app opens it.
     extras.photos?.length ? `Photos: ${extras.photos.join(" ")}` : "",
   ].filter(Boolean);
@@ -157,7 +160,7 @@ export function composeBookingNotes(items: BookingItem[], note?: string, extras:
 }
 
 /** The longest estimate and wanted-back wording the notes need room for. */
-export const NOTE_EXTRAS_RESERVE = 160;
+export const NOTE_EXTRAS_RESERVE = 240;
 
 /** Room one photo link takes in the notes ("https://www.velto.com.bd/go/photo/<32 hex> "). */
 export const NOTE_PHOTO_RESERVE = 72;

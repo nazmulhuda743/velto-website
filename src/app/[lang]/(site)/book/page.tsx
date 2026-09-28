@@ -15,6 +15,8 @@ import { getLocale } from "@/lib/i18n/server";
 import { getPickupChargeMinor } from "@/lib/booking-estimate";
 import { getServicePrices } from "@/lib/service-prices";
 import { getSiteContent } from "@/lib/site-content";
+import { getGoal } from "@/lib/customer/portal";
+import { usableCoupon } from "@/lib/customer/goal";
 import { keepBanglaSuffixes } from "@/lib/i18n/config";
 import { repeatItemsFor } from "@/lib/booking-repeat";
 
@@ -41,6 +43,12 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
     getSiteContent(),
   ]);
   const account = session.kind === "customer" && session.account.state === "ready" ? session.account : null;
+  // A monthly-goal reward the customer holds today: shown in the summary, applied by Velto at confirmation.
+  const goal = account && settings ? await (async () => {
+    const { loyalty } = await getSiteContent();
+    return loyalty.goal.enabled ? getGoal(loyalty.goal.doubleFirst) : null;
+  })() : null;
+  const coupon = goal ? usableCoupon(goal.coupons, goal.today) : null;
   const returnTo = `/book${service ? `?service=${encodeURIComponent(service)}` : ""}`;
   const locale = await getLocale();
   const f = formText(locale);
@@ -109,6 +117,7 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
                 repeatItems={repeatItems}
                 pickupChargeMinor={pickupChargeMinor}
                 offer={offer || undefined}
+                coupon={coupon ? { code: coupon.code, kind: coupon.kind, amount: coupon.amount } : undefined}
                 presetNote={joinNotes(routineNote ?? (repeat ? format(t.repeatNote, { n: repeat }) : t.presetNotes[service ?? ""]), prefs ? careNote(prefs.care, t.care) : "")}
                 savedAddresses={prefs?.addresses ?? []}
                 previewOutcome={previewOutcome}

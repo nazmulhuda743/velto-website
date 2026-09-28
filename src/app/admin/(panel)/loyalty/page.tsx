@@ -1,9 +1,10 @@
 import { AdminHeader, Badge, DataNotice, Field, Notice, one, type SearchParams } from "@/components/admin/ui";
-import { getLoyaltyDistribution } from "@/lib/admin/customer-extras";
+import { getLoyaltyDistribution, previewGoal } from "@/lib/admin/customer-extras";
+import { MAX_RUNGS, monthName, shiftMonth, todayDhaka } from "@/lib/customer/goal";
 import { canEditLoyalty } from "@/lib/admin/permissions";
 import { requireSection } from "@/lib/admin/session";
 import { getSiteContent } from "@/lib/site-content";
-import { saveLoyaltyAction } from "../../customer-actions";
+import { saveGoalAction, saveLoyaltyAction } from "../../customer-actions";
 
 const taka = (n: number) => `৳${Math.round(n).toLocaleString("en-IN")}`;
 
@@ -13,6 +14,11 @@ export default async function LoyaltyPage({ searchParams }: { searchParams: Sear
   const editable = canEditLoyalty(admin.role);
   const { loyalty } = await getSiteContent();
   const dist = await getLoyaltyDistribution(loyalty.windowMonths, loyalty.tiers.map((t) => t.min));
+  const goal = loyalty.goal;
+  const lastMonth = shiftMonth(todayDhaka().slice(0, 7), -1);
+  const goalPreview = await previewGoal(lastMonth, goal.rungs, goal.doubleFirst);
+  const goalRows = [...goal.rungs, ...Array.from({ length: Math.max(0, MAX_RUNGS - goal.rungs.length) }, () => null)];
+  const tab = one(params.tab);
   // Room for up to six tiers; empty rows beyond the current ones can add a tier.
   const rows = [...loyalty.tiers, ...Array.from({ length: Math.max(0, 6 - loyalty.tiers.length) }, () => null)];
 
@@ -23,7 +29,7 @@ export default async function LoyaltyPage({ searchParams }: { searchParams: Sear
         intro="Tiers customers see in their website account, counted from their own Velto orders, and an optional reward every few orders. Benefits and rewards are promises to customers: only an Owner can change them, and Velto staff apply them to orders."
         actions={<Badge tone={loyalty.enabled ? "green" : "neutral"}>{loyalty.enabled ? "Shown to customers" : "Off"}</Badge>}
       />
-      <Notice saved={one(params.saved)} error={one(params.error)} />
+      <Notice saved={tab === "goal" ? undefined : one(params.saved)} error={tab === "goal" ? undefined : one(params.error)} />
 
       <section aria-labelledby="dist-title" className="admin-card mt-6 p-5 md:p-7">
         <h2 id="dist-title" className="t-h4 text-navy">
@@ -145,6 +151,84 @@ export default async function LoyaltyPage({ searchParams }: { searchParams: Sear
           ) : null}
         </fieldset>
       </form>
+
+      {/* ---------- monthly goal ---------- */}
+      <section id="goal" aria-labelledby="goal-title" className="admin-card mt-6 scroll-mt-6 p-5 md:p-7">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 id="goal-title" className="t-h4 text-navy">
+            Monthly goal → next-month reward
+          </h2>
+          <Badge tone={goal.enabled ? "green" : "neutral"}>{goal.enabled ? "Shown to customers" : "Off"}</Badge>
+        </div>
+        <p className="mt-1 t-small text-secondary">
+          &ldquo;Spend ৳X this month, get Y all next month.&rdquo; The account shows a progress bar towards the next rung; on the 1st, everyone who
+          reached a rung gets a coupon (Goal coupons) that is good for that whole month, so it brings them back. Cancelled orders don&apos;t count.
+        </p>
+        {tab === "goal" ? <Notice saved={one(params.saved)} error={one(params.error)} /> : null}
+
+        {goalPreview.state === "ok" ? (
+          <p className="mt-3 t-small text-body">
+            {goalPreview.preview ? <DataNotice state="preview" /> : null}
+            With this ladder, {monthName(lastMonth)} would have earned:{" "}
+            {goal.rungs.map((r, i) => (
+              <span key={r.spend}>
+                {i > 0 ? " · " : ""}
+                <strong className="text-navy">{goalPreview.data.rungs.find((x) => x.rung === i + 1)?.customers ?? 0}</strong> customers ≥ ৳{r.spend}
+              </span>
+            ))}{" "}
+            (of {goalPreview.data.customers} who ordered).
+          </p>
+        ) : goalPreview.state === "error" ? (
+          <DataNotice state="error" message={goalPreview.message} />
+        ) : null}
+
+        <form action={saveGoalAction} className="mt-5">
+          <fieldset disabled={!editable} className="space-y-5">
+            <div className="flex flex-wrap gap-6">
+              <label className="flex items-center gap-3">
+                <input type="checkbox" name="goalEnabled" defaultChecked={goal.enabled} className="size-4" />
+                <span className="font-semibold text-navy">Show the monthly goal in customer accounts</span>
+              </label>
+              <label className="flex items-center gap-3">
+                <input type="checkbox" name="doubleFirst" defaultChecked={goal.doubleFirst} className="size-4" />
+                <span className="font-semibold text-navy">Count the first order of the month twice (a head start)</span>
+              </label>
+            </div>
+            <div className="space-y-3">
+              <p className="text-[15px] font-semibold text-navy">Rungs, lowest first</p>
+              <p className="t-small text-secondary">Leave a rung&apos;s spend empty to drop it. The reward is shown exactly as written. &ldquo;Free delivery&rdquo; is good on every order of the month; an amount off is for one order.</p>
+              {goalRows.map((r, i) => (
+                <fieldset key={i} className="grid gap-3 rounded-md border border-line p-4 md:grid-cols-[130px_150px_120px_1fr_1fr]">
+                  <legend className="px-1 t-small font-semibold text-secondary">Rung {i + 1}</legend>
+                  <Field label="Spend (৳)">
+                    <input name={`goalSpend${i}`} type="number" min={100} max={100000} step={1} defaultValue={r?.spend ?? ""} className="admin-input" />
+                  </Field>
+                  <Field label="Reward type">
+                    <select name={`goalKind${i}`} defaultValue={r?.kind ?? "taka"} className="admin-input">
+                      <option value="delivery">Free delivery, all month</option>
+                      <option value="taka">Amount off one order</option>
+                    </select>
+                  </Field>
+                  <Field label="Amount off (৳)">
+                    <input name={`goalAmount${i}`} type="number" min={0} max={100000} step={1} defaultValue={r?.amount || ""} className="admin-input" />
+                  </Field>
+                  <Field label="Reward, as the customer reads it">
+                    <input name={`goalLabel${i}`} defaultValue={r?.label ?? ""} maxLength={120} className="admin-input" />
+                  </Field>
+                  <Field label="In Bangla">
+                    <input name={`goalLabelBn${i}`} lang="bn" defaultValue={r?.labelBn ?? ""} maxLength={120} className="admin-input" />
+                  </Field>
+                </fieldset>
+              ))}
+            </div>
+            {editable ? (
+              <button type="submit" className="admin-btn">
+                Save monthly goal
+              </button>
+            ) : null}
+          </fieldset>
+        </form>
+      </section>
     </>
   );
 }
