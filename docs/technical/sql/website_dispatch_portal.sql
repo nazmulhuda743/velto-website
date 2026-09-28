@@ -5,7 +5,7 @@
 -- customer gets rows, and only their own: deliveries by their orders' numbers, pickups by their
 -- verified phone. Only planned stops (a day set) that are still open, from yesterday on.
 -- Requires customer_portal.sql and website_dispatch.sql. Idempotent.
--- Status: STAGING only until the owner approves production.
+-- Status: applied on staging and on production (owner-approved, 2026-09-28).
 
 begin;
 
