@@ -33,10 +33,10 @@ export const validOtp = (raw: string) => {
  * Android format, so phones can offer the code for autofill on www.velto.com.bd only.
  */
 export function otpMessage(code: string, host = "www.velto.com.bd") {
-  return `Your sign-in code is ${code}. It expires in ${OTP_TTL_MINUTES} minutes. Never share it; Velto staff will never ask for it.\n\n@${host} #${code}`;
+  return `Use OTP: ${code} to sign in to Velto. Valid for ${OTP_TTL_MINUTES} minutes. Please do not share it with anyone.\n\n@${host} #${code}`;
 }
 
 /** Text for "Show my past orders" (email and Google accounts proving their phone). */
-export function linkCodeMessage(code: string) {
-  return `Your code to show your Velto orders is ${code}. It expires in 10 minutes. Never share it; Velto staff will never ask for it.`;
+export function linkCodeMessage(code: string, host = "www.velto.com.bd") {
+  return `Use OTP: ${code} to show your Velto orders. Valid for 10 minutes. Please do not share it with anyone.\n\n@${host} #${code}`;
 }
