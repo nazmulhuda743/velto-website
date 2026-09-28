@@ -20,6 +20,7 @@ export const SECTIONS = [
   "consent",
   "requests",
   "dispatch",
+  "capacity",
   "retention",
   "feedback",
   "loyalty",
@@ -55,7 +56,7 @@ const MATRIX: Record<Role, ReadonlySet<Section>> = {
   manager: new Set(SECTIONS.filter((s) => s !== "access" && s !== "approvals")),
   marketing: new Set<Section>(["overview", "funnel", "visitors", "marketing", "revenue", "consent", "loyalty", "coupons", "seo", "copy", "reviews", "promo", "notifications", "board"]),
   designer: new Set<Section>(["images", "copy", "seo", "reviews", "promo", "settings", "board"]),
-  support: new Set<Section>(["requests", "dispatch", "retention", "feedback", "coupons", "accounts", "prices", "notifications", "board"]),
+  support: new Set<Section>(["requests", "dispatch", "capacity", "retention", "feedback", "coupons", "accounts", "prices", "notifications", "board"]),
 };
 
 export const isRole = (value: unknown): value is Role => ROLES.includes(value as Role);
@@ -120,6 +121,12 @@ export const canProposePrices = (role: Role | null | undefined) => role === "own
 
 /** Archiving a board task (there is no delete) is for Owners and Managers. */
 export const canArchiveTasks = (role: Role | null | undefined) => role === "owner" || role === "manager";
+
+/**
+ * Pickup & delivery capacity: Owners and Managers set it (windows, zones, numbers, blocks) and may
+ * book over a full window with a reason. Customer support sees the board and books within capacity.
+ */
+export const canEditCapacity = (role: Role | null | undefined) => role === "owner" || role === "manager";
 
 /** Changing loyalty tiers, benefits and rewards is a business decision: Owners only. Others view. */
 export const canEditLoyalty = (role: Role | null | undefined) => role === "owner";

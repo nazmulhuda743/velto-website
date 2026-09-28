@@ -5,7 +5,7 @@ import type { DispatchPlan } from "@/lib/customer/portal";
 
 const nextDay = (iso: string) => new Date(Date.parse(`${iso}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
 
-/** "Today, Evening 5–9 PM with Rakib" for a plan; null when it is neither today nor tomorrow. */
+/** "Today, Evening 4–8 PM with Rakib" for a plan; null when it is neither today nor tomorrow. */
 export function planWhen(plan: DispatchPlan, locale: Locale, today = todayDhaka()): string | null {
   const t = accountText(locale).plan;
   const when = plan.slotDate === today ? t.today : plan.slotDate === nextDay(today) ? t.tomorrow : null;

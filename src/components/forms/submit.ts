@@ -25,6 +25,8 @@ export type BookingFormData = {
   /** Ids of photos already uploaded through /api/bookings/photos (the server links them in the notes). */
   photos?: string[];
   notes?: string;
+  /** The pickup window chosen from live capacity (reserved when the booking is confirmed). */
+  slot?: { date: string; window: string };
 };
 
 export type QuoteFormData = {
@@ -41,7 +43,7 @@ export type QuoteFormData = {
 export type SubmitResult =
   /** `reference` is issued by Velto Ops; the UI never invents one. */
   | { ok: true; reference?: string }
-  | { ok: false; code: "not_connected" | "invalid_request" | "unavailable" | "duplicate_submission" };
+  | { ok: false; code: "not_connected" | "invalid_request" | "unavailable" | "duplicate_submission" | "slot_unavailable" };
 
 /**
  * One idempotency key per distinct payload, reused across retries of the same
@@ -74,6 +76,7 @@ async function post(path: string, data: Record<string, unknown>): Promise<Submit
     }
     if (body?.error?.code === "invalid_request") return { ok: false, code: "invalid_request" };
     if (body?.error?.code === "duplicate_submission") return { ok: false, code: "duplicate_submission" };
+    if (body?.error?.code === "slot_unavailable") return { ok: false, code: "slot_unavailable" };
     return { ok: false, code: "unavailable" };
   } catch {
     return { ok: false, code: "unavailable" };

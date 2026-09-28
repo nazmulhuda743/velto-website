@@ -138,12 +138,12 @@ async function rpc(fn: string, args: Record<string, unknown>): Promise<DispatchR
   }
 }
 
-export function planJob(job: string, person: StaffMember | null, date: string | null, slot: SlotId | null, actor: string): Promise<DispatchResult> | DispatchResult {
+export function planJob(job: string, person: StaffMember | null, date: string | null, slot: SlotId | null, actor: string, override?: string): Promise<DispatchResult> | DispatchResult {
   if (isAdminPreview()) {
     const stage = person && date ? "scheduled" : person || date ? "assigned" : "new";
     return previewWrite(job, { assignee_id: person?.id ?? null, assignee_name: person?.name ?? null, slot_date: date, slot, stage }, "planned");
   }
-  return rpc("website_dispatch_plan", { p_job: job, p_assignee_id: person?.id ?? null, p_assignee_name: person?.name ?? null, p_slot_date: date, p_slot: slot, p_actor: actor });
+  return rpc("website_dispatch_plan", { p_job: job, p_assignee_id: person?.id ?? null, p_assignee_name: person?.name ?? null, p_slot_date: date, p_slot: slot, p_actor: actor, p_override: override || null });
 }
 
 export function closeJob(job: string, outcome: "done" | "cancelled", reason: string | null, actor: string): Promise<DispatchResult> | DispatchResult {

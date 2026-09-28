@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent, type ReactNode, type Ref } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode, type Ref } from "react";
 import { track } from "@/components/layout/Analytics";
 import { ButtonLink } from "@/components/ui/Button";
 import { WhatsAppIcon } from "@/components/ui/icons";
@@ -31,16 +31,20 @@ export type RepeatItem = { item: string; service: ItemService | ""; quantity: nu
 import { normalisePhone, phoneOk } from "./fields";
 import { MAX_BOOKING_PHOTOS } from "@/lib/booking-photos";
 import { shrinkPhoto } from "./shrink-photo";
+import { PickupWindows, hoursText, type PickedWindow } from "./PickupWindows";
 import { submitBooking, uploadBookingPhoto, type BookingFormData, type SubmitResult } from "./submit";
 
 type Text = FormText["booking"];
 type Common = FormText["common"];
 
 /**
- * Book a Pickup, in the order the owner set: choose services, add items with their prices,
- * your details, pickup day and time (required) with delivery date, instructions and optional
- * photos, then the order summary (estimate and the pickup & delivery charge below ৳499) and
- * Confirm. Velto then calls to confirm the pickup.
+ * Book a Pickup: what needs cleaning (services, items with prices), where (sector and address),
+ * the pickup window, then name and phone, the order summary and Confirm.
+ *
+ * Pickup windows come from the Velto Scheduling Engine for the customer's sector: only windows
+ * with room can be chosen, and Confirm reserves the window in the same transaction that creates
+ * the Ops task (a window taken a moment earlier is refused, and the picker reloads). When
+ * capacity booking is off, the same picker offers a preferred window that Velto confirms.
  *
  * Language: the customer sees the page language (`t`), but everything sent to Velto Ops
  * (toBookingData) is English — the area label, the pickup preference, service slugs and item
@@ -53,22 +57,8 @@ const BOOKING_SERVICES = ["dry-cleaning", "wash-and-iron", "ironing", "curtain-c
 const SECTORS = Array.from({ length: 18 }, (_, i) => i + 1);
 const OUTSIDE = "outside";
 
-const DAYS = ["today", "tomorrow", "other"] as const;
-type Day = (typeof DAYS)[number];
-
-/**
- * Preferred part of the day. No clock times: the Velto team calls to confirm the exact time.
- * `en` is what Velto Ops receives; the customer sees t.slots[id]. `end` (Dhaka hour) only
- * rules out a part of today that has already passed.
- */
-const SLOTS = [
-  { id: "morning", en: "Morning", end: 12 },
-  { id: "afternoon", en: "Afternoon", end: 17 },
-  { id: "evening", en: "Evening", end: 21 },
-] as const;
-
-/** A part of the day can still be chosen for today until an hour before it ends (Dhaka time). */
-const slotOpenToday = (end: number) => (new Date().getUTCHours() + 6) % 24 < end - 1;
+/** Today in Dhaka (YYYY-MM-DD): pickup days are Dhaka days. */
+const dhakaToday = () => new Date(Date.now() + 6 * 3_600_000).toISOString().slice(0, 10);
 
 type Photo = { key: string; preview: string; status: "uploading" | "done" | "failed"; id?: string };
 
@@ -83,9 +73,8 @@ type FormState = {
   items: ItemLine[];
   sector: string;
   address: string;
-  day: Day | null;
-  date: string;
-  slot: string;
+  /** The pickup day and window (booked: from live capacity, reserved on Confirm). */
+  pickup: PickedWindow | null;
   backBy: string;
   name: string;
   phone: string;
@@ -93,7 +82,7 @@ type FormState = {
   photos: Photo[];
 };
 
-type ErrorKey = "services" | "name" | "phone" | "sector" | "address" | "day" | "date" | "slot" | "backBy" | "photos";
+type ErrorKey = "services" | "name" | "phone" | "sector" | "address" | "date" | "slot" | "backBy" | "photos";
 type Errors = Partial<Record<ErrorKey, string>>;
 type Status =
   | { state: "idle" }
@@ -113,7 +102,7 @@ const isoDate = (offsetDays = 0, from?: string) => {
 };
 
 /** The pickup date the customer asked for, if any (ISO). */
-const pickupIso = (s: FormState) => (s.day === "today" ? isoDate(0) : s.day === "tomorrow" ? isoDate(1) : s.day === "other" ? s.date : "");
+const pickupIso = (s: FormState) => s.pickup?.date ?? "";
 
 /** Earliest "back by" date: about 3 days after the preferred pickup (or today). */
 const earliestBackBy = (s: FormState) => isoDate(BACK_BY_DAYS, pickupIso(s) || undefined);
@@ -182,16 +171,23 @@ const servicesText = (s: FormState, t: Text) =>
 /** One line for summaries: the items, or the chosen services. */
 const whatLabel = (s: FormState, t: Text, locale: Locale) => (s.items.length ? itemsText(itemsOf(s), t, locale) : servicesText(s, t));
 
+const OPS_WINDOWS: Record<string, string> = { morning: "Morning", afternoon: "Afternoon", evening: "Evening", night: "Night" };
+
 /**
- * Pickup day and part of the day, e.g. "Tomorrow Fri 25 Sep, Afternoon". With OPS_WORDS (and no `slots`)
- * this is the contract's preferredPickup string; the customer's version uses t.slots.
+ * Pickup day and window, e.g. "Tomorrow Tue 29 Sep, Evening 4–8 PM (window booked)". With
+ * OPS_WORDS (and no `slots`) this is the contract's preferredPickup string, in English; the
+ * customer's version uses t.slots and the page language.
  */
 function pickupLabel(s: FormState, w: DateWords = OPS_WORDS, slots?: Record<string, string>) {
-  const iso = pickupIso(s);
-  const prefix = s.day === "today" ? w.today : s.day === "tomorrow" ? w.tomorrow : "";
-  const day = iso ? `${prefix} ${niceDate(iso, w)}`.trim() : "";
-  const slot = slots ? slots[s.slot] : SLOTS.find((x) => x.id === s.slot)?.en;
-  return [day, slot].filter(Boolean).join(", ");
+  const p = s.pickup;
+  if (!p) return "";
+  const today = dhakaToday();
+  const prefix = p.date === today ? w.today : p.date === isoDate(1, today) ? w.tomorrow : "";
+  const day = `${prefix} ${niceDate(p.date, w)}`.trim();
+  const window = slots
+    ? `${slots[p.window]} ${hoursText(p.starts, p.ends, w.locale)}`
+    : `${OPS_WINDOWS[p.window]} ${hoursText(p.starts, p.ends, "en")}${p.booked ? " (window booked)" : ""}`;
+  return `${day}, ${window}`;
 }
 
 const pageWords = (t: Text, c: Common, locale: Locale): DateWords => ({
@@ -212,6 +208,7 @@ function toBookingData(s: FormState): BookingFormData {
     address: s.address.trim(),
     preferredPickup: pickupLabel(s),
     service: bookingService(s),
+    ...(s.pickup?.booked ? { slot: { date: s.pickup.date, window: s.pickup.window } } : {}),
     ...(s.services.length ? { services: s.services } : {}),
     ...(s.items.length ? { items: itemsOf(s) } : {}),
     ...(s.backBy ? { deliveryBy: s.backBy } : {}),
@@ -254,16 +251,15 @@ function validate(s: FormState, t: Text, c: Common, locale: Locale): Errors {
   else if (!phoneOk(s.phone)) e.phone = c.phoneInvalid;
   if (!s.sector) e.sector = t.errors.sector;
   if (!s.address.trim()) e.address = t.errors.address;
-  if (!s.day) e.day = t.errors.day;
-  if (s.day === "other" && !s.date) e.date = t.errors.date;
-  if (!s.slot) e.slot = t.errors.slot;
+  if (!s.pickup && s.sector) e.slot = t.errors.slot;
   if (s.photos.some((p) => p.status === "uploading")) e.photos = t.photosWait;
   const earliest = earliestBackBy(s);
   if (s.backBy && s.backBy < earliest) e.backBy = fill(t.errors.backBy, { date: niceDate(earliest, pageWords(t, c, locale)) }, locale);
   return e;
 }
 
-const FIELD_ORDER: ErrorKey[] = ["services", "name", "phone", "sector", "address", "day", "date", "slot", "backBy", "photos"];
+/** The order fields appear in: what, where, when, who. */
+const FIELD_ORDER: ErrorKey[] = ["services", "sector", "address", "date", "slot", "backBy", "photos", "name", "phone"];
 
 /* ---------- presentational pieces (booking page only) ---------- */
 
@@ -273,6 +269,7 @@ const inputHeight = "h-[54px] md:h-[52px]";
 
 function Group({
   step,
+  id,
   title,
   hint,
   stepOf,
@@ -280,15 +277,16 @@ function Group({
   children,
 }: {
   step: number;
+  id?: string;
   title: string;
   hint?: string;
-  /** "Step {n} of 4: " in the page language. */
+  /** "Step {n} of 5: " in the page language. */
   stepOf: string;
   locale: Locale;
   children: ReactNode;
 }) {
   return (
-    <fieldset className="min-w-0 border-t border-line pt-5 first:border-t-0 first:pt-0">
+    <fieldset id={id} className="min-w-0 scroll-mt-28 border-t border-line pt-5 first:border-t-0 first:pt-0">
       <legend className="contents">
         <span className="flex items-baseline gap-3 t-h4 text-navy">
           <span aria-hidden="true" className="w-4 shrink-0 text-action tabular-nums">
@@ -321,62 +319,6 @@ function ErrorText({ id, children }: { id: string; children?: string }) {
       <span aria-hidden="true">!</span>
       {children}
     </p>
-  );
-}
-
-function ChoiceTiles<T extends string>({
-  name,
-  label,
-  options,
-  value,
-  onChange,
-  columns,
-  firstId,
-  error,
-}: {
-  name: string;
-  label: string;
-  options: readonly { value: T; label: string; disabled?: boolean }[];
-  value: T | null;
-  onChange: (v: T) => void;
-  columns: string;
-  /** id on the first choice, so a validation error can move focus here. */
-  firstId?: string;
-  /** id of the error text, when there is one. */
-  error?: string;
-}) {
-  return (
-    <div role="radiogroup" aria-label={label} aria-describedby={error} aria-invalid={error ? true : undefined} className={`grid gap-2 ${columns}`}>
-      {options.map((o, i) => {
-        const checked = value === o.value;
-        return (
-          <label
-            key={`${name}-${o.value}`}
-            className={`flex min-h-11 items-center justify-center rounded-md border px-1 py-2 text-center text-[14px] leading-tight transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-blue md:text-[15px] ${
-              o.disabled
-                ? "cursor-not-allowed border-line bg-soft text-secondary line-through decoration-secondary/60"
-                : checked
-                  ? "cursor-pointer border-blue bg-[#f0f7fc] font-semibold text-navy"
-                  : error
-                    ? "cursor-pointer border-error text-navy"
-                    : "cursor-pointer border-line-strong text-navy hover:border-navy/50"
-            }`}
-          >
-            <input
-              id={i === 0 ? firstId : undefined}
-              type="radio"
-              name={name}
-              value={o.value}
-              checked={checked}
-              disabled={o.disabled}
-              onChange={() => onChange(o.value)}
-              className="sr-only"
-            />
-            {o.label}
-          </label>
-        );
-      })}
-    </div>
   );
 }
 
@@ -739,9 +681,7 @@ export function BookingForm({
     items: initialItems,
     sector: initialContact && (SECTORS.map(String).includes(initialContact.sector) || initialContact.sector === OUTSIDE) ? initialContact.sector : "",
     address: initialContact?.address ?? "",
-    day: null,
-    date: "",
-    slot: "",
+    pickup: null,
     backBy: "",
     name: initialContact?.name ?? "",
     phone: initialContact?.phone ?? "",
@@ -750,6 +690,9 @@ export function BookingForm({
   });
   const [errors, setErrors] = useState<Errors>({});
   const [status, setStatus] = useState<Status>({ state: "idle" });
+  /** Bumped when a window was taken just before Confirm: the picker reloads live availability. */
+  const [refreshWindows, setRefreshWindows] = useState(0);
+  const setPickup = useCallback((v: PickedWindow | null) => setS((prev) => (prev.pickup === v ? prev : { ...prev, pickup: v })), []);
   const started = useRef(false);
   const statusRef = useRef<HTMLDivElement>(null);
   const successRef = useRef<HTMLHeadingElement>(null);
@@ -837,6 +780,13 @@ export function BookingForm({
     if (result.ok) {
       if (!previewOutcome) track("booking_success", { service: bookingService(s) });
       setStatus({ state: "success", reference: result.reference });
+    } else if (result.code === "slot_unavailable") {
+      // Someone took the last place a moment ago: nothing was booked. Reload and ask again.
+      setStatus({ state: "idle" });
+      setS((prev) => ({ ...prev, pickup: null }));
+      setErrors({ slot: t.slotTaken });
+      setRefreshWindows((n) => n + 1);
+      document.getElementById("booking-pickup")?.scrollIntoView({ block: "start" });
     } else {
       setStatus({ state: "failed", code: result.code });
     }
@@ -901,47 +851,7 @@ export function BookingForm({
             />
           </Group>
 
-          <Group step={3} title={t.youTitle} stepOf={t.stepOf} locale={locale}>
-            <div>
-              <FieldLabel htmlFor="booking-name">{t.nameLabel}</FieldLabel>
-              <input
-                id="booking-name"
-                name="name"
-                type="text"
-                autoComplete="name"
-                autoCapitalize="words"
-                enterKeyHint="next"
-                value={s.name}
-                onChange={(e) => update("name", e.target.value)}
-                aria-invalid={errors.name ? true : undefined}
-                aria-describedby={errors.name ? "booking-name-error" : undefined}
-                className={`${inputBase} ${inputHeight} mt-2`}
-              />
-              <ErrorText id="booking-name-error">{errors.name}</ErrorText>
-            </div>
-
-            <div>
-              <FieldLabel htmlFor="booking-phone">{t.phoneLabel}</FieldLabel>
-              <p id="booking-phone-help" className="mt-1 t-small text-secondary">
-                {t.phoneHelp}
-              </p>
-              <input
-                id="booking-phone"
-                name="phone"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                enterKeyHint="next"
-                placeholder="01XXX XXXXXX"
-                value={s.phone}
-                onChange={(e) => update("phone", e.target.value)}
-                onBlur={checkPhoneOnBlur}
-                aria-invalid={errors.phone ? true : undefined}
-                aria-describedby={errors.phone ? "booking-phone-help booking-phone-error" : "booking-phone-help"}
-                className={`${inputBase} ${inputHeight} mt-2`}
-              />
-              <ErrorText id="booking-phone-error">{errors.phone}</ErrorText>
-            </div>
+          <Group step={3} title={t.whereTitle} hint={t.whereHint} stepOf={t.stepOf} locale={locale}>
 
             {savedAddresses.length ? (
               <div data-saved-addresses>
@@ -1024,66 +934,19 @@ export function BookingForm({
             </div>
           </Group>
 
-          <Group step={4} title={t.datesTitle} hint={t.datesHint} stepOf={t.stepOf} locale={locale}>
-            <div>
-              <p className="text-[15px] font-semibold text-navy">{t.dayLabel}</p>
-              <div className="mt-2">
-                <ChoiceTiles
-                  name="day"
-                  label={t.dayLabel}
-                  options={DAYS.map((value) => ({ value, label: t.days[value] }))}
-                  value={s.day}
-                  onChange={(v) => {
-                    update("day", v);
-                    // A window that has already passed today can't stay chosen.
-                    const slot = SLOTS.find((x) => x.id === s.slot);
-                    if (v === "today" && slot && !slotOpenToday(slot.end)) update("slot", "");
-                  }}
-                  columns="grid-cols-3"
-                  firstId="booking-day"
-                  error={errors.day ? "booking-day-error" : undefined}
-                />
-              </div>
-              <ErrorText id="booking-day-error">{errors.day}</ErrorText>
-              {s.day === "other" ? (
-                <div className="mt-3">
-                  <FieldLabel htmlFor="booking-date">{t.dateLabel}</FieldLabel>
-                  <input
-                    id="booking-date"
-                    name="date"
-                    type="date"
-                    min={isoDate(0)}
-                    value={s.date}
-                    onChange={(e) => update("date", e.target.value)}
-                    aria-invalid={errors.date ? true : undefined}
-                    aria-describedby={errors.date ? "booking-date-error" : undefined}
-                    className={`${inputBase} ${inputHeight} mt-2`}
-                  />
-                  <ErrorText id="booking-date-error">{errors.date}</ErrorText>
-                </div>
-              ) : null}
-            </div>
-
-            <div>
-              <p className="text-[15px] font-semibold text-navy">{t.slotLabel}</p>
-              <div className="mt-2">
-                <ChoiceTiles
-                  name="slot"
-                  label={t.slotLabel}
-                  // Only a chosen "today" rules out windows (never evaluated during server rendering).
-                  options={SLOTS.map((x) => ({ value: x.id, label: t.slots[x.id], disabled: s.day === "today" && !slotOpenToday(x.end) }))}
-                  value={s.slot || null}
-                  onChange={(v) => update("slot", v)}
-                  columns="grid-cols-3"
-                  firstId="booking-slot"
-                  error={errors.slot ? "booking-slot-error" : undefined}
-                />
-              </div>
-              {s.day === "today" && SLOTS.every((x) => !slotOpenToday(x.end)) ? (
-                <p className="mt-2 t-small text-navy">{t.slotsTodayNone}</p>
-              ) : null}
-              <ErrorText id="booking-slot-error">{errors.slot}</ErrorText>
-            </div>
+          <Group step={4} id="booking-pickup" title={t.pickupTitle} stepOf={t.stepOf} locale={locale}>
+            <PickupWindows
+              sector={s.sector === OUTSIDE ? "" : s.sector}
+              outside={s.sector === OUTSIDE}
+              value={s.pickup}
+              onChange={setPickup}
+              refresh={refreshWindows}
+              t={t}
+              c={c}
+              locale={locale}
+              errorDate={errors.date}
+              errorSlot={errors.slot}
+            />
 
             <div>
               <FieldLabel htmlFor="booking-backBy">
@@ -1131,6 +994,49 @@ export function BookingForm({
             <PhotoPicker t={t} c={c} locale={locale} photos={s.photos} onAdd={addPhotos} onRemove={removePhoto} error={errors.photos} />
           </Group>
 
+          <Group step={5} title={t.youTitle} stepOf={t.stepOf} locale={locale}>
+            <div>
+              <FieldLabel htmlFor="booking-name">{t.nameLabel}</FieldLabel>
+              <input
+                id="booking-name"
+                name="name"
+                type="text"
+                autoComplete="name"
+                autoCapitalize="words"
+                enterKeyHint="next"
+                value={s.name}
+                onChange={(e) => update("name", e.target.value)}
+                aria-invalid={errors.name ? true : undefined}
+                aria-describedby={errors.name ? "booking-name-error" : undefined}
+                className={`${inputBase} ${inputHeight} mt-2`}
+              />
+              <ErrorText id="booking-name-error">{errors.name}</ErrorText>
+            </div>
+
+            <div>
+              <FieldLabel htmlFor="booking-phone">{t.phoneLabel}</FieldLabel>
+              <p id="booking-phone-help" className="mt-1 t-small text-secondary">
+                {s.pickup?.booked ? t.phoneHelpBooked : t.phoneHelp}
+              </p>
+              <input
+                id="booking-phone"
+                name="phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                enterKeyHint="next"
+                placeholder="01XXX XXXXXX"
+                value={s.phone}
+                onChange={(e) => update("phone", e.target.value)}
+                onBlur={checkPhoneOnBlur}
+                aria-invalid={errors.phone ? true : undefined}
+                aria-describedby={errors.phone ? "booking-phone-help booking-phone-error" : "booking-phone-help"}
+                className={`${inputBase} ${inputHeight} mt-2`}
+              />
+              <ErrorText id="booking-phone-error">{errors.phone}</ErrorText>
+            </div>
+          </Group>
+
           <OrderSummary s={s} t={t} locale={locale} chargeMinor={pickupChargeMinor} offer={offer} coupon={coupon} />
           <MobileTotalBar s={s} t={t} locale={locale} chargeMinor={pickupChargeMinor} coupon={coupon} />
 
@@ -1176,7 +1082,7 @@ export function BookingForm({
               )}
             </button>
 
-            <p className="mt-4 t-small text-secondary">{t.reassureTime}</p>
+            <p className="mt-4 t-small text-secondary">{s.pickup?.booked ? t.reassureBooked : t.reassureTime}</p>
           </div>
         </form>
       </div>
@@ -1212,7 +1118,7 @@ function BookingSuccess({
     { label: state.items.length ? t.rowItems : t.rowService, value: whatLabel(state, t, locale) || t.notSpecified },
     ...(estimate ? [{ label: t.rowEstimate, value: estimate }] : []),
     { label: t.rowPickupFrom, value: `${state.address.trim()}, ${areaText(state.sector, t, locale)}` },
-    { label: t.rowPreferredTime, value: when },
+    { label: state.pickup?.booked ? t.rowPickupWindow : t.rowPreferredTime, value: when },
     ...(photos ? [{ label: t.rowPhotos, value: fill(t.photosAdded, { n: photos }, locale) }] : []),
     ...(state.backBy ? [{ label: t.rowBackBy, value: niceDate(state.backBy, words) }] : []),
     // Phone numbers keep their digits.
@@ -1222,9 +1128,11 @@ function BookingSuccess({
   return (
     <div data-booking-success>
       <h1 id="page-title" ref={headingRef} tabIndex={-1} className="scroll-mt-32 t-h1 text-navy focus:outline-none">
-        {t.successTitle}
+        {state.pickup?.booked ? t.successTitleBooked : t.successTitle}
       </h1>
-      <p className="mt-3 t-body text-body md:mt-4 md:t-body-lg">{format(t.successBody, { name: firstName })}</p>
+      <p className="mt-3 t-body text-body md:mt-4 md:t-body-lg">
+        {state.pickup?.booked ? format(t.successBodyBooked, { name: firstName, when }) : format(t.successBody, { name: firstName })}
+      </p>
 
       <dl className="mt-7 border-t border-navy">
         {rows.map((r) => (
@@ -1246,7 +1154,7 @@ function BookingSuccess({
 
       <h2 className="mt-8 t-label uppercase text-navy">{t.nextTitle}</h2>
       <ol className="mt-3 space-y-2.5 text-body">
-        {t.nextSteps.map((step, i) => (
+        {(state.pickup?.booked ? t.nextStepsBooked : t.nextSteps).map((step, i) => (
           <li key={step} className="flex gap-3">
             <span className="t-label pt-[4px] text-action">{localDigits(String(i + 1).padStart(2, "0"), locale)}</span>
             {step}

@@ -28,6 +28,13 @@ const I = {
       <path d="M8 3.5v3M16 3.5v3M4 10h16M8.5 14h3M8.5 17h6" />
     </>
   ),
+  capacity: (
+    <>
+      <rect x="4" y="5" width="16" height="15" rx="2" />
+      <path d="M4 10h16M8 3.5v3M16 3.5v3M7.5 14h4M7.5 17h7" />
+      <path d="M15 13.5h2v1.5" />
+    </>
+  ),
   dispatch: (
     <>
       <path d="M3.5 7h10v9h-10zM13.5 10h4l3 3v3h-7" />
@@ -129,6 +136,7 @@ const GROUPS: { label: string; items: Item[] }[] = [
     items: [
       { href: "/admin/requests", label: "Bookings & quotes", icon: "requests" },
       { href: "/admin/dispatch", label: "Pickup & delivery", icon: "dispatch" },
+      { href: "/admin/capacity", label: "Capacity", icon: "capacity" },
       { href: "/admin/retention", label: "Bring customers back", icon: "retention" },
       { href: "/admin/feedback", label: "Customer feedback", icon: "feedback" },
       { href: "/admin/loyalty", label: "Loyalty", icon: "loyalty" },

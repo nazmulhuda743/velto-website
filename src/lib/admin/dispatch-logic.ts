@@ -43,11 +43,11 @@ export type DispatchJob = {
   updated_at: string;
 };
 
-/** The three windows of the day, as on the booking form (ends are the Ops reminder times). */
+/** The windows of the day, as on the booking form and in capacity_windows (ends are the Ops reminder times). */
 export const SLOTS: { id: SlotId; label: string; hours: string; end: number }[] = [
-  { id: "morning", label: "Morning", hours: "until 12 PM", end: 12 },
-  { id: "afternoon", label: "Afternoon", hours: "12–5 PM", end: 17 },
-  { id: "evening", label: "Evening", hours: "5–9 PM", end: 21 },
+  { id: "morning", label: "Morning", hours: "9 AM–12 PM", end: 12 },
+  { id: "afternoon", label: "Afternoon", hours: "12–4 PM", end: 16 },
+  { id: "evening", label: "Evening", hours: "4–8 PM", end: 20 },
 ];
 export const isSlot = (v: unknown): v is SlotId => SLOTS.some((s) => s.id === v);
 export const slotLabel = (id: string | null) => SLOTS.find((s) => s.id === id)?.label ?? "";

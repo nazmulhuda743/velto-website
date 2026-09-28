@@ -5,6 +5,8 @@ import { logActivity } from "@/lib/admin/activity";
 import { closeJob, combineJobs, getStaff, mergeJobs, notifyAssignee, planJob, splitJob, type DispatchResult } from "@/lib/admin/dispatch";
 import { addDays, CANCEL_REASONS, dayName, dhakaToday, isSlot, slotLabel } from "@/lib/admin/dispatch-logic";
 import { requireSection } from "@/lib/admin/session";
+import { canEditCapacity } from "@/lib/admin/permissions";
+import { OVERRIDE_REASONS } from "@/lib/capacity-logic";
 
 /**
  * Pickup & delivery. Everyone with the section (Owner, Manager, Customer support) can plan,
@@ -22,6 +24,10 @@ const MESSAGES: Record<string, string> = {
   assignee: "That person isn't active in Velto Ops any more.",
   past: "That day has already passed. Choose today or later.",
   reason: "Give a reason for cancelling.",
+  slot_full: "That window is full for this zone (Capacity). Choose another window, or an Owner or Manager can book over capacity with a reason.",
+  slot_closed: "That window is blocked or closed for this zone (Capacity). Choose another window.",
+  slot_past: "That window has already passed.",
+  override_role: "Only an Owner or Manager can book over capacity.",
   unavailable: "Velto Ops couldn't be reached. Nothing was changed; try again.",
 };
 
@@ -41,7 +47,10 @@ export async function planAction(form: FormData) {
   const day = text(form, "day", 10);
   const slot = text(form, "slot", 12);
   const label = text(form, "label", 120);
+  const pickedReason = text(form, "override", 120);
+  const override = pickedReason === "other" ? text(form, "overrideOther", 200) : OVERRIDE_REASONS.includes(pickedReason) ? pickedReason : "";
   if (!UUID.test(job)) back(form, { error: MESSAGES.not_found });
+  if (override && !canEditCapacity(admin.role)) back(form, { error: MESSAGES.override_role });
 
   const staff = await getStaff();
   const person = personId ? staff.find((p) => p.id === personId) : null;
@@ -50,14 +59,14 @@ export async function planAction(form: FormData) {
   const validDay = /^\d{4}-\d{2}-\d{2}$/.test(day) && day >= today && day <= addDays(today, 30);
   if ((day || slot) && (!validDay || !isSlot(slot))) back(form, { error: MESSAGES.invalid });
 
-  const r = await planJob(job, person ?? null, day || null, isSlot(slot) ? slot : null, admin.name);
+  const r = await planJob(job, person ?? null, day || null, isSlot(slot) ? slot : null, admin.name, override || undefined);
   if (r.ok) {
     const when = day && isSlot(slot) ? `${dayName(day)} ${slotLabel(slot).toLowerCase()}` : "no slot yet";
     await logActivity(admin, {
       section: "dispatch",
-      action: "stop_planned",
+      action: override ? "stop_planned_over_capacity" : "stop_planned",
       target: job,
-      summary: `Planned ${label || "a stop"}: ${person?.name ?? "nobody"}, ${when}`,
+      summary: `Planned ${label || "a stop"}: ${person?.name ?? "nobody"}, ${when}${override ? ` (over capacity: ${override})` : ""}`,
     });
     if (person) await notifyAssignee(person.id, "🛵 New stop for you", `${label || "A stop"} · ${when}`);
   }

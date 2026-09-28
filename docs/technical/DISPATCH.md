@@ -31,7 +31,7 @@ Status: applied and tested on **staging**; applied on **production** 2026-09-27 
 
 ## In the customer account
 
-`portal_dispatch_plans()` (docs/technical/sql/website_dispatch_portal.sql) gives a linked customer their own planned stops: deliveries by their orders' numbers, pickups by their verified phone. The account home shows a "Today / Tomorrow, Evening 5–9 PM · with Rakib" banner and the delivery window on the active order card. Nothing shows until a manager has planned the stop.
+`portal_dispatch_plans()` (docs/technical/sql/website_dispatch_portal.sql) gives a linked customer their own planned stops: deliveries by their orders' numbers, pickups by their verified phone. The account home shows a "Today / Tomorrow, Evening 4–8 PM · with Rakib" banner and the delivery window on the active order card. Nothing shows until a manager has planned the stop.
 
 ## Later: the Velto Ops engine
 

@@ -21,6 +21,11 @@ export type BookingSubmission = {
   service?: ServiceSlug;
   notes?: string;
   attribution: Attribution;
+  /**
+   * A booked pickup window (Velto Scheduling Engine): reserved in the same transaction that
+   * creates the Ops task, or refused when it has just filled. Absent when capacity is off.
+   */
+  slot?: { date: string; window: string };
 };
 
 export type QuoteSubmission = {
