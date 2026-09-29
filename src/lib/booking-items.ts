@@ -135,7 +135,7 @@ export type BookingNoteExtras = {
   backBy?: string;
   /** Links to the customer's photos (opened by staff from the Ops task). */
   photos?: string[];
-  /** A monthly-goal coupon ("Coupon VG-A1B2C3: ৳200 off (valid to 2026-10-31)") or the signed-in account offer, already worded. */
+  /** The signed-in account offer, with a monthly-goal coupon when held (lib/account-offer.ts offerNoteFor), already worded. */
   coupon?: string;
 };
 
@@ -161,8 +161,8 @@ export function composeBookingNotes(items: BookingItem[], note?: string, extras:
   return [...parts, text ? `Note: ${text}` : ""].filter(Boolean).join(" ");
 }
 
-/** The longest estimate and wanted-back wording the notes need room for. */
-export const NOTE_EXTRAS_RESERVE = 240;
+/** The longest estimate, wanted-back and offer wording (10% or a goal coupon) the notes need room for. */
+export const NOTE_EXTRAS_RESERVE = 400;
 
 /** Room one photo link takes in the notes ("https://www.velto.com.bd/go/photo/<32 hex> "). */
 export const NOTE_PHOTO_RESERVE = 72;

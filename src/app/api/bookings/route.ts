@@ -45,8 +45,9 @@ const fail = (
   );
 
 /**
- * The offer line for the Ops notes: the signed-in customer's monthly-goal coupon, else the account
- * offer (lib/account-offer.ts); undefined for guests, staff and when accounts are unavailable.
+ * The offer line for the Ops notes: the account offer (lib/account-offer.ts), with the signed-in
+ * customer's monthly-goal coupon when they hold one (staff apply whichever saves more); undefined
+ * for guests, staff and when accounts are unavailable.
  */
 async function offerForCaller(): Promise<string | undefined> {
   const session = await getCustomerSession();
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest) {
   const data = input.data && typeof input.data === "object" ? (input.data as Record<string, unknown>) : {};
   const items = cleanBookingItems(data.items);
   const estimate = items?.length ? await bookingEstimateText(items).catch(() => undefined) : undefined;
-  // A monthly-goal reward, else the account offer for any booking made signed in (one per order).
+  // The account offer for any booking made signed in, with a monthly-goal coupon when one is held.
   const offerNote = await offerForCaller().catch(() => undefined);
   const parsed = validateBookingSubmission(input.data, { estimate, siteUrl: SITE_URL, coupon: offerNote });
   const context = validateSubmissionContext({ idempotencyKey: input.idempotencyKey, requestId });

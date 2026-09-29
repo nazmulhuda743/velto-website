@@ -1,9 +1,10 @@
 /**
  * Account offer (owner-set, 2026-09-29): 10% off any website booking of ৳499 or more made while
  * signed in to a Velto account. Guests are asked to sign in first. There is no code to type or
- * share; the booking reaches Ops with a note and the team applies it when they confirm the order,
- * as with the monthly-goal coupon (which takes its place when the customer holds one). Pure: no
- * server imports (tested in tests/account-offer.test.cjs).
+ * share; the booking reaches Ops with a note and the team applies it when they confirm the order.
+ * A customer who also holds a monthly-goal coupon gets whichever saves them more, never both
+ * (owner decision, 2026-09-29): staff choose once the order is counted. Pure: no server imports
+ * (tested in tests/account-offer.test.cjs).
  */
 
 export const ACCOUNT_OFFER = { percent: 10, minimumTaka: 499 } as const;
@@ -14,12 +15,13 @@ export function accountOfferNote(): string {
 }
 
 /**
- * The note a booking carries for Ops: a goal coupon when the signed-in customer holds one, else the
- * account offer; nothing for guests.
+ * The note a booking carries for Ops: the account offer, and with it the goal coupon when the
+ * signed-in customer holds one (staff apply whichever saves more); nothing for guests.
  */
 export function offerNoteFor(signedIn: boolean, couponNote: string | null | undefined): string | undefined {
   if (!signedIn) return undefined;
-  return couponNote || accountOfferNote();
+  if (!couponNote) return accountOfferNote();
+  return `${accountOfferNote()}, OR ${couponNote}: apply whichever saves the customer more, not both (an unused coupon stays open)`;
 }
 
 /**

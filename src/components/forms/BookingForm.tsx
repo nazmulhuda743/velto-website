@@ -587,9 +587,9 @@ function OrderSummary({
             {format(t.summaryCoupon, { code: coupon.code, what: coupon.kind === "delivery" ? t.couponDelivery : fill(t.couponTaka, { n: coupon.amount }, locale) })}
           </p>
         ) : null}
-        {accountOffer && !coupon ? (
+        {accountOffer ? (
           <p className="font-semibold text-navy" data-account-offer={accountOffer}>
-            {fill(accountOffer === "yours" ? t.accountOfferYours : t.accountOfferGuest, { percent: ACCOUNT_OFFER.percent, amount: `৳${localDigits(ACCOUNT_OFFER.minimumTaka, locale)}` }, locale)}
+            {fill(accountOffer === "guest" ? t.accountOfferGuest : coupon ? t.accountOfferOrCoupon : t.accountOfferYours, { percent: ACCOUNT_OFFER.percent, amount: `৳${localDigits(ACCOUNT_OFFER.minimumTaka, locale)}` }, locale)}
             {accountOffer === "guest" && signInHref ? (
               <>
                 {" "}
@@ -857,7 +857,7 @@ export function BookingForm({
   offer?: string;
   /** The signed-in customer's monthly-goal reward for this month (the server adds it to the Ops notes). */
   coupon?: Coupon;
-  /** The 10% account offer (no goal coupon): "yours" when signed in, "guest" asks to sign in first. */
+  /** The 10% account offer: "yours" when signed in (with a goal coupon, whichever saves more), "guest" asks to sign in first. */
   accountOffer?: AccountOffer;
   /** Guests: the sign-in page that comes back to /book. */
   signInHref?: string;

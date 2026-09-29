@@ -105,7 +105,7 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
   const [orders, counts, feedback, goal, plans] = linked
     ? await Promise.all([getPortalOrders(), loyalty.enabled ? getLoyaltyCounts(loyalty.windowMonths) : null, getFeedbackList(), loyalty.goal.enabled ? getGoal(loyalty.goal.doubleFirst) : null, getDispatchPlans()])
     : [[], null, [], null, []];
-  // The coupon a booking would carry today (as on /book): it takes the account offer's place.
+  // A coupon a booking would carry today (as on /book): staff apply it or the 10%, whichever saves more.
   const holdsCoupon = goal ? usableCoupon(goal.coupons, goal.today) !== null : false;
   // A delivered order from the last two weeks that isn't rated yet: ask once, on the home.
   const toRate = orderToRate(orders ?? [], new Set(feedback.map((f) => f.orderNumber)));
@@ -179,13 +179,16 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
         />
       ) : null}
 
-      {/* 10% on every website booking made signed in (lib/account-offer.ts); a goal coupon takes its place. */}
-      {holdsCoupon ? null : <section aria-labelledby="offer-title" className="rounded-lg border border-line bg-white p-5 md:p-6" data-account-offer-banner>
+      {/* 10% on every website booking made signed in (lib/account-offer.ts). */}
+      <section aria-labelledby="offer-title" className="rounded-lg border border-line bg-white p-5 md:p-6" data-account-offer-banner>
         <h2 id="offer-title" className="font-semibold text-navy">
           {fill(t.offerTitle, { percent: ACCOUNT_OFFER.percent }, locale)}
         </h2>
-        <p className="mt-1 t-small text-body">{fill(t.offerBody, { amount: `৳${ACCOUNT_OFFER.minimumTaka}` }, locale)}</p>
-      </section>}
+        <p className="mt-1 t-small text-body">
+          {fill(t.offerBody, { amount: `৳${ACCOUNT_OFFER.minimumTaka}` }, locale)}
+          {holdsCoupon ? ` ${t.offerCoupon}` : null}
+        </p>
+      </section>
 
       {toRate ? (
         <section aria-labelledby="rate-title" className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-line bg-white p-5 md:p-6" data-rate-ask>
