@@ -17,7 +17,12 @@
 -- Manager actions (set / block / override) come from the admin server, which checks who may do
 -- them and logs them. Service role for writes; active Ops staff may read (RLS, is_active_staff()).
 --
--- Requires website_create_request.sql and website_dispatch.sql. Idempotent: safe to run again.
+-- Requires website_create_request.sql, website_dispatch.sql and website_dispatch_stages.sql (the
+-- 'confirmed' and 'picked' stages). Run it AFTER website_dispatch_stages.sql: both define
+-- website_dispatch_plan, and this one (the stages rules + capacity + p_override) must win. If
+-- website_dispatch_stages.sql is ever run again, run this file again after it.
+-- Works with website_customer_pickups.sql: a customer's change or cancel frees the place through
+-- the capacity_job_changed trigger. Idempotent: safe to run again.
 -- Status: STAGING only until the owner approves production.
 
 begin;
@@ -582,8 +587,8 @@ returns text language sql stable set search_path = pg_catalog, public as $$
     case when p_job.kind = 'delivery' then 'dispatch:delivery:' || p_job.order_number else 'dispatch:pickup:' || p_job.id::text end)
 $$;
 
--- After every sync: a website pickup that booked a window arrives on the board already planned
--- for that day and window (the manager only gives it a person).
+-- After every sync: a website pickup that booked a window arrives on the board confirmed for that
+-- day and window (website_dispatch_stages.sql: nobody needs to call; the manager gives it a person).
 create or replace function public.capacity_sync_jobs()
 returns integer
 language plpgsql
@@ -594,21 +599,65 @@ declare v_n integer;
 begin
   update public.website_dispatch_jobs j
      set slot_date = r.slot_date, slot = r.window_id, zone_id = r.zone_id,
-         stage = case when j.assignee_id is not null then 'scheduled' else 'assigned' end,
+         stage = case when j.assignee_id is not null then 'scheduled' else 'confirmed' end,
+         confirmed_at = coalesce(j.confirmed_at, r.created_at),
+         confirmed_by = coalesce(j.confirmed_by, 'Website (window booked)'),
          history = j.history || jsonb_build_array(jsonb_build_object('at', now(), 'by', 'Capacity',
                     'action', 'window booked', 'detail', to_char(r.slot_date, 'Dy DD Mon') || ' ' || r.window_id)),
          updated_at = now()
     from public.capacity_reservations r
    where j.kind = 'pickup' and j.task_id is not null and r.task_id = j.task_id and r.kind = 'pickup' and r.status = 'held'
-     and j.slot_date is null and j.stage in ('new', 'assigned');
+     and j.slot_date is null and j.stage in ('new', 'confirmed', 'assigned');
   get diagnostics v_n = row_count;
-  -- Stops closed on the board free (cancelled, merged) or keep (done) their place.
-  update public.capacity_reservations r set status = case when j.stage = 'done' then 'done' else 'released' end, updated_at = now()
+  -- Stops closed on the board free (cancelled, merged) or keep (picked, done) their place.
+  update public.capacity_reservations r set status = case when j.stage in ('picked', 'done') then 'done' else 'released' end, updated_at = now()
     from public.website_dispatch_jobs j
-   where r.status = 'held' and j.stage in ('done', 'cancelled', 'merged') and r.ref = public.capacity_ref_for_job(j);
+   where r.status = 'held' and j.stage in ('picked', 'done', 'cancelled', 'merged') and r.ref = public.capacity_ref_for_job(j);
   return v_n;
 end;
 $$;
+
+-- Whatever changes a job, its place follows (the board, Velto Ops, a phone confirmation on the
+-- Requests card, or the customer changing or cancelling on the website, which set the plan
+-- directly):
+--   * closed (cancelled, merged) frees the place; picked or done keeps it as done;
+--   * plan cleared frees it;
+--   * a day + window set without a place (e.g. website_dispatch_contact 'confirmed') takes one, so
+--     the website can never sell it again; if the window was already full it is marked over
+--     capacity for the manager to see.
+-- Idempotent with the functions here (they reserve first, so the trigger finds the place held).
+create or replace function public.capacity_job_changed()
+returns trigger
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+declare v_ref text;
+begin
+  v_ref := public.capacity_ref_for_job(new);
+  if new.stage is distinct from old.stage and new.stage in ('cancelled', 'merged') then
+    perform public.capacity_release(v_ref, 'released');
+  elsif new.stage is distinct from old.stage and new.stage in ('picked', 'done') then
+    perform public.capacity_release(v_ref, 'done');
+  elsif new.slot_date is null and old.slot_date is not null then
+    perform public.capacity_release(v_ref, 'released');
+  elsif new.slot_date is not null and new.stage in ('new', 'confirmed', 'assigned', 'scheduled')
+        and (new.slot_date, new.slot) is distinct from (old.slot_date, old.slot)
+        and not exists (select 1 from public.capacity_reservations r
+                         where r.ref = v_ref and r.status = 'held' and r.slot_date = new.slot_date and r.window_id = new.slot) then
+    perform public.capacity_reserve(v_ref, new.kind, new.slot_date,
+                                    coalesce(new.zone_id, public.capacity_zone_for(concat_ws(' ', new.area, new.address)), 'other'),
+                                    new.slot, 1, 'dispatch', 'Velto team', 'Set outside the capacity check (e.g. confirmed by phone)',
+                                    new.task_id, new.order_number, new.customer_name, new.area);
+  end if;
+  return null;
+end;
+$$;
+
+drop trigger if exists capacity_job_changed on public.website_dispatch_jobs;
+create trigger capacity_job_changed
+  after update of slot_date, stage on public.website_dispatch_jobs
+  for each row execute function public.capacity_job_changed();
 
 -- Planning a stop takes its place in the window (a full window needs a reason from the manager).
 -- Unplanning frees it. The previous plan function is replaced by this one (new p_override).
@@ -638,7 +687,7 @@ declare
 begin
   select * into j from public.website_dispatch_jobs where id = p_job for update;
   if j.id is null then return jsonb_build_object('ok', false, 'error', 'not_found'); end if;
-  if j.stage not in ('new', 'assigned', 'scheduled') then return jsonb_build_object('ok', false, 'error', 'closed'); end if;
+  if j.stage not in ('new', 'confirmed', 'assigned', 'scheduled') then return jsonb_build_object('ok', false, 'error', 'closed'); end if;
   if (p_slot_date is null) <> (p_slot is null) or (p_slot is not null and not exists (select 1 from public.capacity_windows where id = p_slot)) then
     return jsonb_build_object('ok', false, 'error', 'invalid');
   end if;
@@ -671,6 +720,7 @@ begin
          slot = p_slot,
          zone_id = v_zone,
          stage = case when p_assignee_id is not null and p_slot_date is not null then 'scheduled'
+                      when j.confirmed_at is not null and p_slot_date is not null then 'confirmed'
                       when p_assignee_id is not null or p_slot_date is not null then 'assigned'
                       else 'new' end,
          updated_at = now()
@@ -735,6 +785,7 @@ begin
     'public.website_dispatch_slot_end(date,text)',
     'public.capacity_ref_for_job(public.website_dispatch_jobs)',
     'public.capacity_sync_jobs()',
+    'public.capacity_job_changed()',
     'public.website_dispatch_plan(uuid,uuid,text,date,text,text,text)'
   ] loop
     execute format('revoke all on function %s from public, anon, authenticated', f);

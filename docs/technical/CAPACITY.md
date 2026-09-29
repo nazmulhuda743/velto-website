@@ -35,6 +35,17 @@ One capacity system shared by the website, the Command Center and Velto Ops. The
 Roles: Owner and Manager change capacity and may override; Customer support sees the board and
 books within capacity. Website bookings can never override.
 
+## With the booking stages and customer self-service
+
+- A window booked on the website arrives on the board as **confirmed** (by "Website (window
+  booked)"): nobody needs to call to confirm it. The manager only gives it a person.
+- A phone confirmation on the Requests card goes through planning, so a full window is refused
+  there too ("That time is full for this area").
+- Any change to a job moves its place, whatever made it (trigger `capacity_job_changed`):
+  cancelled or merged frees it, picked or done keeps it, a cleared plan frees it (the customer
+  changing or cancelling from their account), and a day + window written directly takes one
+  (marked over capacity if the window was full).
+
 ## Rollout switch
 
 `capacity_config.enabled` starts **off**. Off: the website shows the windows as a preference
@@ -53,9 +64,16 @@ way. Turn it on in Capacity → Settings once zones and numbers are confirmed.
 
 ## Production steps (after approval)
 
-1. Apply `website_capacity.sql` to production; run the test file (it rolls back).
-2. Confirm zones and numbers in Capacity → Settings.
-3. Turn on “Customers book a window on the website”.
+1. Apply `website_capacity.sql` to production **after** `website_dispatch_stages.sql` (already on
+   production) and `website_customer_pickups.sql`; both it and the stages file define
+   `website_dispatch_plan`, and the capacity version must be the last one applied. Run the three
+   test files (they roll back).
+2. The website change is safe to merge before step 1: planning sends the over-capacity reason only
+   when one is given, so production's current plan function keeps working, the Capacity page says
+   capacity isn't installed yet, and /book keeps the preference windows. Only "book over capacity"
+   needs step 1.
+3. Confirm zones and numbers in Capacity → Settings.
+4. Turn on “Customers book a window on the website”.
 
 ## Later phases
 

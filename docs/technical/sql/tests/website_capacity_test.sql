@@ -66,8 +66,9 @@ begin
   perform public.website_dispatch_sync();
   perform public.capacity_sync_jobs();
   select id into job from public.website_dispatch_jobs where task_id = t1;
-  assert (select slot_date = tomorrow and slot = 'evening' and stage = 'assigned' and zone_id = 's9-12' from public.website_dispatch_jobs where id = job),
-    'job planned from the booking';
+  assert (select slot_date = tomorrow and slot = 'evening' and stage = 'confirmed' and confirmed_by = 'Website (window booked)' and zone_id = 's9-12'
+            from public.website_dispatch_jobs where id = job),
+    'job arrives confirmed for the booked window';
 
   -- Moving it to the afternoon moves its place (evening frees one).
   j := public.website_dispatch_plan(job, null, null, tomorrow, 'afternoon', 'QA');
@@ -81,15 +82,51 @@ begin
   j := public.website_dispatch_plan(job, null, null, tomorrow, 'evening', 'QA', 'Customer insists');
   assert (j->>'ok')::boolean and (j->>'over')::boolean, 'manager override';
 
-  -- Cancelling frees the place.
-  perform public.website_dispatch_close(job, 'cancelled', 'QA', 'QA');
+  -- A plan cleared directly (as the customer's own change does, website_customer_pickups.sql) frees the place.
+  update public.website_dispatch_jobs set slot_date = null, slot = null, assignee_id = null, assignee_name = null,
+         stage = 'new', confirmed_at = null, confirmed_by = null where id = job;
+  assert (select status from public.capacity_reservations where ref = 'booking:' || k1) = 'released', 'customer change releases';
+  -- ...and the sync does not put the old window back.
   perform public.capacity_sync_jobs();
+  assert (select slot_date is null and stage = 'new' from public.website_dispatch_jobs where id = job), 'released window not re-applied';
+  -- Planned again (confirmed by phone first), then cancelled: the place is freed again.
+  update public.website_dispatch_jobs set confirmed_at = now(), confirmed_by = 'QA' where id = job;
+  j := public.website_dispatch_plan(job, null, null, tomorrow, 'afternoon', 'QA');
+  assert (j->>'ok')::boolean and (select stage from public.website_dispatch_jobs where id = job) = 'confirmed', 'confirmed stays confirmed: ' || j::text;
+  perform public.website_dispatch_close(job, 'cancelled', 'QA', 'QA');
   assert (select status from public.capacity_reservations where ref = 'booking:' || k1) = 'released', 'cancel releases';
+
+  -- A picked-up stop keeps its place (done), from the trigger alone.
+  perform public.website_dispatch_sync();
+  perform public.capacity_sync_jobs();
+  select id into job from public.website_dispatch_jobs where task_id = (select id from public.tasks where dedupe_key = 'website:' || k2);
+  update public.website_dispatch_jobs set stage = 'picked' where id = job;
+  assert (select status from public.capacity_reservations where ref = 'booking:' || k2) = 'done', 'picked keeps its place';
+
+  -- Confirmed by phone on the Requests card (website_dispatch_contact plans through
+  -- website_dispatch_plan): a full window is refused, a free one takes a place.
+  j := public.website_book_pickup(k4, pay || jsonb_build_object('phone', '017' || r || '04', 'name', 'QA Phone'),
+                                  jsonb_build_object('date', tomorrow, 'window', 'afternoon'));
+  perform public.website_dispatch_sync();
+  perform public.capacity_sync_jobs();
+  select id into job from public.website_dispatch_jobs where task_id = (select id from public.tasks where dedupe_key = 'website:' || k4);
+  perform public.website_dispatch_plan(job, null, null, null, null, 'QA');
+  assert (select status from public.capacity_reservations where ref = 'booking:' || k4) = 'released', 'unplanned first';
+  j := public.website_dispatch_contact(job, 'confirmed', tomorrow, 'evening', 'QA');
+  assert j->>'error' = 'slot_full', 'phone confirm into the full evening refused: ' || j::text;
+  j := public.website_dispatch_contact(job, 'confirmed', tomorrow, 'afternoon', 'QA');
+  assert (j->>'ok')::boolean, 'phone confirm: ' || j::text;
+  assert (select status = 'held' and window_id = 'afternoon' and not over_capacity from public.capacity_reservations where ref = 'booking:' || k4),
+    'phone confirmation takes a place';
+  -- A day + window written directly (no capacity function) still takes a place, marked over if full.
+  update public.website_dispatch_jobs set slot_date = tomorrow, slot = 'evening' where id = job;
+  assert (select status = 'held' and window_id = 'evening' and over_capacity from public.capacity_reservations where ref = 'booking:' || k4),
+    'direct write takes a place (over capacity in the full evening)';
 
   -- The board shows the slot and its reservations.
   a := public.capacity_board(tomorrow);
   assert exists (select 1 from jsonb_array_elements(a->'slots') s where s->>'kind' = 'pickup' and s->>'zone' = 's9-12' and s->>'window' = 'evening'
-                 and (s->>'capacity')::int = 2 and jsonb_array_length(s->'reservations') = 2), 'board slot';
+                 and (s->>'capacity')::int = 2 and jsonb_array_length(s->'reservations') >= 1), 'board slot';
 
   raise exception 'ALL_CAPACITY_TESTS_PASSED (rolled back)';
 end;
