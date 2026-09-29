@@ -41,7 +41,7 @@ const SHARE = {
   "/locations/sector-11": ["Velto Sector 11: House 2, Road 14.", "Velto সেক্টর ১১: বাড়ি ২, রোড ১৪।"],
   "/locations/sector-18": ["Velto Sector 18: RUAP, Poncoboti Bazar.", "Velto সেক্টর ১৮: RUAP, পঞ্চবটি বাজার।"],
   "/about": ["A laundry that works to a written process.", "একটি লন্ড্রি, যা লিখিত নিয়ম মেনে কাজ করে।"],
-  "/book": ["Book a pickup. We collect from your door.", "পিকআপ বুক করুন। আমরা দরজা থেকে নিয়ে যাই।"],
+  "/book": ["Book a pickup. We collect from your door.", "পিকআপ বুক করুন। আমরা বাসা থেকে নিয়ে যাই।"],
   "/quote": ["Curtains, carpets or bedding? Get a quote first.", "পর্দা, কার্পেট বা বিছানাপত্র? আগে কোটেশন নিন।"],
   "/track": ["Where's my order? Check it here.", "আমার অর্ডার কোথায়? এখানেই দেখুন।"],
   "/login": ["Your orders, and where each one is.", "আপনার অর্ডার, আর প্রতিটি কোথায় আছে।"],
