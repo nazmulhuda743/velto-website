@@ -38,3 +38,54 @@ const fit = (amount: number, gap: number) => (amount >= gap ? amount - gap : 1_0
 /** 0–100, for the progress bar. */
 export const progressToFree = (subtotalMinor: number, thresholdMinor: number) =>
   thresholdMinor <= 0 ? 100 : Math.max(0, Math.min(100, Math.round((subtotalMinor / thresholdMinor) * 100)));
+
+/* ---------- smart upsell (phase 6): from what Velto's customers actually send ---------- */
+
+/** Why an add-on is offered: the customer's own habit, a real "sent together" pattern, or just popular. */
+export type AddOnReason = { kind: "usual" } | { kind: "pair"; with: string } | { kind: "popular" };
+export type SmartAddOn = AddOn & { reason: AddOnReason };
+
+/** Store-wide pairs (website_item_affinity) and the customer's own regular items (portal_usual_items). Booking-form slugs. */
+export type UpsellHints = {
+  usual: { item: string; service: string }[];
+  pairs: { item: string; service: string; alsoItem: string; alsoService: string; share: number }[];
+};
+
+const key = (s: string) => s.trim().toLowerCase();
+
+/**
+ * Add-ons in order of relevance: what this customer usually sends and hasn't added yet, then what
+ * customers most often send with the items already in the order, then (below the free-delivery
+ * threshold only) the popular gap-closers. Only items on the price list with a fixed price for that
+ * service; never something already in the order; one suggestion per item. Once delivery is free,
+ * only the relevant ones and at most two; otherwise three.
+ */
+export function smartAddOns(lines: UpsellLine[], pool: UpsellItem[], gapMinor: number, hints: UpsellHints, preferred: string[] = []): SmartAddOn[] {
+  const free = gapMinor <= 0;
+  const limit = free ? 2 : 3;
+  const inOrder = new Set(lines.map((l) => key(l.item)));
+  const byName = new Map(pool.map((p) => [key(p.name), p]));
+  const out: SmartAddOn[] = [];
+  const taken = new Set<string>();
+  const offer = (item: string, service: string, reason: AddOnReason) => {
+    const k = key(item);
+    if (out.length >= limit || inOrder.has(k) || taken.has(k)) return;
+    const listed = byName.get(k);
+    const price = listed?.services.find((s) => s.slug === service && s.amountMinor !== null && s.amountMinor > 0 && !s.unitLabel);
+    if (!listed || !price) return;
+    taken.add(k);
+    out.push({ item: listed.name, service, amountMinor: price.amountMinor!, reason });
+  };
+
+  for (const u of hints.usual) offer(u.item, u.service, { kind: "usual" });
+  const anchors = new Set(lines.map((l) => `${key(l.item)}|${l.service}`));
+  const pairs = hints.pairs.filter((p) => anchors.has(`${key(p.item)}|${p.service}`)).sort((a, b) => b.share - a.share);
+  for (const p of pairs) {
+    const anchor = lines.find((l) => key(l.item) === key(p.item));
+    offer(p.alsoItem, p.alsoService, { kind: "pair", with: anchor?.item ?? p.item });
+  }
+  if (!free && out.length < limit) {
+    for (const a of suggestAddOns(lines, pool, gapMinor, preferred, limit)) offer(a.item, a.service, { kind: "popular" });
+  }
+  return out;
+}

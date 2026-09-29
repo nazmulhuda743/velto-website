@@ -37,6 +37,7 @@ import { contactAction, linkOrderAction, noteAction, pickAction } from "../../re
 import { activateRoutineAction, declineRoutineAction } from "../../routine-actions";
 import { closeCallbackAction } from "../../callback-actions";
 import { getCallbacks, type CallbackRow } from "@/lib/admin/callbacks";
+import { getUsualItemsByPhone } from "@/lib/upsell-data";
 import { CALLBACK_OUTCOMES } from "@/lib/booking-recovery";
 import { getRoutines } from "@/lib/admin/routines";
 import type { Loaded } from "@/lib/admin/analytics-data";
@@ -79,6 +80,8 @@ type Card = {
   state: FlowState;
   /** The first open request from the same phone, when this one repeats it. */
   duplicateOf: DispatchJob | null;
+  /** Items this phone sent in 2+ of its last 10 orders (smart upsell: ask on the call). */
+  usual: { item: string; service: string; orders: number }[];
 };
 
 /** Work order: to call first (oldest first), then each later step; finished ones last, newest first. */
@@ -520,6 +523,15 @@ function RequestCard({ card, staff, today, ret, open, canPlan }: { card: Card; s
                 )}
               </dd>
             </div>
+            {card.usual.length ? (
+              <div className="md:col-span-2 xl:col-span-3" data-usual-items>
+                <dt className="t-caption uppercase tracking-[0.04em] text-secondary">Usually sends</dt>
+                <dd className="text-navy">
+                  {card.usual.map((u) => `${u.item} (${u.service}, in ${u.orders} orders)`).join(" · ")}
+                  {!state.closed ? <span className="block t-small text-secondary">Not in this request? Ask about them on the confirmation call.</span> : null}
+                </dd>
+              </div>
+            ) : null}
             <div>
               <dt className="t-caption uppercase tracking-[0.04em] text-secondary">Address</dt>
               <dd className="text-navy [overflow-wrap:anywhere]">{[job.address, job.area].filter(Boolean).join(", ") || "Not given"}</dd>
@@ -905,6 +917,8 @@ export default async function RequestsPage({ searchParams }: { searchParams: Sea
     const had = deliveryFor.get(dj.order_number);
     if (!had || had.created_at < dj.created_at) deliveryFor.set(dj.order_number, dj);
   }
+  const phoneKeys = [...new Set(pickups.filter((j) => isOpen(j)).map((j) => j.phone_key).filter((k): k is string => Boolean(k)))];
+  const usualByPhone = await getUsualItemsByPhone(phoneKeys);
   const context = await getRequestContext(
     [...new Set(pickups.map((j) => j.phone_key).filter((k): k is string => Boolean(k)))],
     [...new Set(pickups.map((j) => j.order_number).filter((o): o is string => Boolean(o)))],
@@ -922,6 +936,7 @@ export default async function RequestsPage({ searchParams }: { searchParams: Sea
       customer: job.phone_key ? (context.customers[job.phone_key] ?? null) : null,
       state: flowState(job, order, delivery),
       duplicateOf: duplicates.get(job.id) ?? null,
+      usual: job.phone_key ? (usualByPhone[job.phone_key] ?? []) : [],
     };
   });
   const onBoard = new Set(pickups.map((j) => j.task_id).filter(Boolean));

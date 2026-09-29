@@ -19,6 +19,7 @@ import { getGoal } from "@/lib/customer/portal";
 import { usableCoupon } from "@/lib/customer/goal";
 import { keepBanglaSuffixes } from "@/lib/i18n/config";
 import { repeatItemsFor } from "@/lib/booking-repeat";
+import { getItemPairs, getUsualItems } from "@/lib/upsell-data";
 
 /** Quick picks on /book: the everyday items customers send most, exactly as the Ops price list names them. */
 const POPULAR_ITEMS = ["Shirt", "Pant", "T-Shirt", "Panjabi", "Kamiz", "Salwar", "Sari (Cotton)", "Jeans", "Blazer", "Bed Sheet (Medium)"];
@@ -36,13 +37,18 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
   // Development-only QA hook: simulate the adapter result without any backend.
   const preview = process.env.NODE_ENV !== "production" ? one(params.preview) : undefined;
   const previewOutcome = preview === "success" || preview === "error" ? preview : undefined;
-  const [session, popular, pickupChargeMinor, { settings }] = await Promise.all([
+  const [session, pairs, pickupChargeMinor, { settings }] = await Promise.all([
     getCustomerSession(),
-    getServicePrices(POPULAR_ITEMS),
+    getItemPairs(),
     getPickupChargeMinor(),
     getSiteContent(),
   ]);
   const account = session.kind === "customer" && session.account.state === "ready" ? session.account : null;
+  // Smart add-ons: this customer's regular items and what customers send together, priced from the list.
+  const usual = account?.link.status === "linked" ? await getUsualItems() : [];
+  const hintNames = [...usual.map((u) => u.item), ...pairs.map((p) => p.alsoItem)].filter((n) => /^[A-Za-z0-9 ().,/&+'-]{1,64}$/.test(n));
+  // The price lookup takes at most 40 names (more would fail the whole lookup).
+  const popular = await getServicePrices([...new Set([...POPULAR_ITEMS, ...hintNames])].slice(0, 40));
   // A monthly-goal reward the customer holds today: shown in the summary, applied by Velto at confirmation.
   const goal = account && settings ? await (async () => {
     const { loyalty } = await getSiteContent();
@@ -114,6 +120,7 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
                 }
                 initialService={service}
                 popularItems={popular.state === "live" ? popular.items : []}
+                upsellHints={{ usual, pairs }}
                 repeatItems={repeatItems}
                 pickupChargeMinor={pickupChargeMinor}
                 offer={offer || undefined}

@@ -34,3 +34,42 @@ test("no gap, no nudge; the bar never passes 100", () => {
   assert.equal(progressToFree(tk(320), tk(499)), 64);
   assert.equal(progressToFree(tk(600), tk(499)), 100);
 });
+
+const { smartAddOns } = require("../.foundation-test-build/booking-upsell.js");
+const pool = [
+  ...popular,
+  { name: "T-Shirt", services: [{ slug: "wash-and-iron", amountMinor: tk(40), unitLabel: null }, { slug: "ironing", amountMinor: tk(15), unitLabel: null }] },
+  { name: "Pajama", services: [{ slug: "ironing", amountMinor: tk(20), unitLabel: null }] },
+];
+const hints = {
+  usual: [{ item: "bed sheet (medium)", service: "wash-and-iron" }, { item: "Shirt", service: "wash-and-iron" }],
+  pairs: [
+    { item: "Shirt", service: "wash-and-iron", alsoItem: "Pant", alsoService: "wash-and-iron", share: 0.38 },
+    { item: "Shirt", service: "wash-and-iron", alsoItem: "T-Shirt", alsoService: "wash-and-iron", share: 0.21 },
+    { item: "Panjabi", service: "ironing", alsoItem: "Pajama", alsoService: "ironing", share: 0.35 },
+  ],
+};
+
+test("smart add-ons: the customer's own habit, then what's sent together, then popular", () => {
+  const got = smartAddOns([{ item: "Shirt", service: "wash-and-iron" }], pool, tk(200), hints);
+  assert.deepEqual(
+    got.map((a) => `${a.item}:${a.service}:${a.reason.kind}`),
+    ["Bed Sheet (Medium):wash-and-iron:usual", "Pant:wash-and-iron:pair", "T-Shirt:wash-and-iron:pair"],
+    "Shirt is already in the order, so the usual Shirt isn't offered",
+  );
+  assert.deepEqual(got[1].reason, { kind: "pair", with: "Shirt" });
+  assert.equal(got[0].amountMinor, tk(120));
+});
+
+test("smart add-ons fall back to popular, skip unlisted or per-unit items, and stay quiet once free", () => {
+  const none = { usual: [], pairs: [] };
+  const fallback = smartAddOns([{ item: "Blazer", service: "dry-cleaning" }], pool, tk(50), none);
+  assert.equal(fallback[0].reason.kind, "popular");
+  assert.equal(fallback[0].item, "Shirt");
+  const unlisted = smartAddOns([{ item: "Panjabi", service: "ironing" }], pool.filter((p) => p.name !== "Pajama"), tk(50), hints);
+  assert.ok(!unlisted.some((a) => a.item === "Pajama"), "not on the price list: not offered");
+  const free = smartAddOns([{ item: "Shirt", service: "wash-and-iron" }], pool, 0, hints);
+  assert.equal(free.length, 2, "two at most once delivery is free");
+  assert.ok(free.every((a) => a.reason.kind !== "popular"), "no generic popular items once free");
+  assert.deepEqual(smartAddOns([{ item: "Blazer", service: "dry-cleaning" }], pool, 0, none), [], "free and nothing relevant: nothing");
+});
