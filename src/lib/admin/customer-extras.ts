@@ -81,6 +81,16 @@ export async function getLoyaltyDistribution(months: number, mins: number[]): Pr
   }
 }
 
+/** Orders per phone (01XXXXXXXXX), for the dispatch board's tier badge. {} when unavailable. */
+export async function getOrderCounts(phones: string[], months: number): Promise<Record<string, { recent: number; total: number }>> {
+  const unique = [...new Set(phones.filter((p) => /^01\d{9}$/.test(p)))].slice(0, 500);
+  if (!unique.length || isAdminPreview() || !isSupabaseConfigured()) return {};
+  try {
+    return await supabaseRpc<Record<string, { recent: number; total: number }>>("website_customer_order_counts", { p_phones: unique, p_months: months });
+  } catch {
+    return {};
+  }
+}
 /* ---------- monthly goal coupons (docs/technical/sql/website_monthly_goal.sql) ---------- */
 
 export type CouponRow = GoalCoupon & {

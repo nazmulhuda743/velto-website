@@ -188,3 +188,33 @@ export const getPreferences = cache(async (): Promise<Preferences> => {
   }
   return parsePreferences(data);
 });
+
+/* ---------- open website pickups (docs/technical/sql/website_customer_pickups.sql) ---------- */
+
+export type PortalPickup = {
+  id: string;
+  reference: string;
+  createdAt: string;
+  /** The customer's wish as written ("Tomorrow Mon 28 Sep, Afternoon"). */
+  requested: string | null;
+  /** Set once Velto has planned a day and part of the day. */
+  plannedDate: string | null;
+  plannedSlot: "morning" | "afternoon" | "evening" | null;
+  stage: "new" | "confirmed" | "assigned" | "scheduled";
+  cutoffAt: string | null;
+  changeable: boolean;
+  changesLeft: number;
+};
+
+/** Open pickups for the caller's proven phone; null when unavailable (not installed, or an error). */
+export const getPickups = cache(async (): Promise<{ verified: boolean; pickups: PortalPickup[] } | null> => {
+  const supabase = await customerSupabase();
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc("portal_pickups");
+  if (error) {
+    console.error("portal_pickups_failed", error.code);
+    return null;
+  }
+  const d = (data ?? {}) as { verified?: boolean; pickups?: PortalPickup[] };
+  return { verified: Boolean(d.verified), pickups: d.pickups ?? [] };
+});
