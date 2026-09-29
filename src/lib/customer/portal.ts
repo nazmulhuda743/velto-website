@@ -218,3 +218,22 @@ export const getPickups = cache(async (): Promise<{ verified: boolean; pickups: 
   const d = (data ?? {}) as { verified?: boolean; pickups?: PortalPickup[] };
   return { verified: Boolean(d.verified), pickups: d.pickups ?? [] };
 });
+
+/* ---------- welcome back: match preview (docs/technical/sql/website_identity_claim.sql) ---------- */
+
+export type MatchPreview =
+  | { state: "linked" | "unverified" | "none" | "rejected" | "assisted"; hasProfile: boolean }
+  | { state: "recent"; hasProfile: boolean; firstName?: string; orders: number; lastOrder: string }
+  | { state: "stepup"; hasProfile: boolean; attemptsLeft: number };
+
+/** What may be said about the Velto record matching the proven phone; null when unavailable. */
+export const getMatchPreview = cache(async (): Promise<MatchPreview | null> => {
+  const supabase = await customerSupabase();
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc("portal_match_preview");
+  if (error) {
+    if (error.code !== "PGRST202") console.error("portal_match_preview_failed", error.code);
+    return null;
+  }
+  return (data ?? null) as MatchPreview | null;
+});

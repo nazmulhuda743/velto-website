@@ -31,7 +31,7 @@ import { whatsappLink } from "@/lib/admin/retention-messages";
 import { requireSection } from "@/lib/admin/session";
 import { canEditCapacity } from "@/lib/admin/permissions";
 import { OVERRIDE_REASONS } from "@/lib/capacity-logic";
-import { getOrderCounts } from "@/lib/admin/customer-extras";
+import { getOrderCounts, getPhoneFlags } from "@/lib/admin/customer-extras";
 import { loyaltyStatus } from "@/lib/customer/loyalty";
 import { getSiteContent } from "@/lib/site-content";
 import { closeAction, combineAction, mergeAction, planAction, splitAction } from "../../dispatch-actions";
@@ -199,7 +199,7 @@ function ReadyWhatsApp({ job }: { job: DispatchJob }) {
 /** "Gold · 9 orders" (tier while loyalty is on) or "9 orders": who is a regular, at a glance. */
 type Regular = { label: string; tone: "blue" | "neutral" };
 
-function JobCard({ job, staff, today, keep, trip, order, regular, canOverride = false }: { job: DispatchJob; staff: StaffMember[]; today: string; keep: string; trip?: boolean; order?: LinkedOrder | null; regular?: Regular; canOverride?: boolean }) {
+function JobCard({ job, staff, today, keep, trip, order, regular, canOverride = false, flagged }: { job: DispatchJob; staff: StaffMember[]; today: string; keep: string; trip?: boolean; order?: LinkedOrder | null; regular?: Regular; canOverride?: boolean; flagged?: boolean }) {
   const suggestion = suggestedSlot(job.requested, job.created_at, today);
   const stage = STAGE[job.stage];
   return (
@@ -212,6 +212,7 @@ function JobCard({ job, staff, today, keep, trip, order, regular, canOverride = 
           <span className="t-small text-secondary">{job.area ?? ""}</span>
           {regular ? <Badge tone={regular.tone}>{regular.label}</Badge> : null}
           {job.requested?.includes("(changed by the customer)") ? <Badge tone="amber">Changed by customer</Badge> : null}
+          {flagged ? <Badge tone="amber">Number may have changed</Badge> : null}
           {trip ? <span className="t-caption font-semibold text-blue">⛓ One trip</span> : null}
           <span className="ml-auto t-small text-secondary">
             {job.slot_date
@@ -372,7 +373,11 @@ export default async function DispatchPage({ searchParams }: { searchParams: Sea
   const jobs = all.filter((j) => j.kind === board);
   // Regulars: order counts by phone, shown as the loyalty tier while loyalty is on.
   const { loyalty } = await getSiteContent();
-  const orderCounts = await getOrderCounts(jobs.flatMap((j) => (j.phone_key ? [j.phone_key] : [])), loyalty.windowMonths);
+  const phones = jobs.flatMap((j) => (j.phone_key ? [j.phone_key] : []));
+  const [orderCounts, phoneFlags] = await Promise.all([getOrderCounts(phones, loyalty.windowMonths), getPhoneFlags(phones)]);
+  // Someone signed in with this number and said the old Velto history isn't theirs (or failed the
+  // name check): confirm the name on the call. Cleared on /admin/accounts.
+  const flaggedFor = (j: DispatchJob) => Boolean(j.phone_key && phoneFlags.has(j.phone_key));
   const regularFor = (j: DispatchJob): Regular | undefined => {
     const c = j.phone_key ? orderCounts[j.phone_key] : undefined;
     if (!c || c.total < 2) return undefined;
@@ -463,7 +468,7 @@ export default async function DispatchPage({ searchParams }: { searchParams: Sea
                 const list = (
                   <ul className="mt-2 space-y-2">
                     {g.list.map((j) => (
-                      <JobCard canOverride={canOverride} key={j.id} job={j} staff={staff} today={today} keep={keep} order={orderOf(j)} regular={regularFor(j)} />
+                      <JobCard canOverride={canOverride} key={j.id} job={j} staff={staff} today={today} keep={keep} order={orderOf(j)} regular={regularFor(j)} flagged={flaggedFor(j)} />
                     ))}
                   </ul>
                 );
@@ -490,7 +495,7 @@ export default async function DispatchPage({ searchParams }: { searchParams: Sea
           ) : waiting.length ? (
             <ul className="mt-3 space-y-2">
               {waiting.map((j) => (
-                <JobCard canOverride={canOverride} key={j.id} job={j} staff={staff} today={today} keep={keep} regular={regularFor(j)} />
+                <JobCard canOverride={canOverride} key={j.id} job={j} staff={staff} today={today} keep={keep} regular={regularFor(j)} flagged={flaggedFor(j)} />
               ))}
             </ul>
           ) : (
@@ -540,7 +545,7 @@ export default async function DispatchPage({ searchParams }: { searchParams: Sea
                           </div>
                           <ul className="mt-2 space-y-2">
                             {p.jobs.map((j) => (
-                              <JobCard canOverride={canOverride} key={j.id} job={j} staff={staff} today={today} keep={keep} trip={Boolean(j.trip_key)} order={orderOf(j)} regular={regularFor(j)} />
+                              <JobCard canOverride={canOverride} key={j.id} job={j} staff={staff} today={today} keep={keep} trip={Boolean(j.trip_key)} order={orderOf(j)} regular={regularFor(j)} flagged={flaggedFor(j)} />
                             ))}
                           </ul>
                         </div>
@@ -560,7 +565,7 @@ export default async function DispatchPage({ searchParams }: { searchParams: Sea
           <summary className="cursor-pointer list-none px-5 py-4 font-semibold text-navy">Finished in the last 3 days ({closed.length})</summary>
           <ul className="space-y-2 border-t border-line p-4">
             {closed.map((j) => (
-              <JobCard canOverride={canOverride} key={j.id} job={j} staff={staff} today={today} keep={keep} order={orderOf(j)} regular={regularFor(j)} />
+              <JobCard canOverride={canOverride} key={j.id} job={j} staff={staff} today={today} keep={keep} order={orderOf(j)} regular={regularFor(j)} flagged={flaggedFor(j)} />
             ))}
           </ul>
         </details>

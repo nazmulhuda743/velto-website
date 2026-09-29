@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { logActivity } from "@/lib/admin/activity";
 import { saveContent } from "@/lib/admin/content-store";
-import { markFeedbackHandled } from "@/lib/admin/customer-extras";
+import { markFeedbackHandled, reviewIdentityFlag } from "@/lib/admin/customer-extras";
 import { canEditLoyalty } from "@/lib/admin/permissions";
 import { requireSection } from "@/lib/admin/session";
 import { logServerEvent } from "@/lib/analytics/store";
@@ -152,4 +152,20 @@ export async function markCouponAction(form: FormData) {
   });
   revalidatePath("/admin/coupons");
   back("/admin/coupons", { saved: "1" });
+}
+
+/* ---------- possible change of phone owner ---------- */
+
+/** Staff checked a "This isn't me" / failed name check (called the number, updated Ops if needed). */
+export async function reviewIdentityFlagAction(form: FormData) {
+  const admin = await requireSection("accounts");
+  const authUserId = text(form, "authUserId", 40);
+  const customerId = text(form, "customerId", 40);
+  const phone = text(form, "phone", 20).replace(/\D/g, "");
+  if (!/^[0-9a-f-]{36}$/i.test(authUserId) || !/^[0-9a-f-]{36}$/i.test(customerId)) back("/admin/accounts", { error: "Unknown flag." });
+  const ok = await reviewIdentityFlag(authUserId, customerId, admin.name).catch(() => false);
+  if (!ok) back("/admin/accounts", { error: "Couldn't mark it checked (someone may have done it already). Refresh and check." });
+  await logActivity(admin, { section: "accounts", action: "identity_flag_reviewed", target: phone || customerId, summary: `Checked a possible change of owner for ${phone ? `…${phone.slice(-4)}` : "a number"}` });
+  revalidatePath("/admin", "layout");
+  back("/admin/accounts", { saved: "flag" });
 }
