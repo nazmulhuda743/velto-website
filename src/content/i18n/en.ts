@@ -318,6 +318,7 @@ export const en = {
     close: "Close",
     notNow: "Not now",
     posterOpens: "Open the offer",
+    ends: "Ends {date}",
   },
   notFound: {
     title: "We can’t find that page.",

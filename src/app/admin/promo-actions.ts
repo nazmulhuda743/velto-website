@@ -63,6 +63,7 @@ export async function savePromoPopupAction(form: FormData) {
   const next: PromoPopup = {
     ...promo,
     enabled: form.get("enabled") === "on",
+    imageStyle: form.get("imageStyle") === "photo" ? "photo" : "poster",
     imageAlt: text(form, "imageAlt", 300),
     imageAltBn: text(form, "imageAltBn", 300),
     tag: text(form, "tag", 40),
@@ -145,9 +146,6 @@ export async function loadFirstOrderTemplateAction() {
   const next: PromoPopup = {
     ...promo,
     ...FIRST_ORDER_TEMPLATE,
-    image: "",
-    imageAlt: "",
-    imageAltBn: "",
     enabled: false,
     frequency: "day",
     delaySeconds: 6,

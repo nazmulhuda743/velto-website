@@ -399,6 +399,7 @@ export const bn: Dictionary = {
     close: "বন্ধ করুন",
     notNow: "এখন না",
     posterOpens: "অফারটি দেখুন",
+    ends: "শেষ {date}",
   },
   notFound: {
     title: "পাতাটি খুঁজে পাওয়া যাচ্ছে না।",

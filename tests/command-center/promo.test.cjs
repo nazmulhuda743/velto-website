@@ -136,3 +136,14 @@ test("new popup fields parse safely and old campaigns keep their version", () =>
   assert.equal(promo.popupFingerprint(old), promo.popupFingerprint({ ...old, proof: true }), "unset new fields don't change the version");
   assert.notEqual(promo.popupFingerprint(old), promo.popupFingerprint({ ...old, offer: "10% OFF" }));
 });
+
+test("pictures: uploads or the site's own photos, poster by default", () => {
+  assert.equal(promo.promoImageOk("/images/pages/finished-shirts-rail.webp"), true);
+  assert.equal(promo.promoImageOk("/images/../secret.webp"), false);
+  assert.equal(promo.promoImageOk("/admin/x.png"), false);
+  assert.equal(promo.parsePopup({ image: "/images/home/hero.webp", imageStyle: "photo" }).imageStyle, "photo");
+  assert.equal(promo.parsePopup({ imageStyle: "banner" }).imageStyle, "poster");
+  const t = { ...promo.EMPTY_POPUP, ...promo.FIRST_ORDER_TEMPLATE };
+  assert.equal(promo.popupProblem(t), null);
+  assert.equal(promo.offerParts(t.offer).big, "10%");
+});

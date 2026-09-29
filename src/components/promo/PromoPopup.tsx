@@ -10,6 +10,7 @@ import { popupDue, popupExcluded, type PopupFrequency, type SeenRecord } from "@
 export type PopupView = {
   version: string;
   image: string;
+  imageStyle: "poster" | "photo";
   imageAlt: string;
   tag: string;
   title: string;
@@ -24,6 +25,8 @@ export type PopupView = {
   fine: string;
   /** "5.0 on Google · 100+ reviews" from Site settings, or empty. */
   proof: string;
+  /** "Ends 30 Oct" when the campaign has an end date, else empty. */
+  ends: string;
   href: string;
   frequency: PopupFrequency;
   delaySeconds: number;
@@ -122,6 +125,8 @@ export function PromoPopup({ popup, labels, logo }: { popup: PopupView; labels: 
     );
 
   const hasText = Boolean(popup.tag || popup.title || popup.body || popup.cta || popup.offerBig);
+  const photo = Boolean(popup.image && popup.imageStyle === "photo" && hasText);
+  const poster = Boolean(popup.image && !photo);
   const cta = (
     <span className="inline-flex items-center gap-2">
       {popup.cta || labels.posterOpens}
@@ -132,6 +137,13 @@ export function PromoPopup({ popup, labels, logo }: { popup: PopupView; labels: 
     <button type="button" onClick={close} className="inline-flex min-h-11 items-center justify-center px-4 t-small font-semibold text-secondary hover:text-navy">
       {labels.notNow}
     </button>
+  );
+  const tick = (
+    <span aria-hidden="true" className="mt-[3px] inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-navy text-white">
+      <svg viewBox="0 0 20 20" className="size-2.5">
+        <path d="M4.5 10.5l3.5 3.5 7.5-8" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
   );
 
   return (
@@ -147,65 +159,75 @@ export function PromoPopup({ popup, labels, logo }: { popup: PopupView; labels: 
       onClick={(e) => {
         if (e.target === e.currentTarget) close();
       }}
-      className="mb-0 mt-auto max-h-[calc(100dvh-24px)] w-full max-w-none overflow-y-auto border-0 bg-transparent p-0 text-body backdrop:bg-navy/60 backdrop:backdrop-blur-[2px] sm:m-auto sm:max-h-[calc(100dvh-32px)] sm:w-[calc(100%-32px)] sm:max-w-[440px]"
+      className={`mb-0 mt-auto max-h-[calc(100dvh-24px)] w-full max-w-none overflow-y-auto border-0 bg-transparent p-0 text-body backdrop:bg-navy/65 backdrop:backdrop-blur-[2px] sm:m-auto sm:max-h-[calc(100dvh-32px)] sm:w-[calc(100%-32px)] ${
+        photo ? "sm:max-w-[680px]" : "sm:max-w-[440px]"
+      }`}
     >
-      <div data-promo-card tabIndex={-1} autoFocus className="relative overflow-hidden rounded-t-[20px] bg-white shadow-[0_24px_64px_rgba(0,34,61,0.35)] focus:outline-none sm:rounded-lg">
+      <div
+        data-promo-card
+        data-voucher={photo ? "" : undefined}
+        tabIndex={-1}
+        autoFocus
+        className={`relative overflow-hidden rounded-t-[20px] bg-white shadow-[0_24px_64px_rgba(0,34,61,0.35)] focus:outline-none sm:rounded-lg ${photo ? "sm:grid sm:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]" : ""}`}
+      >
         <button
           type="button"
           onClick={close}
           aria-label={labels.close}
-          className={`absolute right-3 top-3 z-10 inline-flex size-10 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan ${
-            popup.image ? "bg-white/92 text-navy shadow-sm hover:bg-white" : "bg-white/10 text-white hover:bg-white/20"
-          }`}
+          className="absolute right-3 top-3 z-10 inline-flex size-10 items-center justify-center rounded-full bg-white/92 text-navy shadow-sm hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action"
         >
           <CloseIcon className="size-5" />
         </button>
 
-        {popup.image ? (
+        {photo ? (
+          <div className="relative h-[190px] overflow-hidden bg-soft sm:h-auto sm:min-h-full [@media(max-height:720px)]:hidden" data-promo-photo>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={popup.image} alt={popup.imageAlt} className="absolute inset-0 size-full object-cover" decoding="async" />
+            {popup.ends ? (
+              <p className="absolute left-4 top-4 rounded-full bg-navy px-3 py-1.5 t-caption font-semibold uppercase tracking-[0.08em] text-white" data-promo-ends>
+                {popup.ends}
+              </p>
+            ) : null}
+          </div>
+        ) : poster ? (
           link(
             // eslint-disable-next-line @next/next/no-img-element
             <img src={popup.image} alt={popup.imageAlt} className="block max-h-[56dvh] w-full bg-soft object-contain" decoding="async" />,
             `${linkClass} bg-soft`,
             popup.title ? undefined : popup.imageAlt || labels.posterOpens,
           )
-        ) : hasText ? (
-          <div className="on-navy bg-navy-deep px-6 pb-7 pt-6 text-white min-[400px]:px-7 [@media(max-height:720px)]:pb-5 [@media(max-height:720px)]:pt-5">
-            {logo ? <div className="mb-5 flex h-7 items-center [@media(max-height:720px)]:hidden">{logo}</div> : null}
-            {popup.tag ? (
-              <p className="inline-flex rounded-full border border-cyan/50 px-3 py-1 t-caption font-semibold uppercase tracking-[0.08em] text-cyan">{popup.tag}</p>
-            ) : null}
-            {popup.offerBig ? (
-              <p className="mt-4 flex items-end gap-3 [@media(max-height:720px)]:mt-3" data-promo-offer>
-                <span className="text-[68px] font-bold leading-[0.85] tracking-[-0.04em] text-cyan min-[400px]:text-[80px] [@media(max-height:720px)]:text-[56px]">{popup.offerBig}</span>
-                {popup.offerSmall ? <span className="pb-1 text-[24px] font-bold uppercase leading-none tracking-[0.02em] text-white min-[400px]:text-[28px]">{popup.offerSmall}</span> : null}
-              </p>
-            ) : null}
-            {popup.title ? (
-              <h2 id={titleId} className={`text-[22px] font-semibold leading-[1.2] tracking-[-0.01em] text-white min-[400px]:text-[24px] ${popup.offerBig ? "mt-3" : "mt-3 pr-10"}`}>
-                {popup.title}
-              </h2>
-            ) : null}
-          </div>
         ) : null}
 
         {hasText ? (
-          <div className="px-6 pb-5 pt-5 min-[400px]:px-7 [@media(max-height:720px)]:pb-3 [@media(max-height:720px)]:pt-4">
-            {popup.image && popup.tag ? <p className="t-caption font-semibold uppercase tracking-[0.08em] text-action">{popup.tag}</p> : null}
-            {popup.image && popup.title ? (
-              <h2 id={titleId} className={`t-h4 text-navy ${popup.tag ? "mt-1.5" : ""}`}>
+          <div className={`px-6 pb-5 pt-6 min-[400px]:px-7 [@media(max-height:720px)]:pb-3 [@media(max-height:720px)]:pt-4 ${photo ? "sm:px-9 sm:pb-7 sm:pt-9" : ""}`}>
+            {photo ? (
+              <div className="mb-6 flex items-center justify-between gap-4 [@media(max-height:720px)]:mb-4">
+                {logo ? <div className="flex h-6 items-center">{logo}</div> : <span />}
+                {popup.tag ? <p className="pr-10 t-caption font-semibold uppercase tracking-[0.12em] text-secondary">{popup.tag}</p> : null}
+              </div>
+            ) : popup.tag ? (
+              <p className="t-caption font-semibold uppercase tracking-[0.12em] text-action">{popup.tag}</p>
+            ) : null}
+
+            {popup.offerBig ? (
+              <p className="flex items-start gap-3 [@media(max-height:720px)]:gap-2" data-promo-offer>
+                <span className="text-[80px] font-bold leading-[0.82] tracking-[-0.05em] text-navy min-[400px]:text-[92px] [@media(max-height:720px)]:text-[64px]">{popup.offerBig}</span>
+                {popup.offerSmall ? (
+                  <span className="max-w-[10ch] self-center font-serif text-[22px] italic leading-[1.1] text-navy min-[400px]:text-[24px]">{popup.offerSmall}</span>
+                ) : null}
+              </p>
+            ) : null}
+            {popup.title ? (
+              <h2 id={titleId} className={`font-serif text-[21px] font-normal leading-[1.25] text-navy min-[400px]:text-[23px] ${popup.offerBig ? "mt-5 [@media(max-height:720px)]:mt-3" : "mt-2 pr-10"}`}>
                 {popup.title}
               </h2>
             ) : null}
-            {popup.body ? <p className={`${popup.image ? "mt-2" : ""} text-[16px] leading-[1.5] text-body`}>{popup.body}</p> : null}
+            {popup.body ? <p className="mt-2.5 text-[15px] leading-[1.55] text-body">{popup.body}</p> : null}
             {popup.points.length ? (
-              <ul className="mt-4 space-y-2.5 [@media(max-height:720px)]:mt-3 [@media(max-height:720px)]:space-y-1.5">
+              <ul className="mt-4 space-y-2 border-t border-dashed border-line-strong pt-4 [@media(max-height:720px)]:mt-3 [@media(max-height:720px)]:space-y-1.5 [@media(max-height:720px)]:pt-3">
                 {popup.points.map((point) => (
-                  <li key={point} className="flex items-start gap-3 text-[15px] font-medium text-navy">
-                    <span aria-hidden="true" className="mt-px inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-success-soft text-success">
-                      <svg viewBox="0 0 20 20" className="size-3.5">
-                        <path d="M4.5 10.5l3.5 3.5 7.5-8" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </span>
+                  <li key={point} className="flex items-start gap-2.5 text-[14px] font-medium leading-[1.4] text-navy">
+                    {tick}
                     {point}
                   </li>
                 ))}
@@ -214,7 +236,7 @@ export function PromoPopup({ popup, labels, logo }: { popup: PopupView; labels: 
             <div className="mt-5">
               {link(
                 cta,
-                "group inline-flex min-h-14 w-full items-center justify-center rounded-md bg-action px-5 text-[17px] font-semibold text-white shadow-[0_8px_20px_-10px_rgba(0,112,186,0.9)] transition-colors hover:bg-action-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action focus-visible:ring-offset-2",
+                "group inline-flex min-h-14 w-full items-center justify-center rounded-md bg-action px-5 text-[17px] font-semibold text-white shadow-[0_10px_24px_-12px_rgba(0,120,188,1)] transition-colors hover:bg-action-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action focus-visible:ring-offset-2",
               )}
             </div>
             {popup.proof ? (
@@ -225,7 +247,8 @@ export function PromoPopup({ popup, labels, logo }: { popup: PopupView; labels: 
                 {popup.proof}
               </p>
             ) : null}
-            {popup.fine ? <p className="mt-3 text-center t-caption text-secondary">{popup.fine}</p> : null}
+            {popup.fine ? <p className="mt-2.5 text-center t-caption leading-[1.4] text-secondary">{popup.fine}</p> : null}
+            {!photo && popup.ends ? <p className="mt-2 text-center t-caption font-semibold uppercase tracking-[0.08em] text-navy">{popup.ends}</p> : null}
             <div className="mt-1 flex justify-center">{notNow}</div>
           </div>
         ) : (

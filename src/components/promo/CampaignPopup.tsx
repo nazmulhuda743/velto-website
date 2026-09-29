@@ -20,11 +20,15 @@ export async function CampaignPopup() {
   const offer = offerParts(pick(promo.offer, promo.offerBn));
   // Proof only from the real Google figures in Site settings, never a made-up number.
   const proof = promo.proof && (await getGoogleProof()).live ? await getGoogleProofLabel() : "";
+  const ends = promo.endsOn
+    ? t.ends.replace("{date}", new Date(dhakaDay(promo.endsOn, "end")).toLocaleDateString(bn ? "bn-BD" : "en-GB", { day: "numeric", month: "short", timeZone: "Asia/Dhaka" }))
+    : "";
   return (
     <PromoPopup
       popup={{
         version: promo.version,
         image: promo.image,
+        imageStyle: promo.imageStyle,
         imageAlt: pick(promo.imageAlt, promo.imageAltBn),
         tag: pick(promo.tag, promo.tagBn),
         title: pick(promo.title, promo.titleBn),
@@ -35,6 +39,7 @@ export async function CampaignPopup() {
         points: popupPoints(pick(promo.points, promo.pointsBn)),
         fine: pick(promo.fine, promo.fineBn),
         proof,
+        ends,
         href: promo.href,
         frequency: promo.frequency,
         delaySeconds: promo.delaySeconds,
@@ -42,7 +47,7 @@ export async function CampaignPopup() {
         startsAt: promo.startsOn ? dhakaDay(promo.startsOn, "start") : null,
         endsAt: promo.endsOn ? dhakaDay(promo.endsOn, "end") : null,
       }}
-      logo={<Logo inverse className="h-7" />}
+      logo={<Logo className="h-6" />}
       labels={{ dialogLabel: t.dialogLabel, close: t.close, notNow: t.notNow, posterOpens: t.posterOpens }}
     />
   );

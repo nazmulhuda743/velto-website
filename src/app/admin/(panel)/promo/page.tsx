@@ -110,8 +110,7 @@ export default async function PromoPage({ searchParams }: { searchParams: Search
         </p>
         <form action={loadFirstOrderTemplateAction} className="mt-4 flex flex-wrap items-center gap-3 rounded-md border border-line bg-soft px-4 py-3">
           <p className="min-w-0 flex-1 t-small text-body">
-            <span className="font-semibold text-navy">First-order offer template:</span> “10% OFF your first order booked on our website”, in English and Bangla,
-            with ticks, small print and your Google rating. It replaces the popup below and stays off until you preview it and switch it on.
+            <span className="font-semibold text-navy">First-order offer template:</span> a voucher with a Velto photo, “10% off your first order”, ticks, small print and your Google rating, in English and Bangla. It replaces the popup below and stays off until you preview it and switch it on.
           </p>
           <button type="submit" className="admin-btn-secondary">
             Use the template
@@ -218,6 +217,13 @@ export default async function PromoPage({ searchParams }: { searchParams: Search
                   <p className="p-6 text-center t-small text-secondary">No poster yet</p>
                 )}
               </div>
+              <label className="mt-3 block">
+                <span className="t-small font-semibold text-navy">How the picture is used</span>
+                <select name="imageStyle" defaultValue={promo.imageStyle} className="admin-input mt-1">
+                  <option value="poster">Poster: shown whole, the whole picture opens the link</option>
+                  <option value="photo">Photo: fills the side of the card, cropped to fit</option>
+                </select>
+              </label>
               <ImageFileInput name="image" accept="image/jpeg,image/png,image/webp,image/avif" className="mt-3 block w-full t-small" aria-label="New poster" />
               {promo.image ? (
                 <label className="mt-2 flex items-center gap-2 t-small">

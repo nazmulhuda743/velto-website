@@ -597,3 +597,48 @@ body:has([data-account-frame]) footer[data-site-footer] {
     }
   }
 }
+
+/* Voucher popup: a perforated edge between the photo and the offer (side by side on wide screens, stacked on phones). */
+[data-promo-card][data-voucher] {
+  --notch: 11px;
+  -webkit-mask-image:
+    radial-gradient(circle at 0 190px, transparent var(--notch), #000 calc(var(--notch) + 0.5px)),
+    radial-gradient(circle at 100% 190px, transparent var(--notch), #000 calc(var(--notch) + 0.5px));
+  mask-image:
+    radial-gradient(circle at 0 190px, transparent var(--notch), #000 calc(var(--notch) + 0.5px)),
+    radial-gradient(circle at 100% 190px, transparent var(--notch), #000 calc(var(--notch) + 0.5px));
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+[data-promo-card][data-voucher] [data-promo-photo]::after {
+  content: "";
+  position: absolute;
+  left: 22px;
+  right: 22px;
+  bottom: 0;
+  border-bottom: 2px dashed rgba(255, 255, 255, 0.9);
+}
+@media (min-width: 640px) {
+  [data-promo-card][data-voucher] {
+    -webkit-mask-image:
+      radial-gradient(circle at 41.667% 0, transparent var(--notch), #000 calc(var(--notch) + 0.5px)),
+      radial-gradient(circle at 41.667% 100%, transparent var(--notch), #000 calc(var(--notch) + 0.5px));
+    mask-image:
+      radial-gradient(circle at 41.667% 0, transparent var(--notch), #000 calc(var(--notch) + 0.5px)),
+      radial-gradient(circle at 41.667% 100%, transparent var(--notch), #000 calc(var(--notch) + 0.5px));
+  }
+  [data-promo-card][data-voucher] [data-promo-photo]::after {
+    left: auto;
+    right: 0;
+    top: 22px;
+    bottom: 22px;
+    border-bottom: 0;
+    border-right: 2px dashed rgba(255, 255, 255, 0.9);
+  }
+}
+@media (max-height: 720px) {
+  [data-promo-card][data-voucher] {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}

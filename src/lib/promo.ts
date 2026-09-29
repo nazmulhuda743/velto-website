@@ -19,6 +19,8 @@ export type PromoPopup = {
   /** Changes whenever the campaign content changes, so everyone sees the new campaign once more. */
   version: string;
   image: string;
+  /** poster: shown whole, the whole picture opens the link. photo: fills a side panel, cropped. */
+  imageStyle: "poster" | "photo";
   imageAlt: string;
   imageAltBn: string;
   tag: string;
@@ -53,6 +55,7 @@ export const EMPTY_POPUP: PromoPopup = {
   enabled: false,
   version: "",
   image: "",
+  imageStyle: "poster",
   imageAlt: "",
   imageAltBn: "",
   tag: "",
@@ -87,7 +90,8 @@ export function parsePopup(v: unknown): PromoPopup {
   return {
     enabled: p.enabled === true,
     version: str(p.version, 20),
-    image: /^https:\/\/[^\s"'<>]+$/.test(str(p.image, 500)) ? str(p.image, 500) : "",
+    image: promoImageOk(str(p.image, 500)) ? str(p.image, 500) : "",
+    imageStyle: p.imageStyle === "photo" ? "photo" : "poster",
     imageAlt: str(p.imageAlt, 300),
     imageAltBn: str(p.imageAltBn, 300),
     tag: str(p.tag, 40),
@@ -113,6 +117,9 @@ export function parsePopup(v: unknown): PromoPopup {
     updatedAt: str(p.updatedAt, 40),
   };
 }
+
+/** An uploaded picture (https) or one of the website's own photos under /images. */
+export const promoImageOk = (src: string) => /^https:\/\/[^\s"'<>]+$/.test(src) || (/^\/images\/[A-Za-z0-9/_.-]+\.(?:jpg|jpeg|png|webp|avif)$/.test(src) && !src.includes(".."));
 
 /** A page on this website ("/signup", "/book?source=x") or a full https:// link. */
 export const promoHrefOk = (href: string) => href === "" || /^\/(?!\/)[^\s"'<>]*$/.test(href) || /^https:\/\/[^\s"'<>]+$/.test(href);
@@ -211,6 +218,7 @@ export function popupFingerprint(p: PromoPopup): string {
   const parts = [p.image, p.tag, p.tagBn, p.title, p.titleBn, p.body, p.bodyBn, p.cta, p.ctaBn, p.href];
   // Newer fields join only when set, so campaigns saved before they existed keep their version.
   for (const extra of [p.offer, p.offerBn, p.points, p.pointsBn, p.fine, p.fineBn]) if (extra) parts.push(extra);
+  if (p.imageStyle === "photo") parts.push("photo");
   let hash = 5381;
   for (const ch of parts.join("\u0001")) hash = ((hash << 5) + hash + ch.charCodeAt(0)) >>> 0;
   return hash.toString(36);
@@ -231,14 +239,18 @@ export const popupPoints = (points: string) => barMessages(points).slice(0, 3);
  * Loading it never switches the popup on.
  */
 export const FIRST_ORDER_TEMPLATE = {
-  tag: "Website offer",
-  tagBn: "ওয়েবসাইট অফার",
-  offer: "10% OFF",
-  offerBn: "১০% ছাড়",
-  title: "Your first order, booked on our website",
-  titleBn: "ওয়েবসাইটে বুক করা আপনার প্রথম অর্ডারে",
-  body: "Book a pickup in a few taps. We collect from your door and take 10% off your whole first order.",
-  bodyBn: "কয়েক ট্যাপে পিকআপ বুক করুন। আমরা আপনার দরজা থেকে কাপড় নিয়ে যাব, আর পুরো প্রথম অর্ডারে ১০% ছাড় দেব।",
+  image: "/images/pages/finished-shirts-rail.webp",
+  imageStyle: "photo" as const,
+  imageAlt: "Freshly finished shirts on wooden hangers at Velto",
+  imageAltBn: "Velto-তে কাঠের হ্যাঙ্গারে সদ্য ফিনিশ করা শার্ট",
+  tag: "Welcome offer",
+  tagBn: "স্বাগত অফার",
+  offer: "10% off your first order",
+  offerBn: "১০% ছাড় প্রথম অর্ডারে",
+  title: "Book it on our website, we do the rest.",
+  titleBn: "ওয়েবসাইটে বুক করুন, বাকিটা আমরা করব।",
+  body: "A pickup takes a few taps. We collect from your door, and your whole first order costs 10% less.",
+  bodyBn: "কয়েক ট্যাপে পিকআপ বুক হয়। আমরা আপনার দরজা থেকে নিয়ে যাই, আর পুরো প্রথম অর্ডারে ১০% কম লাগে।",
   points: "Free pickup & delivery on ৳499+ | Every item tagged and checked | Pickup across Uttara Sectors 1–18",
   pointsBn: "৳৪৯৯+ অর্ডারে ফ্রি পিকআপ ও ডেলিভারি | প্রতিটি আইটেম ট্যাগ ও যাচাই করা হয় | উত্তরা সেক্টর ১–১৮ জুড়ে পিকআপ",
   cta: "Book my pickup · 10% off",
