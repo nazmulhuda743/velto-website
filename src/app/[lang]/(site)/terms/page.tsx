@@ -3,7 +3,7 @@ import Link from "@/components/i18n/Link";
 import { LegalContact, LegalDocument, type LegalSection } from "@/components/legal/LegalDocument";
 import { LEGAL } from "@/content/legal";
 import { FREE_DELIVERY_THRESHOLD, REGULAR_FREE_DELIVERY_THRESHOLD, SERVICE_AREA } from "@/content/site";
-import { alternatesFor } from "@/lib/seo/page-metadata";
+import { alternatesFor, shareCardMetadata } from "@/lib/seo/page-metadata";
 
 const baseMetadata: Metadata = {
   title: "Terms of Service | Velto Premium Laundry",
@@ -13,7 +13,7 @@ const baseMetadata: Metadata = {
 };
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { ...baseMetadata, alternates: await alternatesFor("/terms") };
+  return { ...baseMetadata, alternates: await alternatesFor("/terms"), ...(await shareCardMetadata("/terms", String(baseMetadata.title), baseMetadata.description ?? undefined)) };
 }
 
 /*

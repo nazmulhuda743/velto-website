@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "@/components/i18n/Link";
 import { CookieSettingsButton } from "@/components/consent/CookieSettingsButton";
 import { LegalContact, LegalDocument, type LegalSection } from "@/components/legal/LegalDocument";
-import { alternatesFor } from "@/lib/seo/page-metadata";
+import { alternatesFor, shareCardMetadata } from "@/lib/seo/page-metadata";
 
 const baseMetadata: Metadata = {
   title: "Cookie Policy | Velto Premium Laundry",
@@ -11,7 +11,7 @@ const baseMetadata: Metadata = {
 };
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { ...baseMetadata, alternates: await alternatesFor("/cookies") };
+  return { ...baseMetadata, alternates: await alternatesFor("/cookies"), ...(await shareCardMetadata("/cookies", String(baseMetadata.title), baseMetadata.description ?? undefined)) };
 }
 
 type Row = { name: string; purpose: string; duration: string; setBy: string };
