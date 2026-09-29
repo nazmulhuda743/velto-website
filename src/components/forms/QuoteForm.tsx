@@ -9,6 +9,7 @@ import type { FormText } from "@/content/i18n/forms/en";
 import { fill, format, type Locale } from "@/lib/i18n/config";
 import { AREA_OPTIONS, FieldShell, OUTSIDE_AREA, SelectField, TextAreaField, TextField, normalisePhone, phoneOk } from "./fields";
 import { submitQuote, type QuoteFormData, type SubmitResult } from "./submit";
+import { useNightDhaka } from "./useNight";
 
 type QuoteService = QuoteFormData["service"];
 type Text = FormText["quote"];
@@ -67,6 +68,7 @@ export function QuoteForm({
   preview?: "success" | "error";
 }) {
   const locale = useLocale();
+  const night = useNightDhaka();
   const [data, setData] = useState<QuoteDraft>({
     name: "",
     phone: "",
@@ -156,6 +158,7 @@ export function QuoteForm({
         <p className="t-label uppercase text-success">{t.successLabel}</p>
         <h2 className="mt-3 t-h3 text-navy">{t.successTitle}</h2>
         <p className="mt-3 max-w-[52ch] text-body">{t.successBody}</p>
+        {night ? <p className="mt-3 max-w-[52ch] font-semibold text-navy" data-night-note>{t.successNight}</p> : null}
         {done.reference ? (
           <p className="mt-3 text-body">
             {t.referenceBefore}

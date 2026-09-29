@@ -95,6 +95,9 @@ export const formsEn = {
     callbackDone: "Thanks, {name}. Velto will call you soon.",
     callbackFailed: "That didn't go through. Please try again, or message us on WhatsApp.",
     callbackTooMany: "We already have your request. Velto will call you soon.",
+    /** Asked at night (9 PM to 9 AM, Dhaka): the call comes in the morning. */
+    callbackDoneNight: "Thanks, {name}. It's late now, so Velto will call you in the morning, from 9 AM.",
+    callbackTooManyNight: "We already have your request. Velto will call you in the morning, from 9 AM.",
     callbackCancel: "Cancel",
     reassureBooked: "Nothing to pay now. Your pickup window is booked the moment you confirm.",
     phoneHelpBooked: "The rider calls this number when nearby.",
@@ -164,6 +167,7 @@ export const formsEn = {
     errorsMany: "{n} things need checking above.",
     submit: "Book Pickup",
     reassureTime: "Nothing to pay now. We call you to confirm a pickup time.",
+    reassureTimeNight: "Nothing to pay now. It's late, so we'll call you in the morning, from 9 AM, to confirm a pickup time.",
     /** The customer's own view of the pickup preference and area (Ops gets the English form). */
     today: "Today",
     tomorrow: "Tomorrow",
@@ -173,6 +177,7 @@ export const formsEn = {
     mixedItem: "Mixed items",
     successTitle: "Booking received",
     successBody: "Thanks, {name}. Velto will call you to confirm a pickup time slot. Your pickup is booked once we've confirmed it with you.",
+    successBodyNight: "Thanks, {name}. It's late now, so Velto will call you in the morning, from 9 AM, to confirm a pickup time slot. Your pickup is booked once we've confirmed it with you.",
     rowItems: "Items",
     rowService: "Services",
     rowWhat: "Picking up",
@@ -307,6 +312,8 @@ export const formsEn = {
     },
     successLabel: "Quote request received",
     successTitle: "Thanks. We'll call or WhatsApp you with a price.",
+    /** Sent at night (9 PM to 9 AM, Dhaka). */
+    successNight: "It's late now, so we'll get back to you in the morning, from 9 AM.",
     successBody:
       "We work it out from Velto's current pricing and your details. Where size, material or condition needs checking, we confirm the final amount before pickup. Nothing is booked until you agree.",
     referenceBefore: "Your reference is ",
