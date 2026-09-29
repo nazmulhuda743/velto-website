@@ -151,6 +151,7 @@ const GROUPS: { label: string; items: Item[] }[] = [
       { href: "/admin/seo", label: "SEO", icon: "seo" },
       { href: "/admin/images", label: "Images", icon: "images" },
       { href: "/admin/copy", label: "Text & copy", icon: "copy" },
+      { href: "/admin/copy/footer", label: "Footer links", icon: "copy" },
       { href: "/admin/reviews", label: "Reviews", icon: "reviews" },
       { href: "/admin/promo", label: "Promo & popup", icon: "promo" },
       { href: "/admin/settings", label: "Site settings", icon: "settings" },
@@ -168,7 +169,10 @@ const GROUPS: { label: string; items: Item[] }[] = [
   },
 ];
 
-const isActive = (href: string, path: string) => (href === "/admin" ? path === "/admin" : path.startsWith(href));
+const matches = (href: string, path: string) => (href === "/admin" ? path === "/admin" : path.startsWith(href));
+const ALL_HREFS = GROUPS.flatMap((g) => g.items.map((i) => i.href));
+/** The most specific menu item wins: /admin/copy/footer lights "Footer links", not "Text & copy". */
+const isActive = (href: string, path: string) => matches(href, path) && !ALL_HREFS.some((h) => h.length > href.length && h.startsWith(href) && matches(h, path));
 
 function Icon({ name }: { name: keyof typeof I }) {
   return (
