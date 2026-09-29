@@ -156,3 +156,16 @@ export const NAV: { desktop: NavItem[]; mobile: NavItem[]; utility: NavItem[] } 
   /** Quiet header links for returning customers (desktop, ≥1280px). */
   utility: [{ key: "trackOrder", label: "Track Order", href: "/track" }, ...(ACCOUNT_LINK as NavItem[])],
 };
+
+/**
+ * Velto's own social profiles (given by the owner, 2026-09-29). Shown in the footer and listed as
+ * the Organization's `sameAs` in structured data. Google is the Sector 11 Business Profile.
+ */
+export const SOCIAL_PROFILES = [
+  { id: "facebook", name: "Facebook", href: "https://www.facebook.com/veltoofficial" },
+  { id: "instagram", name: "Instagram", href: "https://www.instagram.com/velto.bd" },
+  { id: "linkedin", name: "LinkedIn", href: "https://www.linkedin.com/company/veltoofficial/" },
+] as const;
+
+/** The Business Profile the footer's Google icon opens. */
+export const GOOGLE_PROFILE_BRANCH = "sector-11";

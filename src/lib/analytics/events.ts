@@ -20,6 +20,8 @@ export const ANALYTICS_EVENTS = [
   // kept exhaustive by tests/analytics.type-test.ts.
   "pricing_search",
   "google_reviews_click",
+  // Footer social profile links (Facebook, Instagram, LinkedIn); placement names the network.
+  "social_click",
   "service_view",
   // Command Center additions: first-party page/funnel measurement, the order
   // tracking entry point and anonymous consent-banner outcomes.

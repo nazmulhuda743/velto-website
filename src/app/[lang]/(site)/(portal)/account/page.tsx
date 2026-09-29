@@ -2,12 +2,14 @@ import Link from "@/components/i18n/Link";
 import { redirect } from "next/navigation";
 import { getLocale, loginRedirectPath } from "@/lib/i18n/server";
 import { accountText, orderFormat, type AccountText } from "@/content/i18n/account";
-import { fill, format, localizeHref, type Locale } from "@/lib/i18n/config";
+import { fill, format, type Locale } from "@/lib/i18n/config";
 import { Alert } from "@/components/account/Alert";
 import { LinkHistoryCard } from "@/components/account/LinkHistoryCard";
 import { PlanBanner, planWhen } from "@/components/account/PlanBanner";
 import { RewardsStrip } from "@/components/account/RewardsStrip";
 import { NextPickupCard } from "@/components/account/NextPickupCard";
+import { QuickRepeat } from "@/components/account/QuickRepeat";
+import { RoutineCard } from "@/components/account/RoutineCard";
 import { UpcomingPickups } from "@/components/account/UpcomingPickups";
 import { OrderProgress } from "@/components/account/OrderProgress";
 import { OrderRow } from "@/components/account/OrderRow";
@@ -17,7 +19,9 @@ import { WHATSAPP_URL } from "@/content/site";
 import { getCustomerSession, getDispatchPlans, getFeedbackList, getGoal, getLoyaltyCounts, getPickups, getPortalOrders, type DispatchPlan, type PortalOrder } from "@/lib/customer/portal";
 import { orderToRate } from "@/lib/customer/extras";
 import { getSiteContent } from "@/lib/site-content";
-import { laundryRhythm, ROUTINE_DAYS } from "@/lib/customer/rhythm";
+import { laundryRhythm, repeatHref } from "@/lib/customer/rhythm";
+import { quickRepeatFor } from "@/lib/customer/quick-repeat";
+import { getRoutine } from "@/lib/customer/routine";
 import { formText } from "@/content/i18n/forms";
 import { areaLabel, displayBdPhone, greetingName } from "@/lib/customer/validation";
 
@@ -104,11 +108,15 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
   const active = (orders ?? []).filter((o) => o.active);
   const recent = (orders ?? []).filter((o) => o !== active[0]).slice(0, 3);
   const rhythm = laundryRhythm(orders ?? []);
-  // From the second order on: turning repeat orders into a fixed day is what makes them a habit.
-  const suggestRegular = linked && rhythm.count >= 2;
   const name = greetingName(account.fullName);
   const hasAddress = Boolean(account.address && account.area);
   const locale = await getLocale();
+  // Nothing in progress and a last order: book it again with a day and a time, no form.
+  const quick = !active[0] && !pickups.length && rhythm.last && linked ? await quickRepeatFor(account, rhythm.last.orderNumber, rhythm.repeatService, locale) : null;
+  const routineRead = linked ? await getRoutine() : null;
+  const routine = routineRead === "error" ? null : routineRead;
+  // From the second order on (or once they have one): a fixed weekly day is what makes it a habit.
+  const showRoutine = linked && routineRead !== "error" && (Boolean(routine) || rhythm.count >= 2);
   const a = accountText(locale);
   const t = a.home;
   const f = formText(locale);
@@ -155,7 +163,16 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
           </div>
         </>
       ) : orders !== null && !pickups.length ? (
-        <NextPickupCard rhythm={rhythm} locale={locale} firstTime={linked} />
+        <NextPickupCard
+          rhythm={rhythm}
+          locale={locale}
+          firstTime={linked}
+          quick={
+            quick && rhythm.last ? (
+              <QuickRepeat {...quick} t={a.quick} changeHref={repeatHref(rhythm, `account_${rhythm.stage}`)} placement={`account_quick_${rhythm.stage}`} />
+            ) : undefined
+          }
+        />
       ) : null}
 
       {toRate ? (
@@ -238,40 +255,18 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
       {/* 5. Secondary setup */}
       <LinkHistoryCard account={account} />
 
-      {suggestRegular ? (
-        <section aria-labelledby="regular-title" className="rounded-lg border border-line bg-white p-5 md:p-6" data-routine>
-          <h2 id="regular-title" className="text-[20px] font-semibold tracking-[-0.01em] text-navy">
-            {t.regularTitle}
-          </h2>
-          <p className="mt-1.5 max-w-[56ch] t-small text-body">{t.regularBody}</p>
-          {/* A plain GET form: no script needed, and /book re-validates both values. */}
-          <form action={localizeHref("/book", locale)} className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
-            <input type="hidden" name="source" value="account_routine" />
-            <label className="block t-small font-semibold text-navy">
-              {t.routineEvery}
-              <select name="routine" defaultValue={(rhythm.everyDays ?? 7) > 10 ? "fortnightly" : "weekly"} className="mt-1 block h-11 w-full rounded-md border border-line-strong bg-white px-3 text-navy sm:w-48">
-                <option value="weekly">{t.routineWeekly}</option>
-                <option value="fortnightly">{t.routineFortnightly}</option>
-              </select>
-            </label>
-            <label className="block t-small font-semibold text-navy">
-              {t.routineDay}
-              <select name="day" defaultValue={ROUTINE_DAYS[rhythm.usualWeekday ?? 6]} className="mt-1 block h-11 w-full rounded-md border border-line-strong bg-white px-3 text-navy sm:w-44">
-                {ROUTINE_DAYS.map((d, i) => (
-                  <option key={d} value={d}>
-                    {f.bookPage.routineDays[i]}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button type="submit" data-analytics="book_pickup_click" data-placement="account_routine" className="inline-flex h-11 items-center justify-center rounded-md bg-action px-5 font-semibold text-white hover:bg-action-hover">
-              {t.routineButton}
-            </button>
-          </form>
-          <Link href="/regular-laundry" className="mt-3 inline-block t-small font-semibold text-navy underline decoration-blue/50 underline-offset-4 hover:decoration-blue">
-            {t.routineMore}
-          </Link>
-        </section>
+      {showRoutine ? (
+        <RoutineCard
+          routine={routine}
+          hasAddress={hasAddress}
+          t={a.routine}
+          days={f.bookPage.routineDays}
+          windows={f.booking.slots}
+          services={f.booking.services}
+          nextOnLabel={routine?.nextOn ? orderFormat(locale).day(routine.nextOn) : null}
+          suggestedDay={rhythm.usualWeekday}
+          suggestedService={rhythm.repeatService}
+        />
       ) : null}
     </div>
   );

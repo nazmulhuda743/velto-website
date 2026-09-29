@@ -29,7 +29,7 @@ const dhakaNow = () => new Date(Date.now() + 6 * 3_600_000);
 const minutes = (hhmm: string) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
 
 /** Seven days of preference windows; today's close an hour before they end. */
-function fallbackDays(): AvailabilityDay[] {
+export function fallbackDays(): AvailabilityDay[] {
   const now = dhakaNow();
   const today = now.toISOString().slice(0, 10);
   const nowMin = now.getUTCHours() * 60 + now.getUTCMinutes();

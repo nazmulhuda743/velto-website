@@ -1,6 +1,6 @@
 import { IMAGES } from "@/content/mock";
 import type { Location } from "@/content/site";
-import { LOCATIONS, mapListingUrl } from "@/content/site";
+import { LOCATIONS, mapListingUrl, SOCIAL_PROFILES } from "@/content/site";
 import { absoluteUrl, SITE_NAME, SITE_URL } from "@/lib/seo/site";
 
 /**
@@ -51,6 +51,7 @@ export const ORGANIZATION_SCHEMA = {
     "Laundry, dry cleaning and ironing in Uttara, Dhaka, with pickup and delivery across Uttara Sectors 1–18 and outlets in Sector 11 and Sector 18.",
   areaServed: SERVICE_AREA_SCHEMA,
   location: LOCATIONS.map((l) => ({ "@id": locationId(l) })),
+  sameAs: SOCIAL_PROFILES.map((p) => p.href),
 };
 
 /** One outlet as a local business. Street address is split so it isn't repeated in the locality. */

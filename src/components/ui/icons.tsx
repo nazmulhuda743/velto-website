@@ -69,3 +69,44 @@ export function SearchIcon({ className = "size-5" }: IconProps) {
     </svg>
   );
 }
+
+/* Social profiles (footer): simple line glyphs in the text colour, 24px grid. */
+const social = { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
+
+export function FacebookIcon({ className = "size-5" }: IconProps) {
+  return (
+    <svg {...social} className={className}>
+      <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+    </svg>
+  );
+}
+
+export function InstagramIcon({ className = "size-5" }: IconProps) {
+  return (
+    <svg {...social} className={className}>
+      <rect x="2.5" y="2.5" width="19" height="19" rx="5" />
+      <circle cx="12" cy="12" r="4" />
+      <path d="M17.5 6.5h.01" />
+    </svg>
+  );
+}
+
+export function LinkedInIcon({ className = "size-5" }: IconProps) {
+  return (
+    <svg {...social} className={className}>
+      <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z" />
+      <rect x="2" y="9" width="4" height="12" />
+      <circle cx="4" cy="4" r="2" />
+    </svg>
+  );
+}
+
+/** Google Business Profile: a plain "G". */
+export function GoogleIcon({ className = "size-5" }: IconProps) {
+  return (
+    <svg {...social} className={className}>
+      <path d="M20 12a8 8 0 1 1-2.34-5.66" />
+      <path d="M20 12h-7.5" />
+    </svg>
+  );
+}

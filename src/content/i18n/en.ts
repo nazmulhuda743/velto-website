@@ -57,6 +57,9 @@ export const en = {
     cookies: "Cookies",
     cookieSettings: "Cookie settings",
     directionsTo: "to Velto {name}",
+    follow: "Follow Velto",
+    onNetwork: "Velto on {name}",
+    onGoogle: "Velto Sector 11 on Google",
   },
   /** Names shown to customers. Ops and booking data keep the English slugs and labels. */
   serviceNames: {
