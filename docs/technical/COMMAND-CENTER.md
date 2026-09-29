@@ -15,7 +15,7 @@ change them. There is no second request-status workflow.
 | Route | Purpose |
 |---|---|
 | `/admin` | Command center: conversion rate, visitors, sessions, booking starts, bookings, quotes, WhatsApp, deltas vs the previous period, compact funnel, secondary signals, needs-attention, latest requests, content status |
-| `/admin/funnel` | Funnel (landing → service → pricing → started → sent, plus WhatsApp fallback), filterable by date, service, source, campaign and device; breakdowns by device and source |
+| `/admin/funnel` | Funnel (landing → service → pricing → clicked Book → started → entered phone → sent, plus WhatsApp fallback), filterable by date, service, source, campaign and device; breakdowns by device and source. **After the request** (`website_request_outcomes`, docs/technical/sql/website_request_outcomes.sql): every request → picked up → first order delivered → ordered again, with open/cancelled and new/returning customers, by source. It counts all requests, not only consented sessions, so it follows the Service and Source filters only |
 | `/admin/marketing` | Traffic and conversions by channel, a UTM campaign table, and the tracked campaign link builder |
 | `/admin/visitors` | New vs returning, devices, grouped journeys, top/landing/exit pages, service interest, price searches, time of day |
 | `/admin/consent` | Consent decisions and rates, tracking health, signal timestamps, warnings |

@@ -130,7 +130,6 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
         </p>
       </header>
 
-      {params.password === "updated" ? <Alert tone="success">{t.passwordUpdated}</Alert> : null}
       {params.welcome ? <Alert tone="success">{t.welcome}</Alert> : null}
       {orders === null ? <Alert tone="error">{t.ordersFailed}</Alert> : null}
 

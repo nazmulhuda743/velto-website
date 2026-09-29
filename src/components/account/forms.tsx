@@ -6,24 +6,18 @@ import { useFormStatus } from "react-dom";
 import { SelectField, TextField } from "@/components/forms/fields";
 import {
   confirmLinkCodeAction,
-  forgotPasswordAction,
   googleSignInAction,
-  resendVerificationAction,
-  resetPasswordAction,
   saveProfileAction,
   sendLinkCodeAction,
   sendPhoneCodeAction,
-  signInAction,
-  signUpAction,
   verifyPhoneCodeAction,
   type AuthFormState,
 } from "@/lib/customer/actions";
-import { OUTSIDE_AREA, PASSWORD_MIN, UTTARA_SECTORS, displayBdPhone } from "@/lib/customer/validation";
+import { OUTSIDE_AREA, UTTARA_SECTORS, displayBdPhone } from "@/lib/customer/validation";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import type { AccountText } from "@/content/i18n/account/en";
 import { fill } from "@/lib/i18n/config";
 import { Alert } from "./Alert";
-import { PasswordField } from "./PasswordField";
 import { SubmitButton } from "./SubmitButton";
 
 const IDLE: AuthFormState = { status: "idle" };
@@ -110,16 +104,6 @@ function Divider({ label }: { label: string }) {
       <span className="h-px flex-1 bg-line" />
       <span className="t-small text-secondary">{label}</span>
       <span className="h-px flex-1 bg-line" />
-    </div>
-  );
-}
-
-/** "Continue with Google" plus an "or use your email" divider; shown only when Google is on in Supabase. */
-export function GoogleSignIn({ t, next }: { t: Text; next: string }) {
-  return (
-    <div>
-      <GoogleButton t={t} next={next} />
-      <Divider label={t.orEmail} />
     </div>
   );
 }
@@ -316,63 +300,19 @@ function PhoneCodeStep({
   );
 }
 
-/** Email as the second way in when mobile sign-in is on: folded away, opened on any email result. */
-function EmailDisclosure({ label, open, children }: { label: string; open: boolean; children: React.ReactNode }) {
-  return (
-    <details className="group mt-3" open={open || undefined}>
-      <summary className="flex h-[52px] cursor-pointer list-none items-center justify-center gap-2 rounded-md border border-line-strong bg-white px-5 font-semibold text-navy transition-colors hover:border-navy hover:bg-soft lg:h-12 [&::-webkit-details-marker]:hidden">
-        {label}
-        <svg viewBox="0 0 16 16" aria-hidden="true" className="size-4 transition-transform group-open:rotate-180">
-          <path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </summary>
-      <div className="mt-6">{children}</div>
-    </details>
-  );
-}
-
-/** Mobile first, then Google, then email folded away. Without mobile sign-in: Google, then the email form. */
-function Methods({
-  t,
-  next,
-  mode,
-  google,
-  phone,
-  emailOpen,
-  children,
-}: {
-  t: Text;
-  next: string;
-  mode: "signin" | "signup";
-  google: boolean;
-  phone: boolean;
-  emailOpen: boolean;
-  children: React.ReactNode;
-}) {
-  if (!phone) {
-    return (
-      <>
-        {google ? <GoogleSignIn t={t} next={next} /> : null}
-        {children}
-      </>
-    );
-  }
+/** Mobile number first, then Google. Customers don't use passwords. */
+function Methods({ t, next, mode, google, phone }: { t: Text; next: string; mode: "signin" | "signup"; google: boolean; phone: boolean }) {
+  if (!phone && !google) return <Unavailable t={t} />;
   return (
     <>
-      <PhoneSignIn t={t} next={next} mode={mode} />
-      <Divider label={t.orDivider} />
+      {phone ? <PhoneSignIn t={t} next={next} mode={mode} /> : null}
+      {phone && google ? <Divider label={t.orDivider} /> : null}
       {google ? <GoogleButton t={t} next={next} /> : null}
-      <EmailDisclosure label={mode === "signup" ? t.useEmailSignUp : t.useEmailSignIn} open={emailOpen}>
-        {children}
-      </EmailDisclosure>
     </>
   );
 }
 
 /* ---------- Sign in ---------- */
-
-/** Show/hide labels for PasswordField, in the page language. */
-const toggleLabels = (t: Text) => ({ show: t.show, hide: t.hide, srPassword: t.srPassword });
 
 export function SignInForm({
   t,
@@ -387,218 +327,18 @@ export function SignInForm({
   google?: boolean;
   phone?: boolean;
 }) {
-  const [state, action] = useActionState(signInAction, IDLE);
-  const formRef = useRef<HTMLFormElement>(null);
-  useFocusFirstError(state, formRef);
-  const errors = errorsOf(state);
-
-  if (state.status === "verify-required") return <VerifyEmail t={t} email={state.email} />;
-
   return (
     <>
-    {notice ? <div className="mb-5">{notice}</div> : null}
-    <Methods t={t} next={next} mode="signin" google={google} phone={phone} emailOpen={state.status !== "idle"}>
-    <form ref={formRef} action={action} noValidate className="space-y-5">
-      <StateMessage state={state} t={t} />
-      <input type="hidden" name="next" value={next} />
-      <TextField id="email" label={t.emailLabel} type="email" autoComplete="email" inputMode="email" required maxLength={254} defaultValue={valueOf(state, "email")} error={errors.email} />
-      <PasswordField id="password" label={t.passwordLabel} autoComplete="current-password" error={errors.password} labels={toggleLabels(t)} />
-      <div className="-mt-1 flex justify-end">
-        <Link href="/forgot-password" className="t-small font-semibold text-navy underline decoration-blue/50 underline-offset-4 hover:decoration-blue">
-          {t.forgot}
-        </Link>
-      </div>
-      <SubmitButton pending={t.signInPending}>{t.signInSubmit}</SubmitButton>
-      <p className="border-t border-line pt-5 text-center t-small text-secondary">
-        {t.newTo}
-        <Link href={`/signup${next !== "/account" ? `?next=${encodeURIComponent(next)}` : ""}`} className="font-semibold text-navy underline decoration-blue/50 underline-offset-4 hover:decoration-blue">
-          {t.createLink}
-        </Link>
-      </p>
-    </form>
-    </Methods>
+      {notice ? <div className="mb-5">{notice}</div> : null}
+      <Methods t={t} next={next} mode="signin" google={google} phone={phone} />
     </>
-  );
-}
-
-/* ---------- Verification required / resend ---------- */
-
-export function VerifyEmail({ t, email }: { t: Text; email: string }) {
-  const [state, action] = useActionState(resendVerificationAction, IDLE);
-  return (
-    <div className="space-y-5">
-      <Alert tone="info" title={t.verifyTitle}>
-        {t.verifyBefore}
-        <strong className="text-navy">{email}</strong>
-        {t.verifyAfter}
-      </Alert>
-      {state.status === "sent" ? (
-        <Alert tone="success">{t.resent}</Alert>
-      ) : (
-        <form action={action}>
-          <input type="hidden" name="email" value={email} />
-          <StateMessage state={state} t={t} />
-          <SubmitButton pending={t.sending} variant="secondary" className={state.status === "idle" ? "" : "mt-4"}>
-            {t.resend}
-          </SubmitButton>
-        </form>
-      )}
-      <p className="text-center t-small">
-        <Link href="/login" className="font-semibold text-navy underline decoration-blue/50 underline-offset-4">
-          {t.backToSignIn}
-        </Link>
-      </p>
-    </div>
   );
 }
 
 /* ---------- Sign up ---------- */
 
 export function SignUpForm({ t, next, google = false, phone = false }: { t: Text; next: string; google?: boolean; phone?: boolean }) {
-  const locale = useLocale();
-  const [state, action] = useActionState(signUpAction, IDLE);
-  const formRef = useRef<HTMLFormElement>(null);
-  useFocusFirstError(state, formRef);
-  const errors = errorsOf(state);
-
-  if (state.status === "check-email") {
-    return (
-      <div className="space-y-5" data-signup-sent>
-        <Alert tone="success" title={t.checkTitle}>
-          {t.checkBefore}
-          <strong className="text-navy">{state.email}</strong>
-          {t.checkAfter}
-        </Alert>
-        <p className="t-small text-secondary">
-          {t.alreadyBefore}
-          <Link href="/login" className="font-semibold text-navy underline underline-offset-4">
-            {t.alreadySignIn}
-          </Link>
-          {t.or}
-          <Link href="/forgot-password" className="font-semibold text-navy underline underline-offset-4">
-            {t.alreadyReset}
-          </Link>
-          {t.alreadyAfter}
-        </p>
-      </div>
-    );
-  }
-
-  return (
-    <>
-    <Methods t={t} next={next} mode="signup" google={google} phone={phone} emailOpen={state.status !== "idle"}>
-    <form ref={formRef} action={action} noValidate className="space-y-5">
-      <StateMessage state={state} t={t} />
-      <TextField id="fullName" label={t.fullNameLabel} autoComplete="name" required maxLength={80} defaultValue={valueOf(state, "fullName")} error={errors.fullName} />
-      <TextField id="email" label={t.emailLabel} type="email" autoComplete="email" inputMode="email" required maxLength={254} defaultValue={valueOf(state, "email")} error={errors.email} />
-      <TextField
-        id="phone"
-        label={t.phoneLabel}
-        type="tel"
-        autoComplete="tel"
-        inputMode="tel"
-        required
-        maxLength={20}
-        placeholder="01712 345678"
-        helper={t.phoneHelp}
-        defaultValue={valueOf(state, "phone")}
-        error={errors.phone}
-      />
-      <PasswordField
-        id="password"
-        label={t.passwordLabel}
-        autoComplete="new-password"
-        helper={fill(t.passwordHelp, { n: PASSWORD_MIN }, locale)}
-        error={errors.password}
-        labels={toggleLabels(t)}
-      />
-      <PasswordField id="confirm" label={t.confirmLabel} autoComplete="new-password" error={errors.confirm} labels={toggleLabels(t)} />
-      <TermsCheckbox t={t} name="terms" error={errors.terms} />
-      <SubmitButton pending={t.signUpPending}>{t.signUpSubmit}</SubmitButton>
-      <p className="border-t border-line pt-5 text-center t-small text-secondary">
-        {t.haveAccount}
-        <Link href={`/login${next !== "/account" ? `?next=${encodeURIComponent(next)}` : ""}`} className="font-semibold text-navy underline decoration-blue/50 underline-offset-4 hover:decoration-blue">
-          {t.signInLink}
-        </Link>
-      </p>
-    </form>
-    </Methods>
-    </>
-  );
-}
-
-/* ---------- Forgot password ---------- */
-
-export function ForgotPasswordForm({ t }: { t: Text }) {
-  const [state, action] = useActionState(forgotPasswordAction, IDLE);
-  const formRef = useRef<HTMLFormElement>(null);
-  useFocusFirstError(state, formRef);
-
-  if (state.status === "sent") {
-    return (
-      <div className="space-y-5" data-reset-sent>
-        <Alert tone="success" title={t.checkTitle}>
-          {t.forgotSent}
-        </Alert>
-        <p className="text-center t-small">
-          <Link href="/login" className="font-semibold text-navy underline decoration-blue/50 underline-offset-4">
-            {t.backToSignIn}
-          </Link>
-        </p>
-      </div>
-    );
-  }
-  return (
-    <form ref={formRef} action={action} noValidate className="space-y-5">
-      <StateMessage state={state} t={t} />
-      <TextField id="email" label={t.emailLabel} type="email" autoComplete="email" inputMode="email" required maxLength={254} error={errorsOf(state).email} />
-      <SubmitButton pending={t.sending}>{t.forgotSubmit}</SubmitButton>
-      <p className="text-center t-small">
-        <Link href="/login" className="font-semibold text-navy underline decoration-blue/50 underline-offset-4">
-          {t.backToSignIn}
-        </Link>
-      </p>
-    </form>
-  );
-}
-
-/* ---------- Reset password ---------- */
-
-export function ExpiredResetLink({ t }: { t: Text }) {
-  return (
-    <div className="space-y-5" data-reset-expired>
-      <Alert tone="error" title={t.expiredTitle}>
-        {t.expiredBody}
-      </Alert>
-      <Link href="/forgot-password" className="inline-flex h-[52px] w-full items-center justify-center rounded-md bg-action px-6 font-semibold text-white hover:bg-action-hover lg:h-12">
-        {t.expiredButton}
-      </Link>
-    </div>
-  );
-}
-
-export function ResetPasswordForm({ t }: { t: Text }) {
-  const locale = useLocale();
-  const [state, action] = useActionState(resetPasswordAction, IDLE);
-  const formRef = useRef<HTMLFormElement>(null);
-  useFocusFirstError(state, formRef);
-  const errors = errorsOf(state);
-  if (state.status === "expired") return <ExpiredResetLink t={t} />;
-  return (
-    <form ref={formRef} action={action} noValidate className="space-y-5">
-      <StateMessage state={state} t={t} />
-      <PasswordField
-        id="password"
-        label={t.newPasswordLabel}
-        autoComplete="new-password"
-        helper={fill(t.passwordHelp, { n: PASSWORD_MIN }, locale)}
-        error={errors.password}
-        labels={toggleLabels(t)}
-      />
-      <PasswordField id="confirm" label={t.confirmNewLabel} autoComplete="new-password" error={errors.confirm} labels={toggleLabels(t)} />
-      <SubmitButton pending={t.saving}>{t.savePassword}</SubmitButton>
-    </form>
-  );
+  return <Methods t={t} next={next} mode="signup" google={google} phone={phone} />;
 }
 
 /* ---------- Profile ---------- */

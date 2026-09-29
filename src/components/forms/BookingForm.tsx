@@ -24,6 +24,7 @@ import {
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import type { FormText } from "@/content/i18n/forms/en";
 import { fill, format, localDigits, type Locale } from "@/lib/i18n/config";
+import { progressToFree, suggestAddOns } from "@/lib/booking-upsell";
 import { BookingItems, lineUnit, money, repeatLine, type ItemLine, type PriceItem } from "./BookingItems";
 
 /** One line of an earlier order, as the book page reads it on the server. */
@@ -38,13 +39,15 @@ type Text = FormText["booking"];
 type Common = FormText["common"];
 
 /**
- * Book a Pickup: what needs cleaning (services, items with prices), where (sector and address),
- * the pickup window, then name and phone, the order summary and Confirm.
+ * Book a Pickup, quick first: what we're picking up (a line of text and/or service chips), your
+ * details (with sector and address), then the pickup window, and Book. Everything else stays
+ * folded until the customer wants it: items with prices (and the order summary with the ৳499
+ * free-delivery nudge), a return date, instructions and photos.
  *
  * Pickup windows come from the Velto Scheduling Engine for the customer's sector: only windows
- * with room can be chosen, and Confirm reserves the window in the same transaction that creates
- * the Ops task (a window taken a moment earlier is refused, and the picker reloads). When
- * capacity booking is off, the same picker offers a preferred window that Velto confirms.
+ * with room can be chosen, and Book reserves the window in the same transaction that creates the
+ * Ops task (a window taken a moment earlier is refused, and the picker reloads). When capacity
+ * booking is off, the same picker offers a preferred window that Velto confirms by phone.
  *
  * Language: the customer sees the page language (`t`), but everything sent to Velto Ops
  * (toBookingData) is English — the area label, the pickup preference, service slugs and item
@@ -53,6 +56,10 @@ type Common = FormText["common"];
 
 /** Service values from a service page (?service=): the three garment services, or a household one. */
 const BOOKING_SERVICES = ["dry-cleaning", "wash-and-iron", "ironing", "curtain-cleaning", "carpet-cleaning", "blanket-comforter-cleaning"];
+const HOUSEHOLD_SERVICES = ["curtain-cleaning", "carpet-cleaning", "blanket-comforter-cleaning"];
+
+/** "What are we picking up?" in the customer's own words. */
+const WHAT_MAX = 160;
 
 const SECTORS = Array.from({ length: 18 }, (_, i) => i + 1);
 const OUTSIDE = "outside";
@@ -68,8 +75,10 @@ const BACK_BY_DAYS = 3;
 type FormState = {
   /** From a service page (?service=). A household service (curtains, carpets, blankets) stays as the booking's service. */
   service: string | null;
-  /** Step 1: Dry Cleaning, Wash & Iron and/or Ironing. */
+  /** Dry Cleaning, Wash & Iron and/or Ironing (chips, optional in the quick form). */
   services: GarmentService[];
+  /** "4 curtains, some shirts": what to pick up, in the customer's words. */
+  what: string;
   items: ItemLine[];
   sector: string;
   address: string;
@@ -82,7 +91,7 @@ type FormState = {
   photos: Photo[];
 };
 
-type ErrorKey = "services" | "name" | "phone" | "sector" | "address" | "date" | "slot" | "backBy" | "photos";
+type ErrorKey = "what" | "name" | "phone" | "sector" | "address" | "date" | "slot" | "backBy" | "photos";
 type Errors = Partial<Record<ErrorKey, string>>;
 type Status =
   | { state: "idle" }
@@ -168,8 +177,12 @@ const itemsText = (items: BookingItem[], t: Text, locale: Locale) =>
 const servicesText = (s: FormState, t: Text) =>
   isHousehold(s) ? (t.services[s.service ?? ""] ?? "") : s.services.map((x) => t.services[x]).join(", ");
 
-/** One line for summaries: the items, or the chosen services. */
-const whatLabel = (s: FormState, t: Text, locale: Locale) => (s.items.length ? itemsText(itemsOf(s), t, locale) : servicesText(s, t));
+/** One line for summaries: what the customer wrote, then the items or the chosen services. */
+const whatLabel = (s: FormState, t: Text, locale: Locale) =>
+  [s.what.trim(), s.items.length ? itemsText(itemsOf(s), t, locale) : servicesText(s, t)].filter(Boolean).join(" · ");
+
+/** The customer's own words lead the Ops notes, so staff read them first. */
+const opsNotes = (s: FormState) => [s.what.trim() ? `Picking up: ${s.what.trim()}` : "", s.notes.trim()].filter(Boolean).join(" · ") || undefined;
 
 const OPS_WINDOWS: Record<string, string> = { morning: "Morning", afternoon: "Afternoon", evening: "Evening", night: "Night" };
 
@@ -208,12 +221,12 @@ function toBookingData(s: FormState): BookingFormData {
     address: s.address.trim(),
     preferredPickup: pickupLabel(s),
     service: bookingService(s),
-    ...(s.pickup?.booked ? { slot: { date: s.pickup.date, window: s.pickup.window } } : {}),
     ...(s.services.length ? { services: s.services } : {}),
     ...(s.items.length ? { items: itemsOf(s) } : {}),
     ...(s.backBy ? { deliveryBy: s.backBy } : {}),
     ...(uploadedPhotos(s).length ? { photos: uploadedPhotos(s) } : {}),
-    notes: s.notes.trim() || undefined,
+    notes: opsNotes(s),
+    ...(s.pickup?.booked ? { slot: { date: s.pickup.date, window: s.pickup.window } } : {}),
   };
 }
 
@@ -231,6 +244,7 @@ function whatsappHref(s: FormState, t: Text, c: Common, locale: Locale, chargeMi
   const estimate = estimateLabel(estimateOf(s, chargeMinor), locale);
   const lines = [
     w.greeting,
+    s.what.trim() ? format(w.what, { v: s.what.trim() }) : "",
     s.items.length ? format(w.items, { v: itemsText(itemsOf(s), t, locale) }) : servicesText(s, t) ? format(w.service, { v: servicesText(s, t) }) : "",
     estimate ? format(w.estimate, { v: estimate }) : "",
     s.sector ? format(w.area, { v: areaText(s.sector, t, locale) }) : "",
@@ -245,7 +259,8 @@ function whatsappHref(s: FormState, t: Text, c: Common, locale: Locale, chargeMi
 
 function validate(s: FormState, t: Text, c: Common, locale: Locale): Errors {
   const e: Errors = {};
-  if (!s.services.length && !isHousehold(s)) e.services = t.errors.services;
+  // Anything that says what to collect: words, a service chip, or items.
+  if (!s.what.trim() && !s.services.length && !isHousehold(s) && !s.items.length) e.what = t.errors.what;
   if (!s.name.trim()) e.name = t.errors.name;
   if (!s.phone.trim()) e.phone = c.phoneMissing;
   else if (!phoneOk(s.phone)) e.phone = c.phoneInvalid;
@@ -258,8 +273,7 @@ function validate(s: FormState, t: Text, c: Common, locale: Locale): Errors {
   return e;
 }
 
-/** The order fields appear in: what, where, when, who. */
-const FIELD_ORDER: ErrorKey[] = ["services", "sector", "address", "date", "slot", "backBy", "photos", "name", "phone"];
+const FIELD_ORDER: ErrorKey[] = ["what", "name", "phone", "sector", "address", "date", "slot", "backBy", "photos"];
 
 /* ---------- presentational pieces (booking page only) ---------- */
 
@@ -280,7 +294,7 @@ function Group({
   id?: string;
   title: string;
   hint?: string;
-  /** "Step {n} of 5: " in the page language. */
+  /** "Step {n} of 4: " in the page language. */
   stepOf: string;
   locale: Locale;
   children: ReactNode;
@@ -322,46 +336,51 @@ function ErrorText({ id, children }: { id: string; children?: string }) {
   );
 }
 
-/** Step 1: one or more of the three garment services, as large checkable cards. */
-function ServiceChoices({
+/**
+ * Optional service chips under "What are we picking up?": the three garment services (any mix)
+ * and one household service (curtains, carpets or bedding). A service page preselects its own.
+ */
+function ServiceChips({
   t,
-  value,
-  onChange,
-  invalid,
+  services,
+  household,
+  onServices,
+  onHousehold,
 }: {
   t: Text;
-  value: GarmentService[];
-  onChange: (v: GarmentService[]) => void;
-  invalid: boolean;
+  services: GarmentService[];
+  household: string | null;
+  onServices: (v: GarmentService[]) => void;
+  onHousehold: (v: string | null) => void;
 }) {
+  const chip = (checked: boolean) =>
+    `inline-flex min-h-11 cursor-pointer items-center rounded-full border px-4 text-[15px] transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-blue ${
+      checked ? "border-blue bg-[#f0f7fc] font-semibold text-navy" : "border-line-strong bg-white text-navy hover:border-navy/50"
+    }`;
   return (
-    <div
-      role="group"
-      aria-label={t.servicesTitle}
-      aria-describedby={invalid ? "booking-services-error" : undefined}
-      className="grid gap-2 md:grid-cols-3"
-    >
-      {GARMENT_SERVICES.map((slug, i) => {
-        const checked = value.includes(slug);
+    <div role="group" aria-label={t.servicesTitle} className="flex flex-wrap gap-2" data-service-chips>
+      {GARMENT_SERVICES.map((slug) => {
+        const checked = services.includes(slug);
         return (
-          <label
-            key={slug}
-            className={`flex cursor-pointer items-start gap-3 rounded-md border p-3.5 transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-blue ${
-              checked ? "border-blue bg-[#f0f7fc]" : invalid ? "border-error" : "border-line-strong hover:border-navy/50"
-            }`}
-          >
+          <label key={slug} className={chip(checked)}>
             <input
-              id={i === 0 ? "booking-services" : undefined}
               type="checkbox"
+              className="sr-only"
               checked={checked}
-              onChange={() => onChange(checked ? value.filter((x) => x !== slug) : GARMENT_SERVICES.filter((x) => x === slug || value.includes(x)))}
-              aria-invalid={invalid || undefined}
-              className="mt-0.5 size-5 shrink-0 accent-[#0078bc]"
+              onChange={() => onServices(checked ? services.filter((x) => x !== slug) : GARMENT_SERVICES.filter((x) => x === slug || services.includes(x)))}
             />
-            <span>
-              <span className="block font-semibold text-navy">{t.services[slug]}</span>
-              <span className="mt-0.5 block t-small text-secondary">{t.serviceBlurbs[slug]}</span>
-            </span>
+            {checked ? <span aria-hidden="true" className="mr-1.5 text-action">✓</span> : null}
+            {t.services[slug]}
+          </label>
+        );
+      })}
+      {HOUSEHOLD_SERVICES.map((slug) => {
+        const checked = household === slug;
+        return (
+          <label key={slug} className={chip(checked)}>
+            <input type="checkbox" className="sr-only" checked={checked} onChange={() => onHousehold(checked ? null : slug)} />
+            {checked ? <span aria-hidden="true" className="mr-1.5 text-action">✓</span> : null}
+            {t.services[slug]}
           </label>
         );
       })}
@@ -376,10 +395,31 @@ type Coupon = { code: string; kind: "delivery" | "taka"; amount: number };
 const withCoupon = (e: BookingEstimate, coupon?: Coupon): BookingEstimate =>
   coupon?.kind === "delivery" && !e.free ? { ...e, free: true, chargeMinor: 0, totalMinor: e.subtotalMinor } : e;
 
-function OrderSummary({ s, t, locale, chargeMinor, offer, coupon }: { s: FormState; t: Text; locale: Locale; chargeMinor: number | null; offer?: string; coupon?: Coupon }) {
+function OrderSummary({
+  s,
+  t,
+  locale,
+  chargeMinor,
+  offer,
+  coupon,
+  popular = [],
+  onAdd,
+}: {
+  s: FormState;
+  t: Text;
+  locale: Locale;
+  chargeMinor: number | null;
+  offer?: string;
+  coupon?: Coupon;
+  popular?: PriceItem[];
+  /** Adds one of an item on a service (the free-delivery add-ons). */
+  onAdd?: (item: PriceItem, service: ItemService) => void;
+}) {
   const e = withCoupon(estimateOf(s, chargeMinor), coupon);
   const threshold = localDigits(FREE_DELIVERY_THRESHOLD, locale);
   const priced = e.subtotalMinor > 0;
+  const gap = FREE_DELIVERY_MIN_MINOR - e.subtotalMinor;
+  const addOns = priced && !e.free && onAdd ? suggestAddOns(s.items, popular, gap, s.services) : [];
   const row = "flex items-baseline justify-between gap-4 py-2";
   return (
     <section aria-labelledby="booking-summary-title" className="rounded-md border border-line bg-soft p-4 md:p-5" data-order-summary>
@@ -428,8 +468,49 @@ function OrderSummary({ s, t, locale, chargeMinor, offer, coupon }: { s: FormSta
       ) : null}
       <div className="mt-2 space-y-1.5 t-small">
         {priced && !e.free ? (
-          <p className="text-navy">
-            {format(t.summaryChargeNote, { amount: threshold, more: money(FREE_DELIVERY_MIN_MINOR - e.subtotalMinor, locale) })}
+          <div data-free-progress>
+            <p className="font-semibold text-navy">{format(t.summaryChargeNote, { amount: threshold, more: money(gap, locale) })}</p>
+            <div
+              role="progressbar"
+              aria-label={t.freeProgressLabel}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={progressToFree(e.subtotalMinor, FREE_DELIVERY_MIN_MINOR)}
+              className="mt-2 h-2 overflow-hidden rounded-full bg-line"
+            >
+              <div className="h-full rounded-full bg-action" style={{ width: `${progressToFree(e.subtotalMinor, FREE_DELIVERY_MIN_MINOR)}%` }} />
+            </div>
+            <p className="mt-1 t-caption tabular-nums text-secondary">
+              {money(e.subtotalMinor, locale)} / {money(FREE_DELIVERY_MIN_MINOR, locale)}
+            </p>
+            {addOns.length ? (
+              <div className="mt-3" data-add-ons>
+                <p className="t-small font-semibold text-navy">{t.addOnsTitle}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {addOns.map((a) => {
+                    const listed = popular.find((p) => p.name === a.item);
+                    return (
+                      <button
+                        key={`${a.item}-${a.service}`}
+                        type="button"
+                        onClick={() => listed && onAdd?.(listed, a.service as ItemService)}
+                        className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-line-strong bg-white px-3.5 text-left t-small text-navy hover:border-navy"
+                      >
+                        <span aria-hidden="true" className="font-semibold text-action">+</span>
+                        <span className="font-semibold">{a.item}</span>
+                        <span className="text-secondary">
+                          · {t.services[a.service]} · {money(a.amountMinor, locale)}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : priced && e.free && !coupon ? (
+          <p className="font-semibold text-success" data-free-unlocked>
+            ✓ {t.freeUnlocked}
           </p>
         ) : !priced ? (
           <p className="text-navy">{format(t.summaryFreeNote, { amount: threshold })}</p>
@@ -586,12 +667,34 @@ function MobileTotalBar({ s, t, locale, chargeMinor, coupon }: { s: FormState; t
         <p className="min-w-0 t-small text-body">
           {count === 1 ? t.barItemsOne : fill(t.barItems, { n: count }, locale)}
           {e.subtotalMinor > 0 ? <span className="ml-2 font-semibold tabular-nums text-navy">{money(e.totalMinor, locale)}</span> : null}
+          {e.subtotalMinor > 0 && !e.free ? (
+            <span className="block t-caption text-action" data-bar-to-free>
+              {fill(t.barToFree, { more: money(FREE_DELIVERY_MIN_MINOR - e.subtotalMinor, locale) }, locale)}
+            </span>
+          ) : null}
         </p>
         <a href="#booking-summary-title" className="inline-flex h-11 shrink-0 items-center rounded-md bg-action px-5 font-semibold text-white hover:bg-action-hover">
           {t.barReview}
         </a>
       </div>
     </div>
+  );
+}
+
+/** A folded part of the form: a quiet button that opens it in place. Open stays open. */
+function Fold({ id, label, open, onOpen, children }: { id: string; label: string; open: boolean; onOpen: () => void; children: ReactNode }) {
+  if (open) return <div id={id}>{children}</div>;
+  return (
+    <button
+      type="button"
+      aria-controls={id}
+      aria-expanded={false}
+      onClick={onOpen}
+      className="inline-flex min-h-11 items-center gap-2 text-left font-semibold text-navy underline decoration-blue/50 underline-offset-4 hover:decoration-blue"
+    >
+      <span aria-hidden="true" className="text-action">+</span>
+      {label}
+    </button>
   );
 }
 
@@ -679,6 +782,7 @@ export function BookingForm({
         ? [service]
         : [],
     items: initialItems,
+    what: "",
     sector: initialContact && (SECTORS.map(String).includes(initialContact.sector) || initialContact.sector === OUTSIDE) ? initialContact.sector : "",
     address: initialContact?.address ?? "",
     pickup: null,
@@ -689,11 +793,15 @@ export function BookingForm({
     photos: [],
   });
   const [errors, setErrors] = useState<Errors>({});
-  const [status, setStatus] = useState<Status>({ state: "idle" });
   /** Bumped when a window was taken just before Confirm: the picker reloads live availability. */
   const [refreshWindows, setRefreshWindows] = useState(0);
   const setPickup = useCallback((v: PickedWindow | null) => setS((prev) => (prev.pickup === v ? prev : { ...prev, pickup: v })), []);
+  // Items (with prices) and the extras stay folded until wanted; a repeat order opens its items.
+  const [itemsOpen, setItemsOpen] = useState(initialItems.length > 0);
+  const [extrasOpen, setExtrasOpen] = useState(Boolean(presetNote));
+  const [status, setStatus] = useState<Status>({ state: "idle" });
   const started = useRef(false);
+  const phoneEntered = useRef(false);
   const statusRef = useRef<HTMLDivElement>(null);
   const successRef = useRef<HTMLHeadingElement>(null);
 
@@ -709,6 +817,10 @@ export function BookingForm({
     if (!started.current) {
       started.current = true;
       track("booking_start", { section: "booking-form" });
+    }
+    if (key === "phone" && !phoneEntered.current && phoneOk(String(value))) {
+      phoneEntered.current = true;
+      track("phone_entered", { section: "booking-form" });
     }
     setS((prev) => ({ ...prev, [key]: value }));
     if (key in errors) setErrors((prev) => ({ ...prev, [key]: undefined }));
@@ -824,34 +936,106 @@ export function BookingForm({
           aria-labelledby="page-title"
           className="space-y-6 [&_input]:scroll-mt-32 [&_select]:scroll-mt-32 [&_textarea]:scroll-mt-32"
         >
-          <Group step={1} title={t.servicesTitle} hint={isHousehold(s) ? undefined : t.servicesHint} stepOf={t.stepOf} locale={locale}>
-            {isHousehold(s) ? (
-              <p className="t-small text-navy">
-                {t.bookingBefore}
-                <span className="font-semibold">{t.services[s.service ?? ""]}</span>
-                {t.bookingAfter}
-              </p>
-            ) : null}
+          <Group step={1} title={t.whatTitle} stepOf={t.stepOf} locale={locale}>
             <div>
-              <ServiceChoices t={t} value={s.services} onChange={(v) => update("services", v)} invalid={Boolean(errors.services)} />
-              <ErrorText id="booking-services-error">{errors.services}</ErrorText>
+              <FieldLabel htmlFor="booking-what">
+                {t.whatLabel}
+                {isHousehold(s) || s.services.length || s.items.length ? <span className="font-normal text-secondary">{c.optional}</span> : null}
+              </FieldLabel>
+              <input
+                id="booking-what"
+                name="what"
+                type="text"
+                enterKeyHint="next"
+                maxLength={WHAT_MAX}
+                placeholder={t.whatPlaceholder}
+                value={s.what}
+                onChange={(e) => update("what", e.target.value)}
+                aria-invalid={errors.what ? true : undefined}
+                aria-describedby={errors.what ? "booking-what-help booking-what-error" : "booking-what-help"}
+                className={`${inputBase} ${inputHeight} mt-2`}
+              />
+              <p id="booking-what-help" className="mt-2 t-small text-secondary">
+                {t.whatHelp}
+              </p>
+              <div className="mt-3">
+                <ServiceChips
+                  t={t}
+                  services={s.services}
+                  household={isHousehold(s) ? s.service : null}
+                  onServices={(v) => update("services", v)}
+                  onHousehold={(v) => update("service", v)}
+                />
+              </div>
+              <ErrorText id="booking-what-error">{errors.what}</ErrorText>
             </div>
+            <Fold
+              id="booking-items-fold"
+              label={t.itemsOpen}
+              open={itemsOpen}
+              onOpen={() => {
+                setItemsOpen(true);
+                track("booking_items_open", { section: "booking-form" });
+              }}
+            >
+              <p className="font-semibold text-navy">{t.itemsTitle}</p>
+              <p className="mt-1 t-small text-secondary">{t.itemsHint}</p>
+              <div className="mt-3">
+                <BookingItems
+                  t={t.items}
+                  services={t.services}
+                  mixedLabel={t.mixedItem}
+                  lines={s.items}
+                  onChange={(items) => update("items", items)}
+                  chosen={s.services}
+                  popular={popularItems}
+                  locale={locale}
+                />
+              </div>
+            </Fold>
           </Group>
 
-          <Group step={2} title={t.itemsTitle} hint={t.itemsHint} stepOf={t.stepOf} locale={locale}>
-            <BookingItems
-              t={t.items}
-              services={t.services}
-              mixedLabel={t.mixedItem}
-              lines={s.items}
-              onChange={(items) => update("items", items)}
-              chosen={s.services}
-              popular={popularItems}
-              locale={locale}
-            />
-          </Group>
+          <Group step={2} title={t.youTitle} stepOf={t.stepOf} locale={locale}>
+            <div>
+              <FieldLabel htmlFor="booking-name">{t.nameLabel}</FieldLabel>
+              <input
+                id="booking-name"
+                name="name"
+                type="text"
+                autoComplete="name"
+                autoCapitalize="words"
+                enterKeyHint="next"
+                value={s.name}
+                onChange={(e) => update("name", e.target.value)}
+                aria-invalid={errors.name ? true : undefined}
+                aria-describedby={errors.name ? "booking-name-error" : undefined}
+                className={`${inputBase} ${inputHeight} mt-2`}
+              />
+              <ErrorText id="booking-name-error">{errors.name}</ErrorText>
+            </div>
 
-          <Group step={3} title={t.whereTitle} hint={t.whereHint} stepOf={t.stepOf} locale={locale}>
+            <div>
+              <FieldLabel htmlFor="booking-phone">{t.phoneLabel}</FieldLabel>
+              <p id="booking-phone-help" className="mt-1 t-small text-secondary">
+                {s.pickup?.booked ? t.phoneHelpBooked : t.phoneHelp}
+              </p>
+              <input
+                id="booking-phone"
+                name="phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                enterKeyHint="next"
+                placeholder="01XXX XXXXXX"
+                value={s.phone}
+                onChange={(e) => update("phone", e.target.value)}
+                onBlur={checkPhoneOnBlur}
+                aria-invalid={errors.phone ? true : undefined}
+                aria-describedby={errors.phone ? "booking-phone-help booking-phone-error" : "booking-phone-help"}
+                className={`${inputBase} ${inputHeight} mt-2`}
+              />
+              <ErrorText id="booking-phone-error">{errors.phone}</ErrorText>
+            </div>
 
             {savedAddresses.length ? (
               <div data-saved-addresses>
@@ -934,7 +1118,7 @@ export function BookingForm({
             </div>
           </Group>
 
-          <Group step={4} id="booking-pickup" title={t.pickupTitle} stepOf={t.stepOf} locale={locale}>
+          <Group step={3} id="booking-pickup" title={t.pickupTitle} stepOf={t.stepOf} locale={locale}>
             <PickupWindows
               sector={s.sector === OUTSIDE ? "" : s.sector}
               outside={s.sector === OUTSIDE}
@@ -948,96 +1132,83 @@ export function BookingForm({
               errorSlot={errors.slot}
             />
 
-            <div>
-              <FieldLabel htmlFor="booking-backBy">
-                {t.backByLabel}
-                <span className="font-normal text-secondary">{c.optional}</span>
-              </FieldLabel>
-              <p id="booking-backBy-help" className="mt-1 t-small text-secondary">
-                {fill(t.backByHelp, { date: niceDate(earliest, words) }, locale)}
-              </p>
-              <input
-                id="booking-backBy"
-                name="backBy"
-                type="date"
-                min={earliest}
-                value={s.backBy}
-                onChange={(e) => update("backBy", e.target.value)}
-                aria-invalid={errors.backBy ? true : undefined}
-                aria-describedby={errors.backBy ? "booking-backBy-help booking-backBy-error" : "booking-backBy-help"}
-                className={`${inputBase} ${inputHeight} mt-2`}
-              />
-              <ErrorText id="booking-backBy-error">{errors.backBy}</ErrorText>
-            </div>
+            <Fold id="booking-extras-fold" label={t.extrasOpen} open={extrasOpen} onOpen={() => setExtrasOpen(true)}>
+              <div className="space-y-4">
+                <div>
+                  <FieldLabel htmlFor="booking-backBy">
+                    {t.backByLabel}
+                    <span className="font-normal text-secondary">{c.optional}</span>
+                  </FieldLabel>
+                  <p id="booking-backBy-help" className="mt-1 t-small text-secondary">
+                    {fill(t.backByHelp, { date: niceDate(earliest, words) }, locale)}
+                  </p>
+                  <input
+                    id="booking-backBy"
+                    name="backBy"
+                    type="date"
+                    min={earliest}
+                    value={s.backBy}
+                    onChange={(e) => update("backBy", e.target.value)}
+                    aria-invalid={errors.backBy ? true : undefined}
+                    aria-describedby={errors.backBy ? "booking-backBy-help booking-backBy-error" : "booking-backBy-help"}
+                    className={`${inputBase} ${inputHeight} mt-2`}
+                  />
+                  <ErrorText id="booking-backBy-error">{errors.backBy}</ErrorText>
+                </div>
 
-            <div>
-              <FieldLabel htmlFor="booking-notes">
-                {t.notesLabel}
-                <span className="font-normal text-secondary">{c.optional}</span>
-              </FieldLabel>
-              <textarea
-                id="booking-notes"
-                name="notes"
-                rows={3}
-                // Items, the estimate and the date share the Ops notes field with the instructions.
-                maxLength={Math.max(
-                  0,
-                  MAX_BOOKING_NOTES - NOTE_EXTRAS_RESERVE - s.photos.length * NOTE_PHOTO_RESERVE - (composeBookingNotes(itemsOf(s), "x")?.length ?? 0),
-                )}
-                placeholder={t.notesPlaceholder}
-                value={s.notes}
-                onChange={(e) => update("notes", e.target.value)}
-                className={`${inputBase} mt-2 min-h-[120px] py-3 leading-[1.4]`}
-              />
-            </div>
+                <div>
+                  <FieldLabel htmlFor="booking-notes">
+                    {t.notesLabel}
+                    <span className="font-normal text-secondary">{c.optional}</span>
+                  </FieldLabel>
+                  <textarea
+                    id="booking-notes"
+                    name="notes"
+                    rows={3}
+                    // Items, the estimate and the date share the Ops notes field with the instructions.
+                    maxLength={Math.max(
+                      0,
+                      MAX_BOOKING_NOTES -
+                    NOTE_EXTRAS_RESERVE -
+                    s.photos.length * NOTE_PHOTO_RESERVE -
+                    (composeBookingNotes(itemsOf(s), "x")?.length ?? 0) -
+                    (s.what.trim() ? s.what.trim().length + 16 : 0),
+                    )}
+                    placeholder={t.notesPlaceholder}
+                    value={s.notes}
+                    onChange={(e) => update("notes", e.target.value)}
+                    className={`${inputBase} mt-2 min-h-[120px] py-3 leading-[1.4]`}
+                  />
+                </div>
 
-            <PhotoPicker t={t} c={c} locale={locale} photos={s.photos} onAdd={addPhotos} onRemove={removePhoto} error={errors.photos} />
+                <PhotoPicker t={t} c={c} locale={locale} photos={s.photos} onAdd={addPhotos} onRemove={removePhoto} error={errors.photos} />
+              </div>
+            </Fold>
           </Group>
 
-          <Group step={5} title={t.youTitle} stepOf={t.stepOf} locale={locale}>
-            <div>
-              <FieldLabel htmlFor="booking-name">{t.nameLabel}</FieldLabel>
-              <input
-                id="booking-name"
-                name="name"
-                type="text"
-                autoComplete="name"
-                autoCapitalize="words"
-                enterKeyHint="next"
-                value={s.name}
-                onChange={(e) => update("name", e.target.value)}
-                aria-invalid={errors.name ? true : undefined}
-                aria-describedby={errors.name ? "booking-name-error" : undefined}
-                className={`${inputBase} ${inputHeight} mt-2`}
-              />
-              <ErrorText id="booking-name-error">{errors.name}</ErrorText>
-            </div>
-
-            <div>
-              <FieldLabel htmlFor="booking-phone">{t.phoneLabel}</FieldLabel>
-              <p id="booking-phone-help" className="mt-1 t-small text-secondary">
-                {s.pickup?.booked ? t.phoneHelpBooked : t.phoneHelp}
-              </p>
-              <input
-                id="booking-phone"
-                name="phone"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                enterKeyHint="next"
-                placeholder="01XXX XXXXXX"
-                value={s.phone}
-                onChange={(e) => update("phone", e.target.value)}
-                onBlur={checkPhoneOnBlur}
-                aria-invalid={errors.phone ? true : undefined}
-                aria-describedby={errors.phone ? "booking-phone-help booking-phone-error" : "booking-phone-help"}
-                className={`${inputBase} ${inputHeight} mt-2`}
-              />
-              <ErrorText id="booking-phone-error">{errors.phone}</ErrorText>
-            </div>
-          </Group>
-
-          <OrderSummary s={s} t={t} locale={locale} chargeMinor={pickupChargeMinor} offer={offer} coupon={coupon} />
+          {s.items.length || coupon || offer ? (
+            <OrderSummary
+              s={s}
+              t={t}
+              locale={locale}
+              chargeMinor={pickupChargeMinor}
+              offer={offer}
+              coupon={coupon}
+              popular={popularItems}
+              onAdd={(item, service) => {
+                const at = s.items.findIndex((l) => l.item === item.name && l.service === service);
+                update(
+                  "items",
+                  at >= 0 ? s.items.map((l, i) => (i === at ? { ...l, quantity: l.quantity + 1 } : l)) : [...s.items, repeatLine(item.name, service, 1, item)],
+                );
+                track("booking_addon_add", { section: "booking-summary", service });
+              }}
+            />
+          ) : (
+            <p className="t-small text-navy" data-free-note>
+              {format(t.summaryFreeNote, { amount: localDigits(FREE_DELIVERY_THRESHOLD, locale) })}
+            </p>
+          )}
           <MobileTotalBar s={s} t={t} locale={locale} chargeMinor={pickupChargeMinor} coupon={coupon} />
 
           {/* Confirm — status lives right where the thumb already is */}
@@ -1115,7 +1286,7 @@ function BookingSuccess({
   const firstName = state.name.trim().split(/\s+/)[0];
   const estimate = estimateLabel(estimateOf(state, chargeMinor), locale);
   const rows = [
-    { label: state.items.length ? t.rowItems : t.rowService, value: whatLabel(state, t, locale) || t.notSpecified },
+    { label: state.items.length ? t.rowItems : state.what.trim() ? t.rowWhat : t.rowService, value: whatLabel(state, t, locale) || t.notSpecified },
     ...(estimate ? [{ label: t.rowEstimate, value: estimate }] : []),
     { label: t.rowPickupFrom, value: `${state.address.trim()}, ${areaText(state.sector, t, locale)}` },
     { label: state.pickup?.booked ? t.rowPickupWindow : t.rowPreferredTime, value: when },
@@ -1130,9 +1301,7 @@ function BookingSuccess({
       <h1 id="page-title" ref={headingRef} tabIndex={-1} className="scroll-mt-32 t-h1 text-navy focus:outline-none">
         {state.pickup?.booked ? t.successTitleBooked : t.successTitle}
       </h1>
-      <p className="mt-3 t-body text-body md:mt-4 md:t-body-lg">
-        {state.pickup?.booked ? format(t.successBodyBooked, { name: firstName, when }) : format(t.successBody, { name: firstName })}
-      </p>
+      <p className="mt-3 t-body text-body md:mt-4 md:t-body-lg">{state.pickup?.booked ? format(t.successBodyBooked, { name: firstName, when }) : format(t.successBody, { name: firstName })}</p>
 
       <dl className="mt-7 border-t border-navy">
         {rows.map((r) => (

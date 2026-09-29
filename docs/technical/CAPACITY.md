@@ -27,7 +27,7 @@ One capacity system shared by the website, the Command Center and Velto Ops. The
 
 | Where | What |
 | --- | --- |
-| Website `/book` | What → Where (sector) → Pickup window (live, “2 left”, full windows can't be chosen) → Contact → “Pickup confirmed · Tomorrow, Evening 4–8 PM”. |
+| Website `/book` | Quick form: What → Your details (name, phone, sector, address) → Pickup window (live, “2 left”, full windows can't be chosen) → Book → “Pickup confirmed · Tomorrow, Evening 4–8 PM”. |
 | Command Center → Capacity | Day strip, per window bars and per-zone rows, who is booked, change a day's number, block with a note. Book a WhatsApp/phone customer through the same windows. Settings (Owner/Manager): website switch, days ahead, cutoff, window hours, zones, usual capacity. |
 | Command Center → Pickup & delivery | Planning a stop reserves its window. A full window is refused unless an Owner/Manager books over capacity with a reason (recorded on the reservation and in Activity). |
 | Velto Ops | Website bookings arrive as tasks due at the window end, labelled “Wed 30 Sep, Evening 4–8 PM (window booked)”. |

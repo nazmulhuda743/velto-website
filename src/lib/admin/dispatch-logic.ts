@@ -14,7 +14,12 @@
  */
 
 export type JobKind = "pickup" | "delivery";
-export type Stage = "new" | "assigned" | "scheduled" | "done" | "cancelled" | "merged";
+/**
+ * new → confirmed (customer called, day + slot agreed) → scheduled (person + slot) → picked.
+ * "assigned" is a partial plan (a person or a slot, not both, not confirmed). "done" is a
+ * finished delivery (or a pickup finished before "picked" existed).
+ */
+export type Stage = "new" | "confirmed" | "assigned" | "scheduled" | "picked" | "done" | "cancelled" | "merged";
 export type SlotId = "morning" | "afternoon" | "evening";
 
 export type DispatchJob = {
@@ -38,6 +43,11 @@ export type DispatchJob = {
   trip_key: string | null;
   merged_into: string | null;
   reason: string | null;
+  contact_attempts: number;
+  last_contact_at: string | null;
+  confirmed_at: string | null;
+  confirmed_by: string | null;
+  picked_at: string | null;
   history: { at: string; by: string; action: string; detail?: string | null }[];
   created_at: string;
   updated_at: string;
@@ -55,7 +65,7 @@ export const slotLabel = (id: string | null) => SLOTS.find((s) => s.id === id)?.
 /** Stops one person can do in one slot. A combined trip counts once. */
 export const DEFAULT_CAPACITY = 8;
 
-export const OPEN_STAGES: readonly Stage[] = ["new", "assigned", "scheduled"];
+export const OPEN_STAGES: readonly Stage[] = ["new", "confirmed", "assigned", "scheduled"];
 export const isOpen = (j: Pick<DispatchJob, "stage">) => OPEN_STAGES.includes(j.stage);
 /** Waiting for a manager: no person or no slot yet. */
 export const needsPlan = (j: DispatchJob) => isOpen(j) && (!j.assignee_id || !j.slot_date);
@@ -232,3 +242,41 @@ export function dayName(iso: string) {
   const d = new Date(`${iso}T00:00:00Z`);
   return `${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getUTCDay()]} ${d.getUTCDate()} ${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][d.getUTCMonth()]}`;
 }
+
+/** Reasons to take a delivery off the board without delivering it (the order stays Ready in Ops). */
+export const DELIVERY_CLOSE_REASONS = [
+  "Customer will collect from the outlet",
+  "Couldn't reach the customer",
+  "Already delivered (not planned here)",
+  "Customer asked us to hold it",
+];
+
+export type DeliveryBucket = "late" | "today" | "tomorrow" | "later" | "nodate" | "waiting";
+
+/** Delivery groups, most pressing first. */
+export const DELIVERY_BUCKETS: { id: DeliveryBucket; label: string; hint: string }[] = [
+  { id: "late", label: "Late", hint: "The delivery date has passed." },
+  { id: "today", label: "Due today", hint: "" },
+  { id: "tomorrow", label: "Due tomorrow", hint: "" },
+  { id: "later", label: "Due later", hint: "" },
+  { id: "nodate", label: "No delivery date", hint: "Ready in the last week, with no date in Velto Ops. Ask the customer when." },
+  { id: "waiting", label: "Waiting at the outlet", hint: "Ready for over a week and not delivered. Ask the customer: deliver, or will they collect?" },
+];
+
+/**
+ * Where a delivery belongs, from its order's delivery date and when the order last changed in Ops
+ * (Ready since then). An order Ready for over a week whose date has passed (or that has none) is
+ * waiting at the outlet: a follow-up, not a normal delivery.
+ */
+export function deliveryBucket(order: { deliveryDate: string | null; updatedAt: string } | null | undefined, today: string, now = Date.now()): DeliveryBucket {
+  const date = order?.deliveryDate ?? null;
+  if (date && date === today) return "today";
+  if (date && date === addDays(today, 1)) return "tomorrow";
+  if (date && date > today) return "later";
+  const recent = order ? now - Date.parse(order.updatedAt) < 7 * DAY_MS : true;
+  if (!recent) return "waiting";
+  return date ? "late" : "nodate";
+}
+
+/** Whole days since `iso` (e.g. how long an order has been Ready). */
+export const daysSince = (iso: string, now = Date.now()) => Math.max(0, Math.floor((now - Date.parse(iso)) / DAY_MS));
