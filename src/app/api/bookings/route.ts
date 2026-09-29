@@ -3,6 +3,8 @@ import { logServerEvent } from "@/lib/analytics/store";
 import { bookingEstimateText } from "@/lib/booking-estimate";
 import { cleanBookingItems } from "@/lib/booking-items";
 import { couponNote, usableCoupon } from "@/lib/customer/goal";
+import { firstOrderFor } from "@/lib/customer/first-order";
+import { firstOrderNote } from "@/lib/first-order-offer";
 import { getCustomerSession, getGoal } from "@/lib/customer/portal";
 import { getSiteContent } from "@/lib/site-content";
 import { getCapacityConfig, zoneForArea } from "@/lib/capacity";
@@ -65,7 +67,11 @@ export async function POST(request: NextRequest) {
   const data = input.data && typeof input.data === "object" ? (input.data as Record<string, unknown>) : {};
   const items = cleanBookingItems(data.items);
   const estimate = items?.length ? await bookingEstimateText(items).catch(() => undefined) : undefined;
-  const coupon = await couponForCaller().catch(() => undefined);
+  // A monthly-goal reward, else the first-order offer when this phone has no Velto orders yet
+  // (the two never meet: goal rewards come from earlier orders).
+  const coupon =
+    (await couponForCaller().catch(() => undefined)) ??
+    ((await firstOrderFor(typeof data.phone === "string" ? data.phone : null)) ? firstOrderNote() : undefined);
   const parsed = validateBookingSubmission(input.data, { estimate, siteUrl: SITE_URL, coupon });
   const context = validateSubmissionContext({ idempotencyKey: input.idempotencyKey, requestId });
   if (!parsed.ok || !context.ok) {

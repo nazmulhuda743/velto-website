@@ -159,6 +159,8 @@ export const formsEn = {
     summaryCoupon: "Your reward {code}: {what}. Velto applies it when we confirm.",
     couponDelivery: "free pickup & delivery",
     couponTaka: "৳{n} off",
+    firstOrderGuest: "First Velto order? {percent}% off orders of {amount} or more. We apply it when we confirm.",
+    firstOrderYours: "Your first order: {percent}% off orders of {amount} or more. We apply it when we confirm.",
     failedNotConnectedTitle: "Online booking isn't switched on yet.",
     failedTitle: "We couldn't send your booking just now.",
     failedNotConnectedBody: "Nothing was sent. Send the same details on WhatsApp instead. They're already filled in.",

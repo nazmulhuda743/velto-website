@@ -17,6 +17,7 @@ import { getServicePrices } from "@/lib/service-prices";
 import { getSiteContent } from "@/lib/site-content";
 import { getGoal } from "@/lib/customer/portal";
 import { usableCoupon } from "@/lib/customer/goal";
+import { firstOrderFor } from "@/lib/customer/first-order";
 import { keepBanglaSuffixes } from "@/lib/i18n/config";
 import { repeatItemsFor } from "@/lib/booking-repeat";
 import { getItemPairs, getUsualItems } from "@/lib/upsell-data";
@@ -55,6 +56,9 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
     return loyalty.goal.enabled ? getGoal(loyalty.goal.doubleFirst) : null;
   })() : null;
   const coupon = goal ? usableCoupon(goal.coupons, goal.today) : null;
+  // First-order 10% (from ৳499): a signed-in customer sees it only when their phone has no orders;
+  // anyone not signed in sees the general line. The bookings API decides what reaches Ops.
+  const firstOrder = coupon ? undefined : account ? ((await firstOrderFor(account.phone)) ? ("yours" as const) : undefined) : ("guest" as const);
   const returnTo = `/book${service ? `?service=${encodeURIComponent(service)}` : ""}`;
   const locale = await getLocale();
   const f = formText(locale);
@@ -125,6 +129,7 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
                 pickupChargeMinor={pickupChargeMinor}
                 offer={offer || undefined}
                 coupon={coupon ? { code: coupon.code, kind: coupon.kind, amount: coupon.amount } : undefined}
+                firstOrder={firstOrder}
                 presetNote={joinNotes(routineNote ?? (repeat ? format(t.repeatNote, { n: repeat }) : t.presetNotes[service ?? ""]), prefs ? careNote(prefs.care, t.care) : "")}
                 savedAddresses={prefs?.addresses ?? []}
                 previewOutcome={previewOutcome}

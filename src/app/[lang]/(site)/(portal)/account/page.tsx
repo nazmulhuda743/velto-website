@@ -23,6 +23,8 @@ import { laundryRhythm, repeatHref } from "@/lib/customer/rhythm";
 import { quickRepeatFor } from "@/lib/customer/quick-repeat";
 import { getRoutine } from "@/lib/customer/routine";
 import { formText } from "@/content/i18n/forms";
+import { firstOrderFor } from "@/lib/customer/first-order";
+import { FIRST_ORDER_OFFER } from "@/lib/first-order-offer";
 import { areaLabel, displayBdPhone, greetingName } from "@/lib/customer/validation";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -116,6 +118,8 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
   const routineRead = linked ? await getRoutine() : null;
   const routine = routineRead === "error" ? null : routineRead;
   // From the second order on (or once they have one): a fixed weekly day is what makes it a habit.
+  // First-order 10% (from ৳499): only when this phone has no Velto orders and nothing is booked yet.
+  const firstOrder = !active[0] && !pickups.length && orders !== null && !rhythm.last ? await firstOrderFor(account.phone) : null;
   const showRoutine = linked && routineRead !== "error" && (Boolean(routine) || rhythm.count >= 2);
   const a = accountText(locale);
   const t = a.home;
@@ -163,16 +167,26 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
           </div>
         </>
       ) : orders !== null && !pickups.length ? (
-        <NextPickupCard
+        <>
+          {firstOrder ? (
+            <section aria-labelledby="first-order-title" className="rounded-lg border border-line bg-white p-5 md:p-6" data-first-order-banner>
+              <h2 id="first-order-title" className="font-semibold text-navy">
+                {fill(t.firstOrderTitle, { percent: FIRST_ORDER_OFFER.percent }, locale)}
+              </h2>
+              <p className="mt-1 t-small text-body">{fill(t.firstOrderBody, { amount: `৳${FIRST_ORDER_OFFER.minimumTaka}` }, locale)}</p>
+            </section>
+          ) : null}
+          <NextPickupCard
           rhythm={rhythm}
           locale={locale}
           firstTime={linked}
           quick={
             quick && rhythm.last ? (
               <QuickRepeat {...quick} t={a.quick} changeHref={repeatHref(rhythm, `account_${rhythm.stage}`)} placement={`account_quick_${rhythm.stage}`} />
-            ) : undefined
-          }
-        />
+              ) : undefined
+            }
+          />
+        </>
       ) : null}
 
       {toRate ? (
