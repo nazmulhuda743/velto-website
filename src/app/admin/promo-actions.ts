@@ -5,7 +5,7 @@ import { logActivity } from "@/lib/admin/activity";
 import { saveContent, uploadImage } from "@/lib/admin/content-store";
 import { requireSection } from "@/lib/admin/session";
 import { logServerEvent } from "@/lib/analytics/store";
-import { POPUP_FREQUENCIES, popupFingerprint, popupProblem, promoHrefOk, type PopupFrequency, type PromoPopup } from "@/lib/promo";
+import { FIRST_ORDER_TEMPLATE, POPUP_FREQUENCIES, popupFingerprint, popupProblem, promoHrefOk, type PopupFrequency, type PromoPopup } from "@/lib/promo";
 import { getSiteContent, type SiteSettings } from "@/lib/site-content";
 
 const PAGE = "/admin/promo";
@@ -73,6 +73,13 @@ export async function savePromoPopupAction(form: FormData) {
     bodyBn: text(form, "bodyBn", 400),
     cta: text(form, "cta", 40),
     ctaBn: text(form, "ctaBn", 40),
+    offer: text(form, "offer", 24),
+    offerBn: text(form, "offerBn", 24),
+    points: text(form, "points", 240),
+    pointsBn: text(form, "pointsBn", 240),
+    fine: text(form, "fine", 200),
+    fineBn: text(form, "fineBn", 200),
+    proof: form.get("proof") === "on",
     href: text(form, "href", 300),
     frequency: POPUP_FREQUENCIES.includes(frequency) ? frequency : "day",
     delaySeconds: Number.isInteger(delay) && delay >= 0 && delay <= 60 ? delay : 3,
@@ -126,4 +133,38 @@ export async function savePromoPopupAction(form: FormData) {
     },
   });
   back({ saved: "popup", tab: "popup" });
+}
+
+/**
+ * Fill the popup with the "first website order, 10% off" campaign. It is saved switched off, so
+ * the owner previews it and switches it on; the poster is removed so the designed card shows.
+ */
+export async function loadFirstOrderTemplateAction() {
+  const admin = await requireSection("promo");
+  const { promo } = await getSiteContent();
+  const next: PromoPopup = {
+    ...promo,
+    ...FIRST_ORDER_TEMPLATE,
+    image: "",
+    imageAlt: "",
+    imageAltBn: "",
+    enabled: false,
+    frequency: "day",
+    delaySeconds: 6,
+    updatedAt: new Date().toISOString(),
+  };
+  next.version = popupFingerprint(next);
+  try {
+    await saveContent("promo", next, admin.name);
+  } catch (e) {
+    await logServerEvent("content_save_error", PAGE);
+    back({ error: failure(e), tab: "popup" });
+  }
+  await logActivity(admin, {
+    section: "promo",
+    action: "promo_popup_template",
+    summary: "Popup filled with the first-order 10% template (switched off until checked)",
+    detail: { href: next.href, version: next.version },
+  });
+  back({ saved: "template", tab: "popup" });
 }

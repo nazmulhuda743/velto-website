@@ -3,7 +3,7 @@ import { ImageFileInput } from "@/components/admin/ImageFileInput";
 import { requireSection } from "@/lib/admin/session";
 import { FREQUENCY_INFO, POPUP_FREQUENCIES, barMessages, popupActive, popupProblem, popupSchedule } from "@/lib/promo";
 import { getSiteContent } from "@/lib/site-content";
-import { savePromoBarAction, savePromoPopupAction } from "../../promo-actions";
+import { loadFirstOrderTemplateAction, savePromoBarAction, savePromoPopupAction } from "../../promo-actions";
 
 const dayLabel = (d: string) => new Date(`${d}T00:00:00+06:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "Asia/Dhaka" });
 
@@ -108,6 +108,20 @@ export default async function PromoPage({ searchParams }: { searchParams: Search
           shows on booking, sign-up, sign-in, account or tracking pages, and a visitor who closes it isn&apos;t shown it again for the
           period you choose. Editing the text or poster starts a new campaign, so everyone sees it once more.
         </p>
+        <form action={loadFirstOrderTemplateAction} className="mt-4 flex flex-wrap items-center gap-3 rounded-md border border-line bg-soft px-4 py-3">
+          <p className="min-w-0 flex-1 t-small text-body">
+            <span className="font-semibold text-navy">First-order offer template:</span> “10% OFF your first order booked on our website”, in English and Bangla,
+            with ticks, small print and your Google rating. It replaces the popup below and stays off until you preview it and switch it on.
+          </p>
+          <button type="submit" className="admin-btn-secondary">
+            Use the template
+          </button>
+        </form>
+        {saved === "template" ? (
+          <p role="status" className="mt-3 rounded-md border border-success/30 bg-success-soft px-4 py-3 t-small font-medium text-success">
+            Template loaded. Open “Preview on the website” to check it, then tick “Show the popup” and save.
+          </p>
+        ) : null}
         {problem ? (
           <p className="mt-3 rounded-md border border-[#f0c987] bg-[#fff4e5] px-4 py-3 t-small font-medium text-[#8a5300]">To go live: {problem}</p>
         ) : null}
@@ -144,6 +158,28 @@ export default async function PromoPage({ searchParams }: { searchParams: Search
               <Field label="Button label in Bangla">
                 <input name="ctaBn" lang="bn" defaultValue={promo.ctaBn} maxLength={40} className="admin-input" />
               </Field>
+              <Field label="Big offer" hint="Optional, set large at the top, e.g. “10% OFF”. The first word is the big number.">
+                <input name="offer" defaultValue={promo.offer} maxLength={24} className="admin-input" placeholder="10% OFF" />
+              </Field>
+              <Field label="Big offer in Bangla">
+                <input name="offerBn" lang="bn" defaultValue={promo.offerBn} maxLength={24} className="admin-input" placeholder="১০% ছাড়" />
+              </Field>
+              <Field label="Ticks" hint="Up to three short reasons, separated by |. Only true facts.">
+                <textarea name="points" defaultValue={promo.points} rows={2} maxLength={240} className="admin-input" placeholder="Free pickup & delivery on ৳499+ | Every item tagged and checked" />
+              </Field>
+              <Field label="Ticks in Bangla">
+                <textarea name="pointsBn" lang="bn" defaultValue={promo.pointsBn} rows={2} maxLength={240} className="admin-input" />
+              </Field>
+              <Field label="Small print" hint="Who qualifies and how the discount is applied. Up to 200 characters.">
+                <input name="fine" defaultValue={promo.fine} maxLength={200} className="admin-input" placeholder="For your first order booked on the website." />
+              </Field>
+              <Field label="Small print in Bangla">
+                <input name="fineBn" lang="bn" defaultValue={promo.fineBn} maxLength={200} className="admin-input" />
+              </Field>
+              <label className="flex items-center gap-3 md:col-span-2">
+                <input type="checkbox" name="proof" defaultChecked={promo.proof} className="size-4" />
+                <span className="t-small font-semibold text-navy">Show the Google rating under the button (from Site settings)</span>
+              </label>
               <Field label="Link" hint="Where the poster and the button go: a page like /signup or /book?source=promo_popup, or a full https:// link. Add ?source=… to see the campaign in Funnel.">
                 <input name="href" defaultValue={promo.href} maxLength={300} required className="admin-input" placeholder="/signup?source=promo_popup" />
               </Field>
