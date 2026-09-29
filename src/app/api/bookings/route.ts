@@ -3,8 +3,7 @@ import { logServerEvent } from "@/lib/analytics/store";
 import { bookingEstimateText } from "@/lib/booking-estimate";
 import { cleanBookingItems } from "@/lib/booking-items";
 import { couponNote, usableCoupon } from "@/lib/customer/goal";
-import { firstOrderFor } from "@/lib/customer/first-order";
-import { firstOrderNote } from "@/lib/first-order-offer";
+import { accountOfferNote } from "@/lib/account-offer";
 import { getCustomerSession, getGoal } from "@/lib/customer/portal";
 import { getSiteContent } from "@/lib/site-content";
 import { getCapacityConfig, zoneForArea } from "@/lib/capacity";
@@ -46,14 +45,16 @@ const fail = (
   );
 
 /** The signed-in customer's monthly-goal reward for today, worded for the Ops notes; undefined for everyone else. */
-async function couponForCaller(): Promise<string | undefined> {
+async function offerForCaller(): Promise<string | undefined> {
   const session = await getCustomerSession();
-  if (session.kind !== "customer" || session.account.state !== "ready" || session.account.link.status !== "linked") return undefined;
-  const { loyalty } = await getSiteContent();
-  if (!loyalty.goal.enabled) return undefined;
-  const goal = await getGoal(loyalty.goal.doubleFirst);
-  const c = goal ? usableCoupon(goal.coupons, goal.today) : null;
-  return c ? couponNote(c) : undefined;
+  if (session.kind !== "customer" || session.account.state !== "ready") return undefined;
+  if (session.account.link.status === "linked") {
+    const { loyalty } = await getSiteContent();
+    const goal = loyalty.goal.enabled ? await getGoal(loyalty.goal.doubleFirst).catch(() => null) : null;
+    const c = goal ? usableCoupon(goal.coupons, goal.today) : null;
+    if (c) return couponNote(c);
+  }
+  return accountOfferNote();
 }
 
 export async function POST(request: NextRequest) {
@@ -67,11 +68,8 @@ export async function POST(request: NextRequest) {
   const data = input.data && typeof input.data === "object" ? (input.data as Record<string, unknown>) : {};
   const items = cleanBookingItems(data.items);
   const estimate = items?.length ? await bookingEstimateText(items).catch(() => undefined) : undefined;
-  // A monthly-goal reward, else the first-order offer when this phone has no Velto orders yet
-  // (the two never meet: goal rewards come from earlier orders).
-  const coupon =
-    (await couponForCaller().catch(() => undefined)) ??
-    ((await firstOrderFor(typeof data.phone === "string" ? data.phone : null)) ? firstOrderNote() : undefined);
+  // A monthly-goal reward, else the account offer for any booking made signed in (one per order).
+  const coupon = await offerForCaller().catch(() => undefined);
   const parsed = validateBookingSubmission(input.data, { estimate, siteUrl: SITE_URL, coupon });
   const context = validateSubmissionContext({ idempotencyKey: input.idempotencyKey, requestId });
   if (!parsed.ok || !context.ok) {
