@@ -69,7 +69,7 @@ test("WhatsApp messages: first name, day and time of day, in Bangla or English",
   assert.equal(dayText("2026-09-28", "bn"), "২৮ সেপ্টেম্বর, সোমবার");
   assert.equal(dayText("2026-09-28", "en"), "Mon 28 Sep");
   const en = confirmMessage({ name: "Md. Nadia Rahman", date: "2026-09-29", slot: "evening", rider: "Monir" }, "en");
-  assert.match(en, /^Hello Nadia, this is Velto\. Your pickup is confirmed for Tue 29 Sep, Evening \(5–9 PM\)\. Monir from our team/);
+  assert.match(en, /^Hello Nadia, this is Velto\. Your pickup is confirmed for Tue 29 Sep, Evening \(4–8 PM\)\. Monir from our team/);
   const bn = confirmMessage({ name: null, date: "2026-09-29", slot: "morning", rider: null }, "bn");
   assert.match(bn, /^আসসালামু আলাইকুম, Velto থেকে বলছি। আপনার পিকআপ কনফার্ম হয়েছে: ২৯ সেপ্টেম্বর, মঙ্গলবার, সকাল/);
   assert.doesNotMatch(bn, /আসবেন/, "no rider line without a rider");

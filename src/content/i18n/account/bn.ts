@@ -318,7 +318,7 @@ export const accountBn: AccountText = {
     delivery: "ডেলিভারি",
     today: "আজ",
     tomorrow: "আগামীকাল",
-    slots: { morning: "সকাল, দুপুর ১২টার মধ্যে", afternoon: "দুপুর, ১২টা–৫টা", evening: "সন্ধ্যা, ৫টা–৯টা" },
+    slots: { morning: "সকাল, ৯টা–১২টা", afternoon: "দুপুর, ১২টা–৪টা", evening: "বিকেল–সন্ধ্যা, ৪টা–৮টা", night: "রাত, ৮টা–১০টা" },
     with: "{name} আসবেন",
     pickupBody: "কাপড় গুছিয়ে রাখুন। রাইডার কাছে এসে ফোন করবেন।",
     deliveryBody: "আপনার অর্ডার ফেরার পথে। রাইডার কাছে এসে ফোন করবেন।",

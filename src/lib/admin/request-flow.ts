@@ -114,10 +114,11 @@ const BN_DIGITS = "০১২৩৪৫৬৭৮৯";
 const bnNum = (s: string | number) => String(s).replace(/\d/g, (d) => BN_DIGITS[Number(d)]);
 const BN_MONTHS = ["জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"];
 const BN_DAYS = ["রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার", "শুক্রবার", "শনিবার"];
+/** The same windows as dispatch-logic SLOTS and the booking form (9–12, 12–4, 4–8). */
 const BN_SLOTS: Record<SlotId, string> = {
-  morning: "সকাল (দুপুর ১২টার মধ্যে)",
-  afternoon: "দুপুর (১২টা–৫টা)",
-  evening: "সন্ধ্যা (৫টা–৯টা)",
+  morning: "সকাল (৯টা–১২টা)",
+  afternoon: "দুপুর (১২টা–৪টা)",
+  evening: "বিকেল–সন্ধ্যা (৪টা–৮টা)",
 };
 
 /** "২৮ সেপ্টেম্বর, সোমবার" or "Mon 28 Sep". */
@@ -127,7 +128,7 @@ export function dayText(iso: string, lang: Lang) {
   return `${bnNum(d.getUTCDate())} ${BN_MONTHS[d.getUTCMonth()]}, ${BN_DAYS[d.getUTCDay()]}`;
 }
 
-/** "Afternoon (12–5 PM)" or "দুপুর (১২টা–৫টা)". */
+/** "Afternoon (12–4 PM)" or "দুপুর (১২টা–৪টা)". */
 export function slotText(slot: SlotId, lang: Lang) {
   if (lang === "bn") return BN_SLOTS[slot];
   const s = SLOTS.find((x) => x.id === slot)!;
