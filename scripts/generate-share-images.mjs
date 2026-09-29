@@ -23,8 +23,8 @@ const STAR = `<svg width="22" height="22" viewBox="0 0 24 24"><path fill="#F4B40
 // Share-card headlines: shorter and more direct than the page H1s, using only facts the site
 // already states (thresholds from src/content/site.ts, outlet addresses from SHORT_ADDRESS).
 const SHARE = {
-  "/": ["Your laundry, picked up from your door and brought back.", "আপনার লন্ড্রি, দরজা থেকে নিয়ে আবার দরজায় পৌঁছে দিই।"],
-  "/services": ["Dry cleaning, wash & iron, curtains and carpets. One pickup.", "ড্রাই ক্লিনিং, ওয়াশ ও আয়রন, পর্দা ও কার্পেট। এক পিকআপে।"],
+  "/": ["Your laundry, picked up and brought back.", "আপনার লন্ড্রি, নিয়ে যাই, ফিরিয়ে দিই।"],
+  "/services": ["Dry cleaning, wash & iron and more, picked up from your door.", "ড্রাই ক্লিনিং, ওয়াশ ও আয়রন আরও অনেক কিছু, দরজা থেকে পিকআপ।"],
   "/services/dry-cleaning": ["Suits, saris and sherwanis, dry‑cleaned and covered.", "স্যুট, শাড়ি ও শেরওয়ানি, ড্রাই ক্লিন করে কভারে ফেরত।"],
   "/services/wash-and-iron": ["Everyday clothes, washed, ironed and folded.", "প্রতিদিনের কাপড়, ধুয়ে, আয়রন করে, ভাঁজ করা।"],
   "/services/ironing": ["Washed at home? We iron it and bring it back.", "বাসায় ধোয়া? আমরা আয়রন করে ফিরিয়ে দিই।"],
@@ -32,10 +32,10 @@ const SHARE = {
   "/services/carpet-cleaning": ["Carpets and rugs, cleaned and priced by size.", "কার্পেট ও রাগ, পরিষ্কার করা, দাম মাপ অনুযায়ী।"],
   "/services/blanket-comforter-cleaning": ["Blankets, comforters and quilts, cleaned and packed.", "কম্বল, কমফোর্টার ও লেপ, পরিষ্কার করে প্যাক করা।"],
   "/services/express": ["Need it back sooner? Ask for Express.", "তাড়াতাড়ি ফেরত দরকার? এক্সপ্রেস নিন।"],
-  "/regular-laundry": ["A weekly pickup. Free delivery from ৳300.", "সাপ্তাহিক পিকআপ। ৳৩০০ থেকে ফ্রি ডেলিভারি।"],
+  "/regular-laundry": ["Regular laundry, picked up every week or two.", "নিয়মিত লন্ড্রি, প্রতি এক বা দুই সপ্তাহে পিকআপ।"],
   "/pricing": ["Shirt, blazer, saree: see the price before you book.", "শার্ট, ব্লেজার, শাড়ি: বুক করার আগেই দাম দেখুন।"],
   "/how-it-works": ["Collected, tagged, cleaned, checked, returned.", "সংগ্রহ, ট্যাগ, পরিষ্কার, যাচাই, ফেরত।"],
-  "/locations": ["Two outlets in Uttara. Pickup from Sectors 1–18.", "উত্তরায় দুটি শাখা। সেক্টর ১–১৮ থেকে পিকআপ।"],
+  "/locations": ["Two outlets in Uttara. Pickup across Sectors 1–18.", "উত্তরায় দুটি শাখা। সেক্টর ১–১৮ জুড়ে পিকআপ।"],
   "/locations/sector-11": ["Velto Sector 11: House 2, Road 14.", "Velto সেক্টর ১১: বাড়ি ২, রোড ১৪।"],
   "/locations/sector-18": ["Velto Sector 18: RUAP, Poncoboti Bazar.", "Velto সেক্টর ১৮: RUAP, পঞ্চবটি বাজার।"],
   "/about": ["A laundry that works to a written process.", "একটি লন্ড্রি, যা লিখিত নিয়ম মেনে কাজ করে।"],
@@ -63,6 +63,10 @@ const slug = (p) => (p === "/" ? "home" : p.slice(1).replace(/\//g, "-"));
 const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
 // Everything that matters sits inside the centre 630×630: WhatsApp's small preview crops to it.
 const LINE = { en: "Pickup across Uttara Sectors 1–18 · Free on ৳499+", bn: "উত্তরা সেক্টর ১–১৮ জুড়ে পিকআপ · ৳৪৯৯+ অর্ডারে ফ্রি" };
+// Regular Laundry states only its own rule (src/content/site.ts REGULAR_FREE_DELIVERY_THRESHOLD).
+const LINE_FOR = {
+  "/regular-laundry": { en: "Fixed weekly or fortnightly pickup · Free on ৳300+", bn: "নির্দিষ্ট সাপ্তাহিক বা পাক্ষিক পিকআপ · ৳৩০০+ অর্ডারে ফ্রি" },
+};
 const card = (pg, lang) => {
   const [eyebrow, headline] = pg[lang];
   const n = headline.length;
@@ -90,7 +94,7 @@ const card = (pg, lang) => {
     <div style="margin-top:14px;font-size:${size}px;line-height:${lang === "bn" ? 1.28 : 1.06};font-weight:600;letter-spacing:${lang === "bn" ? 0 : -0.02}em;text-wrap:balance">${esc(headline)}</div>
     <div style="margin-top:auto;padding-top:26px;display:flex;flex-direction:column;gap:14px">
       ${rating}
-      <div style="font-size:${lang === "bn" ? 19 : 18}px;font-weight:500;color:rgba(255,255,255,.9)">${esc(LINE[lang])}</div>
+      <div style="font-size:${lang === "bn" ? 19 : 18}px;font-weight:500;color:rgba(255,255,255,.9)">${esc((LINE_FOR[pg.path] ?? LINE)[lang])}</div>
     </div>
   </div>
 </div>`;
