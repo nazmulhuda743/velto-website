@@ -11,6 +11,7 @@ import { absoluteUrl, SITE_NAME, SITE_URL } from "@/lib/seo/site";
  *   /locations/x#business  DryCleaningOrLaundry per outlet  location pages (+ referenced elsewhere)
  *   Service        per service page, provided by #organization
  *   BreadcrumbList per page
+ *   FAQPage        wherever an FAQ is shown (the same questions and answers, word for word)
  *
  * Only verified facts: no telephone, opening hours, prices or ratings (see
  * docs/seo/VELTO-SEO-MASTER-PLAN.md §Schema for what is deliberately left out
@@ -89,6 +90,24 @@ export function buildBreadcrumbSchema(crumbs: { label: string; path: string }[])
       position: i + 1,
       name: c.label,
       item: absoluteUrl(c.path),
+    })),
+  };
+}
+
+/**
+ * The FAQ a page shows, word for word (never questions that aren't on the page). Google limits FAQ
+ * rich results to government and health sites; this is for AI assistants and search engines
+ * reading the answers.
+ */
+export function buildFaqSchema(items: { q: string; text: string }[], locale: "en" | "bn" = "en") {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    inLanguage: locale === "bn" ? "bn-BD" : "en-BD",
+    mainEntity: items.map((i) => ({
+      "@type": "Question",
+      name: i.q,
+      acceptedAnswer: { "@type": "Answer", text: i.text },
     })),
   };
 }
