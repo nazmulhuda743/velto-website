@@ -19,24 +19,45 @@ const ONLY = process.argv[3];
 // Not on the Sector 18 card: that rating belongs to the Sector 11 profile.
 const RATING = { en: { score: "5.0", line: "100+ Google reviews" }, bn: { score: "৫.০", line: "১০০+ Google রিভিউ" } };
 const STAR = `<svg width="22" height="22" viewBox="0 0 24 24"><path fill="#F4B400" d="M12 2.8l2.8 6 6.5.7-4.9 4.4 1.4 6.4L12 17l-5.8 3.3 1.4-6.4-4.9-4.4 6.5-.7z"/></svg>`;
-const P = (path, file, pos, en, bn, rating, left) => ({ path, file, pos, en, bn, rating, left });
+
+// Share-card headlines: shorter and more direct than the page H1s, using only facts the site
+// already states (thresholds from src/content/site.ts, outlet addresses from SHORT_ADDRESS).
+const SHARE = {
+  "/": ["Your laundry, picked up from your door and brought back.", "আপনার লন্ড্রি, দরজা থেকে নিয়ে আবার দরজায় পৌঁছে দিই।"],
+  "/services": ["Dry cleaning, wash & iron, curtains and carpets. One pickup.", "ড্রাই ক্লিনিং, ওয়াশ ও আয়রন, পর্দা ও কার্পেট। এক পিকআপে।"],
+  "/services/dry-cleaning": ["Suits, saris and sherwanis, dry‑cleaned and covered.", "স্যুট, শাড়ি ও শেরওয়ানি, ড্রাই ক্লিন করে কভারে ফেরত।"],
+  "/services/wash-and-iron": ["Everyday clothes, washed, ironed and folded.", "প্রতিদিনের কাপড়, ধুয়ে, আয়রন করে, ভাঁজ করা।"],
+  "/services/ironing": ["Washed at home? We iron it and bring it back.", "বাসায় ধোয়া? আমরা আয়রন করে ফিরিয়ে দিই।"],
+  "/services/curtain-cleaning": ["Curtains cleaned and returned. Priced per square foot.", "পর্দা পরিষ্কার করে ফেরত। দাম বর্গফুট অনুযায়ী।"],
+  "/services/carpet-cleaning": ["Carpets and rugs, cleaned and priced by size.", "কার্পেট ও রাগ, পরিষ্কার করা, দাম মাপ অনুযায়ী।"],
+  "/services/blanket-comforter-cleaning": ["Blankets, comforters and quilts, cleaned and packed.", "কম্বল, কমফোর্টার ও লেপ, পরিষ্কার করে প্যাক করা।"],
+  "/services/express": ["Need it back sooner? Ask for Express.", "তাড়াতাড়ি ফেরত দরকার? এক্সপ্রেস নিন।"],
+  "/regular-laundry": ["A weekly pickup. Free delivery from ৳300.", "সাপ্তাহিক পিকআপ। ৳৩০০ থেকে ফ্রি ডেলিভারি।"],
+  "/pricing": ["Shirt, blazer, saree: see the price before you book.", "শার্ট, ব্লেজার, শাড়ি: বুক করার আগেই দাম দেখুন।"],
+  "/how-it-works": ["Collected, tagged, cleaned, checked, returned.", "সংগ্রহ, ট্যাগ, পরিষ্কার, যাচাই, ফেরত।"],
+  "/locations": ["Two outlets in Uttara. Pickup from Sectors 1–18.", "উত্তরায় দুটি শাখা। সেক্টর ১–১৮ থেকে পিকআপ।"],
+  "/locations/sector-11": ["Velto Sector 11: House 2, Road 14.", "Velto সেক্টর ১১: বাড়ি ২, রোড ১৪।"],
+  "/locations/sector-18": ["Velto Sector 18: RUAP, Poncoboti Bazar.", "Velto সেক্টর ১৮: RUAP, পঞ্চবটি বাজার।"],
+  "/about": ["A laundry that works to a written process.", "একটি লন্ড্রি, যা লিখিত নিয়ম মেনে কাজ করে।"],
+};
+const P = (path, file, pos, en, bn, rating, left) => ({ path, file, pos, en: [en[0], SHARE[path]?.[0] ?? en[1]], bn: [bn[0], SHARE[path]?.[1] ?? bn[1]], rating, left });
 const PAGES = [
-  P("/", "home/final.jpg", "center", ["Uttara, Dhaka", "Laundry and dry cleaning in Uttara, with pickup from your door."], ["উত্তরা, ঢাকা", "উত্তরায় লন্ড্রি ও ড্রাই ক্লিনিং, আপনার দরজা থেকে পিকআপসহ।"], undefined, ["home/dry-cleaning.webp", "35% center"]),
+  P("/", "home/process-06-qc.jpg", "30% center", ["Uttara, Dhaka", "Laundry and dry cleaning in Uttara, with pickup from your door."], ["উত্তরা, ঢাকা", "উত্তরায় লন্ড্রি ও ড্রাই ক্লিনিং, আপনার দরজা থেকে পিকআপসহ।"], undefined, ["home/dry-cleaning.webp", "35% center"]),
   P("/services", "pages/finished-shirts-rail.webp", "center 40%", ["Services", "Dry cleaning, Wash & Iron, ironing and household items."], ["সার্ভিস", "ড্রাই ক্লিনিং, ওয়াশ ও আয়রন, আয়রন এবং ঘরের জিনিস।"], undefined, ["home/dry-cleaning.webp", "40% center"]),
-  P("/services/dry-cleaning", "home/dry-cleaning.webp", "40% 40%", ["Dry Cleaning", "Dry cleaning for garments that need a closer look."], ["ড্রাই ক্লিনিং", "যেসব পোশাক ভালো করে দেখে নিতে হয়, সেগুলোর জন্য ড্রাই ক্লিনিং।"], undefined, ["home/delicate.jpg", "center"]),
+  P("/services/dry-cleaning", "home/dry-cleaning.webp", "60% 40%", ["Dry Cleaning", "Dry cleaning for garments that need a closer look."], ["ড্রাই ক্লিনিং", "যেসব পোশাক ভালো করে দেখে নিতে হয়, সেগুলোর জন্য ড্রাই ক্লিনিং।"], undefined, ["home/delicate.jpg", "center"]),
   P("/services/wash-and-iron", "home/wash-and-iron.webp", "center 55%", ["Wash & Iron", "Everyday laundry, washed, ironed and brought back."], ["ওয়াশ ও আয়রন", "প্রতিদিনের লন্ড্রি, ধুয়ে, আয়রন করে ফিরিয়ে দেওয়া।"], undefined, ["home/process-07-packed.jpg", "center"]),
   P("/services/ironing", "home/ironing.webp", "45% 55%", ["Ironing", "Already washed? Send it for ironing."], ["আয়রন", "ধোয়া হয়ে গেছে? আয়রনের জন্য পাঠান।"], undefined, ["home/process-05-finished.jpg", "center 40%"]),
   P("/services/curtain-cleaning", "home/household-curtains.jpg", "35% center", ["Curtain Cleaning", "Curtain cleaning, priced by the square foot."], ["পর্দা পরিষ্কার", "পর্দা পরিষ্কার, দাম বর্গফুট অনুযায়ী।"], undefined, ["home/household-section.jpg", "60% center"]),
   P("/services/carpet-cleaning", "pages/carpet-woven.webp", "center", ["Carpet Cleaning", "Carpet cleaning, priced by size."], ["কার্পেট পরিষ্কার", "কার্পেট পরিষ্কার, দাম মাপ অনুযায়ী।"], undefined, ["home/household-section.jpg", "60% center"]),
   P("/services/blanket-comforter-cleaning", "pages/bedding-linen-stack.webp", "center", ["Blankets & Comforters", "Blankets, comforters and quilts, priced by type and size."], ["কম্বল ও কমফোর্টার", "কম্বল, কমফোর্টার ও লেপ, দাম ধরন ও মাপ অনুযায়ী।"], undefined, ["pages/bedding-folded.webp", "center"]),
-  P("/services/express", "pages/express-shirt-hanger.webp", "center", ["Express", "Need it back sooner? Ask about Express."], ["এক্সপ্রেস", "আরও তাড়াতাড়ি ফেরত দরকার? এক্সপ্রেসের কথা জিজ্ঞেস করুন।"], undefined, ["pages/finished-shirts-rail.webp", "center"]),
+  P("/services/express", "pages/finished-shirts-rail.webp", "center 40%", ["Express", "Need it back sooner? Ask about Express."], ["এক্সপ্রেস", "আরও তাড়াতাড়ি ফেরত দরকার? এক্সপ্রেসের কথা জিজ্ঞেস করুন।"], undefined, ["pages/finished-shirts-rail.webp", "center"]),
   P("/regular-laundry", "home/regular.webp", "center", ["Regular Laundry", "A regular laundry pickup, so the week takes care of itself."], ["নিয়মিত লন্ড্রি", "নিয়মিত লন্ড্রি পিকআপ, সপ্তাহের কাপড় নিয়ে আর ভাবতে হবে না।"], undefined, ["home/wash-and-iron.webp", "center"]),
   P("/pricing", "home/process-07-packed.jpg", "center", ["Pricing", "Find the price of an item before you book."], ["দাম", "বুক করার আগেই যেকোনো আইটেমের দাম দেখুন।"], undefined, ["pages/finished-shirts-rail.webp", "center"]),
   P("/how-it-works", "home/process-03-tagged.jpg", "center", ["How It Works", "From your door and back again."], ["যেভাবে কাজ করে", "আপনার দরজা থেকে, আবার আপনার দরজায়।"], undefined, ["home/process-05-finished.jpg", "center 40%"]),
   P("/locations", "locations/sector-11.webp", "center", ["Locations", "Two outlets in Uttara. Pickup across Sectors 1–18."], ["শাখা", "উত্তরায় দুটি শাখা। সেক্টর ১–১৮ জুড়ে পিকআপ।"], undefined, ["home/final.jpg", "center"]),
   P("/locations/sector-11", "locations/sector-11.webp", "center", ["Sector 11 outlet", "Laundry and dry cleaning in Uttara Sector 11."], ["সেক্টর ১১ শাখা", "উত্তরা সেক্টর ১১-এ লন্ড্রি ও ড্রাই ক্লিনিং।"], undefined, ["home/process-07-packed.jpg", "center"]),
   P("/locations/sector-18", "home/delicate.jpg", "center", ["Sector 18 outlet", "Laundry and dry cleaning in Uttara Sector 18."], ["সেক্টর ১৮ শাখা", "উত্তরা সেক্টর ১৮-এ লন্ড্রি ও ড্রাই ক্লিনিং।"], false, ["home/process-07-packed.jpg", "center"]),
-  P("/about", "home/process-06-qc.jpg", "30% center", ["About Velto", "A laundry in Uttara that works to a written process."], ["Velto সম্পর্কে", "উত্তরার একটি লন্ড্রি, যা লিখিত নিয়ম মেনে কাজ করে।"], undefined, ["home/process-04-checked.jpg", "center 40%"]),
+  P("/about", "home/process-04-checked.jpg", "center 40%", ["About Velto", "A laundry in Uttara that works to a written process."], ["Velto সম্পর্কে", "উত্তরার একটি লন্ড্রি, যা লিখিত নিয়ম মেনে কাজ করে।"], undefined, ["home/process-04-checked.jpg", "center 40%"]),
 ];
 const slug = (p) => (p === "/" ? "home" : p.slice(1).replace(/\//g, "-"));
 const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
@@ -45,7 +66,7 @@ const LINE = { en: "Pickup across Uttara Sectors 1–18 · Free on ৳499+", bn:
 const card = (pg, lang) => {
   const [eyebrow, headline] = pg[lang];
   const n = headline.length;
-  const size = (n > 50 ? 44 : n > 36 ? 50 : 56) - (lang === "bn" ? 5 : 0);
+  const size = (n > 50 ? 50 : n > 38 ? 56 : 62) - (lang === "bn" ? 6 : 0);
   const rating = pg.rating === false ? "" : `
       <div style="display:inline-flex;align-self:flex-start;align-items:center;gap:14px;background:#fff;color:#002B4E;border-radius:12px;padding:12px 18px 11px">
         <div style="font-size:40px;line-height:1;font-weight:600;letter-spacing:-0.02em">${RATING[lang].score}</div>
@@ -56,9 +77,8 @@ const card = (pg, lang) => {
       </div>`;
   return `
 <div id="card" lang="${lang}" style="position:fixed;inset:0 auto auto 0;width:1200px;height:630px;background:#002B4E;font-family:var(--font-instrument-sans),var(--font-bengali),sans-serif;z-index:99999;overflow:hidden">
-  <img src="${SITE}/images/${pg.left[0]}" style="position:absolute;left:0;top:0;width:285px;height:630px;object-fit:cover;object-position:${pg.left[1]}" alt="">
-  <img src="${SITE}/images/${pg.file}" style="position:absolute;right:0;top:0;width:285px;height:630px;object-fit:cover;object-position:${pg.pos}" alt="">
-  <div style="position:absolute;left:285px;top:0;width:630px;height:630px;background:#002B4E;color:#fff;box-sizing:border-box;padding:46px 44px 42px;display:flex;flex-direction:column">
+  <img src="${SITE}/images/${pg.file}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:${pg.pos}" alt="">
+  <div style="position:absolute;left:285px;top:0;width:630px;height:630px;background:#002B4E;color:#fff;box-sizing:border-box;padding:46px 46px 42px;display:flex;flex-direction:column;box-shadow:0 0 60px rgba(0,20,40,.45)">
     <div style="position:absolute;left:0;right:0;top:0;height:6px;background:#00A6E5"></div>
     <div style="display:flex;align-items:center;justify-content:space-between">
       <img src="${SITE}/brand/velto-logo-white.png" style="width:168px;height:auto;display:block" alt="">
