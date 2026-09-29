@@ -32,6 +32,7 @@ const toFAQ = (ref: FAQRef, shared: FAQItem[]): FAQItem =>
             ))}
           </>
         ),
+        text: ref.a.join("\n\n"),
       };
 
 const noStop = (v: string) => v.replace(/[.।]$/, "");

@@ -84,6 +84,13 @@ test("channel classification never claims paid traffic without evidence", () => 
   assert.equal(classifyChannel({ utm_source: "google", utm_medium: "cpc" }), "google_ads");
   assert.equal(classifyChannel({ utm_source: "whatsapp", utm_medium: "share" }), "whatsapp");
   assert.equal(classifyChannel({ utm_source: "newsletter", utm_medium: "email" }), "other");
+  // AI assistants: ChatGPT tags links utm_source=chatgpt.com; the others arrive as a referrer.
+  assert.equal(classifyChannel({ utm_source: "chatgpt.com" }), "ai_search");
+  assert.equal(classifyChannel({ utm_source: "ChatGPT.com", referrer_host: "chatgpt.com" }), "ai_search");
+  assert.equal(classifyChannel({ referrer_host: "www.perplexity.ai" }), "ai_search");
+  assert.equal(classifyChannel({ referrer_host: "gemini.google.com" }), "ai_search");
+  assert.equal(classifyChannel({ referrer_host: "copilot.microsoft.com" }), "ai_search");
+  assert.equal(classifyChannel({ utm_source: "newsletter", referrer_host: "chatgpt.com" }), "other", "a tagged campaign keeps its own source");
   assert.equal(deviceFromWidth(390), "mobile");
   assert.equal(deviceFromWidth(1024), "tablet");
   assert.equal(deviceFromWidth(1440), "desktop");
