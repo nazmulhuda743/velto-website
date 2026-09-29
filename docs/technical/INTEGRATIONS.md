@@ -129,16 +129,16 @@ raw upstream response bodies or customer photo data.
 
 ## Foundation tests
 
-The focused tests use Node's built-in test runner. In the complete Next.js
-checkout, compile the runtime-neutral modules with the project's TypeScript
-compiler and run:
+The focused tests use Node's built-in test runner. Run them with:
 
 ```sh
-npx tsc --ignoreConfig --outDir .foundation-test-build --module node16 --moduleResolution node16 --target ES2022 --esModuleInterop --skipLibCheck src/lib/attribution.ts src/lib/integrations/errors.ts src/lib/integrations/ops/validation.ts src/lib/integrations/pricing/validation.ts
-node --test tests/*.test.cjs
+npm run test:foundation
 ```
 
-Remove `.foundation-test-build` after the run. The separate
+`scripts/foundation-tests.mjs` compiles the runtime-neutral modules listed in
+`tests/foundation-modules.txt` into a fresh `.foundation-test-build`, runs
+`tests/*.test.cjs` and removes the build. It fails before compiling if a test
+requires a module that isn't listed, so add new modules to that file. The separate
 `tests/analytics.type-test.ts` is checked by the normal project TypeScript run.
 
 ## Merge notes

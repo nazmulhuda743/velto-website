@@ -10,15 +10,24 @@ import { getSiteContent } from "@/lib/site-content";
 const LOGO = "/brand/velto-logo.png";
 const LOGO_WHITE = "/brand/velto-logo-white.png";
 
-/** Reads intrinsic size from the PNG header so the ratio always matches the artwork. */
+/** Sizes already read: the built-in artwork doesn't change while the server runs. */
+const sizes = new Map<string, { width: number; height: number } | null>();
+
+/** Reads intrinsic size from the PNG header so the ratio always matches the artwork (once per file). */
 function pngSize(publicPath: string): { width: number; height: number } | null {
+  const known = sizes.get(publicPath);
+  if (known !== undefined) return known;
   const file = path.join(process.cwd(), "public", publicPath);
-  if (!fs.existsSync(file)) return null;
-  const header = Buffer.alloc(24);
-  const fd = fs.openSync(file, "r");
-  fs.readSync(fd, header, 0, 24, 0);
-  fs.closeSync(fd);
-  return { width: header.readUInt32BE(16), height: header.readUInt32BE(20) };
+  let size: { width: number; height: number } | null = null;
+  if (fs.existsSync(file)) {
+    const header = Buffer.alloc(24);
+    const fd = fs.openSync(file, "r");
+    fs.readSync(fd, header, 0, 24, 0);
+    fs.closeSync(fd);
+    size = { width: header.readUInt32BE(16), height: header.readUInt32BE(20) };
+  }
+  sizes.set(publicPath, size);
+  return size;
 }
 
 type LogoProps = {
