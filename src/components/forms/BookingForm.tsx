@@ -35,6 +35,7 @@ import { shrinkPhoto } from "./shrink-photo";
 import { PickupWindows, hoursText, type PickedWindow } from "./PickupWindows";
 import { submitBooking, uploadBookingPhoto, type BookingFormData, type SubmitResult } from "./submit";
 import { CallbackRequest } from "./CallbackRequest";
+import { useNightDhaka } from "./useNight";
 import { DRAFT_KEY, makeDraft, readDraft, type BookingDraft } from "@/lib/booking-recovery";
 
 type Text = FormText["booking"];
@@ -858,6 +859,7 @@ export function BookingForm({
 
   // A booking started earlier on this device and not sent: offer to continue it (not over a repeat order).
   const storedDraft = useSyncExternalStore(noSubscribe, readStoredDraft, () => null);
+  const night = useNightDhaka();
   const draft = useMemo(() => (initialItems.length ? null : readDraft(storedDraft)), [storedDraft, initialItems.length]);
   const [draftChoice, setDraftChoice] = useState<"pending" | "done">("pending");
   const draftOffer = draft && draftChoice === "pending" ? draft : null;
@@ -1361,7 +1363,7 @@ export function BookingForm({
               )}
             </button>
 
-            <p className="mt-4 t-small text-secondary">{s.pickup?.booked ? t.reassureBooked : t.reassureTime}</p>
+            <p className="mt-4 t-small text-secondary">{s.pickup?.booked ? t.reassureBooked : night ? t.reassureTimeNight : t.reassureTime}</p>
             <CallbackRequest
               t={t}
               initialName={s.name}
@@ -1404,6 +1406,7 @@ function BookingSuccess({
 }) {
   const words = pageWords(t, c, locale);
   const when = pickupLabel(state, words, t.slots);
+  const night = useNightDhaka();
   const photos = uploadedPhotos(state).length;
   const firstName = state.name.trim().split(/\s+/)[0];
   const estimate = estimateLabel(estimateOf(state, chargeMinor), locale);
@@ -1423,7 +1426,7 @@ function BookingSuccess({
       <h1 id="page-title" ref={headingRef} tabIndex={-1} className="scroll-mt-32 t-h1 text-navy focus:outline-none">
         {state.pickup?.booked ? t.successTitleBooked : t.successTitle}
       </h1>
-      <p className="mt-3 t-body text-body md:mt-4 md:t-body-lg">{state.pickup?.booked ? format(t.successBodyBooked, { name: firstName, when }) : format(t.successBody, { name: firstName })}</p>
+      <p className="mt-3 t-body text-body md:mt-4 md:t-body-lg">{state.pickup?.booked ? format(t.successBodyBooked, { name: firstName, when }) : format(night ? t.successBodyNight : t.successBody, { name: firstName })}</p>
 
       <dl className="mt-7 border-t border-navy">
         {rows.map((r) => (

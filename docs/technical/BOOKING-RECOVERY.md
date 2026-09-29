@@ -26,7 +26,7 @@ nothing typed into an unsent form reaches Velto unless the visitor presses a but
 - `POST /api/callback` → `website_callback_create` (`docs/technical/sql/website_callbacks.sql`, service role).
   It uses the same `VELTO_OPS_WRITES_ENABLED` switch as bookings. A retried tap, or a phone with an open
   request, gets the same request back. At most 3 requests per phone a day.
-- The managers get a phone alert: "📞 Call-back request · name · area … Call within 30 min."
+- The managers get a phone alert: "📞 Call-back request · name · area … Call within 30 min." (at night, 9 PM to 9 AM Dhaka: "call in the morning (from 9 AM)", and the visitor is told Velto will call in the morning; see DISPATCH.md, Night requests)
 - **Command Center → Bookings & quotes → Call-back requests** shows how long each one has waited, what they
   wanted, where they came from, and whether the phone has ordered before. It has Call and WhatsApp
   (বাংলা / English, prepared) buttons, and a close with what happened: booked, will book themselves,

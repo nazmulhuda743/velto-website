@@ -8,6 +8,8 @@
  *    it reaches the database, and the managers' phone alert.
  */
 
+import { callAsk } from "./call-hours";
+
 export const DRAFT_KEY = "velto.booking.draft.v1";
 export const DRAFT_MAX_AGE_MS = 7 * 86_400_000;
 
@@ -124,11 +126,11 @@ export function validateCallback(value: unknown): { ok: true; value: CallbackInp
 }
 
 /** Managers' phone alert. */
-export function callbackPush(c: Pick<CallbackInput, "name" | "area">, siteUrl: string) {
+export function callbackPush(c: Pick<CallbackInput, "name" | "area">, siteUrl: string, now: number | Date = Date.now()) {
   const bits = [c.name.slice(0, 40), c.area?.slice(0, 40)].filter(Boolean);
   return {
     title: "📞 Call-back request",
-    body: `${bits.join(" · ")}. Started a booking but asked us to call. Call within 30 min.`,
+    body: `${bits.join(" · ")}. Started a booking but asked us to call. ${callAsk(now)}`,
     url: `${siteUrl.replace(/\/+$/, "")}/admin/requests#callbacks`,
   };
 }
