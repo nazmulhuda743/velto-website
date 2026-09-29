@@ -21,8 +21,8 @@ const SHARE_CARD_PAGES = new Set([
   ...["dry-cleaning", "wash-and-iron", "ironing", "curtain-cleaning", "carpet-cleaning", "blanket-comforter-cleaning", "express"].map((s) => `/services/${s}`),
 ]);
 
-/** Whether the Bangla cards (name-bn.jpg) are in public/images/share; until then /bn pages use the English card. */
-const BANGLA_CARDS = false;
+/** The Bangla cards (name-bn.jpg) are in public/images/share: /bn pages show the Bangla headline. */
+const BANGLA_CARDS = true;
 
 function shareImage(path: string, locale: "en" | "bn") {
   if (!SHARE_CARD_PAGES.has(path)) return DEFAULT_SHARE_IMAGE;
