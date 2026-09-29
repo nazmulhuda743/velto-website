@@ -201,6 +201,9 @@ export const formsEn = {
     /** Below ৳499: the progress bar and one-tap add-ons in the order summary. */
     freeProgressLabel: "Progress to free pickup & delivery",
     addOnsTitle: "Popular to add",
+    addOnsTitleOften: "Often added",
+    addOnUsual: "You usually send",
+    addOnPair: "Often sent with {item}",
     freeUnlocked: "Free pickup & delivery unlocked.",
     whatsapp: {
       greeting: "Hi Velto, I'd like to book a pickup.",

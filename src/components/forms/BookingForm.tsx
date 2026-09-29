@@ -24,7 +24,7 @@ import {
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import type { FormText } from "@/content/i18n/forms/en";
 import { fill, format, localDigits, type Locale } from "@/lib/i18n/config";
-import { progressToFree, suggestAddOns } from "@/lib/booking-upsell";
+import { progressToFree, smartAddOns, type SmartAddOn, type UpsellHints } from "@/lib/booking-upsell";
 import { BookingItems, lineUnit, money, repeatLine, type ItemLine, type PriceItem } from "./BookingItems";
 
 /** One line of an earlier order, as the book page reads it on the server. */
@@ -65,6 +65,7 @@ const WHAT_MAX = 160;
 
 const SECTORS = Array.from({ length: 18 }, (_, i) => i + 1);
 const OUTSIDE = "outside";
+const NO_HINTS: UpsellHints = { usual: [], pairs: [] };
 
 /* The unsent booking kept in this browser only (lib/booking-recovery.ts). Storage can be blocked. */
 const noSubscribe = () => () => {};
@@ -439,6 +440,7 @@ function OrderSummary({
   offer,
   coupon,
   popular = [],
+  hints = NO_HINTS,
   onAdd,
 }: {
   s: FormState;
@@ -448,15 +450,46 @@ function OrderSummary({
   offer?: string;
   coupon?: Coupon;
   popular?: PriceItem[];
-  /** Adds one of an item on a service (the free-delivery add-ons). */
-  onAdd?: (item: PriceItem, service: ItemService) => void;
+  /** What this customer usually sends and what customers send together (smart add-ons). */
+  hints?: UpsellHints;
+  /** Adds one of an item on a service (the add-ons); `reason` says why it was offered. */
+  onAdd?: (item: PriceItem, service: ItemService, reason: SmartAddOn["reason"]["kind"]) => void;
 }) {
   const e = withCoupon(estimateOf(s, chargeMinor), coupon);
   const threshold = localDigits(FREE_DELIVERY_THRESHOLD, locale);
   const priced = e.subtotalMinor > 0;
   const gap = FREE_DELIVERY_MIN_MINOR - e.subtotalMinor;
-  const addOns = priced && !e.free && onAdd ? suggestAddOns(s.items, popular, gap, s.services) : [];
+  const addOns = priced && onAdd ? smartAddOns(s.items, popular, e.free ? 0 : gap, hints, s.services) : [];
   const row = "flex items-baseline justify-between gap-4 py-2";
+  const addOnsView = addOns.length ? (
+    <div className="mt-3" data-add-ons>
+      <p className="t-small font-semibold text-navy">{addOns.some((a) => a.reason.kind !== "popular") ? t.addOnsTitleOften : t.addOnsTitle}</p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {addOns.map((a) => {
+          const listed = popular.find((p) => p.name === a.item);
+          const why = a.reason.kind === "usual" ? t.addOnUsual : a.reason.kind === "pair" ? format(t.addOnPair, { item: a.reason.with }) : null;
+          return (
+            <button
+              key={`${a.item}-${a.service}`}
+              type="button"
+              onClick={() => listed && onAdd?.(listed, a.service as ItemService, a.reason.kind)}
+              className="inline-flex min-h-11 flex-col items-start justify-center rounded-2xl border border-line-strong bg-white px-3.5 py-1.5 text-left t-small text-navy hover:border-navy"
+              data-add-on={a.reason.kind}
+            >
+              <span className="inline-flex items-center gap-1.5">
+                <span aria-hidden="true" className="font-semibold text-action">+</span>
+                <span className="font-semibold">{a.item}</span>
+                <span className="text-secondary">
+                  · {t.services[a.service]} · {money(a.amountMinor, locale)}
+                </span>
+              </span>
+              {why ? <span className="t-caption text-secondary">{why}</span> : null}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  ) : null;
   return (
     <section aria-labelledby="booking-summary-title" className="rounded-md border border-line bg-soft p-4 md:p-5" data-order-summary>
       <h2 id="booking-summary-title" className="t-h4 text-navy">
@@ -519,35 +552,15 @@ function OrderSummary({
             <p className="mt-1 t-caption tabular-nums text-secondary">
               {money(e.subtotalMinor, locale)} / {money(FREE_DELIVERY_MIN_MINOR, locale)}
             </p>
-            {addOns.length ? (
-              <div className="mt-3" data-add-ons>
-                <p className="t-small font-semibold text-navy">{t.addOnsTitle}</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {addOns.map((a) => {
-                    const listed = popular.find((p) => p.name === a.item);
-                    return (
-                      <button
-                        key={`${a.item}-${a.service}`}
-                        type="button"
-                        onClick={() => listed && onAdd?.(listed, a.service as ItemService)}
-                        className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-line-strong bg-white px-3.5 text-left t-small text-navy hover:border-navy"
-                      >
-                        <span aria-hidden="true" className="font-semibold text-action">+</span>
-                        <span className="font-semibold">{a.item}</span>
-                        <span className="text-secondary">
-                          · {t.services[a.service]} · {money(a.amountMinor, locale)}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : null}
+            {!e.free ? addOnsView : null}
           </div>
         ) : priced && e.free && !coupon ? (
-          <p className="font-semibold text-success" data-free-unlocked>
-            ✓ {t.freeUnlocked}
-          </p>
+          <div>
+            <p className="font-semibold text-success" data-free-unlocked>
+              ✓ {t.freeUnlocked}
+            </p>
+            {addOnsView}
+          </div>
         ) : !priced ? (
           <p className="text-navy">{format(t.summaryFreeNote, { amount: threshold })}</p>
         ) : null}
@@ -780,6 +793,7 @@ export function BookingForm({
   offer,
   coupon,
   savedAddresses = [],
+  upsellHints = NO_HINTS,
 }: {
   /** Form text in the page language (formText(locale).booking), passed by the page. */
   t: Text;
@@ -805,6 +819,8 @@ export function BookingForm({
   coupon?: Coupon;
   /** Signed-in customer's saved pickup addresses (Profile): one tap fills the area and address. */
   savedAddresses?: { label: string; address: string; area: string }[];
+  /** Smart add-ons: this customer's regular items and what customers send together (server-read). */
+  upsellHints?: UpsellHints;
 }) {
   const locale = useLocale();
   const [initialItems] = useState(() => repeatItems.map((r) => repeatLine(r.item, r.service, r.quantity, r.listed)));
@@ -1286,13 +1302,14 @@ export function BookingForm({
               offer={offer}
               coupon={coupon}
               popular={popularItems}
-              onAdd={(item, service) => {
+              hints={upsellHints}
+              onAdd={(item, service, reason) => {
                 const at = s.items.findIndex((l) => l.item === item.name && l.service === service);
                 update(
                   "items",
                   at >= 0 ? s.items.map((l, i) => (i === at ? { ...l, quantity: l.quantity + 1 } : l)) : [...s.items, repeatLine(item.name, service, 1, item)],
                 );
-                track("booking_addon_add", { section: "booking-summary", service });
+                track("booking_addon_add", { section: "booking-summary", service, placement: `addon_${reason}` });
               }}
             />
           ) : (
