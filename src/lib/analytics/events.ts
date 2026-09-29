@@ -6,6 +6,10 @@ export const ANALYTICS_EVENTS = [
   "booking_addon_add",
   // A valid phone number typed into the booking or quote form (once per form).
   "phone_entered",
+  // Abandoned booking recovery: the saved draft continued, "Get a call back" opened and sent.
+  "booking_draft_restore",
+  "callback_open",
+  "callback_request",
   "booking_success",
   "booking_error",
   "whatsapp_click",

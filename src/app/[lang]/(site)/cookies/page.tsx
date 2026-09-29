@@ -16,7 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 type Row = { name: string; purpose: string; duration: string; setBy: string };
 
-/* Keep in step with src/lib/consent.ts, src/lib/analytics/client.ts, src/lib/attribution-client.ts and src/lib/admin. */
+/* Keep in step with src/lib/consent.ts, src/lib/analytics/client.ts, src/lib/attribution-client.ts, src/lib/booking-recovery.ts and src/lib/admin. */
 const ESSENTIAL: Row[] = [
   {
     name: "velto_consent_v1",
@@ -37,6 +37,13 @@ const ESSENTIAL: Row[] = [
     purpose:
       "When you close an offer popup, remembers which offer you closed and when, so the same offer isn't shown again straight away. Holds no identifier and no personal information.",
     duration: "Until the offer changes or you clear your browser data; for some offers, until the tab is closed",
+    setBy: "Velto",
+  },
+  {
+    name: "velto.booking.draft.v1 (browser storage)",
+    purpose:
+      "While you fill in the booking form, keeps what you have typed on this device so you can continue later if you leave before sending. It stays in your browser and is never sent to Velto unless you send the booking (or tap \u201cGet a call back\u201d). No photos or pickup window are kept. Removed when you send the booking or tap Start over.",
+    duration: "7 days, or until you send the booking or clear your browser data",
     setBy: "Velto",
   },
   {

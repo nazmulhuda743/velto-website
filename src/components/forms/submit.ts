@@ -119,3 +119,24 @@ export async function uploadBookingPhoto(photo: Blob): Promise<PhotoUploadResult
     return { ok: false, code: "unavailable" };
   }
 }
+
+export type CallbackFormData = { name: string; phone: string; area?: string; what?: string; services?: string; preferred?: string };
+export type CallbackResult = { ok: true } | { ok: false; code: "not_connected" | "invalid_request" | "rate_limited" | "unavailable" };
+
+/** "Get a call back" from the booking form: sent only when the visitor taps the button. */
+export async function submitCallback(data: CallbackFormData): Promise<CallbackResult> {
+  try {
+    const res = await fetch("/api/callback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ data: { ...data, attribution: submissionAttribution() }, idempotencyKey: idempotencyKeyFor(`callback:${JSON.stringify(data)}`) }),
+    });
+    if (res.ok) return { ok: true };
+    if (res.status === 501) return { ok: false, code: "not_connected" };
+    if (res.status === 429) return { ok: false, code: "rate_limited" };
+    if (res.status === 400) return { ok: false, code: "invalid_request" };
+    return { ok: false, code: "unavailable" };
+  } catch {
+    return { ok: false, code: "unavailable" };
+  }
+}
