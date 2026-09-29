@@ -330,7 +330,7 @@ export const accountEn = {
     delivery: "Delivery",
     today: "Today",
     tomorrow: "Tomorrow",
-    slots: { morning: "Morning, until 12 PM", afternoon: "Afternoon, 12–5 PM", evening: "Evening, 5–9 PM" },
+    slots: { morning: "Morning, 9 AM–12 PM", afternoon: "Afternoon, 12–4 PM", evening: "Evening, 4–8 PM", night: "Night, 8–10 PM" },
     with: "with {name}",
     pickupBody: "Please have your laundry ready. The rider calls when nearby.",
     deliveryBody: "Your order is on its way back. The rider calls when nearby.",

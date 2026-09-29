@@ -29,6 +29,8 @@ import {
 import { readyMessage, type LinkedOrder } from "@/lib/admin/request-flow";
 import { whatsappLink } from "@/lib/admin/retention-messages";
 import { requireSection } from "@/lib/admin/session";
+import { canEditCapacity } from "@/lib/admin/permissions";
+import { OVERRIDE_REASONS } from "@/lib/capacity-logic";
 import { getOrderCounts, getPhoneFlags } from "@/lib/admin/customer-extras";
 import { loyaltyStatus } from "@/lib/customer/loyalty";
 import { getSiteContent } from "@/lib/site-content";
@@ -63,7 +65,7 @@ const waLink = (phone: string) => {
 const label = (j: DispatchJob) => `${j.kind === "delivery" ? `Delivery ${j.order_number}` : j.source === "website_quote" ? "Quote" : "Pickup"} – ${j.customer_name ?? "customer"}`;
 
 /** One form to give a stop a person and a slot (or change them). */
-function PlanForm({ job, staff, today, keep, suggestion }: { job: DispatchJob; staff: StaffMember[]; today: string; keep: string; suggestion: { date: string | null; slot: string | null } }) {
+function PlanForm({ job, staff, today, keep, suggestion, canOverride }: { job: DispatchJob; staff: StaffMember[]; today: string; keep: string; suggestion: { date: string | null; slot: string | null }; canOverride: boolean }) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(today, i));
   const day = job.slot_date ?? suggestion.date ?? "";
   if (day && !days.includes(day)) days.push(day);
@@ -108,6 +110,24 @@ function PlanForm({ job, staff, today, keep, suggestion }: { job: DispatchJob; s
       <button type="submit" className="admin-btn">
         Save
       </button>
+      {canOverride ? (
+        // Only when the window is full: the stop is booked over capacity, with the reason on record.
+        <details className="sm:col-span-4">
+          <summary className="cursor-pointer t-caption font-semibold text-secondary hover:text-navy">Window full? Book over capacity</summary>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            <select name="override" defaultValue="" className="admin-input" aria-label="Reason for booking over capacity">
+              <option value="">No, keep within capacity</option>
+              {OVERRIDE_REASONS.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+              <option value="other">Other reason…</option>
+            </select>
+            <input name="overrideOther" maxLength={200} placeholder="Other reason" className="admin-input" aria-label="Other reason" />
+          </div>
+        </details>
+      ) : null}
     </form>
   );
 }
@@ -179,7 +199,7 @@ function ReadyWhatsApp({ job }: { job: DispatchJob }) {
 /** "Gold · 9 orders" (tier while loyalty is on) or "9 orders": who is a regular, at a glance. */
 type Regular = { label: string; tone: "blue" | "neutral" };
 
-function JobCard({ job, staff, today, keep, trip, order, regular, flagged }: { job: DispatchJob; staff: StaffMember[]; today: string; keep: string; trip?: boolean; order?: LinkedOrder | null; regular?: Regular; flagged?: boolean }) {
+function JobCard({ job, staff, today, keep, trip, order, regular, canOverride = false, flagged }: { job: DispatchJob; staff: StaffMember[]; today: string; keep: string; trip?: boolean; order?: LinkedOrder | null; regular?: Regular; canOverride?: boolean; flagged?: boolean }) {
   const suggestion = suggestedSlot(job.requested, job.created_at, today);
   const stage = STAGE[job.stage];
   return (
@@ -251,7 +271,7 @@ function JobCard({ job, staff, today, keep, trip, order, regular, flagged }: { j
           {job.kind === "delivery" && job.order_number && isOpen(job) ? <ReadyWhatsApp job={job} /> : null}
           {isOpen(job) ? (
             <>
-              <PlanForm job={job} staff={staff} today={today} keep={keep} suggestion={suggestion} />
+              <PlanForm job={job} staff={staff} today={today} keep={keep} suggestion={suggestion} canOverride={canOverride} />
               <div className="flex flex-wrap items-start gap-2">
                 <CloseForms job={job} keep={keep} />
                 {job.trip_key ? (
@@ -339,7 +359,8 @@ function OverlapCard({ o, keep, board }: { o: Overlap; keep: string; board: JobK
 }
 
 export default async function DispatchPage({ searchParams }: { searchParams: SearchParams }) {
-  await requireSection("dispatch");
+  const admin = await requireSection("dispatch");
+  const canOverride = canEditCapacity(admin.role);
   const params = await searchParams;
   const board: JobKind = one(params.board) === "delivery" ? "delivery" : "pickup";
   const today = dhakaToday();
@@ -447,7 +468,7 @@ export default async function DispatchPage({ searchParams }: { searchParams: Sea
                 const list = (
                   <ul className="mt-2 space-y-2">
                     {g.list.map((j) => (
-                      <JobCard key={j.id} job={j} staff={staff} today={today} keep={keep} order={orderOf(j)} regular={regularFor(j)} flagged={flaggedFor(j)} />
+                      <JobCard canOverride={canOverride} key={j.id} job={j} staff={staff} today={today} keep={keep} order={orderOf(j)} regular={regularFor(j)} flagged={flaggedFor(j)} />
                     ))}
                   </ul>
                 );
@@ -474,7 +495,7 @@ export default async function DispatchPage({ searchParams }: { searchParams: Sea
           ) : waiting.length ? (
             <ul className="mt-3 space-y-2">
               {waiting.map((j) => (
-                <JobCard key={j.id} job={j} staff={staff} today={today} keep={keep} regular={regularFor(j)} flagged={flaggedFor(j)} />
+                <JobCard canOverride={canOverride} key={j.id} job={j} staff={staff} today={today} keep={keep} regular={regularFor(j)} flagged={flaggedFor(j)} />
               ))}
             </ul>
           ) : (
@@ -524,7 +545,7 @@ export default async function DispatchPage({ searchParams }: { searchParams: Sea
                           </div>
                           <ul className="mt-2 space-y-2">
                             {p.jobs.map((j) => (
-                              <JobCard key={j.id} job={j} staff={staff} today={today} keep={keep} trip={Boolean(j.trip_key)} order={orderOf(j)} regular={regularFor(j)} flagged={flaggedFor(j)} />
+                              <JobCard canOverride={canOverride} key={j.id} job={j} staff={staff} today={today} keep={keep} trip={Boolean(j.trip_key)} order={orderOf(j)} regular={regularFor(j)} flagged={flaggedFor(j)} />
                             ))}
                           </ul>
                         </div>
@@ -544,7 +565,7 @@ export default async function DispatchPage({ searchParams }: { searchParams: Sea
           <summary className="cursor-pointer list-none px-5 py-4 font-semibold text-navy">Finished in the last 3 days ({closed.length})</summary>
           <ul className="space-y-2 border-t border-line p-4">
             {closed.map((j) => (
-              <JobCard key={j.id} job={j} staff={staff} today={today} keep={keep} order={orderOf(j)} regular={regularFor(j)} flagged={flaggedFor(j)} />
+              <JobCard canOverride={canOverride} key={j.id} job={j} staff={staff} today={today} keep={keep} order={orderOf(j)} regular={regularFor(j)} flagged={flaggedFor(j)} />
             ))}
           </ul>
         </details>

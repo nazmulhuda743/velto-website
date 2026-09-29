@@ -25,6 +25,9 @@ const MESSAGES: Record<string, string> = {
   order: "There is no order with that number in Velto Ops yet. Check the number, or link it later.",
   order_format: "Order numbers look like VEL-01952.",
   note: "Write a note first.",
+  slot_full: "That time is full for this area (Capacity). Agree another time with the customer, or ask an Owner or Manager to book it over capacity on Pickup & delivery.",
+  slot_closed: "That time is blocked or closed for this area (Capacity). Agree another time with the customer.",
+  slot_past: "That time has already passed. Agree a later one.",
   unavailable: "Velto Ops couldn't be reached. Nothing was changed; try again.",
 };
 

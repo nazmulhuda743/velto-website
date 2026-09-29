@@ -5,6 +5,7 @@ import { cleanBookingItems } from "@/lib/booking-items";
 import { couponNote, usableCoupon } from "@/lib/customer/goal";
 import { getCustomerSession, getGoal } from "@/lib/customer/portal";
 import { getSiteContent } from "@/lib/site-content";
+import { getCapacityConfig, zoneForArea } from "@/lib/capacity";
 import {
   IntegrationError,
   integrationLogContext,
@@ -75,6 +76,14 @@ export async function POST(request: NextRequest) {
   const gateway = getOpsGateway();
   if (!gateway) return fail("booking_unavailable", requestId, true, 501);
 
+  // Capacity on: a pickup in a zoned sector must book a window (a stale page can't skip it).
+  // Off: any window sent is only a preference, and Velto confirms by phone as before.
+  const capacity = await getCapacityConfig();
+  if (!capacity.enabled) delete parsed.value.slot;
+  else if (!parsed.value.slot && (await zoneForArea(parsed.value.area))) {
+    return fail("invalid_request", requestId, false, 400, [{ field: "slot", code: "required" }]);
+  }
+
   try {
     const result = await gateway.createBooking(parsed.value, context.value);
     // Tell the managers now, after the response is sent (best effort).
@@ -90,7 +99,7 @@ export async function POST(request: NextRequest) {
       after(() => logServerEvent("booking_error", "/api/bookings", safe.error.code));
     }
     const status =
-      error instanceof IntegrationError && error.code === "duplicate_submission"
+      error instanceof IntegrationError && (error.code === "duplicate_submission" || error.code === "slot_unavailable")
         ? 409
         : error instanceof IntegrationError && error.code === "request_timeout"
           ? 504
