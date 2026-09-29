@@ -76,7 +76,7 @@ export function WelcomeBack({
               autoComplete="name"
               maxLength={120}
               aria-invalid={state.status === "mismatch" ? true : undefined}
-              className="mt-2 block h-12 w-full rounded-md border border-line-strong bg-white px-4 text-base text-navy focus:border-action focus:outline-none focus:ring-2 focus:ring-action/30"
+              className="mt-2 block h-12 w-full rounded-md border border-line-strong bg-white px-4 text-base text-navy focus:border-action focus:ring-2 focus:ring-action/30"
             />
           </label>
         ) : null}
