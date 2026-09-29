@@ -35,9 +35,13 @@ export function createSupabaseOpsGateway(config: SupabaseOpsConfig): VeltoOpsGat
   ) {
     const unavailable = kind === "booking" ? "booking_unavailable" : "quote_unavailable";
 
+    // A booked window goes through website_book_pickup: the window is reserved and the task
+    // created in one transaction, or neither happens.
+    const { slot, ...fields } = payload as BookingSubmission & { slot?: { date: string; window: string } };
+    const booked = kind === "booking" && slot;
     let response: Response;
     try {
-      response = await request(new URL("/rest/v1/rpc/website_create_request", origin), {
+      response = await request(new URL(booked ? "/rest/v1/rpc/website_book_pickup" : "/rest/v1/rpc/website_create_request", origin), {
         method: "POST",
         headers: {
           apikey: config.secretKey,
@@ -45,11 +49,11 @@ export function createSupabaseOpsGateway(config: SupabaseOpsConfig): VeltoOpsGat
           "Content-Type": "application/json",
           Accept: "application/json",
         },
-        body: JSON.stringify({
-          p_kind: kind,
-          p_dedupe_key: context.idempotencyKey,
-          p_payload: payload,
-        }),
+        body: JSON.stringify(
+          booked
+            ? { p_dedupe_key: context.idempotencyKey, p_payload: fields, p_slot: { date: slot.date, window: slot.window, source: "website" } }
+            : { p_kind: kind, p_dedupe_key: context.idempotencyKey, p_payload: fields },
+        ),
         cache: "no-store",
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       });
@@ -80,6 +84,9 @@ export function createSupabaseOpsGateway(config: SupabaseOpsConfig): VeltoOpsGat
     }
     if (data.error === "invalid") {
       throw new IntegrationError("invalid_request", false, "Ops rejected the request");
+    }
+    if (typeof data.error === "string" && (data.error.startsWith("slot_") || data.error === "no_zone")) {
+      throw new IntegrationError("slot_unavailable", false, `Ops refused the window: ${data.error}`);
     }
     if (data.error === "rate_limited") {
       throw new IntegrationError("duplicate_submission", false, "Ops rate limited the phone number");

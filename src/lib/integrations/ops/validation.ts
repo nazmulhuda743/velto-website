@@ -124,6 +124,16 @@ function readServices(value: unknown): GarmentService[] | null {
   return [...new Set(value)];
 }
 
+/** A booked pickup window: { date: YYYY-MM-DD, window: morning|afternoon|evening|night }. */
+function readSlot(value: unknown): { date: string; window: string } | null | undefined {
+  if (value === undefined || value === null) return undefined;
+  const v = record(value);
+  if (!v) return null;
+  const date = typeof v.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v.date) ? v.date : null;
+  const window = typeof v.window === "string" && ["morning", "afternoon", "evening", "night"].includes(v.window) ? v.window : null;
+  return date && window ? { date, window } : null;
+}
+
 export function validateBookingSubmission(
   value: unknown,
   /** Server-computed website estimate (from the Ops price list), added to the notes when it fits. */
@@ -151,6 +161,7 @@ export function validateBookingSubmission(
   const services = readServices(input.services);
   const backBy = readBackBy(input.deliveryBy, options.now);
   const photoIds = readPhotoIds(input.photos);
+  const slot = readSlot(input.slot);
   const extras = {
     services: !items?.length && services && services.length > 1 ? services : undefined,
     backBy: backBy ?? undefined,
@@ -169,6 +180,7 @@ export function validateBookingSubmission(
   if (!services) issues.push({ field: "services", code: "invalid" });
   if (backBy === null) issues.push({ field: "deliveryBy", code: "invalid" });
   if (photoIds === null) issues.push({ field: "photos", code: "invalid" });
+  if (slot === null) issues.push({ field: "slot", code: "invalid" });
   if (!items) issues.push({ field: "items", code: "invalid" });
   else if (notes && notes.length > MAX_BOOKING_NOTES) issues.push({ field: "notes", code: "too_long" });
   if (issues.length || !name || !phone || !area || !address || !preferredPickup) return { ok: false, issues };
@@ -184,6 +196,7 @@ export function validateBookingSubmission(
       ...(service ? { service } : {}),
       ...(notes ? { notes } : {}),
       attribution: attribution(input.attribution),
+      ...(slot ? { slot } : {}),
     },
   };
 }

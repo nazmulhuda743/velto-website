@@ -1,30 +1,14 @@
 /**
- * Pickup day and part of the day, shared by the booking form and one-tap repeat so Velto Ops
- * always receives the same wording ("Tomorrow Fri 25 Sep, Afternoon"). Runtime-neutral.
+ * Pickup day and window as Velto Ops reads them, shared by one-tap repeat with the booking form's
+ * wording ("Tomorrow Wed 30 Sep, Afternoon 12–4 PM (window booked)"). Runtime-neutral.
  */
+import { windowHours, type WindowId } from "./capacity-logic";
 import { fill, type Locale } from "./i18n/config";
 
-/**
- * Preferred part of the day. No clock times: the Velto team calls to confirm the exact time.
- * `en` is what Velto Ops receives; the customer sees their language. `end` (Dhaka hour) only
- * rules out a part of today that has already passed.
- */
-export const SLOTS = [
-  { id: "morning", en: "Morning", end: 12 },
-  { id: "afternoon", en: "Afternoon", end: 17 },
-  { id: "evening", en: "Evening", end: 21 },
-] as const;
+/** Today in Dhaka (YYYY-MM-DD): pickup days are Dhaka days. */
+export const dhakaToday = (now = new Date()) => new Date(now.getTime() + 6 * 3_600_000).toISOString().slice(0, 10);
 
-export type SlotId = (typeof SLOTS)[number]["id"];
-
-/** A part of the day can still be chosen for today until an hour before it ends (Dhaka time). */
-export const slotOpenToday = (end: number, now = new Date()) => (now.getUTCHours() + 6) % 24 < end - 1;
-
-export const isoDate = (offsetDays = 0, from?: string) => {
-  const d = from ? new Date(`${from}T00:00:00`) : new Date();
-  d.setDate(d.getDate() + offsetDays);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
+export const addDays = (iso: string, n: number) => new Date(Date.parse(`${iso}T00:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
 
 /** Words for dates: English for Ops, or the page language for the customer. */
 export type DateWords = {
@@ -46,15 +30,20 @@ export const OPS_WORDS: DateWords = {
   locale: "en",
 };
 
+/** "Wed 30 Sep" for a YYYY-MM-DD, whatever the device's time zone. */
 export const niceDate = (iso: string, w: DateWords) => {
-  const d = new Date(`${iso}T00:00:00`);
-  return fill(w.dayMonth, { weekday: w.weekdays[d.getDay()], day: d.getDate(), month: w.months[d.getMonth()] }, w.locale);
+  const d = new Date(`${iso}T00:00:00Z`);
+  return fill(w.dayMonth, { weekday: w.weekdays[d.getUTCDay()], day: d.getUTCDate(), month: w.months[d.getUTCMonth()] }, w.locale);
 };
 
-/** "Tomorrow Fri 25 Sep, Afternoon" (Ops) or the same in the page language with `slotLabel`. */
-export function pickupWhen(iso: string, slot: string, w: DateWords = OPS_WORDS, slotLabel?: string) {
-  const prefix = iso === isoDate(0) ? w.today : iso === isoDate(1) ? w.tomorrow : "";
-  const day = iso ? `${prefix} ${niceDate(iso, w)}`.trim() : "";
-  const part = slotLabel ?? SLOTS.find((x) => x.id === slot)?.en;
-  return [day, part].filter(Boolean).join(", ");
+/** "Today" / "Tomorrow" / "Thu 1 Oct" in the given words. */
+export const dayLabel = (iso: string, w: DateWords, today = dhakaToday()) =>
+  iso === today ? w.today : iso === addDays(today, 1) ? w.tomorrow : niceDate(iso, w);
+
+const OPS_WINDOWS: Record<WindowId, string> = { morning: "Morning", afternoon: "Afternoon", evening: "Evening", night: "Night" };
+
+/** The Ops preferredPickup string, exactly as the booking form writes it. */
+export function opsPickupWhen(date: string, w: { id: WindowId; starts: string; ends: string }, booked: boolean, today = dhakaToday()) {
+  const prefix = date === today ? OPS_WORDS.today : date === addDays(today, 1) ? OPS_WORDS.tomorrow : "";
+  return `${`${prefix} ${niceDate(date, OPS_WORDS)}`.trim()}, ${OPS_WINDOWS[w.id]} ${windowHours(w.starts, w.ends)}${booked ? " (window booked)" : ""}`;
 }

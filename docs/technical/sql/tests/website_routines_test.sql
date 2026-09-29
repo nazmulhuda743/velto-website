@@ -76,7 +76,7 @@ begin
   sub := (j->>'subscriptionId')::uuid;
   select * into s from public.weekly_subscriptions where id = sub;
   assert s.status = 'active' and s.days = array[v_dow] and s.customer_id = cust and s.phone = phone and s.address = 'House 9, Road 4'
-     and s.sector = 'Uttara Sector 7' and s.outlet_code = 'S11' and s.time_window = 'Afternoon (12–5 PM)' and s.service_category = 'Ironing'
+     and s.sector = 'Uttara Sector 7' and s.outlet_code = 'S11' and s.time_window = 'Afternoon (12–4 PM)' and s.service_category = 'Ironing'
      and s.price_per_run = 150 and s.created_by_name = 'QA Manager', 'Ops subscription written: ' || row_to_json(s)::text;
   j := public.website_routine_activate(rid, 150, 'QA');
   assert j->>'error' = 'closed', 'activating twice refused';
@@ -110,7 +110,7 @@ begin
   j := public.website_routine_activate(rid, null, 'QA');
   execute 'reset role';
   select * into s from public.weekly_subscriptions where id = sub;
-  assert s.days = array[(v_dow + 1) % 7] and s.time_window = 'Morning (until 12 PM)' and s.price_per_run = 150, 'change applied, price kept';
+  assert s.days = array[(v_dow + 1) % 7] and s.time_window = 'Morning (9 AM–12 PM)' and s.price_per_run = 150, 'change applied, price kept';
   assert (select count(*) from public.weekly_subscriptions where customer_id = cust) = 1, 'still one Ops subscription';
   perform public.create_weekly_pickup_tasks();
   assert exists (select 1 from public.tasks where dedupe_key = 'wk:' || sub::text || ':' || (v_today + 1)::text || ':followup'), 'Ops made the day-before confirm call';

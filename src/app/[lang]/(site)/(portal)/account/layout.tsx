@@ -12,7 +12,10 @@ import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { WhatsAppButton } from "@/components/ui/Button";
 import { WHATSAPP_URL } from "@/content/site";
 import { signOutAction } from "@/lib/customer/actions";
-import { requireCustomer } from "@/lib/customer/portal";
+import { getMatchPreview, requireCustomer } from "@/lib/customer/portal";
+import { WelcomeBack } from "@/components/account/WelcomeBack";
+import { formText } from "@/content/i18n/forms";
+import { fill, localDigits, type Locale } from "@/lib/i18n/config";
 import { getSiteContent } from "@/lib/site-content";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -71,10 +74,19 @@ function Frame({ children, nav = true, rewards = false, t }: { children: React.R
   );
 }
 
+/** "2026-09" → "September 2026" / "সেপ্টেম্বর ২০২৬". */
+function monthLabel(ym: string, locale: Locale) {
+  const [y, m] = ym.split("-").map(Number);
+  if (!y || !m) return ym;
+  if (locale === "en") return new Date(Date.UTC(y, m - 1, 15)).toLocaleDateString("en-GB", { month: "long", year: "numeric", timeZone: "UTC" });
+  return `${formText(locale).common.months[m - 1]} ${localDigits(y, locale)}`;
+}
+
 /** Every /account page: a verified customer session, decided on the server. */
 export default async function AccountLayout({ children }: { children: React.ReactNode }) {
   const session = await requireCustomer("/account");
-  const a = accountText(await getLocale());
+  const locale = await getLocale();
+  const a = accountText(locale);
   const t = a.layout;
 
   if (session.kind === "disabled") redirect(await loginRedirectPath());
@@ -101,6 +113,34 @@ export default async function AccountLayout({ children }: { children: React.Reac
     );
   }
   if (session.kind !== "customer") redirect(await loginRedirectPath("/account"));
+
+  // A proven number with Velto history that this login hasn't decided on yet: "Welcome back"
+  // before anything else. Linked accounts never see it again.
+  const undecided = session.account.state === "incomplete" || session.account.link.status !== "linked";
+  const match = undecided ? await getMatchPreview() : null;
+  if (match && (match.state === "recent" || match.state === "stepup")) {
+    const w = a.welcomeBack;
+    const facts =
+      match.state === "recent"
+        ? [
+            match.orders === 1 ? w.ordersOne : fill(w.orders, { n: match.orders }, locale),
+            ...(match.lastOrder ? [fill(w.lastOrder, { month: monthLabel(match.lastOrder, locale) }, locale)] : []),
+          ]
+        : [];
+    return (
+      <Frame nav={false} t={t}>
+        <WelcomeBack
+          kind={match.state}
+          t={w}
+          title={match.state === "stepup" ? w.stepupTitle : match.firstName ? fill(w.title, { name: match.firstName }, locale) : w.titleNoName}
+          facts={facts}
+          showTerms={!match.hasProfile}
+          digits={Array.from({ length: 10 }, (_, i) => localDigits(i, locale))}
+        />
+      </Frame>
+    );
+  }
+
   if (session.account.state === "incomplete") {
     // Google sign-ups arrive with their name in the auth metadata; use it as the starting value.
     const meta = session.user.user_metadata ?? {};
@@ -109,6 +149,13 @@ export default async function AccountLayout({ children }: { children: React.Reac
       <Frame nav={false} t={t}>
         <h1 className="t-h2 text-navy">{t.finishTitle}</h1>
         <p className="mt-3 text-body">{t.finishBody}</p>
+        {match?.state === "assisted" ? (
+          <div className="mt-5">
+            <Alert tone="info" title={a.welcomeBack.assistedTitle}>
+              {a.welcomeBack.assistedBody}
+            </Alert>
+          </div>
+        ) : null}
         <div className="mt-6 rounded-lg border border-line bg-white p-5 md:p-7">
           <ProfileForm
             t={a.forms}

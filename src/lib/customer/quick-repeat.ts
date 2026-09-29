@@ -4,7 +4,7 @@ import type { BookingFormData } from "@/components/forms/submit";
 import { formText } from "@/content/i18n/forms";
 import { repeatItemsFor } from "../booking-repeat";
 import { format, type Locale } from "../i18n/config";
-import type { DateWords, SlotId } from "../pickup-when";
+import type { DateWords } from "../pickup-when";
 import { careNote, joinNotes } from "./extras";
 import { getPreferences, type PortalAccount } from "./portal";
 import { areaLabel } from "./validation";
@@ -14,9 +14,12 @@ type Ready = Extract<PortalAccount, { state: "ready" }>;
 export type QuickRepeatProps = {
   orderNumber: string;
   lines: string[];
-  data: Omit<BookingFormData, "preferredPickup">;
+  data: Omit<BookingFormData, "preferredPickup" | "slot">;
+  /** Uttara sector 1–18, for live pickup capacity; null outside Uttara. */
+  sector: number | null;
+  slotTaken: string;
   words: DateWords;
-  slotLabels: Record<SlotId, string>;
+  slotLabels: Record<string, string>;
 };
 
 /**
@@ -47,6 +50,8 @@ export async function quickRepeatFor(account: Ready, orderNumber: string, repeat
           : {}),
       notes: joinNotes(format(ops.repeatNote, { n: orderNumber }), careNote(prefs.care, ops.care)) || undefined,
     },
+    sector: /^([1-9]|1[0-8])$/.test(account.area ?? "") ? Number(account.area) : null,
+    slotTaken: f.booking.slotTaken,
     words: {
       today: f.booking.today,
       tomorrow: f.booking.tomorrow,
@@ -55,6 +60,6 @@ export async function quickRepeatFor(account: Ready, orderNumber: string, repeat
       dayMonth: f.common.dayMonth,
       locale,
     },
-    slotLabels: f.booking.slots as Record<SlotId, string>,
+    slotLabels: f.booking.slots,
   };
 }

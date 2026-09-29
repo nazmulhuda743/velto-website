@@ -262,7 +262,7 @@ begin
   if r.id is null then return jsonb_build_object('ok', false, 'error', 'not_found'); end if;
   if r.status <> 'requested' then return jsonb_build_object('ok', false, 'error', 'closed'); end if;
 
-  v_window := case r.time_window when 'morning' then 'Morning (until 12 PM)' when 'afternoon' then 'Afternoon (12–5 PM)' else 'Evening (5–9 PM)' end;
+  v_window := case r.time_window when 'morning' then 'Morning (9 AM–12 PM)' when 'afternoon' then 'Afternoon (12–4 PM)' else 'Evening (4–8 PM)' end;
   v_category := case r.service when 'dry-cleaning' then 'Dry Cleaning' when 'wash-and-iron' then 'Wash + Iron' when 'ironing' then 'Ironing' end;
   v_sector := case when r.area = 'outside' then 'Outside Uttara' else 'Uttara Sector ' || r.area end;
 

@@ -224,6 +224,9 @@ as $$
   where u.id = p_uid and u.phone_confirmed_at is not null and coalesce(u.phone, '') <> ''
 $$;
 
+-- SUPERSEDED by website_identity_claim.sql (welcome back: preview → explicit claim/reject), which
+-- turns portal_auto_link into a no-op and makes portal_link_verified_phone record the proven
+-- phone instead of linking. If this file is ever re-run, re-run website_identity_claim.sql after it.
 -- Link order history automatically when the account's phone was proven by SMS code and
 -- exactly one Velto customer has that phone. Proving the phone is proof enough, so another
 -- login of the same person may already be linked to that customer. Anything ambiguous stays
@@ -258,6 +261,7 @@ begin
 end;
 $$;
 
+-- SUPERSEDED by website_identity_claim.sql (see above).
 -- Website server only (service role): an email or Google account proved its phone with an SMS
 -- code sent by the website (lib/customer/sms-link.ts). Links the history when exactly one
 -- Velto customer has that phone; several matches go to staff as a pending request.

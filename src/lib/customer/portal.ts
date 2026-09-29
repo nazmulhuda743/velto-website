@@ -124,7 +124,7 @@ export const getLoyaltyCounts = cache(async (months: number): Promise<{ recent: 
   return d.linked ? { recent: Number(d.recent) || 0, total: Number(d.total) || 0 } : null;
 });
 
-export type DispatchPlan = { kind: "pickup" | "delivery"; orderNumber: string | null; slotDate: string; slot: "morning" | "afternoon" | "evening"; assigneeName: string | null };
+export type DispatchPlan = { kind: "pickup" | "delivery"; orderNumber: string | null; slotDate: string; slot: "morning" | "afternoon" | "evening" | "night"; assigneeName: string | null };
 
 /** Planned pickups and deliveries from the dispatch board (day + window + person); [] when none or unavailable. */
 export const getDispatchPlans = cache(async (): Promise<DispatchPlan[]> => {
@@ -139,7 +139,7 @@ export const getDispatchPlans = cache(async (): Promise<DispatchPlan[]> => {
   return data.filter(
     (p): p is DispatchPlan =>
       !!p && typeof p === "object" && ((p as DispatchPlan).kind === "pickup" || (p as DispatchPlan).kind === "delivery") &&
-      /^\d{4}-\d{2}-\d{2}$/.test(String((p as DispatchPlan).slotDate)) && ["morning", "afternoon", "evening"].includes(String((p as DispatchPlan).slot)),
+      /^\d{4}-\d{2}-\d{2}$/.test(String((p as DispatchPlan).slotDate)) && ["morning", "afternoon", "evening", "night"].includes(String((p as DispatchPlan).slot)),
   );
 });
 
@@ -187,4 +187,53 @@ export const getPreferences = cache(async (): Promise<Preferences> => {
     return EMPTY_PREFERENCES;
   }
   return parsePreferences(data);
+});
+
+/* ---------- open website pickups (docs/technical/sql/website_customer_pickups.sql) ---------- */
+
+export type PortalPickup = {
+  id: string;
+  reference: string;
+  createdAt: string;
+  /** The customer's wish as written ("Tomorrow Mon 28 Sep, Afternoon"). */
+  requested: string | null;
+  /** Set once Velto has planned a day and part of the day. */
+  plannedDate: string | null;
+  plannedSlot: "morning" | "afternoon" | "evening" | null;
+  stage: "new" | "confirmed" | "assigned" | "scheduled";
+  cutoffAt: string | null;
+  changeable: boolean;
+  changesLeft: number;
+};
+
+/** Open pickups for the caller's proven phone; null when unavailable (not installed, or an error). */
+export const getPickups = cache(async (): Promise<{ verified: boolean; pickups: PortalPickup[] } | null> => {
+  const supabase = await customerSupabase();
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc("portal_pickups");
+  if (error) {
+    console.error("portal_pickups_failed", error.code);
+    return null;
+  }
+  const d = (data ?? {}) as { verified?: boolean; pickups?: PortalPickup[] };
+  return { verified: Boolean(d.verified), pickups: d.pickups ?? [] };
+});
+
+/* ---------- welcome back: match preview (docs/technical/sql/website_identity_claim.sql) ---------- */
+
+export type MatchPreview =
+  | { state: "linked" | "unverified" | "none" | "rejected" | "assisted"; hasProfile: boolean }
+  | { state: "recent"; hasProfile: boolean; firstName?: string; orders: number; lastOrder: string }
+  | { state: "stepup"; hasProfile: boolean; attemptsLeft: number };
+
+/** What may be said about the Velto record matching the proven phone; null when unavailable. */
+export const getMatchPreview = cache(async (): Promise<MatchPreview | null> => {
+  const supabase = await customerSupabase();
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc("portal_match_preview");
+  if (error) {
+    if (error.code !== "PGRST202") console.error("portal_match_preview_failed", error.code);
+    return null;
+  }
+  return (data ?? null) as MatchPreview | null;
 });

@@ -81,6 +81,16 @@ export async function getLoyaltyDistribution(months: number, mins: number[]): Pr
   }
 }
 
+/** Orders per phone (01XXXXXXXXX), for the dispatch board's tier badge. {} when unavailable. */
+export async function getOrderCounts(phones: string[], months: number): Promise<Record<string, { recent: number; total: number }>> {
+  const unique = [...new Set(phones.filter((p) => /^01\d{9}$/.test(p)))].slice(0, 500);
+  if (!unique.length || isAdminPreview() || !isSupabaseConfigured()) return {};
+  try {
+    return await supabaseRpc<Record<string, { recent: number; total: number }>>("website_customer_order_counts", { p_phones: unique, p_months: months });
+  } catch {
+    return {};
+  }
+}
 /* ---------- monthly goal coupons (docs/technical/sql/website_monthly_goal.sql) ---------- */
 
 export type CouponRow = GoalCoupon & {
@@ -148,4 +158,53 @@ export async function settleGoal(month: string, rungs: GoalRung[], doubleFirst: 
 export async function markCoupon(id: string, status: "used" | "void" | "open", order: string | null, staff: string): Promise<boolean> {
   if (isAdminPreview()) return true;
   return supabaseRpc<boolean>("website_goal_coupon_mark", { p_id: id, p_status: status, p_order: order, p_staff: staff });
+}
+
+/* ---------- possible change of phone owner (docs/technical/sql/website_identity_claim.sql) ---------- */
+
+export type IdentityFlag = {
+  authUserId: string;
+  customerId: string;
+  phone: string;
+  decision: "rejected" | "stepup_failed";
+  attempts: number;
+  createdAt: string;
+  updatedAt: string;
+  reviewedAt: string | null;
+  reviewedBy: string | null;
+  customerName: string | null;
+  lastOrder: string | null;
+  accountName: string | null;
+  accountEmail: string | null;
+};
+
+const previewFlags = (): IdentityFlag[] => [
+  { authUserId: "00000000-0000-4000-8000-000000000001", customerId: "00000000-0000-4000-8000-0000000000a1", phone: "01700000001", decision: "rejected", attempts: 0, createdAt: ago(5), updatedAt: ago(5), reviewedAt: null, reviewedBy: null, customerName: "Preview Old Owner", lastOrder: "2025-12-04", accountName: "Preview New Owner", accountEmail: null },
+  { authUserId: "00000000-0000-4000-8000-000000000002", customerId: "00000000-0000-4000-8000-0000000000a2", phone: "01700000002", decision: "stepup_failed", attempts: 3, createdAt: ago(30), updatedAt: ago(28), reviewedAt: null, reviewedBy: null, customerName: "Preview Customer", lastOrder: "2024-11-20", accountName: null, accountEmail: null },
+];
+
+export async function getIdentityFlags(): Promise<Loaded<IdentityFlag[]>> {
+  if (isAdminPreview()) return { state: "ok", data: previewFlags(), preview: true };
+  if (!isSupabaseConfigured()) return { state: "not_configured" };
+  try {
+    return { state: "ok", data: await supabaseRpc<IdentityFlag[]>("website_identity_flags", { p_limit: 200 }) };
+  } catch (error) {
+    return { state: "error", message: safeMessage(error) };
+  }
+}
+
+export async function reviewIdentityFlag(authUserId: string, customerId: string, staff: string): Promise<boolean> {
+  if (isAdminPreview()) return true;
+  return supabaseRpc<boolean>("website_identity_flag_review", { p_auth_user_id: authUserId, p_customer_id: customerId, p_staff: staff });
+}
+
+/** Phones (01XXXXXXXXX) with an unchecked flag, for the dispatch board. Empty when unavailable. */
+export async function getPhoneFlags(phones: string[]): Promise<Set<string>> {
+  const unique = [...new Set(phones.filter((p) => /^01\d{9}$/.test(p)))].slice(0, 500);
+  if (!unique.length || isAdminPreview() || !isSupabaseConfigured()) return new Set();
+  try {
+    return new Set(await supabaseRpc<string[]>("website_phone_flags", { p_phones: unique }));
+  } catch {
+    return new Set();
+  }
 }

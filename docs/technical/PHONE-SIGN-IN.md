@@ -41,9 +41,9 @@ Supabase's own rate limits also apply (see setup step 4).
 
 A phone proven by SMS code is trusted: `portal_auth_phone()` reads it from `auth.users`
 (`phone_confirmed_at`), which only Supabase Auth can set. The customer can't replace it with a
-typed one (`portal_profile_save`). When exactly one Ops customer has that phone and it isn't
-linked to another account, `portal_auto_link()` links the history immediately
-(`link_method = 'sms_otp'`). Otherwise staff decide in /admin/accounts as before.
+typed one (`portal_profile_save`). Since `website_identity_claim.sql` the history is not linked
+automatically: the customer sees "Welcome back, {first name}" (or a name check for older records)
+and chooses **Continue** or **This isn't me**. See CUSTOMER-PORTAL.md, section 4.
 
 Customers who signed up with email or Google keep the staff callback flow for now.
 

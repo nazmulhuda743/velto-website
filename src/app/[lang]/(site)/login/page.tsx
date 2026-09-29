@@ -6,13 +6,13 @@ import { AccountsUnavailable, SignedInNotice, StaffAccountNotice } from "@/compo
 import { authProviders } from "@/lib/customer/providers";
 import { getCustomerSession } from "@/lib/customer/portal";
 import { signedInAs, safeNextPath } from "@/lib/customer/validation";
-import { alternatesFor } from "@/lib/seo/page-metadata";
+import { alternatesFor, shareCardMetadata } from "@/lib/seo/page-metadata";
 import { accountText } from "@/content/i18n/account";
 import { getLocale } from "@/lib/i18n/server";
 
 export async function generateMetadata(): Promise<Metadata> {
   const title = accountText(await getLocale()).meta.signIn;
-  return { title, robots: { index: false, follow: false }, alternates: await alternatesFor("/login") };
+  return { title, robots: { index: false, follow: false }, alternates: await alternatesFor("/login"), ...(await shareCardMetadata("/login", title)) };
 }
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -44,7 +44,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
     );
   }
   return (
-    <AuthShell mode="signin" next={next} title={t.signInTitle} intro={/^(?:\/bn)?\/book/.test(next) ? t.signInIntroBook : t.signInIntro}>
+    <AuthShell title={t.signInTitle} intro={/^(?:\/bn)?\/book/.test(next) ? t.signInIntroBook : t.signInIntro}>
       <SignInForm
         t={a.forms}
         next={next}

@@ -146,10 +146,33 @@ Constraint: `linked ⇔ customer_id and verified_phone are set`.
 
 **Typing a phone number never unlocks history; proving it by SMS code does.**
 
-- **Signed in with the mobile number:** the phone is already proven; `portal_auto_link` links at once.
-- **Email or Google account:** the account card offers **Show my past orders** → the website
+Proving the phone never links by itself: the customer sees a **welcome back** preview and
+decides (`docs/technical/sql/website_identity_claim.sql`, `src/components/account/WelcomeBack.tsx`).
+
+- **Signed in with the mobile number:** the phone is already proven by the sign-in code.
+- **Google account:** the account card offers **Show my past orders** → the website
   texts a 6-digit code to the account's phone (`src/lib/customer/sms-link.ts`, signed cookie,
-  10-minute expiry, database rate limits) → `portal_link_verified_phone` (service role) links it.
+  10-minute expiry, database rate limits) → `portal_link_verified_phone` (service role) records
+  the proven phone (`proven_phone`).
+- Then `portal_match_preview()` decides what the account layout shows:
+
+| State | Screen |
+| --- | --- |
+| `none` | new-customer onboarding (name → sector → address) |
+| `recent` (one customer, order in the last 12 months, not linked to another login) | "Welcome back, {first name}", order count, last order month → **Continue** restores everything |
+| `stepup` (older than 12 months, no orders, or linked to another login) | nothing shown; the customer types the name they use with Velto. A match restores; 3 misses → `pending` for staff |
+| `assisted` (several customers share the phone, or the name check failed) | no data; onboarding with a "we'll check" note; staff link it in /admin/accounts |
+| `rejected` ("This isn't me") | fresh profile; this login is never offered that history again |
+| `linked` | straight in |
+
+- Before **Continue** nothing is shown beyond the first name, order count and last order month
+  (and nothing at all for `stepup`): no address, sector, amounts or order details.
+- **Continue** on a new account records `terms_version` / `terms_accepted_at` ("Continuing means
+  you agree to the Terms and Privacy Policy", no checkbox). The onboarding form records it the same way.
+- **This isn't me** and failed name checks are stored in `customer_identity_decisions` (no API
+  grants). They show in /admin/accounts under **Possible number changes**, and bookings from that
+  phone carry a **Number may have changed** badge on the dispatch board until staff mark it checked.
+- Ops has no sector for customers, so the step-up check is the name alone (Md/Mohammad/Mst… ignored).
 - Several logins of the same person (email, Google, phone) may be linked to the same Ops
   customer: each proved the phone. `customer_id` is therefore not unique.
 - Several Ops customers with the same phone, or no SMS access: staff decide, as below.
@@ -162,9 +185,9 @@ Constraint: `linked ⇔ customer_id and verified_phone are set`.
    the confirmation box and **Approve**. The database re-checks the phone match. **Reject** and **Unlink** are also available.
 
 **Sign in with a mobile number** (docs/technical/PHONE-SIGN-IN.md) proves the phone with an SMS
-code. When the account's phone was proven that way and exactly one Ops customer has that phone
-`portal_auto_link` links the history at once with
-`link_method = 'sms_otp'`. Anything ambiguous still goes to staff as above.
+code. When the account's phone was proven that way and exactly one Ops customer has that phone,
+the welcome-back preview above is shown; **Continue** links with `link_method = 'sms_otp'`.
+Anything ambiguous still goes to staff as above.
 
 ---
 
@@ -320,7 +343,17 @@ SQL: `docs/technical/sql/website_customer_extras.sql` (idempotent; test: `sql/te
 - **Order ratings** (`components/account/FeedbackForm.tsx`): delivered orders only, one per order, changeable for 14 days (`portal_feedback_save` / `portal_feedback_list`). 4–5 stars: thanks and a link to the outlet's Google profile. 1–3 stars: the database opens a task on the website task board (urgent for 1–2, high for 3, label `feedback`) with the order number, what went wrong and the comment, **never the name or phone** (every dashboard role sees the board). Staff see who on admin → Customer feedback (`website_feedback_list`, Owner/Manager/Support) and mark it handled (`website_feedback_handle`). The account home asks about the latest unrated order delivered in the last 14 days.
 - **Saved preferences** (`components/account/PreferencesForm.tsx`, Profile): shirts on hangers or folded, starch, fragrance, whites/colours separate, a free note, and up to three labelled pickup addresses (`portal_prefs_get` / `portal_prefs_save`; unknown keys are dropped). On /book the care line is added to the request note Ops receives, and saved addresses appear as one-tap chips that fill area and address. Ops is not changed.
 
-## 14. One-tap repeat and routine pickup (phase 4)
+## 14. Change or cancel a website pickup; regulars on the dispatch board
+
+SQL: `docs/technical/sql/website_customer_pickups.sql` (idempotent; test: `sql/tests/website_customer_pickups_test.sql`, staging only, rolls back). Needs `customer_portal.sql` and `website_dispatch.sql`.
+
+- **Who:** only a customer whose phone is proven: order history linked (staff/SMS) or signed in with an SMS code (`portal_verified_phone`). Their open website pickup tasks are those whose `source_ref` is that phone (`portal_pickups`). Email-only accounts that aren't linked see nothing here.
+- **Account home** (`components/account/UpcomingPickups.tsx`): what they asked for or what Velto planned, with **Change time** (a day in the next 14 days and morning/afternoon/evening, at least an hour ahead) and **Cancel pickup** (optional reason).
+- **Rules** (in the database): changes allowed until 3 hours before the end of a slot Velto has planned (09:00 / 14:00 / 18:00 for morning / afternoon / evening), at most 3 changes per pickup; after that the card points to WhatsApp. These are defaults to confirm with the owner.
+- **What staff see:** a change puts the dispatch job back to *New* with the customer's new wish (any planned person/slot is cleared so the team re-plans), adds a line to the Ops task and moves its due time to the new slot; the board shows a *Changed by customer* badge. A cancel goes through `website_dispatch_close`: the job is cancelled and the Ops task is closed as "Cancelled by Customer (website): <reason>".
+- **Regulars:** the dispatch board shows each customer's order count ("9 orders"), and their loyalty tier while loyalty is switched on ("Gold · 9 orders"), from `website_customer_order_counts` (service role).
+
+## 15. One-tap repeat and routine pickup (phase 4)
 
 **One-tap repeat** (`components/account/QuickRepeat.tsx`, `lib/customer/quick-repeat.ts`). With nothing in
 progress, a linked customer with a saved address sees their last order's items, then picks a day

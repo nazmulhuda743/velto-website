@@ -21,7 +21,7 @@ change them. There is no second request-status workflow.
 | `/admin/consent` | Consent decisions and rates, tracking health, signal timestamps, warnings |
 | `/admin/health` | Live checks (Supabase, content store, pricing source, media storage, pricing/booking/quote/tracking APIs, canonical, robots, sitemap, admin auth, GTM, ingestion), recent errors, 404s, content configuration |
 | `/admin/notifications` | Derived notifications with "mark all as read" |
-| `/admin/requests` | Existing screen plus totals, open age, breakdowns and quick filters (New, Today, Bookings, Quotes, Open, Done, Sector 18, Household, Paid Social, Organic, Direct). **Routine pickups**: customer requests for a weekly day (confirm on WhatsApp → Activate into Velto Ops weekly pickups, or Decline with a reason), plus running and paused routines (docs/technical/CUSTOMER-PORTAL.md §14) |
+| `/admin/requests` | Existing screen plus totals, open age, breakdowns and quick filters (New, Today, Bookings, Quotes, Open, Done, Sector 18, Household, Paid Social, Organic, Direct). **Routine pickups**: customer requests for a weekly day (confirm on WhatsApp → Activate into Velto Ops weekly pickups, or Decline with a reason), plus running and paused routines (docs/technical/CUSTOMER-PORTAL.md §15) |
 | `/admin/seo`, `/admin/images`, `/admin/reviews` | Existing screens with issue badges, filters, image source/alt/focus/last-changed/fallback, and review order/outlet/service links/source |
 
 Every route sits in `app/admin/(panel)`, whose layout calls `requireAdmin()`. Admins are re-checked

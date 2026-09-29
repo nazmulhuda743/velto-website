@@ -34,7 +34,7 @@ export type AuthFormState =
   /** An SMS code is on its way to `phone`; `message` reports a problem on this step (e.g. resend refused). */
   | { status: "code-sent"; phone: string; resent?: boolean; sentAt?: number; message?: string; errors?: FieldErrors }
   /** "Show my past orders": the phone is proven; `result` says what was found under it. */
-  | { status: "linked"; result: "linked" | "no_orders" | "pending" };
+  | { status: "linked"; result: "linked" | "no_orders" | "pending" | "match" };
 
 const UNAVAILABLE: AuthFormState = { status: "unavailable" };
 
@@ -314,6 +314,53 @@ export async function savePreferencesAction(_prev: PreferencesState, form: FormD
   return { status: "saved" };
 }
 
+/* ---------- change or cancel a website pickup ---------- */
+
+export type PickupState = { status: "idle" } | { status: "changed" } | { status: "cancelled" } | { status: "error"; message: string };
+
+const UUID = /^[0-9a-f-]{36}$/i;
+const SLOTS = new Set(["morning", "afternoon", "evening"]);
+
+async function pickupError(error: { code?: string; message?: string }, t: Awaited<ReturnType<typeof messages>>["t"]): Promise<PickupState> {
+  if (error.code === "PGRST301" || error.message?.includes("authentication required")) redirect(await loginRedirectPath("/account"));
+  const m = error.message ?? "";
+  if (m.includes("too late")) return { status: "error", message: t.pickupTooLate };
+  if (m.includes("too many changes")) return { status: "error", message: t.pickupTooMany };
+  if (m.includes("slot too soon")) return { status: "error", message: t.pickupTooSoon };
+  if (m.includes("invalid time")) return { status: "error", message: t.pickupInvalid };
+  if (m.includes("not found") || m.includes("closed")) return { status: "error", message: t.pickupGone };
+  console.error("portal_pickup_failed", error.code);
+  return { status: "error", message: t.pickupFailed };
+}
+
+/** New day and part of the day for an open pickup. The database checks it is the caller's. */
+export async function changePickupAction(_prev: PickupState, form: FormData): Promise<PickupState> {
+  const m = await messages();
+  const id = str(form, "id", 40);
+  const date = str(form, "date", 10);
+  const slot = str(form, "slot", 10);
+  if (!UUID.test(id)) return { status: "error", message: m.t.pickupGone };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !SLOTS.has(slot)) return { status: "error", message: m.t.pickupInvalid };
+  const supabase = await customerSupabase();
+  if (!supabase) return m.disabled as PickupState;
+  const { error } = await supabase.rpc("portal_pickup_change", { p_task: id, p_date: date, p_slot: slot });
+  if (error) return pickupError(error, m.t);
+  revalidatePath("/account", "layout");
+  return { status: "changed" };
+}
+
+export async function cancelPickupAction(_prev: PickupState, form: FormData): Promise<PickupState> {
+  const m = await messages();
+  const id = str(form, "id", 40);
+  const reason = str(form, "reason", 200).trim();
+  if (!UUID.test(id)) return { status: "error", message: m.t.pickupGone };
+  const supabase = await customerSupabase();
+  if (!supabase) return m.disabled as PickupState;
+  const { error } = await supabase.rpc("portal_pickup_cancel", { p_task: id, p_reason: reason || null });
+  if (error) return pickupError(error, m.t);
+  revalidatePath("/account", "layout");
+  return { status: "cancelled" };
+}
 /* ---------- Show my past orders: prove the account's phone with an SMS code ---------- */
 
 /**
@@ -380,10 +427,59 @@ export async function confirmLinkCodeAction(_prev: AuthFormState, form: FormData
     if (!r.ok || !r.result) return { status: "error", message: m.t.saveFailed };
     store.delete(LINK_CODE_COOKIE);
     revalidatePath("/account", "layout");
-    return { status: "linked", result: r.result === "linked" ? "linked" : r.result === "pending" ? "pending" : "no_orders" };
+    // "match": the proof is recorded; the account now asks "Welcome back — is this you?".
+    return { status: "linked", result: r.result === "linked" ? "linked" : r.result === "pending" ? "pending" : r.result === "match" ? "match" : "no_orders" };
   } catch (error) {
     console.error("portal_link_verified_phone_failed", error instanceof Error ? error.message : "unknown");
     return { status: "error", message: m.t.saveFailed };
   }
 }
 
+
+/* ---------- welcome back: claim or reject the matching Velto record ---------- */
+
+export type ClaimState =
+  | { status: "idle" }
+  | { status: "error"; message: string }
+  | { status: "mismatch"; attemptsLeft: number }
+  | { status: "assisted" };
+
+/** "Continue to my account": links the history (the database checks everything again). */
+export async function claimMatchAction(_prev: ClaimState, form: FormData): Promise<ClaimState> {
+  const m = await messages();
+  const supabase = await customerSupabase();
+  if (!supabase) return m.disabled as ClaimState;
+  const name = str(form, "name", 120).trim();
+  const { data, error } = await supabase.rpc("portal_claim_match", {
+    p_name: name || null,
+    // Continuing is agreeing (the screen says so); recorded with the version, as at sign-up.
+    p_terms_version: TERMS_VERSION,
+  });
+  if (error) {
+    if (error.code === "PGRST301" || error.message?.includes("authentication required")) redirect(await loginRedirectPath("/account"));
+    console.error("portal_claim_match_failed", error.code);
+    return { status: "error", message: m.t.saveFailed };
+  }
+  const r = (data ?? {}) as { ok?: boolean; state?: string; error?: string; attemptsLeft?: number };
+  if (r.ok) {
+    revalidatePath("/account", "layout");
+    redirect(await localHref("/account?restored=1"));
+  }
+  if (r.state === "assisted") {
+    revalidatePath("/account", "layout");
+    return { status: "assisted" };
+  }
+  if (r.error === "name_required") return { status: "error", message: m.t.claimName };
+  if (r.error === "name_mismatch") return { status: "mismatch", attemptsLeft: r.attemptsLeft ?? 0 };
+  revalidatePath("/account", "layout");
+  return { status: "error", message: m.t.saveFailed };
+}
+
+/** "This isn't me": remembered for good; the account carries on as a new one. */
+export async function rejectMatchAction(): Promise<void> {
+  const supabase = await customerSupabase();
+  if (!supabase) return;
+  const { error } = await supabase.rpc("portal_reject_match");
+  if (error) console.error("portal_reject_match_failed", error.code);
+  revalidatePath("/account", "layout");
+}

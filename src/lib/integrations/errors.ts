@@ -5,6 +5,7 @@ export const SAFE_ERROR_CODES = [
   "quote_unavailable",
   "request_timeout",
   "duplicate_submission",
+  "slot_unavailable",
   "internal_error",
 ] as const;
 
