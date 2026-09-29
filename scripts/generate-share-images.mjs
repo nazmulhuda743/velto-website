@@ -19,6 +19,9 @@ const TRUST = {
   en: ["Pickup across Uttara Sectors 1–18", "Every item tagged and checked", "Free pickup & delivery on ৳499+"],
   bn: ["উত্তরা সেক্টর ১–১৮ জুড়ে পিকআপ", "প্রতিটি আইটেম ট্যাগ ও যাচাই করা হয়", "৳৪৯৯+ অর্ডারে ফ্রি পিকআপ ও ডেলিভারি"],
 };
+// The site's own Google proof (src/content/site.ts GOOGLE_PROOF, Sector 11 profile), same wording.
+const RATING = { en: { score: "5.0", line: "100+ Google reviews" }, bn: { score: "৫.০", line: "১০০+ Google রিভিউ" } };
+const STAR = `<svg width="22" height="22" viewBox="0 0 24 24"><path fill="#F4B400" d="M12 2.8l2.8 6 6.5.7-4.9 4.4 1.4 6.4L12 17l-5.8 3.3 1.4-6.4-4.9-4.4 6.5-.7z"/></svg>`;
 const P = (path, file, pos, en, bn) => ({ path, file, pos, en, bn });
 const PAGES = [
   P("/", "home/hero.webp", "center 28%", ["Uttara, Dhaka", "Laundry and dry cleaning in Uttara, with pickup from your door."], ["উত্তরা, ঢাকা", "উত্তরায় লন্ড্রি ও ড্রাই ক্লিনিং, আপনার দরজা থেকে পিকআপসহ।"]),
@@ -46,7 +49,10 @@ const card = (pg, lang) => {
   return `
 <div id="card" lang="${lang}" style="position:fixed;inset:0 auto auto 0;width:1200px;height:630px;display:flex;background:#002B4E;color:#fff;font-family:var(--font-instrument-sans),var(--font-bengali),sans-serif;z-index:99999;overflow:hidden">
   <div style="width:664px;padding:56px 56px 48px 64px;display:flex;flex-direction:column">
-    <img src="${SITE}/brand/velto-logo-white.png" style="width:188px;height:auto;display:block" alt="">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <img src="${SITE}/brand/velto-logo-white.png" style="width:188px;height:auto;display:block" alt="">
+      <div style="font-size:18px;font-weight:500;color:rgba(255,255,255,.7);letter-spacing:.02em">velto.com.bd</div>
+    </div>
     <div style="margin-top:auto">
       <div style="display:flex;align-items:center;gap:14px;font-size:${lang === "bn" ? 22 : 19}px;font-weight:600;letter-spacing:${lang === "bn" ? 0 : 0.14}em;text-transform:uppercase;color:#00A6E5">
         <span style="width:36px;height:2px;background:#00A6E5;display:block"></span>${esc(eyebrow)}
@@ -60,7 +66,13 @@ const card = (pg, lang) => {
   <div style="position:relative;flex:1;">
     <img src="${SITE}/images/${pg.file}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:${pg.pos}" alt="">
     <div style="position:absolute;left:0;top:0;bottom:0;width:6px;background:#00A6E5"></div>
-    <div style="position:absolute;right:28px;bottom:28px;background:#fff;color:#002B4E;border-radius:999px;padding:10px 20px;font-size:19px;font-weight:600;letter-spacing:.01em">velto.com.bd</div>
+    <div style="position:absolute;left:34px;bottom:30px;background:#fff;color:#002B4E;border-radius:14px;padding:16px 22px 15px;box-shadow:0 10px 30px rgba(0,20,40,.28);display:flex;align-items:center;gap:16px">
+      <div style="font-size:46px;line-height:1;font-weight:600;letter-spacing:-0.02em">${RATING[lang].score}</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;gap:3px">${STAR.repeat(5)}</div>
+        <div style="font-size:${lang === "bn" ? 18 : 17}px;font-weight:600;color:#30373d;white-space:nowrap">${esc(RATING[lang].line)}</div>
+      </div>
+    </div>
   </div>
 </div>`;
 };
