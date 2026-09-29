@@ -319,3 +319,30 @@ SQL: `docs/technical/sql/website_customer_extras.sql` (idempotent; test: `sql/te
 - **Loyalty tiers** (`lib/customer/loyalty.ts`, `components/account/LoyaltyCard.tsx`): `portal_loyalty(p_months)` counts the customer's non-cancelled orders in the window and in total. Tier names, thresholds, benefits and the milestone reward are website settings (`website_content.loyalty`, admin → Loyalty, **Owner-only save**). Off by default. Defaults are the proposal from Velto's data (1–3 / 4–7 / 8–15 / 16+ orders in 12 months) with no benefits and no reward: nothing is promised until the owner writes it. The milestone stamp card shows only when a reward is written. Staff apply benefits in Ops; the website never changes prices.
 - **Order ratings** (`components/account/FeedbackForm.tsx`): delivered orders only, one per order, changeable for 14 days (`portal_feedback_save` / `portal_feedback_list`). 4–5 stars: thanks and a link to the outlet's Google profile. 1–3 stars: the database opens a task on the website task board (urgent for 1–2, high for 3, label `feedback`) with the order number, what went wrong and the comment, **never the name or phone** (every dashboard role sees the board). Staff see who on admin → Customer feedback (`website_feedback_list`, Owner/Manager/Support) and mark it handled (`website_feedback_handle`). The account home asks about the latest unrated order delivered in the last 14 days.
 - **Saved preferences** (`components/account/PreferencesForm.tsx`, Profile): shirts on hangers or folded, starch, fragrance, whites/colours separate, a free note, and up to three labelled pickup addresses (`portal_prefs_get` / `portal_prefs_save`; unknown keys are dropped). On /book the care line is added to the request note Ops receives, and saved addresses appear as one-tap chips that fill area and address. Ops is not changed.
+
+## 14. One-tap repeat and routine pickup (phase 4)
+
+**One-tap repeat** (`components/account/QuickRepeat.tsx`, `lib/customer/quick-repeat.ts`). With nothing in
+progress, a linked customer with a saved address sees their last order's items, then picks a day
+(today while a time is still open, tomorrow, the day after) and a time, and taps **Book pickup**. It posts to
+`/api/bookings` exactly like the booking form: same validation, server-side estimate, Ops task, manager
+alert and idempotency. Ops receives the same English payload as "Book the same again" on `/book` (items,
+"Same as my last order (VEL-…)", saved care). Without a saved address the card keeps the link to the
+prefilled form. The pickup wording is shared with the form through `lib/pickup-when.ts`.
+
+**Routine pickup** (`docs/technical/sql/website_routines.sql`, `components/account/RoutineCard.tsx`).
+The customer asks for "every Saturday, afternoon" (plus an optional usual service and a note) on
+their account. The request shows on **Bookings & quotes → Routine pickups**, and the managers get a phone alert.
+A manager confirms it on WhatsApp (the message is prepared in বাংলা and English), then taps **Activate**. That writes a
+row into Velto Ops' own `weekly_subscriptions` (optional price per run). From then on Ops' daily job
+`create_weekly_pickup_tasks` (pg_cron `velto-weekly-pickup-tasks`, 10:00 Dhaka) makes the day-before
+confirmation call task, the pickup task and the delivery task. The customer sees the next pickup day and can
+**change** the day or time (the routine keeps running until a manager applies the change), **pause** or **resume** it
+(Ops subscription paused or active), or **stop** it (Ops subscription paused and noted, never deleted). A
+declined request shows the manager's reason on the account for 30 days.
+
+That Ops job had never run with data. It inserted into a `tasks.note` column that doesn't exist, and its
+`on conflict (dedupe_key)` didn't match the partial unique index. `ops_weekly_pickup_tasks_fix.sql`
+fixes only those two things (approved by the owner, 2026-09-29).
+Tests: `docs/technical/sql/tests/website_routines_test.sql` (staging, rolled back; includes running Ops' job)
+and `tests/routine.test.cjs`.

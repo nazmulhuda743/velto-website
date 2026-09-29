@@ -25,6 +25,7 @@ import { useLocale } from "@/components/i18n/LocaleProvider";
 import type { FormText } from "@/content/i18n/forms/en";
 import { fill, format, localDigits, type Locale } from "@/lib/i18n/config";
 import { progressToFree, suggestAddOns } from "@/lib/booking-upsell";
+import { isoDate, niceDate, OPS_WORDS, SLOTS, slotOpenToday, type DateWords } from "@/lib/pickup-when";
 import { BookingItems, lineUnit, money, repeatLine, type ItemLine, type PriceItem } from "./BookingItems";
 
 /** One line of an earlier order, as the book page reads it on the server. */
@@ -60,20 +61,6 @@ const OUTSIDE = "outside";
 
 const DAYS = ["today", "tomorrow", "other"] as const;
 type Day = (typeof DAYS)[number];
-
-/**
- * Preferred part of the day. No clock times: the Velto team calls to confirm the exact time.
- * `en` is what Velto Ops receives; the customer sees t.slots[id]. `end` (Dhaka hour) only
- * rules out a part of today that has already passed.
- */
-const SLOTS = [
-  { id: "morning", en: "Morning", end: 12 },
-  { id: "afternoon", en: "Afternoon", end: 17 },
-  { id: "evening", en: "Evening", end: 21 },
-] as const;
-
-/** A part of the day can still be chosen for today until an hour before it ends (Dhaka time). */
-const slotOpenToday = (end: number) => (new Date().getUTCHours() + 6) % 24 < end - 1;
 
 type Photo = { key: string; preview: string; status: "uploading" | "done" | "failed"; id?: string };
 
@@ -113,42 +100,11 @@ const displayPhone = (v: string) => {
   return /^01\d{9}$/.test(n) ? `${n.slice(0, 5)} ${n.slice(5)}` : n;
 };
 
-const isoDate = (offsetDays = 0, from?: string) => {
-  const d = from ? new Date(`${from}T00:00:00`) : new Date();
-  d.setDate(d.getDate() + offsetDays);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
-
 /** The pickup date the customer asked for, if any (ISO). */
 const pickupIso = (s: FormState) => (s.day === "today" ? isoDate(0) : s.day === "tomorrow" ? isoDate(1) : s.day === "other" ? s.date : "");
 
 /** Earliest "back by" date: about 3 days after the preferred pickup (or today). */
 const earliestBackBy = (s: FormState) => isoDate(BACK_BY_DAYS, pickupIso(s) || undefined);
-
-/** Words for dates: English for Ops, or the page language for the customer. */
-type DateWords = {
-  today: string;
-  tomorrow: string;
-  weekdays: readonly string[];
-  months: readonly string[];
-  dayMonth: string;
-  locale: Locale;
-};
-
-/** What Velto Ops receives, whatever the page language. */
-const OPS_WORDS: DateWords = {
-  today: "Today",
-  tomorrow: "Tomorrow",
-  weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-  months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-  dayMonth: "{weekday} {day} {month}",
-  locale: "en",
-};
-
-const niceDate = (iso: string, w: DateWords) => {
-  const d = new Date(`${iso}T00:00:00`);
-  return fill(w.dayMonth, { weekday: w.weekdays[d.getDay()], day: d.getDate(), month: w.months[d.getMonth()] }, w.locale);
-};
 
 /** Ops area label ("Uttara Sector 7"): the value Velto Ops matches on. Never localized. */
 const areaLabel = (sector: string) => (sector === OUTSIDE ? "Outside Uttara Sectors 1–18" : `Uttara Sector ${sector}`);

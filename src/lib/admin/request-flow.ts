@@ -149,6 +149,19 @@ export function confirmMessage(f: { name: string | null; date: string; slot: Slo
   return `${hello(f.name, lang)} আপনার পিকআপ কনফার্ম হয়েছে: ${dayText(f.date, lang)}, ${slotText(f.slot, lang)}।${who} কোনো পরিবর্তন হলে এই মেসেজের উত্তর দিন। ধন্যবাদ!`;
 }
 
+const WEEKDAYS_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const WEEKDAYS_BN = ["রবিবার", "সোমবার", "মঙ্গলবার", "বুধবার", "বৃহস্পতিবার", "শুক্রবার", "শনিবার"];
+
+/** A routine pickup request (website_routines): confirm the weekly day before activating it. */
+export function routineMessage(f: { name: string | null; weekday: number; slot: SlotId }, lang: Lang) {
+  if (lang === "en") {
+    const day = WEEKDAYS_EN[f.weekday];
+    return `${hello(f.name, lang)} You asked for a routine pickup every ${day}, ${slotText(f.slot, lang)}. Shall we start this ${day}? We'll message you the day before each pickup. Just reply here to confirm.`;
+  }
+  const day = WEEKDAYS_BN[f.weekday];
+  return `${hello(f.name, lang)} আপনি প্রতি ${day} ${slotText(f.slot, lang)} নিয়মিত পিকআপ চেয়েছেন। এই ${day} থেকে শুরু করব? প্রতি পিকআপের আগের দিন আমরা মেসেজ করব। কনফার্ম করতে এই মেসেজের উত্তর দিন।`;
+}
+
 /** After collection. */
 export function pickedMessage(f: { name: string | null; orderNumber: string | null }, lang: Lang) {
   if (lang === "en") {
