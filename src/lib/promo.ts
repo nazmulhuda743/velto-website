@@ -19,6 +19,8 @@ export type PromoPopup = {
   /** Changes whenever the campaign content changes, so everyone sees the new campaign once more. */
   version: string;
   image: string;
+  /** poster: shown whole, the whole picture opens the link. photo: fills a side panel, cropped. */
+  imageStyle: "poster" | "photo";
   imageAlt: string;
   imageAltBn: string;
   tag: string;
@@ -29,6 +31,17 @@ export type PromoPopup = {
   bodyBn: string;
   cta: string;
   ctaBn: string;
+  /** The offer in big type at the top, e.g. "10% OFF": the first word is the headline number. */
+  offer: string;
+  offerBn: string;
+  /** Up to three short reasons to act now, separated by "|", shown with ticks. */
+  points: string;
+  pointsBn: string;
+  /** Small print under the button: who qualifies and how the discount is applied. */
+  fine: string;
+  fineBn: string;
+  /** Show the Google rating (from Site settings) as proof under the button. */
+  proof: boolean;
   href: string;
   frequency: PopupFrequency;
   delaySeconds: number;
@@ -42,6 +55,7 @@ export const EMPTY_POPUP: PromoPopup = {
   enabled: false,
   version: "",
   image: "",
+  imageStyle: "poster",
   imageAlt: "",
   imageAltBn: "",
   tag: "",
@@ -52,6 +66,13 @@ export const EMPTY_POPUP: PromoPopup = {
   bodyBn: "",
   cta: "",
   ctaBn: "",
+  offer: "",
+  offerBn: "",
+  points: "",
+  pointsBn: "",
+  fine: "",
+  fineBn: "",
+  proof: false,
   href: "",
   frequency: "day",
   delaySeconds: 3,
@@ -69,7 +90,8 @@ export function parsePopup(v: unknown): PromoPopup {
   return {
     enabled: p.enabled === true,
     version: str(p.version, 20),
-    image: /^https:\/\/[^\s"'<>]+$/.test(str(p.image, 500)) ? str(p.image, 500) : "",
+    image: promoImageOk(str(p.image, 500)) ? str(p.image, 500) : "",
+    imageStyle: p.imageStyle === "photo" ? "photo" : "poster",
     imageAlt: str(p.imageAlt, 300),
     imageAltBn: str(p.imageAltBn, 300),
     tag: str(p.tag, 40),
@@ -80,6 +102,13 @@ export function parsePopup(v: unknown): PromoPopup {
     bodyBn: str(p.bodyBn, 400),
     cta: str(p.cta, 40),
     ctaBn: str(p.ctaBn, 40),
+    offer: str(p.offer, 24),
+    offerBn: str(p.offerBn, 24),
+    points: str(p.points, 240),
+    pointsBn: str(p.pointsBn, 240),
+    fine: str(p.fine, 200),
+    fineBn: str(p.fineBn, 200),
+    proof: p.proof === true,
     href: promoHrefOk(str(p.href, 300)) ? str(p.href, 300) : "",
     frequency: POPUP_FREQUENCIES.includes(p.frequency as PopupFrequency) ? (p.frequency as PopupFrequency) : "day",
     delaySeconds: Number.isInteger(delay) && delay >= 0 && delay <= 60 ? delay : 3,
@@ -88,6 +117,9 @@ export function parsePopup(v: unknown): PromoPopup {
     updatedAt: str(p.updatedAt, 40),
   };
 }
+
+/** An uploaded picture (https) or one of the website's own photos under /images. */
+export const promoImageOk = (src: string) => /^https:\/\/[^\s"'<>]+$/.test(src) || (/^\/images\/[A-Za-z0-9/_.-]+\.(?:jpg|jpeg|png|webp|avif)$/.test(src) && !src.includes(".."));
 
 /** A page on this website ("/signup", "/book?source=x") or a full https:// link. */
 export const promoHrefOk = (href: string) => href === "" || /^\/(?!\/)[^\s"'<>]*$/.test(href) || /^https:\/\/[^\s"'<>]+$/.test(href);
@@ -184,7 +216,47 @@ export function tickerCopies(messages: string[]): number {
 /** A short version string that changes when any visible field changes. */
 export function popupFingerprint(p: PromoPopup): string {
   const parts = [p.image, p.tag, p.tagBn, p.title, p.titleBn, p.body, p.bodyBn, p.cta, p.ctaBn, p.href];
+  // Newer fields join only when set, so campaigns saved before they existed keep their version.
+  for (const extra of [p.offer, p.offerBn, p.points, p.pointsBn, p.fine, p.fineBn]) if (extra) parts.push(extra);
+  if (p.imageStyle === "photo") parts.push("photo");
   let hash = 5381;
   for (const ch of parts.join("\u0001")) hash = ((hash << 5) + hash + ch.charCodeAt(0)) >>> 0;
   return hash.toString(36);
 }
+
+/** "10% OFF" → { big: "10%", small: "OFF" }: the first word is set large, the rest beside it. */
+export function offerParts(offer: string): { big: string; small: string } {
+  const m = offer.trim().match(/^(\S+)\s*(.*)$/);
+  return m ? { big: m[1], small: m[2] } : { big: "", small: "" };
+}
+
+/** The ticked points, at most three. */
+export const popupPoints = (points: string) => barMessages(points).slice(0, 3);
+
+/**
+ * Starting point for the "first website order, 10% off" campaign (Promo & popup → Use the
+ * template). Only facts already published on the site; the discount terms are Velto's own offer.
+ * Loading it never switches the popup on.
+ */
+export const FIRST_ORDER_TEMPLATE = {
+  image: "/images/pages/finished-shirts-rail.webp",
+  imageStyle: "photo" as const,
+  imageAlt: "Freshly finished shirts on wooden hangers at Velto",
+  imageAltBn: "Velto-তে কাঠের হ্যাঙ্গারে সদ্য ফিনিশ করা শার্ট",
+  tag: "Welcome offer",
+  tagBn: "স্বাগত অফার",
+  offer: "10% off your first order",
+  offerBn: "১০% ছাড় প্রথম অর্ডারে",
+  title: "Book it on our website, we do the rest.",
+  titleBn: "ওয়েবসাইটে বুক করুন, বাকিটা আমরা করব।",
+  body: "A pickup takes a few taps. We collect from your door, and your whole first order costs 10% less.",
+  bodyBn: "কয়েক ট্যাপে পিকআপ বুক হয়। আমরা আপনার দরজা থেকে নিয়ে যাই, আর পুরো প্রথম অর্ডারে ১০% কম লাগে।",
+  points: "Free pickup & delivery on ৳499+ | Every item tagged and checked | Pickup across Uttara Sectors 1–18",
+  pointsBn: "৳৪৯৯+ অর্ডারে ফ্রি পিকআপ ও ডেলিভারি | প্রতিটি আইটেম ট্যাগ ও যাচাই করা হয় | উত্তরা সেক্টর ১–১৮ জুড়ে পিকআপ",
+  cta: "Book my pickup · 10% off",
+  ctaBn: "পিকআপ বুক করুন · ১০% ছাড়",
+  fine: "For your first order booked on the website. We apply the 10% when we confirm your order.",
+  fineBn: "ওয়েবসাইটে বুক করা প্রথম অর্ডারে প্রযোজ্য। অর্ডার কনফার্ম করার সময় আমরা ১০% ছাড় যোগ করি।",
+  href: "/book?source=promo_popup",
+  proof: true,
+} satisfies Partial<PromoPopup>;
