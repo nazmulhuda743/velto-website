@@ -133,7 +133,7 @@ export type BookingNoteExtras = {
   backBy?: string;
   /** Links to the customer's photos (opened by staff from the Ops task). */
   photos?: string[];
-  /** The customer's monthly-goal coupon, already worded ("Coupon VG-A1B2C3: ৳200 off (valid to 2026-10-31)"). */
+  /** A monthly-goal coupon ("Coupon VG-A1B2C3: ৳200 off (valid to 2026-10-31)") or the signed-in account offer, already worded. */
   coupon?: string;
 };
 

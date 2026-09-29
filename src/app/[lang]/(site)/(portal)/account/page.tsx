@@ -23,6 +23,7 @@ import { laundryRhythm, repeatHref } from "@/lib/customer/rhythm";
 import { quickRepeatFor } from "@/lib/customer/quick-repeat";
 import { getRoutine } from "@/lib/customer/routine";
 import { formText } from "@/content/i18n/forms";
+import { ACCOUNT_OFFER } from "@/lib/account-offer";
 import { areaLabel, displayBdPhone, greetingName } from "@/lib/customer/validation";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -174,6 +175,14 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
           }
         />
       ) : null}
+
+      {/* 10% on every website booking made signed in (lib/account-offer.ts). */}
+      <section aria-labelledby="offer-title" className="rounded-lg border border-line bg-white p-5 md:p-6" data-account-offer-banner>
+        <h2 id="offer-title" className="font-semibold text-navy">
+          {fill(t.offerTitle, { percent: ACCOUNT_OFFER.percent }, locale)}
+        </h2>
+        <p className="mt-1 t-small text-body">{fill(t.offerBody, { amount: `৳${ACCOUNT_OFFER.minimumTaka}` }, locale)}</p>
+      </section>
 
       {toRate ? (
         <section aria-labelledby="rate-title" className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-line bg-white p-5 md:p-6" data-rate-ask>

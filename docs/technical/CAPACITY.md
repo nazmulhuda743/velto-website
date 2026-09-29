@@ -1,6 +1,6 @@
 # Pickup & delivery capacity (Velto Scheduling Engine, phase 1)
 
-**Status:** BUILT and TESTED on staging (`ekgdefcdqcsqvpbqponv`). Not applied to production.
+**Status:** on staging and production (SQL applied 2026-09-29). Website switch off until the owner turns it on.
 
 One capacity system shared by the website, the Command Center and Velto Ops. The rule:
 **if the website shows a window as available, a place is already held for it.**

@@ -163,6 +163,8 @@ export const accountEn = {
     welcome: "Welcome to your Velto account.",
     ordersFailed: "We couldn't load your orders just now. Please refresh in a moment.",
     bookAnother: "Book another pickup",
+    offerTitle: "{percent}% off when you book from your account",
+    offerBody: "Every website booking of {amount} or more while signed in. Nothing to type: we apply it when we confirm your order.",
     book: "Book a pickup",
     viewAll: "View all orders",
     recent: "Recent orders",
