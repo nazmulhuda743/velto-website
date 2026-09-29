@@ -78,7 +78,11 @@ export function PromoPopup({ popup, labels, logo }: { popup: PopupView; labels: 
   const titleId = useId();
 
   useEffect(() => {
-    if (popupExcluded(pathname)) return;
+    // Arriving on a booking, sign-in or account page (e.g. through the popup's own button) closes it.
+    if (popupExcluded(pathname)) {
+      dialogRef.current?.close();
+      return;
+    }
     const preview = new URLSearchParams(window.location.search).get("promo") === "preview";
     const now = Date.now();
     const inWindow = (popup.startsAt === null || now >= popup.startsAt) && (popup.endsAt === null || now <= popup.endsAt);
@@ -109,17 +113,23 @@ export function PromoPopup({ popup, labels, logo }: { popup: PopupView; labels: 
     dialogRef.current?.close();
   };
 
+  /** The link opens the offer: count the click, then get out of the way (the page may not reload). */
+  const follow = () => {
+    finish("click");
+    dialogRef.current?.close();
+  };
+
   if (!open) return null;
 
   const external = /^https?:\/\//.test(popup.href);
   const linkClass = "block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action focus-visible:ring-offset-2";
   const link = (content: React.ReactNode, className: string, ariaLabel?: string) =>
     external ? (
-      <a href={popup.href} target="_blank" rel="noopener noreferrer" onClick={() => finish("click")} className={className} aria-label={ariaLabel}>
+      <a href={popup.href} target="_blank" rel="noopener noreferrer" onClick={follow} className={className} aria-label={ariaLabel}>
         {content}
       </a>
     ) : (
-      <Link href={popup.href} onClick={() => finish("click")} className={className} aria-label={ariaLabel}>
+      <Link href={popup.href} onClick={follow} className={className} aria-label={ariaLabel}>
         {content}
       </Link>
     );
