@@ -314,6 +314,53 @@ export async function savePreferencesAction(_prev: PreferencesState, form: FormD
   return { status: "saved" };
 }
 
+/* ---------- change or cancel a website pickup ---------- */
+
+export type PickupState = { status: "idle" } | { status: "changed" } | { status: "cancelled" } | { status: "error"; message: string };
+
+const UUID = /^[0-9a-f-]{36}$/i;
+const SLOTS = new Set(["morning", "afternoon", "evening"]);
+
+async function pickupError(error: { code?: string; message?: string }, t: Awaited<ReturnType<typeof messages>>["t"]): Promise<PickupState> {
+  if (error.code === "PGRST301" || error.message?.includes("authentication required")) redirect(await loginRedirectPath("/account"));
+  const m = error.message ?? "";
+  if (m.includes("too late")) return { status: "error", message: t.pickupTooLate };
+  if (m.includes("too many changes")) return { status: "error", message: t.pickupTooMany };
+  if (m.includes("slot too soon")) return { status: "error", message: t.pickupTooSoon };
+  if (m.includes("invalid time")) return { status: "error", message: t.pickupInvalid };
+  if (m.includes("not found") || m.includes("closed")) return { status: "error", message: t.pickupGone };
+  console.error("portal_pickup_failed", error.code);
+  return { status: "error", message: t.pickupFailed };
+}
+
+/** New day and part of the day for an open pickup. The database checks it is the caller's. */
+export async function changePickupAction(_prev: PickupState, form: FormData): Promise<PickupState> {
+  const m = await messages();
+  const id = str(form, "id", 40);
+  const date = str(form, "date", 10);
+  const slot = str(form, "slot", 10);
+  if (!UUID.test(id)) return { status: "error", message: m.t.pickupGone };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !SLOTS.has(slot)) return { status: "error", message: m.t.pickupInvalid };
+  const supabase = await customerSupabase();
+  if (!supabase) return m.disabled as PickupState;
+  const { error } = await supabase.rpc("portal_pickup_change", { p_task: id, p_date: date, p_slot: slot });
+  if (error) return pickupError(error, m.t);
+  revalidatePath("/account", "layout");
+  return { status: "changed" };
+}
+
+export async function cancelPickupAction(_prev: PickupState, form: FormData): Promise<PickupState> {
+  const m = await messages();
+  const id = str(form, "id", 40);
+  const reason = str(form, "reason", 200).trim();
+  if (!UUID.test(id)) return { status: "error", message: m.t.pickupGone };
+  const supabase = await customerSupabase();
+  if (!supabase) return m.disabled as PickupState;
+  const { error } = await supabase.rpc("portal_pickup_cancel", { p_task: id, p_reason: reason || null });
+  if (error) return pickupError(error, m.t);
+  revalidatePath("/account", "layout");
+  return { status: "cancelled" };
+}
 /* ---------- Show my past orders: prove the account's phone with an SMS code ---------- */
 
 /**
