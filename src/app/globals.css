@@ -642,3 +642,95 @@ body:has([data-account-frame]) footer[data-site-footer] {
     mask-image: none;
   }
 }
+
+/*
+ * Booking micro-interactions: feedback on what the customer just did, nothing decorative.
+ * Transform and opacity only (plus colour on the choice cards), 120–420ms, and all of it off
+ * with reduced motion (the tick marks and success mark still show, just without moving).
+ */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes velto-tick-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes velto-pop-in {
+    from {
+      opacity: 0;
+      transform: scale(0.6);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes velto-draw {
+    from {
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+
+  /* Day and pickup-window cards: the chosen state eases in instead of snapping. */
+  [data-day],
+  [data-window] {
+    transition:
+      border-color 160ms ease-out,
+      background-color 160ms ease-out;
+  }
+  [data-window-tick] {
+    animation: velto-pop-in 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  /* A new estimated total rises into place, so the change is noticed. */
+  [data-tick] {
+    animation: velto-tick-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  [data-progress-fill] {
+    transition: transform 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  /* A folded part (items, return date) settles in when opened. */
+  [data-fold-open] {
+    animation: velto-tick-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  /* Book Pickup: a small press, so a tap feels taken. */
+  [data-press] {
+    transition:
+      transform 120ms ease-out,
+      background-color 160ms ease-out;
+  }
+  [data-press]:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  /* Success: the ring and check draw once, then the confirmation rises in. */
+  [data-success-mark] [data-mark-ring],
+  [data-success-mark] [data-mark-check] {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 0;
+  }
+  [data-success-mark] [data-mark-ring] {
+    animation: velto-draw 420ms cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+  [data-success-mark] [data-mark-check] {
+    animation: velto-draw 260ms cubic-bezier(0.4, 0, 0.2, 1) 300ms both;
+  }
+  [data-booking-success] > :not([data-success-mark]) {
+    animation: velto-tick-in 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  [data-booking-success] > :nth-child(3) {
+    animation-delay: 60ms;
+  }
+  [data-booking-success] > :nth-child(n + 4) {
+    animation-delay: 120ms;
+  }
+}
