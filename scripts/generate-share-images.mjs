@@ -81,13 +81,24 @@ const card = (pg, lang) => {
   await ctx.addCookies([{ name: "velto_consent_v1", value: encodeURIComponent(JSON.stringify({ version: 1, analytics: false, marketing: false, timestamp: "2026-09-29T00:00:00.000Z" })), domain: "www.velto.com.bd", path: "/" }]);
   const p = await ctx.newPage();
   for (const lang of ["en", "bn"]) {
-    for (let t = 0; t < 4; t++) { try { await p.goto(SITE + (lang === "bn" ? "/bn/about" : "/about"), { waitUntil: "networkidle", timeout: 45000 }); break; } catch (e) { if (t === 3) throw e; } }
+    // The site's stylesheet must be in place (its font variables), or the cards fall back to a serif.
+    for (let t = 0; ; t++) {
+      try {
+        await p.goto(SITE + (lang === "bn" ? "/bn/about" : "/about"), { waitUntil: "networkidle", timeout: 45000 });
+        const ok = await p.evaluate(() => getComputedStyle(document.body).getPropertyValue("--font-instrument-sans").trim() !== "");
+        if (ok) break;
+      } catch (e) {
+        if (t >= 5) throw e;
+      }
+      if (t >= 5) throw new Error("The site's stylesheet did not load");
+    }
     for (const pg of PAGES) {
       if (ONLY && slug(pg.path) !== ONLY) continue;
       await p.evaluate((html) => { document.getElementById("card")?.remove(); document.body.insertAdjacentHTML("beforeend", html); }, card(pg, lang));
       await p.evaluate(async () => { await document.fonts.ready; await Promise.all([...document.querySelectorAll("#card img")].map((i) => i.complete ? 0 : new Promise((r) => { i.onload = i.onerror = r; }))); });
       const bad = await p.evaluate(() => [...document.querySelectorAll("#card img")].filter((i) => !i.naturalWidth).map((i) => i.src));
-      if (bad.length) console.log("MISSING", bad);
+      const font = await p.evaluate(() => document.fonts.check(`600 40px ${getComputedStyle(document.body).getPropertyValue("--font-instrument-sans").split(",")[0]}`));
+      if (bad.length || !font) throw new Error(`${pg.path} (${lang}): ${bad.length ? `missing ${bad.join(", ")}` : "site font not loaded"}`);
       const name = `${slug(pg.path)}${lang === "bn" ? "-bn" : ""}.jpg`;
       await p.locator("#card").screenshot({ path: `${OUT}/${name}`, type: "jpeg", quality: 86 });
       console.log(name, fs.statSync(`${OUT}/${name}`).size);
