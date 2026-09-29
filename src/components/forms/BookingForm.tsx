@@ -538,7 +538,10 @@ function OrderSummary({
           <div className={`${row} pt-3`}>
             <dt className="font-semibold text-navy">{t.summaryTotal}</dt>
             <dd className="text-[20px] font-semibold tabular-nums text-navy" data-estimate-total>
-              {money(e.totalMinor, locale)}
+              {/* Keyed on the amount: a new total ticks in, so the change is noticed. */}
+              <span key={e.totalMinor} className="inline-block" data-tick>
+                {money(e.totalMinor, locale)}
+              </span>
             </dd>
           </div>
         </dl>
@@ -555,7 +558,11 @@ function OrderSummary({
               aria-valuenow={progressToFree(e.subtotalMinor, FREE_DELIVERY_MIN_MINOR)}
               className="mt-2 h-2 overflow-hidden rounded-full bg-line"
             >
-              <div className="h-full rounded-full bg-action" style={{ width: `${progressToFree(e.subtotalMinor, FREE_DELIVERY_MIN_MINOR)}%` }} />
+              <div
+                className="h-full origin-left rounded-full bg-action"
+                style={{ transform: `scaleX(${progressToFree(e.subtotalMinor, FREE_DELIVERY_MIN_MINOR) / 100})` }}
+                data-progress-fill
+              />
             </div>
             <p className="mt-1 t-caption tabular-nums text-secondary">
               {money(e.subtotalMinor, locale)} / {money(FREE_DELIVERY_MIN_MINOR, locale)}
@@ -736,7 +743,7 @@ function MobileTotalBar({ s, t, locale, chargeMinor, coupon }: { s: FormState; t
       <div className="flex items-center justify-between gap-3">
         <p className="min-w-0 t-small text-body">
           {count === 1 ? t.barItemsOne : fill(t.barItems, { n: count }, locale)}
-          {e.subtotalMinor > 0 ? <span className="ml-2 font-semibold tabular-nums text-navy">{money(e.totalMinor, locale)}</span> : null}
+          {e.subtotalMinor > 0 ? <span key={e.totalMinor} className="ml-2 inline-block font-semibold tabular-nums text-navy" data-tick>{money(e.totalMinor, locale)}</span> : null}
           {e.subtotalMinor > 0 && !e.free ? (
             <span className="block t-caption text-action" data-bar-to-free>
               {fill(t.barToFree, { more: money(FREE_DELIVERY_MIN_MINOR - e.subtotalMinor, locale) }, locale)}
@@ -751,9 +758,19 @@ function MobileTotalBar({ s, t, locale, chargeMinor, coupon }: { s: FormState; t
   );
 }
 
+/** The success tick: a circle and check that draw once (static with reduced motion). */
+function SuccessMark() {
+  return (
+    <svg viewBox="0 0 48 48" width="48" height="48" aria-hidden="true" className="mb-5 text-success" data-success-mark>
+      <circle cx="24" cy="24" r="22" fill="none" stroke="currentColor" strokeWidth="2.5" pathLength={1} data-mark-ring />
+      <path d="M14.5 24.5l6.5 6.5 13-13.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" pathLength={1} data-mark-check />
+    </svg>
+  );
+}
+
 /** A folded part of the form: a quiet button that opens it in place. Open stays open. */
 function Fold({ id, label, open, onOpen, children }: { id: string; label: string; open: boolean; onOpen: () => void; children: ReactNode }) {
-  if (open) return <div id={id}>{children}</div>;
+  if (open) return <div id={id} data-fold-open>{children}</div>;
   return (
     <button
       type="button"
@@ -925,7 +942,8 @@ export function BookingForm({
   useEffect(() => {
     if (status.state === "failed") statusRef.current?.focus();
     if (status.state === "success") {
-      successRef.current?.scrollIntoView({ block: "start" });
+      // Straight to the confirmation (not a smooth scroll from the footer), so its tick is seen.
+      successRef.current?.scrollIntoView({ block: "start", behavior: "instant" });
       successRef.current?.focus({ preventScroll: true });
     }
   }, [status.state]);
@@ -1380,6 +1398,7 @@ export function BookingForm({
               disabled={submitting}
               aria-busy={submitting || undefined}
               className="inline-flex h-[54px] w-full items-center justify-center gap-2.5 whitespace-nowrap rounded-md bg-action px-7 text-base font-semibold text-white hover:bg-action-hover active:bg-action-active disabled:cursor-wait disabled:opacity-85 md:h-12 md:w-auto"
+              data-press
             >
               {submitting ? (
                 <>
@@ -1451,6 +1470,7 @@ function BookingSuccess({
 
   return (
     <div data-booking-success>
+      <SuccessMark />
       <h1 id="page-title" ref={headingRef} tabIndex={-1} className="scroll-mt-32 t-h1 text-navy focus:outline-none">
         {state.pickup?.booked ? t.successTitleBooked : t.successTitle}
       </h1>
