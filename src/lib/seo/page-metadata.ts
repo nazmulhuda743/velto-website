@@ -12,22 +12,6 @@ import { getSiteContent } from "../site-content";
 const DEFAULT_SHARE_IMAGE = { url: "/opengraph-image", width: 1200, height: 630 };
 
 /**
- * Pages with their own share card (public/images/share, made by scripts/generate-share-images.mjs):
- * the page's headline and photo in English and Bangla. Other pages use the brand card.
- */
-const SHARE_CARD_PAGES = new Set([
-  "/", "/services", "/pricing", "/how-it-works", "/regular-laundry", "/locations", "/about",
-  "/locations/sector-11", "/locations/sector-18",
-  ...["dry-cleaning", "wash-and-iron", "ironing", "curtain-cleaning", "carpet-cleaning", "blanket-comforter-cleaning", "express"].map((s) => `/services/${s}`),
-]);
-
-function shareImage(path: string, locale: "en" | "bn") {
-  if (!SHARE_CARD_PAGES.has(path)) return DEFAULT_SHARE_IMAGE;
-  const name = path === "/" ? "home" : path.slice(1).replace(/\//g, "-");
-  return { url: `/images/share/${name}${locale === "bn" ? "-bn" : ""}.jpg`, width: 1200, height: 630 };
-}
-
-/**
  * Page metadata in the page's language. English: registry defaults, overridden by anything
  * saved in the admin dashboard. Bangla: the admin's Bangla title/description, else the Bangla
  * dictionary's (falling back to English), with the admin's share image and noindex choices
@@ -48,7 +32,6 @@ export async function pageMetadata(path: string, options: { noindex?: boolean } 
   const description = (locale === "bn" ? override.descriptionBn : undefined) ?? local?.description ?? override.description ?? route?.description;
   const canonical = banglaIndexable(path) ? localizeHref(path, locale) : path;
   const untranslated = locale === "bn" && !banglaIndexable(path);
-  const card = shareImage(path, locale === "bn" && !untranslated ? "bn" : "en");
   return {
     title,
     description,
@@ -61,13 +44,13 @@ export async function pageMetadata(path: string, options: { noindex?: boolean } 
       locale: dictionary(locale).meta.ogLocale,
       type: "website",
       // Explicit, because a page-level openGraph object replaces the root opengraph-image file.
-      images: override.ogImage ? [{ url: override.ogImage }] : [{ ...card, alt: title ?? dictionary(locale).meta.shareImageAlt }],
+      images: override.ogImage ? [{ url: override.ogImage }] : [{ ...DEFAULT_SHARE_IMAGE, alt: dictionary(locale).meta.shareImageAlt }],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [override.ogImage ?? card.url],
+      images: [override.ogImage ?? DEFAULT_SHARE_IMAGE.url],
     },
     ...(override.noindex || options.noindex || untranslated ? { robots: { index: false, follow: true } } : {}),
   };
