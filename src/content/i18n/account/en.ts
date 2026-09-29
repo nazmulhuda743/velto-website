@@ -165,6 +165,7 @@ export const accountEn = {
     bookAnother: "Book another pickup",
     offerTitle: "{percent}% off when you book from your account",
     offerBody: "Every website booking of {amount} or more while signed in. Nothing to type: we apply it when we confirm your order.",
+    offerCoupon: "You also hold a reward coupon: we apply whichever saves you more, not both.",
     book: "Book a pickup",
     viewAll: "View all orders",
     recent: "Recent orders",

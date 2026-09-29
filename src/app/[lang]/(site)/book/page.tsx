@@ -55,10 +55,12 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
     return loyalty.goal.enabled ? getGoal(loyalty.goal.doubleFirst) : null;
   })() : null;
   const coupon = goal ? usableCoupon(goal.coupons, goal.today) : null;
-  // 10% for any booking made signed in (the goal coupon takes its place); guests are asked to sign in.
-  const accountOffer = coupon ? undefined : account ? ("yours" as const) : ("guest" as const);
-  const signInHref = account ? undefined : await loginRedirectPath("/book");
+  // 10% for any booking made signed in (with a goal coupon, whichever saves more); guests are asked
+  // to sign in. Staff, unfinished profiles and unavailable accounts see neither line.
+  const guest = session.kind === "anonymous";
+  const accountOffer = account ? ("yours" as const) : guest ? ("guest" as const) : undefined;
   const returnTo = `/book${service ? `?service=${encodeURIComponent(service)}` : ""}`;
+  const signInHref = guest ? await loginRedirectPath(returnTo) : undefined;
   const locale = await getLocale();
   const f = formText(locale);
   const t = f.bookPage;

@@ -7,6 +7,8 @@
  * booking notes. Ops stays the source of truth for prices and final counts.
  */
 
+import { withoutOfferClaims } from "./account-offer";
+
 /** Services a single line can ask for (the per-garment and household services). */
 export const ITEM_SERVICES = {
   "dry-cleaning": "Dry Cleaning",
@@ -133,7 +135,7 @@ export type BookingNoteExtras = {
   backBy?: string;
   /** Links to the customer's photos (opened by staff from the Ops task). */
   photos?: string[];
-  /** A monthly-goal coupon ("Coupon VG-A1B2C3: ৳200 off (valid to 2026-10-31)") or the signed-in account offer, already worded. */
+  /** The signed-in account offer, with a monthly-goal coupon when held (lib/account-offer.ts offerNoteFor), already worded. */
   coupon?: string;
 };
 
@@ -154,13 +156,13 @@ export function composeBookingNotes(items: BookingItem[], note?: string, extras:
     // No full stop after a link: it would end up inside the link when the Ops app opens it.
     extras.photos?.length ? `Photos: ${extras.photos.join(" ")}` : "",
   ].filter(Boolean);
-  const text = note?.trim();
+  const text = note ? withoutOfferClaims(note).trim() : undefined;
   if (!parts.length) return text || undefined;
   return [...parts, text ? `Note: ${text}` : ""].filter(Boolean).join(" ");
 }
 
-/** The longest estimate and wanted-back wording the notes need room for. */
-export const NOTE_EXTRAS_RESERVE = 240;
+/** The longest estimate, wanted-back and offer wording (10% or a goal coupon) the notes need room for. */
+export const NOTE_EXTRAS_RESERVE = 400;
 
 /** Room one photo link takes in the notes ("https://www.velto.com.bd/go/photo/<32 hex> "). */
 export const NOTE_PHOTO_RESERVE = 72;

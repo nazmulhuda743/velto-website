@@ -24,6 +24,7 @@ import { quickRepeatFor } from "@/lib/customer/quick-repeat";
 import { getRoutine } from "@/lib/customer/routine";
 import { formText } from "@/content/i18n/forms";
 import { ACCOUNT_OFFER } from "@/lib/account-offer";
+import { usableCoupon } from "@/lib/customer/goal";
 import { areaLabel, displayBdPhone, greetingName } from "@/lib/customer/validation";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -104,6 +105,8 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
   const [orders, counts, feedback, goal, plans] = linked
     ? await Promise.all([getPortalOrders(), loyalty.enabled ? getLoyaltyCounts(loyalty.windowMonths) : null, getFeedbackList(), loyalty.goal.enabled ? getGoal(loyalty.goal.doubleFirst) : null, getDispatchPlans()])
     : [[], null, [], null, []];
+  // A coupon a booking would carry today (as on /book): staff apply it or the 10%, whichever saves more.
+  const holdsCoupon = goal ? usableCoupon(goal.coupons, goal.today) !== null : false;
   // A delivered order from the last two weeks that isn't rated yet: ask once, on the home.
   const toRate = orderToRate(orders ?? [], new Set(feedback.map((f) => f.orderNumber)));
   const active = (orders ?? []).filter((o) => o.active);
@@ -181,7 +184,10 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
         <h2 id="offer-title" className="font-semibold text-navy">
           {fill(t.offerTitle, { percent: ACCOUNT_OFFER.percent }, locale)}
         </h2>
-        <p className="mt-1 t-small text-body">{fill(t.offerBody, { amount: `৳${ACCOUNT_OFFER.minimumTaka}` }, locale)}</p>
+        <p className="mt-1 t-small text-body">
+          {fill(t.offerBody, { amount: `৳${ACCOUNT_OFFER.minimumTaka}` }, locale)}
+          {holdsCoupon ? ` ${t.offerCoupon}` : null}
+        </p>
       </section>
 
       {toRate ? (

@@ -162,6 +162,7 @@ export const formsEn = {
     accountOfferGuest: "Get {percent}% off orders of {amount} or more: sign in with your mobile, then book.",
     accountOfferSignIn: "Sign in",
     accountOfferYours: "Booked from your account: {percent}% off orders of {amount} or more. We apply it when we confirm.",
+    accountOfferOrCoupon: "Booked from your account: {percent}% off orders of {amount} or more, or your coupon. When we confirm, we apply whichever saves you more.",
     failedNotConnectedTitle: "Online booking isn't switched on yet.",
     failedTitle: "We couldn't send your booking just now.",
     failedNotConnectedBody: "Nothing was sent. Send the same details on WhatsApp instead. They're already filled in.",

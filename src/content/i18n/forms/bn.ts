@@ -154,6 +154,7 @@ export const formsBn: FormText = {
     accountOfferGuest: "{amount} বা তার বেশি অর্ডারে {percent}% ছাড় পেতে মোবাইল দিয়ে সাইন ইন করে বুক করুন।",
     accountOfferSignIn: "সাইন ইন",
     accountOfferYours: "আপনার অ্যাকাউন্ট থেকে বুকিং: {amount} বা তার বেশি অর্ডারে {percent}% ছাড়। অর্ডার নিশ্চিত করার সময় আমরা যোগ করব।",
+    accountOfferOrCoupon: "আপনার অ্যাকাউন্ট থেকে বুকিং: {amount} বা তার বেশি অর্ডারে {percent}% ছাড়, অথবা আপনার কুপন। অর্ডার নিশ্চিত করার সময় যেটিতে বেশি সাশ্রয় হয়, সেটিই যোগ করব।",
     failedNotConnectedTitle: "অনলাইন বুকিং এখনো চালু হয়নি।",
     failedTitle: "এই মুহূর্তে আপনার বুকিং পাঠানো যায়নি।",
     failedNotConnectedBody: "কিছুই পাঠানো হয়নি। একই তথ্য WhatsApp-এ পাঠান। সেগুলো আগে থেকেই লেখা আছে।",
