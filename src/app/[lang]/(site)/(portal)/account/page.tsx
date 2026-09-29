@@ -24,6 +24,7 @@ import { quickRepeatFor } from "@/lib/customer/quick-repeat";
 import { getRoutine } from "@/lib/customer/routine";
 import { formText } from "@/content/i18n/forms";
 import { ACCOUNT_OFFER } from "@/lib/account-offer";
+import { usableCoupon } from "@/lib/customer/goal";
 import { areaLabel, displayBdPhone, greetingName } from "@/lib/customer/validation";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -104,6 +105,8 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
   const [orders, counts, feedback, goal, plans] = linked
     ? await Promise.all([getPortalOrders(), loyalty.enabled ? getLoyaltyCounts(loyalty.windowMonths) : null, getFeedbackList(), loyalty.goal.enabled ? getGoal(loyalty.goal.doubleFirst) : null, getDispatchPlans()])
     : [[], null, [], null, []];
+  // The coupon a booking would carry today (as on /book): it takes the account offer's place.
+  const holdsCoupon = goal ? usableCoupon(goal.coupons, goal.today) !== null : false;
   // A delivered order from the last two weeks that isn't rated yet: ask once, on the home.
   const toRate = orderToRate(orders ?? [], new Set(feedback.map((f) => f.orderNumber)));
   const active = (orders ?? []).filter((o) => o.active);
@@ -176,13 +179,13 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
         />
       ) : null}
 
-      {/* 10% on every website booking made signed in (lib/account-offer.ts). */}
-      <section aria-labelledby="offer-title" className="rounded-lg border border-line bg-white p-5 md:p-6" data-account-offer-banner>
+      {/* 10% on every website booking made signed in (lib/account-offer.ts); a goal coupon takes its place. */}
+      {holdsCoupon ? null : <section aria-labelledby="offer-title" className="rounded-lg border border-line bg-white p-5 md:p-6" data-account-offer-banner>
         <h2 id="offer-title" className="font-semibold text-navy">
           {fill(t.offerTitle, { percent: ACCOUNT_OFFER.percent }, locale)}
         </h2>
         <p className="mt-1 t-small text-body">{fill(t.offerBody, { amount: `৳${ACCOUNT_OFFER.minimumTaka}` }, locale)}</p>
-      </section>
+      </section>}
 
       {toRate ? (
         <section aria-labelledby="rate-title" className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-line bg-white p-5 md:p-6" data-rate-ask>

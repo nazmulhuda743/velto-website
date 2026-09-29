@@ -3,7 +3,7 @@ import { logServerEvent } from "@/lib/analytics/store";
 import { bookingEstimateText } from "@/lib/booking-estimate";
 import { cleanBookingItems } from "@/lib/booking-items";
 import { couponNote, usableCoupon } from "@/lib/customer/goal";
-import { accountOfferNote } from "@/lib/account-offer";
+import { offerNoteFor } from "@/lib/account-offer";
 import { getCustomerSession, getGoal } from "@/lib/customer/portal";
 import { getSiteContent } from "@/lib/site-content";
 import { getCapacityConfig, zoneForArea } from "@/lib/capacity";
@@ -44,17 +44,21 @@ const fail = (
     { status, headers: { "Cache-Control": "no-store" } },
   );
 
-/** The signed-in customer's monthly-goal reward for today, worded for the Ops notes; undefined for everyone else. */
+/**
+ * The offer line for the Ops notes: the signed-in customer's monthly-goal coupon, else the account
+ * offer (lib/account-offer.ts); undefined for guests, staff and when accounts are unavailable.
+ */
 async function offerForCaller(): Promise<string | undefined> {
   const session = await getCustomerSession();
-  if (session.kind !== "customer" || session.account.state !== "ready") return undefined;
-  if (session.account.link.status === "linked") {
+  const account = session.kind === "customer" && session.account.state === "ready" ? session.account : null;
+  let coupon: string | null = null;
+  if (account?.link.status === "linked") {
     const { loyalty } = await getSiteContent();
     const goal = loyalty.goal.enabled ? await getGoal(loyalty.goal.doubleFirst).catch(() => null) : null;
     const c = goal ? usableCoupon(goal.coupons, goal.today) : null;
-    if (c) return couponNote(c);
+    coupon = c ? couponNote(c) : null;
   }
-  return accountOfferNote();
+  return offerNoteFor(account !== null, coupon);
 }
 
 export async function POST(request: NextRequest) {
@@ -69,8 +73,8 @@ export async function POST(request: NextRequest) {
   const items = cleanBookingItems(data.items);
   const estimate = items?.length ? await bookingEstimateText(items).catch(() => undefined) : undefined;
   // A monthly-goal reward, else the account offer for any booking made signed in (one per order).
-  const coupon = await offerForCaller().catch(() => undefined);
-  const parsed = validateBookingSubmission(input.data, { estimate, siteUrl: SITE_URL, coupon });
+  const offerNote = await offerForCaller().catch(() => undefined);
+  const parsed = validateBookingSubmission(input.data, { estimate, siteUrl: SITE_URL, coupon: offerNote });
   const context = validateSubmissionContext({ idempotencyKey: input.idempotencyKey, requestId });
   if (!parsed.ok || !context.ok) {
     const issues = [...(parsed.ok ? [] : parsed.issues), ...(context.ok ? [] : context.issues)];

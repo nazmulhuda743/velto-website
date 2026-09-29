@@ -7,6 +7,8 @@
  * booking notes. Ops stays the source of truth for prices and final counts.
  */
 
+import { withoutOfferClaims } from "./account-offer";
+
 /** Services a single line can ask for (the per-garment and household services). */
 export const ITEM_SERVICES = {
   "dry-cleaning": "Dry Cleaning",
@@ -154,7 +156,7 @@ export function composeBookingNotes(items: BookingItem[], note?: string, extras:
     // No full stop after a link: it would end up inside the link when the Ops app opens it.
     extras.photos?.length ? `Photos: ${extras.photos.join(" ")}` : "",
   ].filter(Boolean);
-  const text = note?.trim();
+  const text = note ? withoutOfferClaims(note).trim() : undefined;
   if (!parts.length) return text || undefined;
   return [...parts, text ? `Note: ${text}` : ""].filter(Boolean).join(" ");
 }

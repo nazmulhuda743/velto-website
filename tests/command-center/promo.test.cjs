@@ -114,16 +114,19 @@ test("the version changes with any visible field and nothing else", () => {
   }
 });
 
-test("offer parts, ticks and the first-order template", () => {
+test("offer parts, ticks and the account offer template", () => {
   assert.deepEqual(promo.offerParts("10% OFF"), { big: "10%", small: "OFF" });
   assert.deepEqual(promo.offerParts("১০% ছাড়"), { big: "১০%", small: "ছাড়" });
   assert.deepEqual(promo.offerParts("  "), { big: "", small: "" });
   assert.deepEqual(promo.popupPoints("a | b | c | d"), ["a", "b", "c"]);
-  const t = { ...promo.EMPTY_POPUP, ...promo.FIRST_ORDER_TEMPLATE };
+  const t = { ...promo.EMPTY_POPUP, ...promo.ACCOUNT_OFFER_TEMPLATE };
   assert.equal(promo.popupProblem(t), null);
   assert.equal(promo.promoHrefOk(t.href), true);
   assert.equal(promo.popupExcluded("/book"), true, "never over the booking page it links to");
   assert.ok(promo.popupPoints(t.points).length === 3 && promo.popupPoints(t.pointsBn).length === 3);
+  // Saving never trims the template's words.
+  const saved = promo.parsePopup(t);
+  for (const k of ["tag", "tagBn", "offer", "offerBn", "cta", "ctaBn", "fine", "fineBn"]) assert.equal(saved[k], t[k], k);
 });
 
 test("new popup fields parse safely and old campaigns keep their version", () => {
@@ -143,7 +146,7 @@ test("pictures: uploads or the site's own photos, poster by default", () => {
   assert.equal(promo.promoImageOk("/admin/x.png"), false);
   assert.equal(promo.parsePopup({ image: "/images/home/hero.webp", imageStyle: "photo" }).imageStyle, "photo");
   assert.equal(promo.parsePopup({ imageStyle: "banner" }).imageStyle, "poster");
-  const t = { ...promo.EMPTY_POPUP, ...promo.FIRST_ORDER_TEMPLATE };
+  const t = { ...promo.EMPTY_POPUP, ...promo.ACCOUNT_OFFER_TEMPLATE };
   assert.equal(promo.popupProblem(t), null);
   assert.equal(promo.offerParts(t.offer).big, "10%");
 });
