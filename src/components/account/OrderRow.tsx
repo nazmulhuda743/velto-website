@@ -35,7 +35,7 @@ export async function OrderRow({ order }: { order: PortalOrder }) {
         <span className="min-w-0">
           <span className="block font-semibold text-navy group-hover:text-blue">{order.orderNumber}</span>
           <span className="block truncate t-small text-secondary">
-            {day(order.orderDate, true)}
+            {day(order.orderDate)}
             {order.outlet ? ` · ${order.outlet.name}` : ""}
           </span>
         </span>

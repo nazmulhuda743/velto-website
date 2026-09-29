@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test:foundation": "tsc --ignoreConfig --outDir .foundation-test-build --module node16 --moduleResolution node16 --target es2022 --esModuleInterop --skipLibCheck --types node src/lib/attribution.ts src/lib/integrations/errors.ts src/lib/integrations/ops/validation.ts src/lib/integrations/pricing/validation.ts src/lib/customer/validation.ts src/lib/customer/rhythm.ts src/lib/customer/loyalty.ts src/lib/customer/extras.ts src/lib/admin/retention-messages.ts src/lib/security/standard-webhooks.ts src/lib/sms/otp.ts src/lib/booking-photos.ts src/lib/admin/dispatch-logic.ts && node --test tests/*.test.cjs",
+    "test:foundation": "tsc --ignoreConfig --outDir .foundation-test-build --module node16 --moduleResolution node16 --target es2022 --esModuleInterop --skipLibCheck --types node src/lib/attribution.ts src/lib/integrations/errors.ts src/lib/integrations/ops/validation.ts src/lib/integrations/pricing/validation.ts src/lib/customer/validation.ts src/lib/customer/rhythm.ts src/lib/customer/loyalty.ts src/lib/customer/goal.ts src/lib/customer/extras.ts src/lib/admin/retention-messages.ts src/lib/security/standard-webhooks.ts src/lib/sms/otp.ts src/lib/booking-photos.ts src/lib/admin/dispatch-logic.ts src/lib/admin/request-flow.ts src/lib/booking-upsell.ts && node --test tests/*.test.cjs",
     "test:security": "node scripts/security-static-check.mjs && node scripts/customer-portal-tests.mjs",
     "test:portal": "node scripts/customer-portal-tests.mjs",
     "test:launch": "node scripts/launch-smoke.mjs",

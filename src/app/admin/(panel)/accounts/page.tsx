@@ -40,7 +40,7 @@ function Request({ r }: { r: LinkRequest }) {
                 {c.orders} orders{c.lastOrder ? ` · last ${c.lastOrder}` : ""}
                 {c.zone ? ` · ${c.zone}` : ""}
               </p>
-              {c.alreadyLinked && r.status !== "linked" ? <p className="mt-1 t-small font-semibold text-error">Already linked to another account.</p> : null}
+              {c.alreadyLinked && r.status !== "linked" ? <p className="mt-1 t-small text-secondary">Also linked to another login (email, Google or phone) of this customer.</p> : null}
             </>
           ) : (
             <p className="mt-1 t-small text-secondary">No Velto customer has this number, so there&apos;s nothing to link yet.</p>

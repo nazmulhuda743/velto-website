@@ -90,7 +90,7 @@ export function BarList({ items, total, empty = "Nothing recorded in this period
 }
 
 /** One strong funnel: stage bars scaled to the first stage, with step conversion and drop-off between stages. */
-export function FunnelChart({ steps, compact = false }: { steps: FunnelStep[]; compact?: boolean }) {
+export function FunnelChart({ steps, compact = false, unit = "sessions" }: { steps: (Omit<FunnelStep, "key"> & { key: string })[]; compact?: boolean; unit?: string }) {
   const top = Math.max(1, steps[0]?.count ?? 0);
   return (
     <ol className="space-y-0">
@@ -117,12 +117,12 @@ export function FunnelChart({ steps, compact = false }: { steps: FunnelStep[]; c
             <div className="h-9 rounded-md bg-soft" aria-hidden="true">
               <div
                 className={`h-9 rounded-md ${i === steps.length - 1 ? "bg-success/80" : "bg-navy"}`}
-                style={{ width: `${Math.max(s.count ? 1.5 : 0, (s.count / top) * 100)}%`, opacity: 1 - i * 0.12 }}
+                style={{ width: `${Math.max(s.count ? 1.5 : 0, (s.count / top) * 100)}%`, opacity: 1 - (i / Math.max(1, steps.length - 1)) * 0.5 }}
               />
             </div>
             <p className="text-right tabular-nums">
               <span className="text-[20px] font-semibold text-navy">{fmt(s.count)}</span>
-              <span className="block t-caption text-secondary">{i === 0 ? "sessions" : `${pct(s.ofTotal)} of all`}</span>
+              <span className="block t-caption text-secondary">{i === 0 ? unit : `${pct(s.ofTotal)} of all`}</span>
             </p>
           </div>
         </li>

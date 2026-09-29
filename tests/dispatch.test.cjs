@@ -82,3 +82,20 @@ test("the day plan groups stops by slot and person, and flags overload", () => {
   assert.equal(needsPlan(jobs[4]), true);
   assert.equal(needsPlan(jobs[0]), false);
 });
+
+test("deliveries are grouped by urgency; long-Ready orders wait at the outlet", () => {
+  const { deliveryBucket, daysSince } = require("../.foundation-test-build/admin/dispatch-logic.js");
+  const now = Date.parse("2026-09-28T06:00:00Z");
+  const fresh = "2026-09-26T06:00:00Z";
+  const old = "2026-09-10T06:00:00Z";
+  const b = (deliveryDate, updatedAt) => deliveryBucket({ deliveryDate, updatedAt }, "2026-09-28", now);
+  assert.equal(b("2026-09-28", old), "today", "due today wins, however long it has waited");
+  assert.equal(b("2026-09-29", fresh), "tomorrow");
+  assert.equal(b("2026-10-02", fresh), "later");
+  assert.equal(b("2026-09-25", fresh), "late");
+  assert.equal(b(null, fresh), "nodate");
+  assert.equal(b("2026-09-12", old), "waiting");
+  assert.equal(b(null, old), "waiting");
+  assert.equal(deliveryBucket(null, "2026-09-28", now), "nodate", "unknown order: ask for a date");
+  assert.equal(daysSince(old, now), 18);
+});

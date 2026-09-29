@@ -4,9 +4,10 @@ import { cache } from "react";
 import { isAnalyticsWritesEnabled } from "../analytics/store";
 import { isSupabaseConfigured, supabaseFetch, supabaseRpc } from "../supabase-server";
 import { getWebsiteRequests, type WebsiteRequest } from "./data";
-import type { ConsentSummary, DateRange, SessionRow } from "./insights";
+import { dhakaDay, type ConsentSummary, type DateRange, type SessionRow } from "./insights";
 import { isAdminPreview } from "./preview";
-import { previewConsent, previewRequests, previewSessions } from "./preview-fixtures";
+import { previewConsent, previewOutcomes, previewRequests, previewSessions } from "./preview-fixtures";
+import type { OutcomeRow } from "./request-outcomes";
 
 /**
  * Server-side reads for the Command Center. Every loader degrades to an
@@ -44,6 +45,28 @@ export const getSessions = cache(async (fromIso: string, toIso: string): Promise
 });
 
 export const sessionsFor = (range: Pick<DateRange, "from" | "to">) => getSessions(range.from.toISOString(), range.to.toISOString());
+
+/** What happened after each website request in the range (Funnel → "After the request"). Dhaka calendar days. */
+export const getOutcomes = cache(async (fromDay: string, toDay: string): Promise<Loaded<OutcomeRow[]>> => {
+  if (isAdminPreview()) {
+    const rows = previewOutcomes().filter((o) => dhakaDay(new Date(o.created_at)) >= fromDay && dhakaDay(new Date(o.created_at)) <= toDay);
+    return { state: "ok", data: rows, preview: true };
+  }
+  if (!isSupabaseConfigured()) return { state: "not_configured" };
+  try {
+    const rows = await supabaseRpc<OutcomeRow[]>("website_request_outcomes", { p_from: fromDay, p_to: toDay });
+    return { state: "ok", data: Array.isArray(rows) ? rows : [] };
+  } catch (error) {
+    const m = error instanceof Error ? error.message : "";
+    console.error("admin_outcomes_failed", m || "unknown");
+    if (/HTTP 404/.test(m)) return { state: "error", message: "Request outcomes aren't installed in this database yet (docs/technical/sql/website_request_outcomes.sql)." };
+    return { state: "error", message: safeMessage(error) };
+  }
+});
+
+/** The range's last included Dhaka day: `to` is the exclusive start of the next day. */
+export const outcomesFor = (range: Pick<DateRange, "from" | "to">) =>
+  getOutcomes(dhakaDay(range.from), dhakaDay(new Date(range.to.getTime() - 1)));
 
 export async function getConsentSummary(range: DateRange): Promise<Loaded<ConsentSummary>> {
   if (isAdminPreview()) return { state: "ok", data: previewConsent(range.days), preview: true };

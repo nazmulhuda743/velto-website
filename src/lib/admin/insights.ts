@@ -195,16 +195,23 @@ export const FUNNEL_STAGES = [
   { key: "landing", label: "Landed on the site", hint: "Every session" },
   { key: "service", label: "Viewed a service", hint: "A service page or a service interaction" },
   { key: "pricing", label: "Checked a price", hint: "Pricing page or price search" },
+  { key: "clicked", label: "Clicked Book", hint: "A “Book pickup” button; everyone who started a form counts here too" },
   { key: "started", label: "Started a booking or quote", hint: "First interaction with either form" },
+  { key: "phone", label: "Entered a phone number", hint: "A valid phone number typed into either form" },
   { key: "success", label: "Sent a request", hint: "Booking or quote confirmed by Velto Ops" },
 ] as const;
 
 export type FunnelStageKey = (typeof FUNNEL_STAGES)[number]["key"];
 
-/** Furthest stage a session reached (0..4). Later stages imply the earlier ones. */
+/** Index of the last stage: a sent request. */
+export const SUCCESS_STAGE = FUNNEL_STAGES.length - 1;
+
+/** Furthest stage a session reached (0..SUCCESS_STAGE). Later stages imply the earlier ones. */
 export function furthestStage(s: SessionRow): number {
-  if (has(s, "booking_success", "quote_success")) return 4;
-  if (has(s, "booking_start", "quote_start")) return 3;
+  if (has(s, "booking_success", "quote_success")) return 6;
+  if (has(s, "phone_entered")) return 5;
+  if (has(s, "booking_start", "quote_start")) return 4;
+  if (has(s, "book_pickup_click")) return 3;
   if (has(s, "pricing_search", "pricing_view") || paths(s).includes("/pricing")) return 2;
   if (has(s, "service_view") || paths(s).some((p) => p.startsWith("/services/")) || (s.services ?? []).length) return 1;
   return 0;
@@ -224,7 +231,7 @@ export type FunnelStep = {
 };
 
 export function funnel(rows: SessionRow[]) {
-  const reached = [0, 0, 0, 0, 0];
+  const reached: number[] = FUNNEL_STAGES.map(() => 0);
   for (const s of rows) {
     const f = furthestStage(s);
     for (let i = 0; i <= f; i++) reached[i] += 1;
@@ -240,7 +247,7 @@ export function funnel(rows: SessionRow[]) {
       dropOff: i === 0 || fromPrevious === null ? null : 1 - fromPrevious,
     };
   });
-  const notConverted = rows.filter((s) => furthestStage(s) < 4);
+  const notConverted = rows.filter((s) => furthestStage(s) < SUCCESS_STAGE);
   const whatsappFallback = notConverted.filter((s) => has(s, "whatsapp_click")).length;
   return { steps, whatsappFallback, whatsappFallbackRate: rate(whatsappFallback, notConverted.length) };
 }
@@ -384,7 +391,7 @@ export function journeys(rows: SessionRow[], limit = 8) {
     const key = steps.join(" → ");
     const hit = counts.get(key);
     if (hit) hit.count += 1;
-    else counts.set(key, { steps, count: 1, converted: furthestStage(s) === 4 });
+    else counts.set(key, { steps, count: 1, converted: furthestStage(s) === SUCCESS_STAGE });
   }
   return [...counts.values()]
     .sort((a, b) => Number(b.converted) - Number(a.converted) || b.count - a.count)

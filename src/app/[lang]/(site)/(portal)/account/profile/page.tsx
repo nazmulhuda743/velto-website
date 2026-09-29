@@ -6,7 +6,6 @@ import { ProfileForm } from "@/components/account/forms";
 import { LinkHistoryCard } from "@/components/account/LinkHistoryCard";
 import { PreferencesForm } from "@/components/account/PreferencesForm";
 import { WHATSAPP_URL } from "@/content/site";
-import { signOutAction } from "@/lib/customer/actions";
 import { getCustomerSession, getPreferences } from "@/lib/customer/portal";
 import { fill } from "@/lib/i18n/config";
 import { displayBdPhone } from "@/lib/customer/validation";
@@ -64,30 +63,19 @@ export default async function ProfilePage() {
             </div>
           ) : null}
           {a.email ? (
-            <>
-              <div>
-                <dt className="text-[15px] font-semibold text-navy">{t.email}</dt>
-                <dd className="mt-1 text-body">{a.email}</dd>
-                <dd className="mt-1 t-small text-secondary">
-                  {t.changeEmailBefore}
-                  <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="font-semibold text-navy underline underline-offset-4">
-                    {t.messageVelto}
-                  </a>
-                  {t.changeEmailAfter}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-[15px] font-semibold text-navy">{t.password}</dt>
-                <dd className="mt-1 t-small text-secondary">{t.passwordBody}</dd>
-              </div>
-            </>
+            <div>
+              <dt className="text-[15px] font-semibold text-navy">{t.email}</dt>
+              <dd className="mt-1 text-body">{a.email}</dd>
+              <dd className="mt-1 t-small text-secondary">
+                {t.changeEmailBefore}
+                <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="font-semibold text-navy underline underline-offset-4">
+                  {t.messageVelto}
+                </a>
+                {t.changeEmailAfter}
+              </dd>
+            </div>
           ) : null}
         </dl>
-        <form action={signOutAction} className="mt-6">
-          <button type="submit" className="inline-flex h-12 items-center rounded-md border border-line-strong bg-white px-5 font-semibold text-navy hover:border-navy">
-            {t.signOut}
-          </button>
-        </form>
       </section>
 
       {a.link.status !== "linked" ? (

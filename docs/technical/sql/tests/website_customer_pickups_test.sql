@@ -68,6 +68,16 @@ begin
   execute 'reset role';
   assert (select slot_date is null and stage = 'new' from website_dispatch_jobs where id = job), 'staff plan cleared after a customer change';
 
+  -- Staff called and confirmed a time; the customer changes it: back to new, confirmation cleared.
+  -- (Set directly, as website_dispatch_contact would, so this test doesn't depend on its version.)
+  update website_dispatch_jobs set stage = 'confirmed', confirmed_at = now(), confirmed_by = 'ZZ Staff', slot_date = today + 3, slot = 'evening' where id = job;
+  execute 'set local role authenticated';
+  j := portal_pickups();
+  assert (select p ->> 'stage' = 'confirmed' and (p ->> 'changeable')::boolean from jsonb_array_elements(j -> 'pickups') p where p ->> 'id' = t1::text), 'confirmed pickup listed and changeable';
+  perform portal_pickup_change(t1, today + 5, 'afternoon');
+  execute 'reset role';
+  assert (select stage = 'new' and confirmed_at is null and slot_date is null from website_dispatch_jobs where id = job), 'confirmation cleared after a customer change';
+
   -- Past the cutoff (3 hours before a planned slot ends): refused.
   update website_dispatch_jobs set slot_date = today - 1, slot = 'morning', stage = 'assigned' where id = job;
   execute 'set local role authenticated';
@@ -80,7 +90,6 @@ begin
   -- Three changes per pickup, then WhatsApp.
   update website_dispatch_jobs set slot_date = null, slot = null, stage = 'new' where id = job;
   execute 'set local role authenticated';
-  perform portal_pickup_change(t1, today + 6, 'morning');
   j := portal_pickups();
   assert (select (p ->> 'changesLeft')::int from jsonb_array_elements(j -> 'pickups') p where p ->> 'id' = t1::text) = 0, 'no changes left';
   begin perform portal_pickup_change(t1, today + 7, 'morning'); raise exception 'fourth change accepted'; exception when insufficient_privilege then null; end;

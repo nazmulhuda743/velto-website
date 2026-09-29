@@ -16,6 +16,9 @@ available under it.
 - **The hook** (`src/app/api/auth/sms-hook/route.ts`) accepts only requests signed by Supabase
   (Standard Webhooks, `VELTO_SMS_HOOK_SECRET`), refuses non-Bangladeshi numbers, applies the
   limits below, and sends the SMS (`src/lib/sms/send.ts`).
+- **The brand:** Bangladeshi gateways (GreenWeb/BD Bulk SMS) require OTP messages to begin with
+  the brand in brackets and refuse Banglish. The GreenWeb token's **OTP SMS Header** is set to
+  `(Velto)` and the gateway adds it on top of every code SMS, so the website's text doesn't repeat it.
 - **The SMS** is English on purpose (one GSM-7 segment; Bangla would cost 2–3). Its last line
   (`@www.velto.com.bd #123456`) lets Android Chrome fill the code in automatically; iPhones offer
   it from the keyboard (`autocomplete="one-time-code"`).

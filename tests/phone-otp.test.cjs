@@ -4,7 +4,7 @@ const { createHmac } = require("node:crypto");
 const test = require("node:test");
 
 const { verifyStandardWebhook } = require("../.foundation-test-build/security/standard-webhooks.js");
-const { bdPhoneToE164, hookPhone, otpMessage, validOtp } = require("../.foundation-test-build/sms/otp.js");
+const { bdPhoneToE164, hookPhone, linkCodeMessage, otpMessage, validOtp } = require("../.foundation-test-build/sms/otp.js");
 
 const key = Buffer.from("velto-test-secret-velto-test-secret");
 const secret = `v1,whsec_${key.toString("base64")}`;
@@ -45,10 +45,18 @@ test("codes are six digits; the SMS is one plain segment with the WebOTP line", 
   assert.equal(validOtp("12345"), null);
   assert.equal(validOtp("12345a"), null);
   const sms = otpMessage("482913");
+  // The gateway adds the "(Velto)" header itself; repeating it here would show it twice.
+  assert.doesNotMatch(sms, /\(Velto\)/);
   assert.match(sms, /482913/);
   assert.match(sms, /\n@www\.velto\.com\.bd #482913$/);
   assert.ok(sms.length <= 160, `SMS is ${sms.length} characters`);
   assert.match(sms, /^[\x20-\x7e\n]+$/, "GSM-7 friendly ASCII only");
+  assert.match(sms, /^Use OTP: 482913 to sign in to Velto\./);
+  const link = linkCodeMessage("482913");
+  assert.doesNotMatch(link, /\(Velto\)/);
+  assert.match(link, /^Use OTP: 482913 to show your Velto orders\./);
+  assert.match(link, /\n@www\.velto\.com\.bd #482913$/);
+  assert.ok(link.length <= 160, `SMS is ${link.length} characters`);
 });
 
 const { sniffPhotoType, readPhotoIds } = require("../.foundation-test-build/booking-photos.js");

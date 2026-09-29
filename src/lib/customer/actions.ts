@@ -5,57 +5,44 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getLocale, localHref, loginRedirectPath } from "@/lib/i18n/server";
 import { accountText } from "@/content/i18n/account";
-import { fill } from "@/lib/i18n/config";
 import { SITE_URL } from "@/lib/site-url";
 import { otpAllowed } from "@/lib/sms/limits";
-import { bdPhoneToE164, validOtp } from "@/lib/sms/otp";
-import { ACCOUNT_HINT_COOKIE, RECOVERY_COOKIE } from "./config";
+import { bdPhoneToE164, linkCodeMessage, validOtp } from "@/lib/sms/otp";
+import { sendSms } from "@/lib/sms/send";
+import { supabaseRpc } from "@/lib/supabase-server";
+import { LINK_CODE_COOKIE, LINK_CODE_TTL_SECONDS, checkLinkCode, issueLinkCode } from "./sms-link";
+import { ACCOUNT_HINT_COOKIE } from "./config";
 import { AREA, cleanIssues, happy, parsePreferences } from "./extras";
 import { AUTH_COOKIE_OPTIONS, customerSupabase } from "./supabase";
 import {
-  PASSWORD_MAX,
-  PASSWORD_MIN,
   TERMS_VERSION,
   normaliseBdPhone,
-  passwordIssue,
   safeNextPath,
   validArea,
-  validEmail,
   validName,
   validOrderNumber,
 } from "./validation";
 
-export type FieldErrors = Partial<Record<"fullName" | "email" | "phone" | "password" | "confirm" | "terms" | "address" | "area" | "code", string>>;
+export type FieldErrors = Partial<Record<"fullName" | "phone" | "terms" | "address" | "area" | "code", string>>;
 
 export type AuthFormState =
   | { status: "idle" }
   | { status: "invalid"; errors: FieldErrors; message?: string; values?: Record<string, string> }
   | { status: "error"; message: string; values?: Record<string, string> }
   | { status: "unavailable" }
-  | { status: "check-email"; email: string }
-  | { status: "verify-required"; email: string }
-  | { status: "sent" }
-  | { status: "expired" }
   | { status: "saved" }
   /** An SMS code is on its way to `phone`; `message` reports a problem on this step (e.g. resend refused). */
-  | { status: "code-sent"; phone: string; resent?: boolean; sentAt?: number; message?: string; errors?: FieldErrors };
+  | { status: "code-sent"; phone: string; resent?: boolean; sentAt?: number; message?: string; errors?: FieldErrors }
+  /** "Show my past orders": the phone is proven; `result` says what was found under it. */
+  | { status: "linked"; result: "linked" | "no_orders" | "pending" };
 
 const UNAVAILABLE: AuthFormState = { status: "unavailable" };
 
 /** Messages in the language of the page the form was sent from (the proxy's locale header). */
 async function messages() {
-  const locale = await getLocale();
-  const t = accountText(locale).actions;
-  const password = (value: string) => {
-    const issue = passwordIssue(value);
-    if (issue === "short") return fill(t.passwordShort, { n: PASSWORD_MIN }, locale);
-    if (issue === "long") return fill(t.passwordLong, { n: PASSWORD_MAX }, locale);
-    if (issue === "mix") return t.passwordMix;
-    return null;
-  };
+  const t = accountText(await getLocale()).actions;
   return {
     t,
-    password,
     disabled: { status: "error", message: t.disabled } as AuthFormState,
     tooMany: { status: "error", message: t.tooMany } as AuthFormState,
   };
@@ -65,7 +52,7 @@ const str = (form: FormData, key: string, max = 300) => String(form.get(key) ?? 
 
 /* ---------- Best-effort brake per IP (each server instance keeps its own window) ---------- */
 
-const WINDOWS = { signin: [10, 10 * 60_000], signup: [5, 60 * 60_000], recover: [5, 60 * 60_000], resend: [3, 60 * 60_000] } as const;
+const WINDOWS = { signin: [10, 10 * 60_000] } as const;
 const hits = new Map<string, number[]>();
 
 const requesterIp = async () => (await headers()).get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
@@ -89,7 +76,7 @@ function authFailure(error: { name?: string; code?: string; status?: number }, t
   return null;
 }
 
-/** Email links land on /auth/confirm, then continue to `next` in the language the form was used in. */
+/** Google sign-in lands on /auth/confirm, then continue to `next` in the language the form was used in. */
 const redirectTo = async (next: string) => `${SITE_URL}/auth/confirm?next=${encodeURIComponent(await localHref(next))}`;
 
 async function setAccountHint(signedIn: boolean) {
@@ -105,111 +92,6 @@ async function setAccountHint(signedIn: boolean) {
   } else {
     store.delete(ACCOUNT_HINT_COOKIE);
   }
-}
-
-/* ---------- Sign up ---------- */
-
-export async function signUpAction(_prev: AuthFormState, form: FormData): Promise<AuthFormState> {
-  const values = { fullName: str(form, "fullName", 120), email: str(form, "email", 254), phone: str(form, "phone", 30) };
-  const password = str(form, "password", 200);
-  const errors: FieldErrors = {};
-  const m = await messages();
-
-  const fullName = validName(values.fullName);
-  const email = validEmail(values.email);
-  const phone = normaliseBdPhone(values.phone);
-  if (!fullName) errors.fullName = m.t.name;
-  if (!email) errors.email = m.t.email;
-  if (!phone) errors.phone = m.t.phone;
-  const pwProblem = m.password(password);
-  if (pwProblem) errors.password = pwProblem;
-  if (password !== str(form, "confirm", 200)) errors.confirm = m.t.confirm;
-  if (form.get("terms") !== "on") errors.terms = m.t.terms;
-  if (Object.keys(errors).length) return { status: "invalid", errors, values };
-
-  const supabase = await customerSupabase();
-  if (!supabase) return m.disabled;
-  if (await throttled("signup")) return m.tooMany;
-
-  const { data, error } = await supabase.auth.signUp({
-    email: email!,
-    password,
-    options: {
-      emailRedirectTo: await redirectTo("/account"),
-      // Used once, to create the customer's own portal profile. Grants nothing. `locale` only
-      // picks the language of the pages the emailed links open (see docs/technical/email-templates).
-      data: {
-        full_name: fullName,
-        phone,
-        terms_version: TERMS_VERSION,
-        terms_accepted_at: new Date().toISOString(),
-        locale: await getLocale(),
-      },
-    },
-  });
-  if (error) {
-    const mapped = authFailure(error, m.tooMany);
-    if (mapped) return mapped;
-    if (error.code === "weak_password") return { status: "invalid", errors: { password: m.t.weakPassword }, values };
-    if (error.code === "email_address_invalid") return { status: "invalid", errors: { email: m.t.email }, values };
-    if (error.code === "user_already_exists" || error.code === "email_exists") return { status: "check-email", email: email! };
-    console.error("customer_signup_failed", error.code ?? error.status);
-    return { status: "error", message: m.t.signUpFailed, values };
-  }
-  if (data.session) {
-    // Projects without email confirmation sign the customer straight in.
-    await setAccountHint(true);
-    redirect(await localHref("/account"));
-  }
-  // An existing address gets the same answer as a new one, so sign-up can't be used to
-  // discover who has an account.
-  return { status: "check-email", email: email! };
-}
-
-export async function resendVerificationAction(_prev: AuthFormState, form: FormData): Promise<AuthFormState> {
-  const m = await messages();
-  const email = validEmail(str(form, "email", 254));
-  if (!email) return { status: "invalid", errors: { email: m.t.email } };
-  const supabase = await customerSupabase();
-  if (!supabase) return m.disabled;
-  if (await throttled("resend")) return m.tooMany;
-  const { error } = await supabase.auth.resend({ type: "signup", email, options: { emailRedirectTo: await redirectTo("/account") } });
-  if (error) {
-    const mapped = authFailure(error, m.tooMany);
-    if (mapped) return mapped;
-  }
-  return { status: "sent" };
-}
-
-/* ---------- Sign in / out ---------- */
-
-export async function signInAction(_prev: AuthFormState, form: FormData): Promise<AuthFormState> {
-  const values = { email: str(form, "email", 254) };
-  const email = validEmail(values.email);
-  const password = str(form, "password", 200);
-  // The form's language wins: /bn/login with next=/account continues to /bn/account.
-  const next = await localHref(safeNextPath(str(form, "next", 300)));
-  const errors: FieldErrors = {};
-  const m = await messages();
-  if (!email) errors.email = m.t.signInEmail;
-  if (!password) errors.password = m.t.signInPassword;
-  if (Object.keys(errors).length) return { status: "invalid", errors, values };
-
-  const supabase = await customerSupabase();
-  if (!supabase) return m.disabled;
-  if (await throttled("signin")) return m.tooMany;
-
-  const { error } = await supabase.auth.signInWithPassword({ email: email!, password });
-  if (error) {
-    const mapped = authFailure(error, m.tooMany);
-    if (mapped) return mapped;
-    if (error.code === "email_not_confirmed") return { status: "verify-required", email: email! };
-    // One message for an unknown email and a wrong password, in either language.
-    return { status: "error", message: m.t.wrongCredentials, values };
-  }
-  await supabase.rpc("portal_touch_login");
-  await setAccountHint(true);
-  redirect(next);
 }
 
 /* ---------- Sign in with a mobile number (SMS code) ---------- */
@@ -320,55 +202,6 @@ export async function signOutAction() {
   await supabase?.auth.signOut({ scope: "local" });
   await setAccountHint(false);
   redirect(await localHref("/"));
-}
-
-/* ---------- Forgot / reset password ---------- */
-
-export async function forgotPasswordAction(_prev: AuthFormState, form: FormData): Promise<AuthFormState> {
-  const m = await messages();
-  const email = validEmail(str(form, "email", 254));
-  if (!email) return { status: "invalid", errors: { email: m.t.email } };
-  const supabase = await customerSupabase();
-  if (!supabase) return m.disabled;
-  if (await throttled("recover")) return m.tooMany;
-  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: await redirectTo("/reset-password") });
-  if (error && (error.name === "AuthRetryableFetchError" || !error.status)) return UNAVAILABLE;
-  // Same answer whether or not the address has an account.
-  return { status: "sent" };
-}
-
-export async function resetPasswordAction(_prev: AuthFormState, form: FormData): Promise<AuthFormState> {
-  const password = str(form, "password", 200);
-  const errors: FieldErrors = {};
-  const m = await messages();
-  const pwProblem = m.password(password);
-  if (pwProblem) errors.password = pwProblem;
-  if (password !== str(form, "confirm", 200)) errors.confirm = m.t.confirm;
-  if (Object.keys(errors).length) return { status: "invalid", errors };
-
-  const supabase = await customerSupabase();
-  if (!supabase) return m.disabled;
-  const store = await cookies();
-  // Only a session that arrived through a recovery link may set a new password here.
-  if (store.get(RECOVERY_COOKIE)?.value !== "1") return { status: "expired" };
-  const { data } = await supabase.auth.getUser();
-  if (!data.user) return { status: "expired" };
-
-  const { error } = await supabase.auth.updateUser({ password });
-  if (error) {
-    const mapped = authFailure(error, m.tooMany);
-    if (mapped) return mapped;
-    if (error.code === "same_password") return { status: "invalid", errors: { password: m.t.samePassword } };
-    if (error.code === "weak_password") return { status: "invalid", errors: { password: m.t.weakPassword } };
-    if (error.status === 401 || error.status === 403) return { status: "expired" };
-    console.error("customer_reset_failed", error.code ?? error.status);
-    return { status: "error", message: m.t.resetFailed };
-  }
-  store.delete(RECOVERY_COOKIE);
-  // Anyone else holding an old session is signed out.
-  await supabase.auth.signOut({ scope: "others" });
-  await setAccountHint(true);
-  redirect(await localHref("/account?password=updated"));
 }
 
 /* ---------- Profile & history link ---------- */
@@ -528,3 +361,76 @@ export async function cancelPickupAction(_prev: PickupState, form: FormData): Pr
   revalidatePath("/account", "layout");
   return { status: "cancelled" };
 }
+/* ---------- Show my past orders: prove the account's phone with an SMS code ---------- */
+
+/**
+ * Email and Google accounts: text a code to the phone on the account. The code is bound to this
+ * login and phone by a signed httpOnly cookie (lib/customer/sms-link.ts); same database limits as
+ * sign-in codes (5 per phone and 10 per IP an hour, 300 site-wide).
+ */
+export async function sendLinkCodeAction(_prev: AuthFormState, form: FormData): Promise<AuthFormState> {
+  const m = await messages();
+  const resend = form.get("resend") === "1";
+  const supabase = await customerSupabase();
+  if (!supabase) return m.disabled;
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect(await loginRedirectPath("/account"));
+  const me = await supabase.rpc("portal_me");
+  const phone = (me.data as { state?: string; phone?: string } | null)?.state === "ready" ? (me.data as { phone: string }).phone : null;
+  if (!phone) return { status: "error", message: m.t.saveFailed };
+  const fail = (message: string): AuthFormState => (resend ? { status: "code-sent", phone, message } : { status: "error", message });
+
+  const [perPhone, perIp, global] = await Promise.all([
+    otpAllowed("phone", phone),
+    otpAllowed("ip", await requesterIp()),
+    otpAllowed("global", "site"),
+  ]);
+  if (!perPhone || !perIp || !global) return fail(m.t.tooMany);
+
+  const issued = issueLinkCode(data.user.id, phone);
+  if (!issued) return fail(m.t.smsFailed);
+  const sent = await sendSms(phone, linkCodeMessage(issued.code));
+  if (!sent.ok) {
+    console.error("link_code_sms_failed", sent.provider, sent.code);
+    return fail(m.t.smsFailed);
+  }
+  (await cookies()).set(LINK_CODE_COOKIE, issued.cookie, {
+    ...AUTH_COOKIE_OPTIONS,
+    path: "/",
+    maxAge: LINK_CODE_TTL_SECONDS,
+  });
+  return { status: "code-sent", phone, resent: resend, sentAt: Date.now() };
+}
+
+/** Check the code; a right one links the history (or reports that none was found). */
+export async function confirmLinkCodeAction(_prev: AuthFormState, form: FormData): Promise<AuthFormState> {
+  const m = await messages();
+  const code = validOtp(str(form, "linkCode", 20));
+  const supabase = await customerSupabase();
+  if (!supabase) return m.disabled;
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect(await loginRedirectPath("/account"));
+  const store = await cookies();
+  const pending = store.get(LINK_CODE_COOKIE)?.value;
+  const phone = pending?.split(".")[0] ?? "";
+  if (!code) return { status: "code-sent", phone, errors: { code: m.t.code } };
+  if (!(await otpAllowed("verify", phone || data.user.id))) return { status: "code-sent", phone, message: m.t.tooMany };
+
+  const checked = checkLinkCode(data.user.id, pending, code);
+  if (!checked || "expired" in checked) return { status: "code-sent", phone, errors: { code: m.t.codeWrong } };
+
+  try {
+    const r = await supabaseRpc<{ ok?: boolean; result?: string; reason?: string }>("portal_link_verified_phone", {
+      p_auth_user_id: data.user.id,
+      p_phone: checked.phone,
+    });
+    if (!r.ok || !r.result) return { status: "error", message: m.t.saveFailed };
+    store.delete(LINK_CODE_COOKIE);
+    revalidatePath("/account", "layout");
+    return { status: "linked", result: r.result === "linked" ? "linked" : r.result === "pending" ? "pending" : "no_orders" };
+  } catch (error) {
+    console.error("portal_link_verified_phone_failed", error instanceof Error ? error.message : "unknown");
+    return { status: "error", message: m.t.saveFailed };
+  }
+}
+

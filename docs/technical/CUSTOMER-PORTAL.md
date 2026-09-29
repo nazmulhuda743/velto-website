@@ -95,44 +95,33 @@ sign-up is disabled.
 
 | Concern | Implementation |
 | --- | --- |
-| Identity | Supabase Auth (email + password), same project as Ops |
+| Identity | Supabase Auth, same project as Ops. Customers sign in with a mobile number (SMS code) or Google; there are no customer passwords. The Email provider stays on in Supabase because staff use it for `/admin` |
 | Session | `@supabase/ssr` server client. Cookies are httpOnly, `SameSite=Lax`, `Secure` in production, `path=/`. No Supabase client in the browser; the publishable key stays server-side (`VELTO_SUPABASE_PUBLISHABLE_KEY`) |
-| Session upkeep | `src/proxy.ts` (Next 16 proxy) on `/account*`, `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/book`: validates with `auth.getUser()` (server round-trip, never trusts the cookie alone), refreshes tokens, redirects signed-out visitors from `/account*` to `/login?next=…` |
+| Session upkeep | `src/proxy.ts` (Next 16 proxy) on `/account*`, `/login`, `/signup`, `/book`: validates with `auth.getUser()` (server round-trip, never trusts the cookie alone), refreshes tokens, redirects signed-out visitors from `/account*` to `/login?next=…` |
 | Header state | Non-sensitive `velto_account=1` hint cookie so public pages stay static; account pages always re-verify on the server |
 | Customer data | SECURITY DEFINER SQL functions granted to `authenticated` only, deriving the caller from `auth.uid()` |
 | Staff linking | Website admin (`/admin/accounts`) → service-role-only SQL functions |
 | Admin auth | Unchanged and separate (`velto_admin` HMAC cookie, path `/admin`, Ops `role=admin`) |
 | Feature flag | `VELTO_CUSTOMER_ACCOUNTS_ENABLED=true` + URL + publishable key. When off, auth pages show "coming soon", the header shows no Sign in, and `/account` redirects to `/login` |
 
-Brute-force brake: the server actions keep a per-IP window (sign-in 10 per 10 min, sign-up 5 per
-hour, reset 5 per hour, resend 3 per hour) on each server instance. Because auth calls come from
+Brute-force brake: Google sign-in starts are limited per IP (10 per 10 minutes) on each server
+instance; SMS codes use the database limiter (lib/sms/limits.ts). Because auth calls come from
 Vercel, Supabase sees Vercel's IPs. Review Supabase **Auth → Rate Limits** for production.
 
 ---
 
 ## 3. Flows
 
-**Sign up** (`/signup`): full name, email, Bangladeshi mobile (`01[3-9]XXXXXXXX`, `+880`/spaces
-accepted), password (8–72 characters, a letter and a number), confirmation, and required Terms/Privacy
-consent (no marketing opt-in). `auth.signUp` stores `full_name`, `phone`, `terms_version`,
-`terms_accepted_at` in user metadata, used once to create the customer's own portal profile.
-Existing emails get the same "Check your email" answer (no enumeration).
+**Sign up / sign in** (`/signup`, `/login`): mobile number first, then "Continue with Google".
+Sign-up also asks for the full name and the Terms/Privacy consent. A correct SMS code signs the
+customer in and creates the account on first use. Success → the `next` destination, which must be
+a same-site path under `/account`, `/book`, `/quote` or `/track`; anything else falls back to
+`/account`. Already signed in → "You're already signed in" with Continue / Sign out.
 
-**Verify email**: the link lands on `/auth/confirm`, which accepts both the PKCE `?code=` redirect
-and `?token_hash=&type=`. Success → `/account?welcome=1`. An invalid, expired or used link →
-`/login?error=link_expired`. Signing in before confirming shows "Please confirm your email first"
-with a resend button.
-
-**Sign in** (`/login`): email + password. A wrong password and an unknown email get the same
-message. Success → the `next` destination, which must be a same-site path under `/account`,
-`/book`, `/quote`, `/track` or `/reset-password`; anything else falls back to `/account`.
-Already signed in → "You're already signed in" with Continue / Sign out.
-
-**Forgot / reset**: `/forgot-password` always answers neutrally. The recovery link goes through
-`/auth/confirm` (type `recovery`), which sets a 15-minute httpOnly `velto_recovery` marker. Only
-then does `/reset-password` accept a new password. Success signs out other sessions and lands on
-`/account?password=updated`. Expired, used or missing links show "This reset link has expired or
-was already used" with a new-link button. Tokens are never logged.
+**No passwords** (since 28 Sep 2026): the email + password forms, `/forgot-password` and
+`/reset-password` are gone. Both old URLs redirect (307) to `/login`. `/auth/confirm` still
+completes Google sign-in and older email links; a password-recovery link goes to `/login`.
+Existing email accounts can sign in with Google (same address) or their verified mobile number.
 
 **Sign out**: `auth.signOut({ scope: "local" })`, hint cookie cleared, back to `/`.
 
@@ -155,21 +144,26 @@ was already used" with a new-link button. Tokens are never logged.
 
 Constraint: `linked ⇔ customer_id and verified_phone are set`.
 
-**Typing a phone number never unlocks history.** There is no SMS/OTP provider in the project
-(`sms_provider` is configured as twilio, but phone auth is disabled and there are no OTP tables or
-functions), so OTP is not faked. Instead:
+**Typing a phone number never unlocks history; proving it by SMS code does.**
 
-1. The customer taps **Link my Velto history** → `pending`. Their phone is then locked.
+- **Signed in with the mobile number:** the phone is already proven; `portal_auto_link` links at once.
+- **Email or Google account:** the account card offers **Show my past orders** → the website
+  texts a 6-digit code to the account's phone (`src/lib/customer/sms-link.ts`, signed cookie,
+  10-minute expiry, database rate limits) → `portal_link_verified_phone` (service role) links it.
+- Several logins of the same person (email, Google, phone) may be linked to the same Ops
+  customer: each proved the phone. `customer_id` is therefore not unique.
+- Several Ops customers with the same phone, or no SMS access: staff decide, as below.
+
+1. The customer taps **Ask Velto to check by phone** → `pending`. Their phone is then locked.
 2. Staff open **/admin/accounts**. For each request they see the account and the only Ops
    customer whose phone equals the claimed phone, with order count, last order and whether it's
    already linked.
 3. Staff call the number **on the Ops record**, confirm the person created the account, tick
-   the confirmation box and **Approve**. The database re-checks the phone match and the
-   one-account-per-customer rule. **Reject** and **Unlink** are also available.
+   the confirmation box and **Approve**. The database re-checks the phone match. **Reject** and **Unlink** are also available.
 
 **Sign in with a mobile number** (docs/technical/PHONE-SIGN-IN.md) proves the phone with an SMS
 code. When the account's phone was proven that way and exactly one Ops customer has that phone
-(not linked to another account), `portal_auto_link` links the history at once with
+`portal_auto_link` links the history at once with
 `link_method = 'sms_otp'`. Anything ambiguous still goes to staff as above.
 
 ---
@@ -203,7 +197,7 @@ cleaned, Ready → Ready, Delivered → Delivered, Cancelled → Cancelled.
 
 | Route | Notes |
 | --- | --- |
-| `/login`, `/signup`, `/forgot-password`, `/reset-password` | noindex; designed states: default, pending, invalid, verification required, expired link, success, network unavailable, already signed in, accounts disabled |
+| `/login`, `/signup` | noindex; designed states: default, code sent, wrong code, SMS failed, Google failed, network unavailable, already signed in, accounts disabled |
 | `/auth/confirm` | email-link handler (route handler) |
 | `/account` | greeting, active order (status, number, expected back, amount due, progress), Book another pickup, View all orders, link card, recent orders, pickup details, WhatsApp help, regular-pickup prompt after 3+ orders |
 | `/account/orders` | In progress / Past orders |

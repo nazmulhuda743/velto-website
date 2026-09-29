@@ -6,13 +6,15 @@
 --    changes per pickup). Changes go through the dispatch functions (website_dispatch.sql), so
 --    the dispatch board and the Ops task stay in step:
 --      * change  → the job goes back to "new" with the customer's new preference (any planned
---                  person/slot is cleared, so the team re-plans it); the Ops task gets a note line
+--                  person/slot and any phone confirmation are cleared, so the team re-confirms); the Ops task gets a note line
 --                  and its due time moves to the new slot.
 --      * cancel  → website_dispatch_close(..., 'cancelled'): the job is cancelled and the Ops task
 --                  is closed with "Cancelled by Customer (website): …".
 -- 2. website_customer_order_counts: order counts per phone for the dispatch board's tier badge.
 --
--- Requires customer_portal.sql (portal_caller, portal_auth_phone) and website_dispatch.sql.
+-- Requires customer_portal.sql (portal_caller, portal_auth_phone), website_dispatch.sql and
+-- website_dispatch_stages.sql (the 'confirmed' stage and confirmed_at). A customer change clears the
+-- plan directly (not via website_dispatch_plan, whose staff rules may refuse some stages).
 -- Idempotent. Orders are never written.
 
 -- The caller's proven phone (01XXXXXXXXX): the verified Ops phone of a linked account, else the
@@ -81,7 +83,7 @@ begin
         and t.source_ref = v_phone
         and t.status <> 'done'
         and t.created_at > now() - interval '30 days'
-        and (j.id is null or j.stage in ('new', 'assigned', 'scheduled'))
+        and (j.id is null or j.stage in ('new', 'confirmed', 'assigned', 'scheduled'))
       order by t.created_at desc
       limit 5
     ) x
@@ -117,7 +119,7 @@ begin
     perform public.website_dispatch_sync();
     select * into j from public.website_dispatch_jobs where task_id = v_task;
   end if;
-  if j.id is null or j.stage not in ('new', 'assigned', 'scheduled') then
+  if j.id is null or j.stage not in ('new', 'confirmed', 'assigned', 'scheduled') then
     raise exception 'pickup closed' using errcode = 'P0002';
   end if;
   if j.slot_date is not null and now() >= public.portal_pickup_cutoff(j.slot_date, j.slot) then
@@ -152,14 +154,21 @@ begin
   end if;
 
   v_label := to_char(p_date, 'Dy DD Mon') || ', ' || initcap(p_slot);
-  -- Back to "new": whatever the team planned no longer fits; they re-plan from the new wish.
-  perform public.website_dispatch_plan(j.id, null, null, null, null, 'Customer (website)');
+  -- Back to "new" with the customer's wish. Whatever the team planned or confirmed no longer fits,
+  -- so person, slot, trip and confirmation are cleared here directly (not through
+  -- website_dispatch_plan, whose staff rules may refuse some stages): the team re-plans it.
   update public.website_dispatch_jobs
-     set requested = left(v_label || ' (changed by the customer)', 160), updated_at = now()
+     set assignee_id = null, assignee_name = null, slot_date = null, slot = null, trip_key = null,
+         stage = 'new', confirmed_at = null, confirmed_by = null,
+         requested = left(v_label || ' (changed by the customer)', 160),
+         updated_at = now()
    where id = j.id;
   perform public.website_dispatch_log(j.id, 'Customer (website)', 'rescheduled', v_label);
+  -- The Ops task: off the rider's list, a note line, and the reminder at the new slot's end.
   update public.tasks
-     set description = concat_ws(E'\n', description,
+     set assigned_to = null, assigned_to_name = null, assignee_ids = '{}'::uuid[], assignee_names = '{}'::text[],
+         assigned_by_name = 'Customer (website)',
+         description = concat_ws(E'\n', description,
            'Customer changed the pickup on the website (' || to_char(now() at time zone 'Asia/Dhaka', 'DD Mon HH24:MI') || '): ' || v_label),
          due_at = public.website_dispatch_slot_end(p_date, p_slot),
          reminded = false

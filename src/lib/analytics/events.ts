@@ -1,6 +1,11 @@
 export const ANALYTICS_EVENTS = [
   "book_pickup_click",
   "booking_start",
+  // Quick booking: the customer opened "Add items and see prices".
+  "booking_items_open",
+  "booking_addon_add",
+  // A valid phone number typed into the booking or quote form (once per form).
+  "phone_entered",
   "booking_success",
   "booking_error",
   "whatsapp_click",

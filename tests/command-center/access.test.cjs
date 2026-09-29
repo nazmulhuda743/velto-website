@@ -33,7 +33,7 @@ test("designers never reach customer data or money", () => {
 });
 
 test("support handles customers but not site content or marketing", () => {
-  for (const s of ["requests", "dispatch", "retention", "accounts"]) assert.ok(p.can("support", s), s);
+  for (const s of ["requests", "dispatch", "retention", "accounts", "coupons"]) assert.ok(p.can("support", s), s);
   for (const s of ["images", "settings", "seo", "revenue", "marketing"]) assert.equal(p.can("support", s), false, s);
 });
 

@@ -26,7 +26,7 @@ export async function Footer() {
   const locations = await Promise.all((await getLocations()).map(localLocation));
   const t = dictionary(await getLocale());
   return (
-    <footer className="on-navy border-t border-white/15 bg-navy-deep text-white/80">
+    <footer data-site-footer className="on-navy border-t border-white/15 bg-navy-deep text-white/80">
       <div className="container-page pb-10 pt-16 md:pt-20">
         <div className="grid-page gap-y-12">
           <div className="col-span-4 md:col-span-8 xl:col-span-3">

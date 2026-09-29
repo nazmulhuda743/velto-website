@@ -15,5 +15,3 @@ export const customerAccountsEnabled = () => customerAuthConfig() !== null;
 /** Non-sensitive hint that lets the static header show "My Account" without a server call. */
 export const ACCOUNT_HINT_COOKIE = "velto_account";
 
-/** Set only after a password-recovery link is verified; gates the reset form (15 minutes). */
-export const RECOVERY_COOKIE = "velto_recovery";

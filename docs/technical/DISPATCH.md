@@ -2,6 +2,31 @@
 
 `/admin/dispatch`, for Owners, Managers and Customer support.
 
+## One card per booking (`/admin/requests`)
+
+Every website booking and quote is one card, from the first call to delivery, with the next step
+done on the card itself:
+
+| Step | Who | On the card |
+|---|---|---|
+| New | website | A call timer: fine for 30 min, amber after, red after 24 h. **Confirmed with customer** (day + time of day, the customer's choice pre-filled) or **No answer** (attempts counted; after 3, cancel with "No answer after 3 calls") |
+| Confirmed | staff | **Assign** a person (day and time of day kept). WhatsApp confirmation, Bangla or English |
+| Assigned | staff | **Picked up**, with the Ops order number if it exists already. The Ops task closes. WhatsApp confirmation with the rider's name |
+| Picked up | staff | **Link** the Ops order: one tap on an order made for the same phone since the request, or type the number |
+| In process → Ready → Delivery planned → Delivered | Velto Ops | Read from the linked order and its delivery job. **Plan delivery** on the card (the order's delivery date pre-filled). WhatsApp "picked up" and "ready" messages |
+
+Also on every card: a repeat request from the same phone (**Merge**), a staff note, **Cancel** with a
+reason, the customer's earlier orders in Ops (New to Velto / Returning), the request's details and
+photos, and a timeline of every change and WhatsApp message opened. WhatsApp messages open with the
+text written out; staff send them from their own WhatsApp. Pickup & delivery stays as the day's plan
+by person and links back to each booking.
+
+Data: `docs/technical/sql/website_dispatch_stages.sql` (stages `confirmed` and `picked`, call
+attempts, notes, order link, `website_dispatch_context`). A pickup task finished in Velto Ops now
+means "picked". Delivery jobs are only created for orders that became Ready in the last 7 days or
+are due from yesterday on. Test: `docs/technical/sql/tests/website_dispatch_stages_test.sql`
+(staging only; rolls back). Rules: `src/lib/admin/request-flow.ts`, tested in `tests/request-flow.test.cjs`.
+
 ## The flow
 
 | Step | Pickups (website bookings and quotes) | Deliveries (orders Ready in Velto Ops) |
@@ -12,6 +37,30 @@
 | 4. Finish | **Picked up** (or done in Ops) closes it; **Cancel** needs a reason, which is written on the Ops task | Closes itself when the order is Delivered (or Cancelled) in Ops |
 
 Changing a plan updates the same Ops task; nothing is created twice. Every change is in **Activity**.
+
+## New request push
+
+When a website booking or quote is saved, every active Ops **admin** and **manager** whose phone is
+subscribed to Velto Ops notifications gets a push: "🧺 New pickup booking · name · area · when ·
+service. Call within 30 min." (or "📐 New quote request"). It goes through the Ops `notify-push`
+function, one person at a time; people without a subscription are skipped (never the whole team).
+It is sent after the customer's response, so it never slows or fails a booking. The push links to
+`/admin/requests?stage=new`. Set `VELTO_NEW_REQUEST_PUSH=false` on the server to turn it off.
+
+## The delivery board
+
+Deliveries waiting for a plan are grouped by the order's date in Velto Ops, most pressing first:
+**Late**, **Due today**, **Due tomorrow**, **Due later**, **No delivery date**, and (folded)
+**Waiting at the outlet**: orders Ready for over a week whose date has passed. Each group shows what
+the riders collect. Each delivery card shows the order's items, total, **amount to collect** (red),
+its date in Ops and how long it has been Ready, and a WhatsApp "your order is ready" message (with the
+planned day once a person is set).
+
+**Take off the board** closes a delivery without delivering it ("Customer will collect from the
+outlet", "Couldn't reach the customer", "Already delivered (not planned here)", "Customer asked us to
+hold it", or another reason). The order stays Ready in Ops; it comes back to the board only if the
+order changes in Ops afterwards (`docs/technical/sql/website_dispatch_deliveries.sql`; test:
+`docs/technical/sql/tests/website_dispatch_deliveries_test.sql`, staging only).
 
 ## Overlaps
 
@@ -28,6 +77,10 @@ The board finds them and offers one tap:
 The rules (slots, capacity, overlaps, suggested slot) are pure functions in `src/lib/admin/dispatch-logic.ts`, unit-tested in `tests/dispatch.test.cjs`.
 
 Status: applied and tested on **staging**; applied on **production** 2026-09-27 (owner-approved). The test script stays staging-only.
+
+## In the customer account
+
+`portal_dispatch_plans()` (docs/technical/sql/website_dispatch_portal.sql) gives a linked customer their own planned stops: deliveries by their orders' numbers, pickups by their verified phone. The account home shows a "Today / Tomorrow, Evening 5–9 PM · with Rakib" banner and the delivery window on the active order card. Nothing shows until a manager has planned the stop.
 
 ## Later: the Velto Ops engine
 

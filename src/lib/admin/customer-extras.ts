@@ -2,6 +2,7 @@ import "server-only";
 
 import { isSupabaseConfigured, supabaseRpc } from "../supabase-server";
 import type { FeedbackIssue } from "../customer/extras";
+import type { GoalCoupon, GoalRung } from "../customer/goal";
 import type { Loaded } from "./analytics-data";
 import { isAdminPreview } from "./preview";
 
@@ -89,4 +90,72 @@ export async function getOrderCounts(phones: string[], months: number): Promise<
   } catch {
     return {};
   }
+}
+/* ---------- monthly goal coupons (docs/technical/sql/website_monthly_goal.sql) ---------- */
+
+export type CouponRow = GoalCoupon & {
+  spend: number;
+  orderNumber: string | null;
+  usedBy: string | null;
+  usedAt: string | null;
+  createdAt: string;
+  customerName: string | null;
+  customerPhone: string | null;
+};
+
+export type SettleResult =
+  | { ok: true; month: string; reached: number; issued: number; expired: number; validFrom: string; validTo: string }
+  | { ok: false; error: string };
+
+const GOAL_NOT_INSTALLED = "The monthly goal isn't installed in this database yet (docs/technical/sql/website_monthly_goal.sql).";
+
+const previewCoupons = (): CouponRow[] => {
+  const month = new Date(Date.now() - 20 * 86_400_000).toISOString().slice(0, 7);
+  const next = new Date(Date.now() + 10 * 86_400_000).toISOString().slice(0, 7);
+  return [
+    { id: "c1", code: "VG-7K2P9Q", kind: "taka", amount: 200, label: "৳200 off an order next month", labelBn: "", month, spend: 1720, validFrom: `${next}-01`, validTo: `${next}-30`, status: "open", orderNumber: null, usedBy: null, usedAt: null, createdAt: ago(30), customerName: "Preview Customer One", customerPhone: "01700000001" },
+    { id: "c2", code: "VG-3M8XZA", kind: "delivery", amount: 0, label: "Free pickup & delivery on every order next month", labelBn: "", month, spend: 940, validFrom: `${next}-01`, validTo: `${next}-30`, status: "open", orderNumber: null, usedBy: null, usedAt: null, createdAt: ago(30), customerName: "Preview Customer Two", customerPhone: "01700000002" },
+    { id: "c3", code: "VG-QQ12AB", kind: "taka", amount: 400, label: "৳400 off an order next month", labelBn: "", month, spend: 2610, validFrom: `${next}-01`, validTo: `${next}-30`, status: "used", orderNumber: "VEL-01240", usedBy: "Preview admin", usedAt: ago(5), createdAt: ago(30), customerName: "Preview Customer Three", customerPhone: "01700000003" },
+  ];
+};
+
+export async function getGoalCoupons(limit = 300): Promise<Loaded<CouponRow[]>> {
+  if (isAdminPreview()) return { state: "ok", data: previewCoupons(), preview: true };
+  if (!isSupabaseConfigured()) return { state: "not_configured" };
+  try {
+    return { state: "ok", data: await supabaseRpc<CouponRow[]>("website_goal_coupons", { p_limit: limit }) };
+  } catch (error) {
+    const m = error instanceof Error ? error.message : "";
+    return { state: "error", message: /HTTP 404/.test(m) ? GOAL_NOT_INSTALLED : safeMessage(error) };
+  }
+}
+
+/** How many customers reached each rung in a month (for setting the ladder, and before issuing). */
+export async function previewGoal(month: string, rungs: GoalRung[], doubleFirst: boolean): Promise<Loaded<{ customers: number; spend: number; rungs: { rung: number; customers: number }[] }>> {
+  if (isAdminPreview()) return { state: "ok", preview: true, data: { customers: 388, spend: 214000, rungs: rungs.map((_, i) => ({ rung: i + 1, customers: [61, 24, 9, 3][i] ?? 1 })) } };
+  if (!isSupabaseConfigured()) return { state: "not_configured" };
+  try {
+    return { state: "ok", data: await supabaseRpc("website_goal_preview", { p_month: month, p_ladder: rungs, p_double: doubleFirst }) };
+  } catch (error) {
+    const m = error instanceof Error ? error.message : "";
+    return { state: "error", message: /HTTP 404/.test(m) ? GOAL_NOT_INSTALLED : safeMessage(error) };
+  }
+}
+
+export async function settleGoal(month: string, rungs: GoalRung[], doubleFirst: boolean): Promise<SettleResult> {
+  if (isAdminPreview()) return { ok: true, month, reached: 12, issued: 0, expired: 0, validFrom: "", validTo: "" };
+  if (!isSupabaseConfigured()) return { ok: false, error: "The database isn't configured." };
+  try {
+    const r = await supabaseRpc<SettleResult>("website_goal_settle", { p_month: month, p_ladder: rungs, p_double: doubleFirst });
+    if (!r.ok) return { ok: false, error: r.error === "month_not_over" ? "That month isn't over yet." : r.error === "no_ladder" ? "Set the ladder on Loyalty first." : "Couldn't issue coupons." };
+    return r;
+  } catch (error) {
+    const m = error instanceof Error ? error.message : "";
+    return { ok: false, error: /HTTP 404/.test(m) ? GOAL_NOT_INSTALLED : safeMessage(error) };
+  }
+}
+
+export async function markCoupon(id: string, status: "used" | "void" | "open", order: string | null, staff: string): Promise<boolean> {
+  if (isAdminPreview()) return true;
+  return supabaseRpc<boolean>("website_goal_coupon_mark", { p_id: id, p_status: status, p_order: order, p_staff: staff });
 }
