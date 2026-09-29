@@ -5,13 +5,13 @@ import { AccountsUnavailable, SignedInNotice, StaffAccountNotice } from "@/compo
 import { authProviders } from "@/lib/customer/providers";
 import { getCustomerSession } from "@/lib/customer/portal";
 import { signedInAs, safeNextPath } from "@/lib/customer/validation";
-import { alternatesFor } from "@/lib/seo/page-metadata";
+import { alternatesFor, shareCardMetadata } from "@/lib/seo/page-metadata";
 import { accountText } from "@/content/i18n/account";
 import { getLocale } from "@/lib/i18n/server";
 
 export async function generateMetadata(): Promise<Metadata> {
   const title = accountText(await getLocale()).meta.signUp;
-  return { title, robots: { index: false, follow: false }, alternates: await alternatesFor("/signup") };
+  return { title, robots: { index: false, follow: false }, alternates: await alternatesFor("/signup"), ...(await shareCardMetadata("/signup", title)) };
 }
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
