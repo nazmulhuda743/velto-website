@@ -2,7 +2,7 @@ import Link from "next/link";
 import { AdminHeader, Field, Notice, one, type SearchParams } from "@/components/admin/ui";
 import { LOCATIONS } from "@/content/site";
 import { getSiteContent } from "@/lib/site-content";
-import { ImageFileInput } from "@/components/admin/ImageFileInput";
+import { LogoFileField } from "@/components/admin/LogoFileField";
 import { saveLogoAction, saveSettingsAction } from "../../actions";
 import { requireSection } from "@/lib/admin/session";
 
@@ -36,17 +36,12 @@ export default async function SettingsPage({ searchParams }: { searchParams: Sea
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={l.src} alt="" className="h-12 w-auto" />
               </div>
-              <ImageFileInput name="file" accept="image/png,image/webp" className="mt-3 block w-full t-small" aria-label={`New file for ${l.title}`} />
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button type="submit" className="admin-btn">
-                  Upload logo
+              <LogoFileField label={l.title} bg={l.bg} />
+              {l.custom ? (
+                <button type="submit" name="reset" value="1" formNoValidate className="admin-btn-danger mt-2">
+                  Restore official logo
                 </button>
-                {l.custom ? (
-                  <button type="submit" name="reset" value="1" formNoValidate className="admin-btn-danger">
-                    Restore official logo
-                  </button>
-                ) : null}
-              </div>
+              ) : null}
             </form>
           ))}
         </div>
