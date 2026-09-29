@@ -1,36 +1,51 @@
 import Link from "@/components/i18n/Link";
 import { CookieSettingsButton } from "@/components/consent/CookieSettingsButton";
 import { Logo } from "@/components/ui/Logo";
-import { SERVICE_PAGES } from "@/content/services";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
-import { dictionary, type Dictionary } from "@/content/i18n";
-import { CUSTOMER_PORTAL, GOOGLE_PROFILE_BRANCH, SOCIAL_PROFILES, WHATSAPP_URL, bookHref } from "@/content/site";
+import { dictionary } from "@/content/i18n";
+import { defaultFooterLinks } from "@/content/footer-defaults";
+import { GOOGLE_PROFILE_BRANCH, SOCIAL_PROFILES, WHATSAPP_URL, bookHref } from "@/content/site";
 import { FacebookIcon, GoogleIcon, InstagramIcon, LinkedInIcon } from "@/components/ui/icons";
-import { getLocations } from "@/lib/site-content";
+import { footerLabel, isExternalHref, visibleFooterLinks, type FooterLink } from "@/lib/footer-links";
+import { getLocations, getSiteContent } from "@/lib/site-content";
 import { getLocale, localLocation } from "@/lib/i18n/server";
 
 const link = "inline-block py-1.5 t-small text-white hover:text-cyan";
 const social = "inline-flex size-11 items-center justify-center rounded-full border border-white/25 text-white transition-colors hover:border-cyan hover:text-cyan";
 const SOCIAL_ICONS = { facebook: FacebookIcon, instagram: InstagramIcon, linkedin: LinkedInIcon } as const;
 
-/** Everything a customer might look for after the page ends; the header stays short. */
-const HELP: { key: keyof Dictionary["nav"]; href: string }[] = [
-  { key: "pricing", href: "/pricing" },
-  { key: "howItWorks", href: "/how-it-works" },
-  { key: "regularLaundry", href: "/regular-laundry" },
-  { key: "requestQuote", href: "/quote" },
-  { key: "trackAnOrder", href: "/track" },
-  ...(CUSTOMER_PORTAL.enabled ? [{ key: "myAccount" as const, href: CUSTOMER_PORTAL.href }] : []),
-  { key: "about", href: "/about" },
-];
+/** One footer link: pages on this site keep the language; other websites open in a new tab. */
+function FooterItem({ item, locale, newTab }: { item: FooterLink; locale: string; newTab: string }) {
+  const label = footerLabel(item, locale);
+  return (
+    <li>
+      {isExternalHref(item.href) ? (
+        <a href={item.href} target="_blank" rel="noopener noreferrer" className={link}>
+          {label}
+          <span className="sr-only"> {newTab}</span>
+        </a>
+      ) : (
+        <Link href={item.href} className={link}>
+          {label}
+        </Link>
+      )}
+    </li>
+  );
+}
 
+/** Everything a customer might look for after the page ends; the header stays short. Columns are edited in Content → Footer links. */
 export async function Footer() {
   // Hours in the page language (built-in defaults translated, admin edits with local digits).
   const locations = await Promise.all((await getLocations()).map(localLocation));
-  const t = dictionary(await getLocale());
+  const locale = await getLocale();
+  const t = dictionary(locale);
   const google = locations.find((l) => l.id === GOOGLE_PROFILE_BRANCH);
+  const { footer } = await getSiteContent();
+  const builtIn = defaultFooterLinks();
+  const services = visibleFooterLinks(footer.services ?? builtIn.services);
+  const help = visibleFooterLinks(footer.help ?? builtIn.help);
   return (
-    <footer data-site-footer className="on-navy border-t border-white/15 bg-navy-deep text-white/80">
+    <footer id="site-footer" data-site-footer className="on-navy border-t border-white/15 bg-navy-deep text-white/80">
       <div className="container-page pb-10 pt-16 md:pt-20">
         <div className="grid-page gap-y-12">
           <div className="col-span-4 md:col-span-8 xl:col-span-3">
@@ -90,17 +105,8 @@ export async function Footer() {
               {t.footer.services}
             </h2>
             <ul className="mt-4 space-y-1">
-              <li>
-                <Link href="/services" className={link}>
-                  {t.footer.allServices}
-                </Link>
-              </li>
-              {SERVICE_PAGES.map((s) => (
-                <li key={s.slug}>
-                  <Link href={`/services/${s.slug}`} className={link}>
-                    {t.serviceNames[s.slug] ?? s.name}
-                  </Link>
-                </li>
+              {services.map((item, i) => (
+                <FooterItem key={`${i}-${item.href}`} item={item} locale={locale} newTab={t.common.opensNewTab} />
               ))}
             </ul>
           </nav>
@@ -110,12 +116,8 @@ export async function Footer() {
               {t.footer.help}
             </h2>
             <ul className="mt-4 space-y-1">
-              {HELP.map((item) => (
-                <li key={item.href}>
-                  <Link href={item.href} className={link}>
-                    {t.nav[item.key]}
-                  </Link>
-                </li>
+              {help.map((item, i) => (
+                <FooterItem key={`${i}-${item.href}`} item={item} locale={locale} newTab={t.common.opensNewTab} />
               ))}
             </ul>
           </nav>

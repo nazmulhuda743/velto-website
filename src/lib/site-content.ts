@@ -10,6 +10,7 @@ import { isSupabaseConfigured, supabaseFetch } from "./supabase-server";
 import type { CopyOverrides } from "./i18n/copy-overrides";
 import { parsePopup, type PromoPopup } from "./promo";
 import { parseLoyalty, type LoyaltySettings } from "./customer/loyalty";
+import { parseFooterLinks, type FooterLinks } from "./footer-links";
 
 /** Cache tag invalidated by every admin save. */
 export const SITE_CONTENT_TAG = "site-content";
@@ -59,6 +60,8 @@ export type SiteContent = {
   promo: PromoPopup;
   /** Loyalty tiers and milestone reward (admin → Loyalty). */
   loyalty: LoyaltySettings;
+  /** Footer link columns (Content → Footer links); null columns use the built-in links. */
+  footer: FooterLinks;
   seo: Record<string, SeoEntry>;
   images: Record<string, ImageOverride>;
   reviews: ReviewEntry[];
@@ -221,6 +224,7 @@ export const getSiteContent = cache(async (): Promise<SiteContent> => {
     brand: parseBrand(rows.brand),
     promo: parsePopup(rows.promo),
     loyalty: parseLoyalty(rows.loyalty),
+    footer: parseFooterLinks(rows.footer),
   };
 });
 
