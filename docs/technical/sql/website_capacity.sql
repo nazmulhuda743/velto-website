@@ -23,7 +23,7 @@
 -- website_dispatch_stages.sql is ever run again, run this file again after it.
 -- Works with website_customer_pickups.sql: a customer's change or cancel frees the place through
 -- the capacity_job_changed trigger. Idempotent: safe to run again.
--- Status: STAGING only until the owner approves production.
+-- Status: applied to staging and to production (2026-09-29, owner approved). Website switch starts off.
 
 begin;
 
