@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "@/components/i18n/Link";
 import { LegalContact, LegalDocument, type LegalSection } from "@/components/legal/LegalDocument";
 import { LEGAL } from "@/content/legal";
-import { alternatesFor } from "@/lib/seo/page-metadata";
+import { alternatesFor, shareCardMetadata } from "@/lib/seo/page-metadata";
 
 const baseMetadata: Metadata = {
   title: "Privacy Policy | Velto Premium Laundry",
@@ -12,7 +12,7 @@ const baseMetadata: Metadata = {
 };
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { ...baseMetadata, alternates: await alternatesFor("/privacy") };
+  return { ...baseMetadata, alternates: await alternatesFor("/privacy"), ...(await shareCardMetadata("/privacy", String(baseMetadata.title), baseMetadata.description ?? undefined)) };
 }
 
 /*
