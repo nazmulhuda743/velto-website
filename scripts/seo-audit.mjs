@@ -66,6 +66,21 @@ if (!robots.includes(`Sitemap: ${origin}/sitemap.xml`)) fail(`robots.txt does no
 const disallows = (p) => robots.split("\n").some((line) => line.trim() === `Disallow: ${p}`);
 for (const p of ["/admin", "/account", "/api/"]) if (!disallows(p)) fail(`robots.txt does not disallow ${p}`);
 
+// llms.txt: the plain-text summary for AI assistants, on the production host, no private routes
+{
+  const res = await get("/llms.txt");
+  const body = await res.text();
+  if (res.status !== 200 || !/^text\/plain/.test(res.headers.get("content-type") ?? "")) fail(`/llms.txt returned ${res.status} ${res.headers.get("content-type")}`);
+  else {
+    if (!body.startsWith("# ")) fail("/llms.txt does not start with an H1 title");
+    for (const u of body.match(/\]\((https?:[^)\s]+)\)/g) ?? []) {
+      const url = u.slice(2, -1);
+      if (/localhost|127\.0\.0\.1|vercel\.app/.test(url)) fail(`/llms.txt links a non-production host: ${url}`);
+      if (/\/(admin|account|api|auth)(\/|$)/.test(url)) fail(`/llms.txt links a private route: ${url}`);
+    }
+  }
+}
+
 // sitemap
 const sitemapXml = await (await get("/sitemap.xml")).text();
 const sitemapUrls = [...sitemapXml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
@@ -78,13 +93,15 @@ for (const p of PRIVATE) if (indexable.includes(p)) fail(`private route listed i
 const seenTitles = new Map();
 const seenDescriptions = new Map();
 const internal = new Set();
+let faqPages = 0;
 for (const path of indexable) {
   const res = await get(path);
   if (res.status !== 200) {
     fail(`${path} returned ${res.status}`);
     continue;
   }
-  const h = head(await res.text());
+  const html = await res.text();
+  const h = head(html);
   const expected = path === "/" ? [origin, `${origin}/`] : [`${origin}${path}`];
   if (h.canonicals.length !== 1) fail(`${path} has ${h.canonicals.length} canonical links`);
   else if (!expected.includes(h.canonicals[0])) fail(`${path} canonical is ${h.canonicals[0]}, expected ${expected[0]}`);
@@ -105,7 +122,18 @@ for (const path of indexable) {
   for (const block of h.jsonLd) {
     try {
       const data = JSON.parse(block);
-      for (const item of [data].flat()) if (!item["@context"]) fail(`${path} JSON-LD block without @context`);
+      for (const item of [data].flat()) {
+        if (!item["@context"]) fail(`${path} JSON-LD block without @context`);
+        // FAQPage only for questions the page actually shows (in its <summary> accordion).
+        if (item["@type"] === "FAQPage") {
+          const shown = [...html.matchAll(/<summary\b[\s\S]*?<\/summary>/gi)].map((m) => decode(m[0].replace(/<[^>]+>/g, "")).trim());
+          for (const q of item.mainEntity ?? []) {
+            if (!q.name || !q.acceptedAnswer?.text) fail(`${path} FAQPage question without a name or answer`);
+            else if (!shown.includes(q.name)) fail(`${path} FAQPage question not shown on the page: ${q.name}`);
+          }
+          faqPages++;
+        }
+      }
     } catch {
       fail(`${path} has malformed JSON-LD`);
     }
@@ -231,5 +259,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `SEO audit passed: ${indexable.length} sitemap pages (canonical, title, description, H1, JSON-LD, og:image), ${internal.size} internal links, ${PRIVATE.length + 1} private routes and all old-URL redirects. Languages (Bangla ${banglaOn ? "on" : "off"}): ${languageChecks} pages checked for hreflang, canonicals, indexing and ${banglaOn ? "sitemap entries" : "/bn redirects"}.`,
+  `SEO audit passed: ${indexable.length} sitemap pages (canonical, title, description, H1, JSON-LD, og:image; FAQ schema on ${faqPages} matches the page), llms.txt, ${internal.size} internal links, ${PRIVATE.length + 1} private routes and all old-URL redirects. Languages (Bangla ${banglaOn ? "on" : "off"}): ${languageChecks} pages checked for hreflang, canonicals, indexing and ${banglaOn ? "sitemap entries" : "/bn redirects"}.`,
 );

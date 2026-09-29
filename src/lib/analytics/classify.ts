@@ -7,11 +7,12 @@
  * "Other", never a guess.
  */
 
-export type Channel = "direct" | "google_organic" | "meta_ads" | "google_ads" | "referral" | "whatsapp" | "other";
+export type Channel = "direct" | "google_organic" | "ai_search" | "meta_ads" | "google_ads" | "referral" | "whatsapp" | "other";
 
 export const CHANNEL_LABELS: Record<Channel, string> = {
   direct: "Direct",
   google_organic: "Google organic",
+  ai_search: "AI search (ChatGPT, Gemini…)",
   meta_ads: "Facebook / Instagram ads",
   google_ads: "Google ads",
   referral: "Referral",
@@ -19,7 +20,7 @@ export const CHANNEL_LABELS: Record<Channel, string> = {
   other: "Other",
 };
 
-export const CHANNEL_ORDER: Channel[] = ["direct", "google_organic", "meta_ads", "google_ads", "referral", "whatsapp", "other"];
+export const CHANNEL_ORDER: Channel[] = ["direct", "google_organic", "ai_search", "meta_ads", "google_ads", "referral", "whatsapp", "other"];
 
 export type AcquisitionFields = {
   utm_source?: string | null;
@@ -34,6 +35,10 @@ const META_SOURCES = /^(facebook|fb|instagram|ig|meta|messenger|audience_?networ
 const GOOGLE_SOURCES = /^(google|adwords|google_?ads|youtube)$/;
 const WHATSAPP = /^(whatsapp|wa|wa\.me|share|shared|shared_link)$/;
 
+// AI assistants that link out: ChatGPT tags its links utm_source=chatgpt.com; the others show as the referrer.
+const AI_SOURCES = /^(chatgpt(\.com)?|openai|perplexity(\.ai)?|gemini|copilot|claude(\.ai)?|deepseek|meta_?ai)$/;
+const AI_HOSTS = /^(chatgpt\.com|chat\.openai\.com|(www\.)?perplexity\.ai|gemini\.google\.com|bard\.google\.com|copilot\.microsoft\.com|claude\.ai|chat\.deepseek\.com|meta\.ai)$/;
+
 const lower = (v: string | null | undefined) => (v ?? "").trim().toLowerCase();
 
 export function classifyChannel(f: AcquisitionFields): Channel {
@@ -44,6 +49,7 @@ export function classifyChannel(f: AcquisitionFields): Channel {
   if (f.click_id === "gclid" || (GOOGLE_SOURCES.test(source) && PAID_MEDIUMS.test(medium))) return "google_ads";
   // Paid Meta traffic needs a paid medium; fbclid alone is added to organic Facebook links too.
   if (META_SOURCES.test(source) && PAID_MEDIUMS.test(medium)) return "meta_ads";
+  if (AI_SOURCES.test(source) || (!source && AI_HOSTS.test(host))) return "ai_search";
   if (WHATSAPP.test(source) || WHATSAPP.test(medium) || /(^|\.)whatsapp\.com$|^wa\.me$/.test(host)) return "whatsapp";
   if (source || medium) {
     if (GOOGLE_SOURCES.test(source) && (medium === "organic" || medium === "")) return "google_organic";
