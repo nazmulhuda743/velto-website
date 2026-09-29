@@ -177,6 +177,7 @@ export function PickupWindows({
             return (
               <label
                 key={d.date}
+                data-day
                 className={`relative flex min-h-16 w-[4.75rem] shrink-0 cursor-pointer flex-col items-center justify-center rounded-md border px-1 text-center has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-blue ${
                   chosen ? "border-action bg-[#e8f3fb]" : open ? "border-line-strong bg-white hover:border-navy/60" : "border-line bg-soft"
                 }`}
@@ -236,9 +237,18 @@ export function PickupWindows({
                   aria-describedby={errorSlot ? "booking-slot-error" : undefined}
                   className="sr-only"
                 />
-                <span className="min-w-0">
-                  <span className={`block font-semibold ${ok ? "text-navy" : "text-secondary"}`}>{t.slots[w.id]}</span>
-                  <span className={`block t-small ${ok ? "text-body" : "text-secondary"}`}>{hoursText(w.starts, w.ends, locale)}</span>
+                <span className="flex min-w-0 items-center gap-3">
+                  {/* The chosen window gets a tick, so the choice isn't shown by colour alone. */}
+                  {chosen ? (
+                    <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true" className="shrink-0 text-action" data-window-tick>
+                      <circle cx="10" cy="10" r="10" fill="currentColor" />
+                      <path d="M5.5 10.2l3 3 6-6.4" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  ) : null}
+                  <span className="min-w-0">
+                    <span className={`block font-semibold ${ok ? "text-navy" : "text-secondary"}`}>{t.slots[w.id]}</span>
+                    <span className={`block t-small ${ok ? "text-body" : "text-secondary"}`}>{hoursText(w.starts, w.ends, locale)}</span>
+                  </span>
                 </span>
                 {status ? (
                   <span
