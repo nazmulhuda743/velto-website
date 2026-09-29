@@ -133,6 +133,7 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
       </header>
 
       {params.welcome ? <Alert tone="success">{t.welcome}</Alert> : null}
+      {params.restored ? <Alert tone="success">{a.welcomeBack.restored}</Alert> : null}
       {orders === null ? <Alert tone="error">{t.ordersFailed}</Alert> : null}
 
       {/* 0. The rider is coming today or tomorrow: say so first. */}

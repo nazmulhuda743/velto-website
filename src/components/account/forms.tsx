@@ -400,21 +400,19 @@ export function ProfileForm({
         error={errors.address}
       />
       {completing ? (
-        <label className="flex items-start gap-3 t-small text-body">
-          <input type="checkbox" name="terms" required aria-invalid={errors.terms ? true : undefined} className="mt-0.5 size-5 shrink-0 accent-[var(--color-action)]" />
-          <span>
-            {t.agreeBefore}
-            <Link href="/terms" target="_blank" className="font-semibold text-navy underline underline-offset-4">
-              {t.termsLink}
-            </Link>
-            {t.and}
-            <Link href="/privacy" target="_blank" className="font-semibold text-navy underline underline-offset-4">
-              {t.privacyLink}
-            </Link>
-            {t.agreeAfter}
-            {errors.terms ? <span className="mt-1 block font-medium text-error">{errors.terms}</span> : null}
-          </span>
-        </label>
+        // No checkbox: continuing is agreeing, said plainly; the version and time are recorded.
+        <p className="t-small text-secondary">
+          <input type="hidden" name="terms" value="on" />
+          {t.continueTermsBefore}
+          <Link href="/terms" target="_blank" className="font-semibold text-navy underline underline-offset-4">
+            {t.termsLink}
+          </Link>
+          {t.and}
+          <Link href="/privacy" target="_blank" className="font-semibold text-navy underline underline-offset-4">
+            {t.privacyLink}
+          </Link>
+          {t.continueTermsAfter}
+        </p>
       ) : null}
       <SubmitButton pending={t.saving} className="md:w-auto">
         {completing ? t.continue : t.saveDetails}
@@ -440,7 +438,7 @@ export function LinkBySms({ t, phone }: { t: LinkText; phone: string }) {
   if (state.status === "linked") {
     return (
       <Alert tone={state.result === "linked" ? "success" : "info"}>
-        {state.result === "linked" ? t.linkedDone : state.result === "pending" ? t.pendingDone : t.noOrders}
+        {state.result === "linked" ? t.linkedDone : state.result === "pending" ? t.pendingDone : state.result === "match" ? t.matchFound : t.noOrders}
       </Alert>
     );
   }

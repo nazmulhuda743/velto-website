@@ -34,7 +34,7 @@ export type AuthFormState =
   /** An SMS code is on its way to `phone`; `message` reports a problem on this step (e.g. resend refused). */
   | { status: "code-sent"; phone: string; resent?: boolean; sentAt?: number; message?: string; errors?: FieldErrors }
   /** "Show my past orders": the phone is proven; `result` says what was found under it. */
-  | { status: "linked"; result: "linked" | "no_orders" | "pending" };
+  | { status: "linked"; result: "linked" | "no_orders" | "pending" | "match" };
 
 const UNAVAILABLE: AuthFormState = { status: "unavailable" };
 
@@ -427,10 +427,59 @@ export async function confirmLinkCodeAction(_prev: AuthFormState, form: FormData
     if (!r.ok || !r.result) return { status: "error", message: m.t.saveFailed };
     store.delete(LINK_CODE_COOKIE);
     revalidatePath("/account", "layout");
-    return { status: "linked", result: r.result === "linked" ? "linked" : r.result === "pending" ? "pending" : "no_orders" };
+    // "match": the proof is recorded; the account now asks "Welcome back — is this you?".
+    return { status: "linked", result: r.result === "linked" ? "linked" : r.result === "pending" ? "pending" : r.result === "match" ? "match" : "no_orders" };
   } catch (error) {
     console.error("portal_link_verified_phone_failed", error instanceof Error ? error.message : "unknown");
     return { status: "error", message: m.t.saveFailed };
   }
 }
 
+
+/* ---------- welcome back: claim or reject the matching Velto record ---------- */
+
+export type ClaimState =
+  | { status: "idle" }
+  | { status: "error"; message: string }
+  | { status: "mismatch"; attemptsLeft: number }
+  | { status: "assisted" };
+
+/** "Continue to my account": links the history (the database checks everything again). */
+export async function claimMatchAction(_prev: ClaimState, form: FormData): Promise<ClaimState> {
+  const m = await messages();
+  const supabase = await customerSupabase();
+  if (!supabase) return m.disabled as ClaimState;
+  const name = str(form, "name", 120).trim();
+  const { data, error } = await supabase.rpc("portal_claim_match", {
+    p_name: name || null,
+    // Continuing is agreeing (the screen says so); recorded with the version, as at sign-up.
+    p_terms_version: TERMS_VERSION,
+  });
+  if (error) {
+    if (error.code === "PGRST301" || error.message?.includes("authentication required")) redirect(await loginRedirectPath("/account"));
+    console.error("portal_claim_match_failed", error.code);
+    return { status: "error", message: m.t.saveFailed };
+  }
+  const r = (data ?? {}) as { ok?: boolean; state?: string; error?: string; attemptsLeft?: number };
+  if (r.ok) {
+    revalidatePath("/account", "layout");
+    redirect(await localHref("/account?restored=1"));
+  }
+  if (r.state === "assisted") {
+    revalidatePath("/account", "layout");
+    return { status: "assisted" };
+  }
+  if (r.error === "name_required") return { status: "error", message: m.t.claimName };
+  if (r.error === "name_mismatch") return { status: "mismatch", attemptsLeft: r.attemptsLeft ?? 0 };
+  revalidatePath("/account", "layout");
+  return { status: "error", message: m.t.saveFailed };
+}
+
+/** "This isn't me": remembered for good; the account carries on as a new one. */
+export async function rejectMatchAction(): Promise<void> {
+  const supabase = await customerSupabase();
+  if (!supabase) return;
+  const { error } = await supabase.rpc("portal_reject_match");
+  if (error) console.error("portal_reject_match_failed", error.code);
+  revalidatePath("/account", "layout");
+}

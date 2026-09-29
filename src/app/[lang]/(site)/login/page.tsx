@@ -44,7 +44,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
     );
   }
   return (
-    <AuthShell mode="signin" next={next} title={t.signInTitle} intro={/^(?:\/bn)?\/book/.test(next) ? t.signInIntroBook : t.signInIntro}>
+    <AuthShell title={t.signInTitle} intro={/^(?:\/bn)?\/book/.test(next) ? t.signInIntroBook : t.signInIntro}>
       <SignInForm
         t={a.forms}
         next={next}
