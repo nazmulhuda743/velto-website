@@ -18,6 +18,7 @@ const approvedEvents = [
   "directions_click",
   "pricing_search",
   "google_reviews_click",
+  "social_click",
   "service_view",
   "page_view",
   "track_order_open",

@@ -58,6 +58,9 @@ export const bn: Dictionary = {
     cookies: "কুকি",
     cookieSettings: "কুকি সেটিংস",
     directionsTo: "(Velto {name})",
+    follow: "Velto-কে ফলো করুন",
+    onNetwork: "{name}-এ Velto",
+    onGoogle: "Google-এ Velto সেক্টর ১১",
   },
   serviceNames: {
     "dry-cleaning": "ড্রাই ক্লিনিং",
