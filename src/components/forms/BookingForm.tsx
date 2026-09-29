@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode, type Ref } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode, type Ref } from "react";
 import { track } from "@/components/layout/Analytics";
 import { ButtonLink } from "@/components/ui/Button";
 import { WhatsAppIcon } from "@/components/ui/icons";
@@ -34,6 +34,8 @@ import { MAX_BOOKING_PHOTOS } from "@/lib/booking-photos";
 import { shrinkPhoto } from "./shrink-photo";
 import { PickupWindows, hoursText, type PickedWindow } from "./PickupWindows";
 import { submitBooking, uploadBookingPhoto, type BookingFormData, type SubmitResult } from "./submit";
+import { CallbackRequest } from "./CallbackRequest";
+import { DRAFT_KEY, makeDraft, readDraft, type BookingDraft } from "@/lib/booking-recovery";
 
 type Text = FormText["booking"];
 type Common = FormText["common"];
@@ -63,6 +65,34 @@ const WHAT_MAX = 160;
 
 const SECTORS = Array.from({ length: 18 }, (_, i) => i + 1);
 const OUTSIDE = "outside";
+
+/* The unsent booking kept in this browser only (lib/booking-recovery.ts). Storage can be blocked. */
+const noSubscribe = () => () => {};
+const readStoredDraft = () => {
+  try {
+    return window.localStorage.getItem(DRAFT_KEY);
+  } catch {
+    return null;
+  }
+};
+const writeStoredDraft = (d: BookingDraft | null) => {
+  try {
+    if (d) window.localStorage.setItem(DRAFT_KEY, JSON.stringify(d));
+    else window.localStorage.removeItem(DRAFT_KEY);
+  } catch {
+    // Private mode or storage off: the draft is a convenience, never required.
+  }
+};
+
+/** Service names as Velto reads them (for a call-back request). */
+const OPS_SERVICE_NAMES: Record<string, string> = {
+  "dry-cleaning": "Dry Cleaning",
+  "wash-and-iron": "Wash & Iron",
+  ironing: "Ironing",
+  "curtain-cleaning": "Curtain Cleaning",
+  "carpet-cleaning": "Carpet Cleaning",
+  "blanket-comforter-cleaning": "Blanket & Comforter Cleaning",
+};
 
 /** Today in Dhaka (YYYY-MM-DD): pickup days are Dhaka days. */
 const dhakaToday = () => new Date(Date.now() + 6 * 3_600_000).toISOString().slice(0, 10);
@@ -201,6 +231,12 @@ function pickupLabel(s: FormState, w: DateWords = OPS_WORDS, slots?: Record<stri
     ? `${slots[p.window]} ${hoursText(p.starts, p.ends, w.locale)}`
     : `${OPS_WINDOWS[p.window]} ${hoursText(p.starts, p.ends, "en")}${p.booked ? " (window booked)" : ""}`;
   return `${day}, ${window}`;
+}
+
+/** "earlier today" / "yesterday" / "3 days ago" for the continue banner. */
+function draftWhen(savedAt: number, t: Text, locale: Locale) {
+  const days = Math.floor((Date.now() - savedAt) / 86_400_000);
+  return days <= 0 ? t.draftToday : days === 1 ? t.draftDay : fill(t.draftDays, { n: days }, locale);
 }
 
 const pageWords = (t: Text, c: Common, locale: Locale): DateWords => ({
@@ -803,6 +839,43 @@ export function BookingForm({
   const started = useRef(false);
   const phoneEntered = useRef(false);
   const statusRef = useRef<HTMLDivElement>(null);
+
+  // A booking started earlier on this device and not sent: offer to continue it (not over a repeat order).
+  const storedDraft = useSyncExternalStore(noSubscribe, readStoredDraft, () => null);
+  const draft = useMemo(() => (initialItems.length ? null : readDraft(storedDraft)), [storedDraft, initialItems.length]);
+  const [draftChoice, setDraftChoice] = useState<"pending" | "done">("pending");
+  const draftOffer = draft && draftChoice === "pending" ? draft : null;
+  // Keep the unsent booking in this browser as the visitor types (never photos or the pickup window).
+  useEffect(() => {
+    if (!started.current || status.state === "success") return;
+    const id = window.setTimeout(() => writeStoredDraft(makeDraft(s)), 500);
+    return () => window.clearTimeout(id);
+  }, [s, status.state]);
+
+  const continueDraft = (d: BookingDraft) => {
+    started.current = true;
+    track("booking_draft_restore", { section: "booking-form" });
+    setDraftChoice("done");
+    setS((prev) => ({
+      ...prev,
+      service: d.service && BOOKING_SERVICES.includes(d.service) ? d.service : prev.service,
+      services: d.services.filter((x): x is GarmentService => isGarmentService(x)),
+      what: d.what,
+      items: d.items as ItemLine[],
+      sector: SECTORS.map(String).includes(d.sector) || d.sector === OUTSIDE ? d.sector : prev.sector,
+      address: d.address || prev.address,
+      backBy: d.backBy,
+      name: d.name || prev.name,
+      phone: d.phone || prev.phone,
+      notes: d.notes || prev.notes,
+    }));
+    if (d.items.length) setItemsOpen(true);
+    if (d.backBy || d.notes) setExtrasOpen(true);
+  };
+  const startOver = () => {
+    writeStoredDraft(null);
+    setDraftChoice("done");
+  };
   const successRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -814,6 +887,7 @@ export function BookingForm({
   }, [status.state]);
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
+    if (draftChoice === "pending") setDraftChoice("done");
     if (!started.current) {
       started.current = true;
       track("booking_start", { section: "booking-form" });
@@ -891,6 +965,7 @@ export function BookingForm({
 
     if (result.ok) {
       if (!previewOutcome) track("booking_success", { service: bookingService(s) });
+      writeStoredDraft(null);
       setStatus({ state: "success", reference: result.reference });
     } else if (result.code === "slot_unavailable") {
       // Someone took the last place a moment ago: nothing was booked. Reload and ask again.
@@ -936,6 +1011,22 @@ export function BookingForm({
           aria-labelledby="page-title"
           className="space-y-6 [&_input]:scroll-mt-32 [&_select]:scroll-mt-32 [&_textarea]:scroll-mt-32"
         >
+          {draftOffer ? (
+            <div role="region" aria-labelledby="draft-title" className="rounded-md border border-blue/30 bg-[#f0f7fc] p-4" data-draft>
+              <p id="draft-title" className="font-semibold text-navy">
+                {t.draftTitle}
+              </p>
+              <p className="mt-1 t-small text-body">{format(t.draftBody, { when: draftWhen(draftOffer.savedAt, t, locale) })}</p>
+              <div className="mt-3 flex flex-wrap gap-3">
+                <button type="button" onClick={() => continueDraft(draftOffer)} className="inline-flex h-11 items-center justify-center rounded-md bg-navy px-5 font-semibold text-white hover:bg-navy/90">
+                  {t.draftContinue}
+                </button>
+                <button type="button" onClick={startOver} className="inline-flex h-11 items-center justify-center rounded-md border border-line-strong bg-white px-5 font-semibold text-navy hover:border-navy">
+                  {t.draftStartOver}
+                </button>
+              </div>
+            </div>
+          ) : null}
           <Group step={1} title={t.whatTitle} stepOf={t.stepOf} locale={locale}>
             <div>
               <FieldLabel htmlFor="booking-what">
@@ -1254,6 +1345,20 @@ export function BookingForm({
             </button>
 
             <p className="mt-4 t-small text-secondary">{s.pickup?.booked ? t.reassureBooked : t.reassureTime}</p>
+            <CallbackRequest
+              t={t}
+              initialName={s.name}
+              initialPhone={s.phone}
+              nameError={t.errors.name}
+              phoneError={c.phoneInvalid}
+              whatsappHref={whatsappHref(s, t, c, locale, pickupChargeMinor)}
+              context={() => ({
+                area: s.sector ? areaLabel(s.sector) : undefined,
+                what: [s.what.trim(), s.items.length ? itemsOf(s).map((i) => `${i.quantity} × ${i.item}`).join(", ") : ""].filter(Boolean).join(" · ") || undefined,
+                services: (isHousehold(s) && s.service ? [s.service] : s.services).map((x) => OPS_SERVICE_NAMES[x] ?? x).join(", ") || undefined,
+                preferred: pickupLabel(s) || undefined,
+              })}
+            />
           </div>
         </form>
       </div>

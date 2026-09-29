@@ -163,6 +163,14 @@ export function routineMessage(f: { name: string | null; weekday: number; slot: 
   return `${hello(f.name, lang)} আপনি প্রতি ${day} ${slotText(f.slot, lang)} নিয়মিত পিকআপ চেয়েছেন। এই ${day} থেকে শুরু করব? প্রতি পিকআপের আগের দিন আমরা মেসেজ করব। কনফার্ম করতে এই মেসেজের উত্তর দিন।`;
 }
 
+/** A "Get a call back" request: reach out once to finish the booking. */
+export function callbackMessage(f: { name: string | null }, lang: Lang) {
+  if (lang === "en") {
+    return `${hello(f.name, lang)} You asked us to call you about a pickup. When would suit you, and what should we collect? Just reply here and we'll book it for you. Thank you!`;
+  }
+  return `${hello(f.name, lang)} আপনি একটি পিকআপের জন্য আমাদের কল করতে বলেছিলেন। কখন সুবিধা হবে আর কী কী নিতে হবে, এই মেসেজের উত্তরে জানালে আমরাই বুক করে দেব। ধন্যবাদ!`;
+}
+
 /** After collection. */
 export function pickedMessage(f: { name: string | null; orderNumber: string | null }, lang: Lang) {
   if (lang === "en") {
