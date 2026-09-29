@@ -352,3 +352,30 @@ SQL: `docs/technical/sql/website_customer_pickups.sql` (idempotent; test: `sql/t
 - **Rules** (in the database): changes allowed until 3 hours before the end of a slot Velto has planned (09:00 / 14:00 / 18:00 for morning / afternoon / evening), at most 3 changes per pickup; after that the card points to WhatsApp. These are defaults to confirm with the owner.
 - **What staff see:** a change puts the dispatch job back to *New* with the customer's new wish (any planned person/slot is cleared so the team re-plans), adds a line to the Ops task and moves its due time to the new slot; the board shows a *Changed by customer* badge. A cancel goes through `website_dispatch_close`: the job is cancelled and the Ops task is closed as "Cancelled by Customer (website): <reason>".
 - **Regulars:** the dispatch board shows each customer's order count ("9 orders"), and their loyalty tier while loyalty is switched on ("Gold · 9 orders"), from `website_customer_order_counts` (service role).
+
+## 15. One-tap repeat and routine pickup (phase 4)
+
+**One-tap repeat** (`components/account/QuickRepeat.tsx`, `lib/customer/quick-repeat.ts`). With nothing in
+progress, a linked customer with a saved address sees their last order's items, then picks a day
+(today while a time is still open, tomorrow, the day after) and a time, and taps **Book pickup**. It posts to
+`/api/bookings` exactly like the booking form: same validation, server-side estimate, Ops task, manager
+alert and idempotency. Ops receives the same English payload as "Book the same again" on `/book` (items,
+"Same as my last order (VEL-…)", saved care). Without a saved address the card keeps the link to the
+prefilled form. The pickup wording is shared with the form through `lib/pickup-when.ts`.
+
+**Routine pickup** (`docs/technical/sql/website_routines.sql`, `components/account/RoutineCard.tsx`).
+The customer asks for "every Saturday, afternoon" (plus an optional usual service and a note) on
+their account. The request shows on **Bookings & quotes → Routine pickups**, and the managers get a phone alert.
+A manager confirms it on WhatsApp (the message is prepared in বাংলা and English), then taps **Activate**. That writes a
+row into Velto Ops' own `weekly_subscriptions` (optional price per run). From then on Ops' daily job
+`create_weekly_pickup_tasks` (pg_cron `velto-weekly-pickup-tasks`, 10:00 Dhaka) makes the day-before
+confirmation call task, the pickup task and the delivery task. The customer sees the next pickup day and can
+**change** the day or time (the routine keeps running until a manager applies the change), **pause** or **resume** it
+(Ops subscription paused or active), or **stop** it (Ops subscription paused and noted, never deleted). A
+declined request shows the manager's reason on the account for 30 days.
+
+That Ops job had never run with data. It inserted into a `tasks.note` column that doesn't exist, and its
+`on conflict (dedupe_key)` didn't match the partial unique index. `ops_weekly_pickup_tasks_fix.sql`
+fixes only those two things (approved by the owner, 2026-09-29).
+Tests: `docs/technical/sql/tests/website_routines_test.sql` (staging, rolled back; includes running Ops' job)
+and `tests/routine.test.cjs`.

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "@/components/i18n/Link";
 import { ButtonLink, WhatsAppButton } from "@/components/ui/Button";
 import { serviceLabel } from "@/content/order-status";
@@ -11,7 +12,7 @@ import { repeatHref, type Rhythm } from "@/lib/customer/rhythm";
  * again" with the customer's own pace. One primary action; WhatsApp stays one tap away for
  * customers who would rather message. Everything shown comes from their own orders.
  */
-export function NextPickupCard({ rhythm, locale, firstTime }: { rhythm: Rhythm; locale: Locale; firstTime: boolean }) {
+export function NextPickupCard({ rhythm, locale, firstTime, quick }: { rhythm: Rhythm; locale: Locale; firstTime: boolean; quick?: ReactNode }) {
   const a = accountText(locale);
   const t = a.next;
   const { day } = orderFormat(locale);
@@ -92,14 +93,19 @@ export function NextPickupCard({ rhythm, locale, firstTime }: { rhythm: Rhythm; 
         </dl>
       </div>
 
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <ButtonLink href={repeatHref(rhythm, `account_${rhythm.stage}`)} event="book_pickup_click" placement={`account_repeat_${rhythm.stage}`} className="sm:!px-8">
-          {t.same}
-        </ButtonLink>
-        <WhatsAppButton href={whatsapp} placement={`account_repeat_${rhythm.stage}`}>
-          {t.orWhatsApp}
-        </WhatsAppButton>
-      </div>
+      {/* One tap when the address is saved (day and time only); otherwise the prefilled form. */}
+      {quick ? (
+        <div className="mt-6">{quick}</div>
+      ) : (
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <ButtonLink href={repeatHref(rhythm, `account_${rhythm.stage}`)} event="book_pickup_click" placement={`account_repeat_${rhythm.stage}`} className="sm:!px-8">
+            {t.same}
+          </ButtonLink>
+          <WhatsAppButton href={whatsapp} placement={`account_repeat_${rhythm.stage}`}>
+            {t.orWhatsApp}
+          </WhatsAppButton>
+        </div>
+      )}
       <p className="mt-3 t-small text-secondary">
         {services ? format(t.sameWith, { services }) : null}{" "}
         <Link href="/book?source=account" className="font-semibold text-navy underline decoration-blue/40 underline-offset-4 hover:decoration-blue">

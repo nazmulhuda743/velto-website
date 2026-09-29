@@ -4,12 +4,15 @@ import { Logo } from "@/components/ui/Logo";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { dictionary } from "@/content/i18n";
 import { defaultFooterLinks } from "@/content/footer-defaults";
-import { WHATSAPP_URL, bookHref } from "@/content/site";
+import { GOOGLE_PROFILE_BRANCH, SOCIAL_PROFILES, WHATSAPP_URL, bookHref } from "@/content/site";
+import { FacebookIcon, GoogleIcon, InstagramIcon, LinkedInIcon } from "@/components/ui/icons";
 import { footerLabel, isExternalHref, visibleFooterLinks, type FooterLink } from "@/lib/footer-links";
 import { getLocations, getSiteContent } from "@/lib/site-content";
 import { getLocale, localLocation } from "@/lib/i18n/server";
 
 const link = "inline-block py-1.5 t-small text-white hover:text-cyan";
+const social = "inline-flex size-11 items-center justify-center rounded-full border border-white/25 text-white transition-colors hover:border-cyan hover:text-cyan";
+const SOCIAL_ICONS = { facebook: FacebookIcon, instagram: InstagramIcon, linkedin: LinkedInIcon } as const;
 
 /** One footer link: pages on this site keep the language; other websites open in a new tab. */
 function FooterItem({ item, locale, newTab }: { item: FooterLink; locale: string; newTab: string }) {
@@ -36,6 +39,7 @@ export async function Footer() {
   const locations = await Promise.all((await getLocations()).map(localLocation));
   const locale = await getLocale();
   const t = dictionary(locale);
+  const google = locations.find((l) => l.id === GOOGLE_PROFILE_BRANCH);
   const { footer } = await getSiteContent();
   const builtIn = defaultFooterLinks();
   const services = visibleFooterLinks(footer.services ?? builtIn.services);
@@ -68,6 +72,31 @@ export async function Footer() {
                   <span className="sr-only"> {t.common.opensNewTab}</span>
                 </a>
               </li>
+            </ul>
+            <ul aria-label={t.footer.follow} className="mt-5 flex flex-wrap gap-3" data-social>
+              {SOCIAL_PROFILES.map((p) => {
+                const Icon = SOCIAL_ICONS[p.id];
+                return (
+                  <li key={p.id}>
+                    <a href={p.href} target="_blank" rel="noopener noreferrer me" className={social} data-analytics="social_click" data-placement={`footer_${p.id}`}>
+                      <Icon />
+                      <span className="sr-only">
+                        {t.footer.onNetwork.replace("{name}", p.name)} {t.common.opensNewTab}
+                      </span>
+                    </a>
+                  </li>
+                );
+              })}
+              {google ? (
+                <li>
+                  <a href={google.reviewsUrl} target="_blank" rel="noopener noreferrer" className={social} data-analytics="google_reviews_click" data-placement="footer" data-branch={google.id}>
+                    <GoogleIcon />
+                    <span className="sr-only">
+                      {t.footer.onGoogle} {t.common.opensNewTab}
+                    </span>
+                  </a>
+                </li>
+              ) : null}
             </ul>
           </div>
 
