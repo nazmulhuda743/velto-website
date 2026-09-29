@@ -42,10 +42,12 @@ test("call-back requests need a real name and a Bangladesh mobile", () => {
 });
 
 test("managers get a short call-back alert", () => {
-  const p = callbackPush({ name: "Nadia Rahman", area: "Uttara Sector 7" }, "https://www.velto.com.bd/");
+  const p = callbackPush({ name: "Nadia Rahman", area: "Uttara Sector 7" }, "https://www.velto.com.bd/", Date.parse("2026-09-29T06:00:00Z"));
   assert.equal(p.title, "📞 Call-back request");
   assert.equal(p.body, "Nadia Rahman · Uttara Sector 7. Started a booking but asked us to call. Call within 30 min.");
   assert.equal(p.url, "https://www.velto.com.bd/admin/requests#callbacks");
+  const n = callbackPush({ name: "Nadia" }, "https://x.test", Date.parse("2026-09-29T01:00:00Z"));
+  assert.equal(n.body, "Nadia. Started a booking but asked us to call. Night request: call in the morning (from 9 AM).");
 });
 
 test("the call-back WhatsApp message greets by first name in both languages", () => {

@@ -47,6 +47,17 @@ function, one person at a time; people without a subscription are skipped (never
 It is sent after the customer's response, so it never slows or fails a booking. The push links to
 `/admin/requests?stage=new`. Set `VELTO_NEW_REQUEST_PUSH=false` on the server to turn it off.
 
+### Night requests
+
+Velto calls between 9 AM and 9 PM Dhaka (`src/lib/call-hours.ts`: the first outlet opens and the
+first pickup window starts at 9 AM; the earlier outlet closes at 9 PM). A request made outside those
+hours still sends the push, but it ends "Night request: call in the morning (from 9 AM)." instead of
+"Call within 30 min.", and the customer is told the same: the booking form's line under Book Pickup,
+the booking and quote confirmations and the "Get a call back" confirmation say Velto will call in the
+morning, from 9 AM (English and Bangla). The page shows the daytime wording first and switches after
+it loads, so the server and browser never disagree; it re-checks each minute. A booking with a
+pickup window already booked needs no call, so its wording doesn't change.
+
 ## The delivery board
 
 Deliveries waiting for a plan are grouped by the order's date in Velto Ops, most pressing first:

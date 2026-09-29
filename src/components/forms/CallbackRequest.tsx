@@ -6,6 +6,7 @@ import type { FormText } from "@/content/i18n/forms/en";
 import { format } from "@/lib/i18n/config";
 import { bdPhone } from "@/lib/booking-recovery";
 import { submitCallback, type CallbackFormData } from "./submit";
+import { useNightDhaka } from "./useNight";
 
 type Text = FormText["booking"];
 
@@ -33,6 +34,7 @@ export function CallbackRequest({
   phoneError: string;
 }) {
   const [open, setOpen] = useState(false);
+  const night = useNightDhaka();
   const [name, setName] = useState(initialName);
   const [phone, setPhone] = useState(initialPhone);
   const [state, setState] = useState<{ kind: "idle" | "sending" } | { kind: "done"; message: string } | { kind: "error"; field?: "name" | "phone" }>({ kind: "idle" });
@@ -72,7 +74,7 @@ export function CallbackRequest({
     const result = await submitCallback({ name: cleanName, phone, ...context() });
     if (result.ok || result.code === "rate_limited") {
       track("callback_request", { section: "booking-form" });
-      setState({ kind: "done", message: result.ok ? format(t.callbackDone, { name: cleanName.split(/\s+/)[0] }) : t.callbackTooMany });
+      setState({ kind: "done", message: result.ok ? format(night ? t.callbackDoneNight : t.callbackDone, { name: cleanName.split(/\s+/)[0] }) : night ? t.callbackTooManyNight : t.callbackTooMany });
     } else {
       setState({ kind: "error" });
     }

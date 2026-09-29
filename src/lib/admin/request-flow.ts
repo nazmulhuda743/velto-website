@@ -8,6 +8,7 @@
  */
 import { greetingName } from "../customer/validation";
 import { dayName, SLOTS, type DispatchJob, type SlotId } from "./dispatch-logic";
+import { callAsk } from "../call-hours";
 
 export const FLOW = [
   { key: "new", label: "New" },
@@ -226,11 +227,11 @@ const serviceWords = (slug: string | undefined) => {
 };
 
 /** The push staff get for a new website request: short enough for a lock screen. */
-export function newRequestPush(kind: "booking" | "quote", f: { name: string; area: string; when?: string; service?: string }, siteUrl: string) {
+export function newRequestPush(kind: "booking" | "quote", f: { name: string; area: string; when?: string; service?: string }, siteUrl: string, now: number | Date = Date.now()) {
   const bits = [f.name.trim().slice(0, 40), f.area.trim().slice(0, 40), (f.when ?? "").trim().slice(0, 40), serviceWords(f.service)].filter(Boolean);
   return {
     title: kind === "booking" ? "🧺 New pickup booking" : "📐 New quote request",
-    body: `${bits.join(" · ")}. Call within 30 min.`,
+    body: `${bits.join(" · ")}. ${callAsk(now)}`,
     url: `${siteUrl.replace(/\/+$/, "")}/admin/requests?stage=new`,
   };
 }
