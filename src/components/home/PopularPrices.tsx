@@ -22,7 +22,7 @@ export async function PopularPrices({ source, placement }: { source: string; pla
   const t = d.home.findPrice;
   const rows = pickPopularItems(prices.items);
   if (!rows.length) return null;
-  const cell = "px-2 py-3 first:pl-0 last:pr-0 md:px-3";
+  const cell = "px-2 py-1.5 first:pl-0 last:pr-0 md:px-3 md:py-3";
   return (
     <div data-popular-prices>
       <p id={`${placement}-title`} className="t-label uppercase text-navy">

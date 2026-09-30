@@ -18,16 +18,12 @@ export async function RegularLaundrySection() {
         <div className="col-span-4 md:col-span-4 xl:col-span-6">
           <ResponsiveImage
             image={IMAGES.regular}
-            aspect="aspect-[4/3] md:aspect-[4/5] xl:aspect-[4/3]"
+            aspect="aspect-[16/9] md:aspect-[4/5] xl:aspect-[4/3]"
             sizes="(min-width: 1200px) 610px, (min-width: 768px) 50vw, 100vw"
           />
         </div>
         <div className="col-span-4 md:col-span-4 md:self-center xl:col-span-5 xl:col-start-8">
-          <SectionIntro
-            id="regular-title"
-            eyebrow={t.eyebrow}
-            title={t.title}
-          >
+          <SectionIntro id="regular-title" title={t.title}>
             <p>{t.intro1}</p>
             <p>{fill(t.intro2, { amount: REGULAR_FREE_DELIVERY_THRESHOLD }, locale)}</p>
           </SectionIntro>
