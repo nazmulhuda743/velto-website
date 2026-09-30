@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BarList, fmt } from "@/components/admin/charts";
+import { MarkRequestsSeen } from "@/components/admin/MarkRequestsSeen";
 import { NotificationRefresher } from "@/components/admin/NotificationRefresher";
 import { AdminHeader, Badge, DataNotice, one, type SearchParams } from "@/components/admin/ui";
 import { WhatsAppSend } from "@/components/admin/WhatsAppSend";
@@ -956,10 +957,13 @@ export default async function RequestsPage({ searchParams }: { searchParams: Sea
   const late = toCall.filter((c) => (callTimer(c.job)?.tone ?? "ok") !== "ok").length;
   const action = cards.filter((c) => needsAction(c.state)).length;
   const openCard = openId && rows.some((c) => c.job.id === openId) ? openId : rows.length === 1 ? rows[0].job.id : "";
+  // Opening this page marks everything shown as seen (the menu badge counts only newer ones).
+  const newest = Math.max(0, ...tasks.map((r) => Date.parse(r.created_at)).filter(Number.isFinite), ...pickups.map((j) => Date.parse(j.created_at)).filter(Number.isFinite));
 
   return (
     <>
       <NotificationRefresher />
+      <MarkRequestsSeen newest={newest} />
       <AdminHeader
         title="Bookings & quotes"
         intro="Every pickup booking and household quote from the website, from the first call to delivery. Open a request to see where it is and do the next step right there."
