@@ -12,3 +12,6 @@ next-env.d.ts
 
 # Superpowers subagent-driven-development scratch (ledger, briefs, reports)
 .superpowers/
+
+# Agent worktrees
+.claude/worktrees/
