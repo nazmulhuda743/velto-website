@@ -4,7 +4,7 @@ import { useState } from "react";
 import { track } from "@/components/layout/Analytics";
 import type { FormText } from "@/content/i18n/forms/en";
 import { format } from "@/lib/i18n/config";
-import { bdPhone } from "@/lib/booking-recovery";
+import { bdPhone, callbackOutcome } from "@/lib/booking-recovery";
 import { submitCallback, type CallbackFormData } from "./submit";
 import { useNightDhaka } from "./useNight";
 
@@ -37,12 +37,23 @@ export function CallbackRequest({
   const night = useNightDhaka();
   const [name, setName] = useState(initialName);
   const [phone, setPhone] = useState(initialPhone);
-  const [state, setState] = useState<{ kind: "idle" | "sending" } | { kind: "done"; message: string } | { kind: "error"; field?: "name" | "phone" }>({ kind: "idle" });
+  const [state, setState] = useState<{ kind: "idle" | "sending" | "blocked" } | { kind: "done"; message: string } | { kind: "error"; field?: "name" | "phone" }>({ kind: "idle" });
 
   if (state.kind === "done") {
     return (
       <p role="status" className="mt-4 rounded-md border border-success/40 bg-success/5 p-3 t-small font-semibold text-navy" data-callback="done">
         {state.message}
+      </p>
+    );
+  }
+
+  if (state.kind === "blocked") {
+    return (
+      <p role="alert" className="mt-4 rounded-md border border-line-strong bg-soft p-3 t-small font-semibold text-navy" data-callback="blocked">
+        {t.callbackBlocked}{" "}
+        <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="underline underline-offset-4" data-analytics="whatsapp_click" data-placement="callback_blocked">
+          WhatsApp
+        </a>
       </p>
     );
   }
@@ -72,11 +83,13 @@ export function CallbackRequest({
     if (!bdPhone(phone)) return setState({ kind: "error", field: "phone" });
     setState({ kind: "sending" });
     const result = await submitCallback({ name: cleanName, phone, ...context() });
-    if (result.ok || result.code === "rate_limited") {
+    const outcome = callbackOutcome(result);
+    if (outcome === "sent") {
       track("callback_request", { section: "booking-form" });
-      setState({ kind: "done", message: result.ok ? format(night ? t.callbackDoneNight : t.callbackDone, { name: cleanName.split(/\s+/)[0] }) : night ? t.callbackTooManyNight : t.callbackTooMany });
+      setState({ kind: "done", message: format(night ? t.callbackDoneNight : t.callbackDone, { name: cleanName.split(/\s+/)[0] }) });
     } else {
-      setState({ kind: "error" });
+      // Blocked: every request from this number today was already handled, so no call is coming.
+      setState({ kind: outcome === "blocked" ? "blocked" : "error" });
     }
   }
 

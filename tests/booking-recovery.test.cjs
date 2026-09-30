@@ -56,3 +56,11 @@ test("the call-back WhatsApp message greets by first name in both languages", ()
   assert.match(callbackMessage({ name: "Nadia Rahman" }, "bn"), /কল করতে বলেছিলেন/);
   assert.ok(callbackMessage({ name: null }, "en").startsWith("Hello, this is Velto."));
 });
+
+test("call-back result: sent, blocked when this number's requests today were all handled, else failed", () => {
+  const { callbackOutcome } = require("../.foundation-test-build/booking-recovery.js");
+  assert.equal(callbackOutcome({ ok: true }), "sent");
+  // 429 only comes when nothing is open for the number, so nobody is waiting to call: never "sent".
+  assert.equal(callbackOutcome({ ok: false, code: "rate_limited" }), "blocked");
+  for (const code of ["unavailable", "not_connected", "invalid_request"]) assert.equal(callbackOutcome({ ok: false, code }), "failed", code);
+});

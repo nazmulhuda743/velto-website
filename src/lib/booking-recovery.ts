@@ -135,6 +135,16 @@ export function callbackPush(c: Pick<CallbackInput, "name" | "area">, siteUrl: s
   };
 }
 
+/**
+ * What the call-back panel shows after sending. The server answers 429 only when nothing is open
+ * for the number and it already sent three today (website_callback_create), so every request was
+ * handled and nobody is waiting to call: "blocked" points to WhatsApp instead of promising a call.
+ */
+export function callbackOutcome(result: { ok: true } | { ok: false; code: string }): "sent" | "blocked" | "failed" {
+  if (result.ok) return "sent";
+  return result.code === "rate_limited" ? "blocked" : "failed";
+}
+
 export const CALLBACK_OUTCOMES = [
   { id: "booked", label: "Booked (I made the booking)" },
   { id: "will_book", label: "Will book themselves" },
