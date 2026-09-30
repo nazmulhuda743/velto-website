@@ -2,7 +2,7 @@ import "server-only";
 
 import { isSupabaseConfigured, supabaseFetch, supabaseRpc } from "../supabase-server";
 import type { Loaded } from "./analytics-data";
-import { addDays, dhakaToday, type DispatchJob, type SlotId } from "./dispatch-logic";
+import { addDays, dhakaToday, localPhone, type DispatchJob, type SlotId } from "./dispatch-logic";
 import type { CustomerContext, LinkedOrder } from "./request-flow";
 import { isAdminPreview } from "./preview";
 
@@ -338,6 +338,37 @@ export function noteJob(job: string, kind: "note" | "whatsapp", text: string, ac
 export function pickJob(job: string, orderNumber: string | null, actor: string): Promise<DispatchResult> | DispatchResult {
   if (isAdminPreview()) return previewWrite(job, { stage: "picked", picked_at: new Date().toISOString(), ...(orderNumber ? { order_number: orderNumber } : {}) }, "picked up");
   return rpc("website_dispatch_pick", { p_job: job, p_order_number: orderNumber, p_actor: actor });
+}
+
+/**
+ * Whether an Ops order belongs to the same phone as a booking request. A linked order's status
+ * and amounts are shown to the customer who made the request, so linking a mistyped number
+ * would show one customer another customer's order. "unknown" means either side could not be
+ * read — the caller must not treat that as a match.
+ */
+export async function orderMatchesRequestPhone(job: string, orderNumber: string): Promise<"match" | "mismatch" | "unknown"> {
+  if (isAdminPreview()) return "match";
+  if (!isSupabaseConfigured()) return "unknown";
+  try {
+    const jq = new URLSearchParams({ select: "phone_key", id: `eq.${job}`, limit: "1" });
+    const oq = new URLSearchParams({ select: "phone_snapshot", order_number: `eq.${orderNumber}`, limit: "1" });
+    const [jr, or] = await Promise.all([
+      supabaseFetch(`/rest/v1/website_dispatch_jobs?${jq}`, { cache: "no-store" }),
+      supabaseFetch(`/rest/v1/orders?${oq}`, { cache: "no-store" }),
+    ]);
+    if (!jr.ok || !or.ok) return "unknown";
+    const [jobRow] = (await jr.json()) as { phone_key: string | null }[];
+    const [orderRow] = (await or.json()) as { phone_snapshot: string | null }[];
+    // A missing order is reported by the link function itself ("no order with that number").
+    if (!orderRow) return "match";
+    const a = localPhone(jobRow?.phone_key);
+    const b = localPhone(orderRow.phone_snapshot);
+    if (!a || !b) return "unknown";
+    return a === b ? "match" : "mismatch";
+  } catch (error) {
+    console.error("dispatch_link_phone_check_failed", error instanceof Error ? error.message.slice(0, 120) : "");
+    return "unknown";
+  }
 }
 
 export function linkOrder(job: string, orderNumber: string | null, actor: string): Promise<DispatchResult> | DispatchResult {
