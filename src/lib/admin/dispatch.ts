@@ -130,19 +130,24 @@ export async function getDispatch(): Promise<Loaded<DispatchJob[]>> {
   }
 }
 
-/** Active Velto Ops staff: the people a pickup or delivery can be given to. */
+/** Active Velto Ops staff: the people a pickup or delivery can be given to. Empty when they can't be read. */
 export async function getStaff(fetcher: typeof supabaseFetch = supabaseFetch): Promise<StaffMember[]> {
+  return (await readStaff(fetcher)) ?? [];
+}
+
+/** The same list, but null when it can't be read (so a settings page can say so instead of showing nobody). */
+export async function readStaff(fetcher: typeof supabaseFetch = supabaseFetch): Promise<StaffMember[] | null> {
   if (isAdminPreview()) return PREVIEW_STAFF;
-  if (!isSupabaseConfigured()) return [];
+  if (!isSupabaseConfigured()) return null;
   try {
     const q = new URLSearchParams({ select: "id,name,role", active: "eq.true", role: "in.(admin,manager,rider,worker)", order: "name.asc" });
     const res = await fetcher(`/rest/v1/profiles?${q}`, { cache: "no-store" });
-    if (!res.ok) return [];
+    if (!res.ok) return null;
     return ((await res.json()) as { id: string; name: string | null; role: string }[])
       .filter((p) => p.name)
       .map((p) => ({ id: p.id, name: p.name!, role: p.role }));
   } catch {
-    return [];
+    return null;
   }
 }
 

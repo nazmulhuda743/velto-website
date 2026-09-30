@@ -4,7 +4,7 @@ import type { RoutineRow } from "../routine";
 import { isSupabaseConfigured, supabaseFetch, supabaseRpc } from "../supabase-server";
 import type { Loaded } from "./analytics-data";
 import { getCallbacks, type CallbackRow } from "./callbacks";
-import { getDispatch, getRequestContext, getStaff, JOB_COLUMNS, type DispatchResult, type RequestContext } from "./dispatch";
+import { getDispatch, getRequestContext, getStaff, JOB_COLUMNS, readStaff, type DispatchResult, type RequestContext } from "./dispatch";
 import { addDays, DEFAULT_CAPACITY, dhakaToday, type DispatchJob, type SlotId } from "./dispatch-logic";
 import { isAdminPreview } from "./preview";
 import { getRoutines } from "./routines";
@@ -44,6 +44,7 @@ export const TODAY_ERRORS = {
   full: "That rider is full in that window. Assign anyway?",
   order: "There is no order with that number in Velto Ops yet.",
   order_format: "Order numbers look like VEL-01952.",
+  order_taken: "That order is already linked to another pickup.",
   role: "Only an Owner or Manager can change riders.",
   not_installed: "Riders & windows aren't installed in this database yet (docs/technical/sql/website_today.sql).",
   slot_full: "That window is full for this area (Capacity).",
@@ -53,9 +54,37 @@ export const TODAY_ERRORS = {
 } as const;
 export type TodayError = keyof typeof TODAY_ERRORS;
 
+/** The same in Bangla (DRAFT for owner review, like the rest of the Today Bangla: docs/content/BANGLA-REVIEW.md). */
+export const TODAY_ERRORS_BN: Record<TodayError, string> = {
+  invalid: "দিন আর সময় ঠিক করে আবার চেষ্টা করুন।",
+  past: "এই দিন পার হয়ে গেছে। আজ বা পরের কোনো দিন বাছুন।",
+  not_found: "এই কাজটা আর নেই। তালিকা রিফ্রেশ করা হয়েছে।",
+  closed: "এই কাজটা আগেই এগিয়ে গেছে। তালিকা রিফ্রেশ করা হয়েছে।",
+  assignee: "এই ব্যক্তি পিকআপ-ডেলিভারি নেন না (রাইডার সেটিংস)।",
+  off: "এই রাইডার সেদিন ছুটিতে।",
+  full: "এই সময়ে রাইডার পূর্ণ। তবুও দেবেন?",
+  order: "Velto Ops-এ এই নম্বরের কোনো অর্ডার এখনো নেই।",
+  order_format: "অর্ডার নম্বর এমন হয়: VEL-01952।",
+  order_taken: "এই অর্ডার আরেকটা পিকআপের সাথে যুক্ত।",
+  role: "শুধু Owner বা Manager রাইডার বদলাতে পারেন।",
+  not_installed: "রাইডার সেটিংস এখনো ডাটাবেজে চালু হয়নি (docs/technical/sql/website_today.sql)।",
+  slot_full: "এই এলাকায় এই সময় পূর্ণ (Capacity)।",
+  slot_closed: "এই এলাকায় এই সময় বন্ধ (Capacity)।",
+  slot_past: "এই সময় পার হয়ে গেছে।",
+  unavailable: "এখন Velto Ops-এ যাওয়া যাচ্ছে না। কিছু বদলায়নি; আবার চেষ্টা করুন।",
+};
+
+/** An error code's text in the page's language. */
+export const todayError = (code: TodayError, lang: "en" | "bn") => (lang === "bn" ? TODAY_ERRORS_BN : TODAY_ERRORS)[code];
+
 const NOT_INSTALLED = "Pickup & delivery isn't installed in this database yet (docs/technical/sql/website_dispatch.sql).";
 const UNREACHABLE = "Can't reach Velto Ops right now.";
-const isDay = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(`${v}T00:00:00Z`));
+/** A real calendar day as YYYY-MM-DD (2026-02-31 is not one). */
+export function isDay(v: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+  const t = Date.parse(`${v}T00:00:00Z`);
+  return !Number.isNaN(t) && new Date(t).toISOString().slice(0, 10) === v;
+}
 const stops = (n: unknown) => (typeof n === "number" && Number.isInteger(n) && n >= 1 && n <= 30 ? n : DEFAULT_CAPACITY);
 
 /* ---------- local preview (next dev + VELTO_ADMIN_PREVIEW=1): riders in memory ---------- */
@@ -142,7 +171,8 @@ export async function getRiderSettings(): Promise<Loaded<{ people: RiderSetting[
     return { state: "ok", data: { people, anyTicked: people.some((p) => p.canRide), installed: true }, preview: true };
   }
   if (!isSupabaseConfigured()) return { state: "not_configured" };
-  const staff = await getStaff();
+  const staff = await readStaff();
+  if (!staff) return { state: "error", message: "Velto Ops staff couldn't be read right now." };
   const [rows, daysOff] = await Promise.all([
     readRows<RiderRow>(supabaseFetch, `/rest/v1/website_riders?${new URLSearchParams({ select: "profile_id,can_ride,stops_per_window" })}`),
     readRows<{ profile_id: string; day: string }>(supabaseFetch, `/rest/v1/website_rider_days_off?${new URLSearchParams({ select: "profile_id,day", day: `in.(${today},${tomorrow})` })}`),
@@ -215,6 +245,17 @@ export async function getJob(id: string): Promise<DispatchJob | null | undefined
   if (!isSupabaseConfigured()) return undefined;
   const rows = await readRows<DispatchJob>(supabaseFetch, `/rest/v1/website_dispatch_jobs?${new URLSearchParams({ select: JOB_COLUMNS, id: `eq.${id}`, limit: "1" })}`);
   return rows ? (rows[0] ?? null) : undefined;
+}
+
+/** Whether `order` is already linked to a pickup other than `job` (false when that can't be read: the link function decides). */
+export async function orderLinkedElsewhere(order: string, job: string): Promise<boolean> {
+  if (isAdminPreview()) {
+    const board = await getDispatch();
+    return board.state === "ok" && board.data.some((j) => j.kind === "pickup" && j.order_number === order && j.id !== job);
+  }
+  if (!isSupabaseConfigured()) return false;
+  const q = new URLSearchParams({ select: "id", kind: "eq.pickup", order_number: `eq.${order}`, id: `neq.${job}`, limit: "1" });
+  return Boolean((await readRows<{ id: string }>(supabaseFetch, `/rest/v1/website_dispatch_jobs?${q}`))?.length);
 }
 
 /** Scheduled stops in one window of one day (for a rider's load); null when they couldn't be read. */

@@ -6,7 +6,7 @@ const assert = require("node:assert/strict");
 require.cache[require.resolve("server-only")] = { id: "server-only", filename: "server-only", loaded: true, exports: {} };
 process.env.VELTO_SUPABASE_URL = "https://ops.example.supabase.co";
 process.env.VELTO_SUPABASE_SECRET_KEY = "sb_secret_test_value";
-const { getRiders, getToday } = require("../.foundation-test-build/admin/today.js");
+const { getRiders, getToday, getRiderSettings, isDay } = require("../.foundation-test-build/admin/today.js");
 const { getDispatch } = require("../.foundation-test-build/admin/dispatch.js");
 
 const A = "00000000-0000-4000-8000-00000000a001";
@@ -96,7 +96,11 @@ const job = (over) => ({
 });
 
 test("today: syncs and auto-links first, degrades when tables are missing, and lists order candidates", async (t) => {
-  const picked = job({ id: "00000000-0000-4000-8000-000000000002", stage: "picked", picked_at: "2026-10-01T04:00:00Z" });
+  // Picked up three hours ago (candidates are only looked for in the last 7 days); two outlet orders since.
+  const hoursAgo = (h) => new Date(Date.now() - h * 3_600_000).toISOString();
+  const picked = job({ id: "00000000-0000-4000-8000-000000000002", stage: "picked", picked_at: hoursAgo(3), created_at: hoursAgo(30) });
+  const ORDER_A = hoursAgo(2);
+  const ORDER_B = hoursAgo(1);
   const confirmed = job({ id: "00000000-0000-4000-8000-000000000003", stage: "confirmed", source: "weekly", phone_key: "01711000001" });
   const calls = [];
   t.mock.method(
@@ -117,8 +121,8 @@ test("today: syncs and auto-links first, degrades when tables are missing, and l
               orders: 2,
               lastOrder: null,
               recent: [
-                { orderNumber: "VEL-01965", status: "Picked", orderDate: null, createdAt: "2026-10-01T06:00:00Z" },
-                { orderNumber: "VEL-01963", status: "Picked", orderDate: null, createdAt: "2026-10-01T05:00:00Z" },
+                { orderNumber: "VEL-01965", status: "Picked", orderDate: null, createdAt: ORDER_B },
+                { orderNumber: "VEL-01963", status: "Picked", orderDate: null, createdAt: ORDER_A },
               ],
             },
           },
@@ -143,8 +147,8 @@ test("today: syncs and auto-links first, degrades when tables are missing, and l
   assert.deepEqual(d.routines, []);
   assert.deepEqual(d.candidates, {
     [picked.id]: [
-      { orderNumber: "VEL-01963", createdAt: "2026-10-01T05:00:00Z" },
-      { orderNumber: "VEL-01965", createdAt: "2026-10-01T06:00:00Z" },
+      { orderNumber: "VEL-01963", createdAt: ORDER_A },
+      { orderNumber: "VEL-01965", createdAt: ORDER_B },
     ],
   });
   assert.ok(!Number.isNaN(Date.parse(d.loadedAt)));
@@ -170,4 +174,22 @@ test("pickup & delivery board: confirmed pickups are open work (they were missin
   assert.equal(r.state, "ok");
   const read = calls.find((c) => c.url.includes("/rest/v1/website_dispatch_jobs"));
   assert.match(decodeURIComponent(read.url), /stage\.in\.\(new,confirmed,assigned,scheduled\)/);
+});
+
+test("rider settings: unreadable staff list is an error, not an empty list", async (t) => {
+  t.mock.method(globalThis, "fetch", supabase({ "/rest/v1/profiles": json({ message: "boom" }, 500), "/rest/v1/website_riders": json([]), "/rest/v1/website_rider_days_off": json([]) }));
+  assert.equal((await getRiderSettings()).state, "error");
+  t.mock.method(globalThis, "fetch", supabase({ ...staffRoute, "/rest/v1/website_riders": json([]), "/rest/v1/website_rider_days_off": json([]) }));
+  const ok = await getRiderSettings();
+  assert.equal(ok.state, "ok");
+  assert.equal(ok.data.people.length, 3);
+});
+
+test("dates: only real calendar days", () => {
+  assert.equal(isDay("2026-10-01"), true);
+  assert.equal(isDay("2028-02-29"), true);
+  assert.equal(isDay("2026-02-31"), false);
+  assert.equal(isDay("2026-13-01"), false);
+  assert.equal(isDay("2026-1-01"), false);
+  assert.equal(isDay("tomorrow"), false);
 });

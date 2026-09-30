@@ -97,12 +97,14 @@ const ORDER_NUMBER = /^VELR?-\d{3,6}$/;
 /**
  * "Which order?": the same phone's Ops orders that could belong to a picked pickup with no order
  * yet: created from a day before the pickup (but not before the request itself) to two days after,
- * not cancelled, and not already linked to another pickup (`taken`). Oldest first. The same rule
+ * not cancelled, and not already linked to another pickup (`taken`), for pickups of the last 7 days. Oldest first. The same rule
  * as website_dispatch_autolink() (website_today.sql), which links on its own when there is one.
  */
-export function linkCandidates(job: DispatchJob, recent: CustomerContext["recent"] | undefined, taken: ReadonlySet<string>): OrderCandidate[] {
+export function linkCandidates(job: DispatchJob, recent: CustomerContext["recent"] | undefined, taken: ReadonlySet<string>, now = Date.now()): OrderCandidate[] {
   if (job.kind !== "pickup" || job.stage !== "picked" || job.order_number || !job.picked_at || !recent) return [];
   const picked = Date.parse(job.picked_at);
+  // Picked up over a week ago: no longer matched (autolink stops looking then too).
+  if (!(picked > now - 7 * DAY_MS)) return [];
   const from = Math.max(picked - DAY_MS, Date.parse(job.created_at));
   const to = picked + 2 * DAY_MS;
   return recent

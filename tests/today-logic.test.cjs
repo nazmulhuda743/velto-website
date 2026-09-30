@@ -153,6 +153,7 @@ test("link candidates: same phone's orders from a day before to two days after t
   const picked = "2026-10-01T10:00:00Z";
   const at = (h) => new Date(Date.parse(picked) + h * 3_600_000).toISOString();
   const p = job({ stage: "picked", picked_at: picked, created_at: at(-48) });
+  const NOW = Date.parse(picked) + 3 * 86_400_000;
   const recent = [
     { orderNumber: "VEL-00005", status: "Picked", orderDate: null, createdAt: at(60) }, // 2.5 days after: too late
     { orderNumber: "VEL-00004", status: "Picked", orderDate: null, createdAt: at(30) },
@@ -163,17 +164,26 @@ test("link candidates: same phone's orders from a day before to two days after t
     { orderNumber: "VEL-00001", status: "Delivered", orderDate: null, createdAt: at(-23) },
     { orderNumber: "VEL-00000", status: "Delivered", orderDate: null, createdAt: at(-25) }, // over a day before
   ];
-  assert.deepEqual(linkCandidates(p, recent, new Set(["VEL-00009"])), [
+  assert.deepEqual(linkCandidates(p, recent, new Set(["VEL-00009"]), NOW), [
     { orderNumber: "VEL-00001", createdAt: at(-23) },
     { orderNumber: "VEL-00002", createdAt: at(2) },
     { orderNumber: "VEL-00004", createdAt: at(30) },
   ]);
   // Not before the booking itself reached the board.
-  assert.deepEqual(linkCandidates({ ...p, created_at: at(-2) }, recent, new Set()).map((o) => o.orderNumber), ["VEL-00009", "VEL-00002", "VEL-00004"]);
+  assert.deepEqual(linkCandidates({ ...p, created_at: at(-2) }, recent, new Set(), NOW).map((o) => o.orderNumber), ["VEL-00009", "VEL-00002", "VEL-00004"]);
   // Only picked pickups that have no order yet.
-  assert.deepEqual(linkCandidates({ ...p, order_number: "VEL-00002" }, recent, new Set()), []);
-  assert.deepEqual(linkCandidates({ ...p, stage: "scheduled" }, recent, new Set()), []);
-  assert.deepEqual(linkCandidates({ ...p, kind: "delivery" }, recent, new Set()), []);
-  assert.deepEqual(linkCandidates({ ...p, picked_at: null }, recent, new Set()), []);
-  assert.deepEqual(linkCandidates(p, undefined, new Set()), []);
+  assert.deepEqual(linkCandidates({ ...p, order_number: "VEL-00002" }, recent, new Set(), NOW), []);
+  assert.deepEqual(linkCandidates({ ...p, stage: "scheduled" }, recent, new Set(), NOW), []);
+  assert.deepEqual(linkCandidates({ ...p, kind: "delivery" }, recent, new Set(), NOW), []);
+  assert.deepEqual(linkCandidates({ ...p, picked_at: null }, recent, new Set(), NOW), []);
+  assert.deepEqual(linkCandidates(p, undefined, new Set(), NOW), []);
+});
+
+test("link candidates: only pickups picked in the last 7 days (as website_dispatch_autolink)", () => {
+  const picked = "2026-10-01T10:00:00Z";
+  const p = job({ stage: "picked", picked_at: picked, created_at: "2026-09-30T00:00:00Z" });
+  const recent = [{ orderNumber: "VEL-00002", status: "Picked", orderDate: null, createdAt: "2026-10-01T12:00:00Z" }];
+  const day = 86_400_000;
+  assert.equal(linkCandidates(p, recent, new Set(), Date.parse(picked) + 6 * day).length, 1);
+  assert.deepEqual(linkCandidates(p, recent, new Set(), Date.parse(picked) + 7 * day + 1), []);
 });

@@ -6,7 +6,7 @@ import { closeJob, contactJob, getStaff, linkOrder, notifyAssignee, pickJob, pla
 import { addDays, dayName, dhakaToday, isSlot, slotLabel, type SlotId } from "@/lib/admin/dispatch-logic";
 import { canEditCapacity } from "@/lib/admin/permissions";
 import { requireSection } from "@/lib/admin/session";
-import { getJob, getRiders, getWindowStops, saveRider, setDayOff, TODAY_ERRORS, type TodayError } from "@/lib/admin/today";
+import { getJob, getRiders, getWindowStops, isDay as isDate, orderLinkedElsewhere, saveRider, setDayOff, TODAY_ERRORS, type TodayError } from "@/lib/admin/today";
 import { riderChoices, type TodayTab } from "@/lib/admin/today-logic";
 
 /**
@@ -21,7 +21,6 @@ const text = (form: FormData, key: string, max: number) => String(form.get(key) 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ORDER = /^VELR?-\d{3,6}$/;
 const TABS: readonly TodayTab[] = ["call", "assign", "deliver", "route"];
-const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(`${v}T00:00:00Z`));
 /** A day that can still be planned: today up to 30 days ahead (Dhaka). */
 const plannable = (v: string) => isDate(v) && v >= dhakaToday() && v <= addDays(dhakaToday(), 30);
 
@@ -99,7 +98,7 @@ export async function noAnswerAction(form: FormData) {
 /**
  * A rider and a window for a pickup or a delivery. A rider who is full in that window needs
  * `force=1` (the page asks once: "Bappy is full in the morning. Assign anyway?"); a rider who is
- * off that day can't be given stops.
+ * off that day can't be given stops. The re-ask goes back as `rider`, `adate` and `slot`; `date` stays the day being viewed.
  */
 export async function assignAction(form: FormData) {
   const admin = await requireSection("dispatch");
@@ -127,7 +126,7 @@ export async function assignAction(form: FormData) {
   const choice = riderChoices(riders, (stops ?? []).filter((j) => j.id !== job), day, window).find((r) => r.id === riderId);
   if (!choice) back(form, tab, { error: "assignee" });
   if (choice.off) back(form, tab, { error: "off" });
-  if (choice.full && !force) back(form, tab, { error: "full", extra: { rider: riderId, date: day, slot: window } });
+  if (choice.full && !force) back(form, tab, { error: "full", extra: { rider: riderId, adate: day, slot: window } });
 
   const r = await planJob(job, { id: choice.id, name: choice.name, role: "rider" }, day, window, admin.name);
   if (r.ok) {
@@ -173,6 +172,9 @@ export async function pickOrderAction(form: FormData) {
   const now = await getJob(job);
   if (now === null) back(form, "route", { error: "not_found" });
   if (now && now.order_number === order) back(form, "route", { done: "linked" });
+  // Never replace a linked order silently (unlinking is on Bookings), nor take one another pickup has.
+  if (now?.order_number) back(form, "route", { error: "closed" });
+  if (await orderLinkedElsewhere(order, job)) back(form, "route", { error: "order_taken" });
 
   const r = await linkOrder(job, order, admin.name);
   if (r.ok) await logActivity(admin, { section: "dispatch", action: "request_order_linked", target: job, summary: `Linked ${order} to ${label}` });

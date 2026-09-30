@@ -467,7 +467,7 @@ function RequestCard({ card, staff, today, ret, open, canPlan }: { card: Card; s
     <li id={`r-${job.id}`} className={`admin-card scroll-mt-24 ${timer?.tone === "late" ? "border-error/40" : timer?.tone === "soon" ? "border-[#f0d49a]" : ""}`}>
       <details className="group" open={open || undefined}>
         <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-5 py-4">
-          <Badge tone={job.source === "website_quote" ? "amber" : "blue"}>{job.source === "website_quote" ? "Quote" : "Booking"}</Badge>
+          <Badge tone={job.source === "website_quote" ? "amber" : "blue"}>{job.source === "website_quote" ? "Quote" : job.source === "weekly" ? "Weekly" : "Booking"}</Badge>
           {insight?.firstOrder ? <Badge tone="green">First website order · 10% off</Badge> : null}
           <span className="font-semibold text-navy">{job.customer_name ?? "Customer"}</span>
           <span className="t-small text-secondary">{job.phone}</span>
