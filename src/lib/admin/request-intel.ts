@@ -7,6 +7,7 @@
 import { CHANNEL_LABELS, classifyChannel, type Channel } from "../analytics/classify";
 import type { WebsiteRequest } from "./data";
 import { requestDetails } from "./request-details";
+import { hasFirstOrderMark } from "../first-order-offer";
 
 export type RequestInsight = {
   request: WebsiteRequest;
@@ -23,6 +24,8 @@ export type RequestInsight = {
   device: string | null;
   open: boolean;
   ageHours: number;
+  /** A booking marked as the number's first website order: staff apply 10% in Ops (lib/first-order-offer). */
+  firstOrder: boolean;
 };
 
 /** "utm_source=facebook, utm_medium=paid_social, landing_page=/x" → record. */
@@ -65,6 +68,7 @@ export function analyseRequest(r: WebsiteRequest, now = Date.now()): RequestInsi
     device: campaign.device ?? null,
     open: r.status !== "done",
     ageHours: Math.max(0, (now - new Date(r.created_at).getTime()) / 3_600_000),
+    firstOrder: r.source === "website_booking" && hasFirstOrderMark(details.Notes),
   };
 }
 

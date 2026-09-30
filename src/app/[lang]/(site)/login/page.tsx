@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "@/components/i18n/Link";
 import { Alert } from "@/components/account/Alert";
 import { AuthShell } from "@/components/account/AuthShell";
 import { SignInForm } from "@/components/account/forms";
@@ -58,6 +59,14 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
           ) : undefined
         }
       />
+      {/^(?:\/bn)?\/book/.test(next) ? (
+        // Signing in is encouraged (the first-order 10% is noted either way), never required.
+        <p className="mt-6 t-small text-center">
+          <Link href={next} className="font-semibold text-navy underline decoration-blue/50 underline-offset-4 hover:decoration-blue" data-book-as-guest>
+            {t.bookAsGuest}
+          </Link>
+        </p>
+      ) : null}
     </AuthShell>
   );
 }

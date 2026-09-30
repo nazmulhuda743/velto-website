@@ -187,7 +187,25 @@ export function previewRequests(): WebsiteRequest[] {
       done_by_name: null,
     } satisfies WebsiteRequest;
   });
-  return rows.sort((a, b) => b.created_at.localeCompare(a.created_at));
+  // Two bookings marked as the number's first website order (lib/first-order-offer), one with a goal coupon.
+  const first = (id: string, name: string, hours: number, notes: string): WebsiteRequest => ({
+    id,
+    title: `Website pickup - ${name}`,
+    type: "pickup",
+    status: "open",
+    source: "website_booking",
+    outlet_code: "S11",
+    description: [`Name: ${name}`, "Phone: 01XXXXXXXXX", "Area: Uttara Sector 11", "Service: Ironing", `Notes: ${notes}`, "Campaign: landing_page=/book, device=mobile"].join("\n"),
+    created_at: new Date(now - hours * 3_600_000).toISOString(),
+    done_at: null,
+    done_by_name: null,
+  });
+  const all: WebsiteRequest[] = [
+    ...rows,
+    first("preview-first-order", "Tanvir Hasan", 20, "Items: 6 × Shirt – Ironing. First website order: apply 10% off (any amount). Note: Call before coming"),
+    first("preview-first-coupon", "Arif Hossain", 6, "First website order: apply 10% off (any amount), OR Coupon VG-7K2P9Q: ৳200 off (valid to 2026-10-31): apply whichever saves the customer more, not both (an unused coupon stays open)."),
+  ];
+  return all.sort((a, b) => b.created_at.localeCompare(a.created_at));
 }
 
 /** "After the request": one row per request, older ones further along (a fresh request can't be delivered yet). */

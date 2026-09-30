@@ -3,7 +3,8 @@ import { logServerEvent } from "@/lib/analytics/store";
 import { bookingEstimateText } from "@/lib/booking-estimate";
 import { cleanBookingItems } from "@/lib/booking-items";
 import { couponNote, usableCoupon } from "@/lib/customer/goal";
-import { offerNoteFor } from "@/lib/account-offer";
+import { offerNoteFor, type FirstOrder } from "@/lib/first-order-offer";
+import { firstWebsiteBooking } from "@/lib/first-order-lookup";
 import { getCustomerSession, getGoal } from "@/lib/customer/portal";
 import { getSiteContent } from "@/lib/site-content";
 import { getCapacityConfig, zoneForArea } from "@/lib/capacity";
@@ -44,22 +45,27 @@ const fail = (
     { status, headers: { "Cache-Control": "no-store" } },
   );
 
-/**
- * The offer line for the Ops notes: the account offer (lib/account-offer.ts), with the signed-in
- * customer's monthly-goal coupon when they hold one (staff apply whichever saves more); undefined
- * for guests, staff and when accounts are unavailable.
- */
-async function offerForCaller(): Promise<string | undefined> {
+/** The signed-in customer's monthly-goal coupon for today, worded for Ops; null for everyone else. */
+async function couponForCaller(): Promise<string | null> {
   const session = await getCustomerSession();
-  const account = session.kind === "customer" && session.account.state === "ready" ? session.account : null;
-  let coupon: string | null = null;
-  if (account?.link.status === "linked") {
-    const { loyalty } = await getSiteContent();
-    const goal = loyalty.goal.enabled ? await getGoal(loyalty.goal.doubleFirst).catch(() => null) : null;
-    const c = goal ? usableCoupon(goal.coupons, goal.today) : null;
-    coupon = c ? couponNote(c) : null;
-  }
-  return offerNoteFor(account !== null, coupon);
+  if (session.kind !== "customer" || session.account.state !== "ready" || session.account.link.status !== "linked") return null;
+  const { loyalty } = await getSiteContent();
+  const goal = loyalty.goal.enabled ? await getGoal(loyalty.goal.doubleFirst).catch(() => null) : null;
+  const c = goal ? usableCoupon(goal.coupons, goal.today) : null;
+  return c ? couponNote(c) : null;
+}
+
+/**
+ * The offer line for the Ops notes (lib/first-order-offer.ts): 10% off the number's first website
+ * booking, signed in or not, with the customer's goal coupon when they hold one (staff apply
+ * whichever saves more).
+ */
+async function offerForBooking(phone: unknown): Promise<string | undefined> {
+  const [first, coupon] = await Promise.all([
+    typeof phone === "string" ? firstWebsiteBooking(phone) : Promise.resolve<FirstOrder>("unknown"),
+    couponForCaller().catch(() => null),
+  ]);
+  return offerNoteFor(first, coupon);
 }
 
 export async function POST(request: NextRequest) {
@@ -73,8 +79,8 @@ export async function POST(request: NextRequest) {
   const data = input.data && typeof input.data === "object" ? (input.data as Record<string, unknown>) : {};
   const items = cleanBookingItems(data.items);
   const estimate = items?.length ? await bookingEstimateText(items).catch(() => undefined) : undefined;
-  // The account offer for any booking made signed in, with a monthly-goal coupon when one is held.
-  const offerNote = await offerForCaller().catch(() => undefined);
+  // 10% off the number's first website booking, with a monthly-goal coupon when one is held.
+  const offerNote = await offerForBooking(data.phone).catch(() => undefined);
   const parsed = validateBookingSubmission(input.data, { estimate, siteUrl: SITE_URL, coupon: offerNote });
   const context = validateSubmissionContext({ idempotencyKey: input.idempotencyKey, requestId });
   if (!parsed.ok || !context.ok) {

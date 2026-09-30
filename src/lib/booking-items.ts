@@ -7,7 +7,7 @@
  * booking notes. Ops stays the source of truth for prices and final counts.
  */
 
-import { withoutOfferClaims } from "./account-offer";
+import { withoutOfferClaims } from "./first-order-offer";
 
 /** Services a single line can ask for (the per-garment and household services). */
 export const ITEM_SERVICES = {
@@ -135,7 +135,7 @@ export type BookingNoteExtras = {
   backBy?: string;
   /** Links to the customer's photos (opened by staff from the Ops task). */
   photos?: string[];
-  /** The signed-in account offer, with a monthly-goal coupon when held (lib/account-offer.ts offerNoteFor), already worded. */
+  /** The first-order offer and/or a monthly-goal coupon (lib/first-order-offer.ts offerNoteFor), already worded. */
   coupon?: string;
 };
 

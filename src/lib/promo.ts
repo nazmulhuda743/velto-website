@@ -185,7 +185,7 @@ export function popupExcluded(pathname: string): boolean {
  */
 export function barLink(a: { href: string; bookingNote: string }): string {
   if (a.href) return a.href;
-  return a.bookingNote.trim() ? "/book?source=promo_bar" : "";
+  return a.bookingNote.trim() ? SIGN_IN_THEN_BOOK("promo_bar") : "";
 }
 
 /** The top-bar text may hold several messages separated by "|"; each becomes one ticker item. */
@@ -233,30 +233,33 @@ export function offerParts(offer: string): { big: string; small: string } {
 /** The ticked points, at most three. */
 export const popupPoints = (points: string) => barMessages(points).slice(0, 3);
 
+/** Offers lead to sign-in first, then /book (customers are trained to book signed in; guests can skip). */
+export const SIGN_IN_THEN_BOOK = (source: string) => `/login?next=${encodeURIComponent(`/book?source=${source}`)}`;
+
 /**
- * Starting point for the "book signed in, 10% off" campaign (lib/account-offer.ts) (Promo & popup → Use the
+ * Starting point for the first-order 10% campaign (lib/first-order-offer.ts) (Promo & popup → Use the
  * template). Only facts already published on the site; the discount terms are Velto's own offer.
- * Loading it never switches the popup on.
+ * The button opens sign-in first, then the booking page. Loading it never switches the popup on.
  */
-export const ACCOUNT_OFFER_TEMPLATE = {
+export const FIRST_ORDER_TEMPLATE = {
   image: "/images/pages/finished-shirts-rail.webp",
   imageStyle: "photo" as const,
   imageAlt: "Freshly finished shirts on wooden hangers at Velto",
   imageAltBn: "Velto-তে কাঠের হ্যাঙ্গারে সদ্য ফিনিশ করা শার্ট",
-  tag: "Account offer",
-  tagBn: "অ্যাকাউন্ট অফার",
-  offer: "10% off signed in",
-  offerBn: "১০% ছাড় সাইন ইন করলে",
-  title: "Book it on our website, we do the rest.",
-  titleBn: "ওয়েবসাইটে বুক করুন, বাকিটা আমরা করব।",
-  body: "Sign in with your mobile, then book a pickup in a few taps. We collect from your door, and every order of ৳499 or more costs 10% less.",
-  bodyBn: "মোবাইল দিয়ে সাইন ইন করুন, তারপর কয়েক ট্যাপে পিকআপ বুক করুন। আমরা আপনার দরজা থেকে নিয়ে যাই, আর ৳৪৯৯ বা তার বেশি প্রতিটি অর্ডারে ১০% কম লাগে।",
+  tag: "First order offer",
+  tagBn: "প্রথম অর্ডার অফার",
+  offer: "10% off first order",
+  offerBn: "প্রথম অর্ডারে ১০% ছাড়",
+  title: "Your first order on our website: 10% off.",
+  titleBn: "ওয়েবসাইটে আপনার প্রথম অর্ডারে ১০% ছাড়।",
+  body: "Sign in with your mobile, then book your first pickup in a few taps. We collect from your door, and your first website order costs 10% less, whatever the amount.",
+  bodyBn: "মোবাইল দিয়ে সাইন ইন করুন, তারপর কয়েক ট্যাপে আপনার প্রথম পিকআপ বুক করুন। আমরা আপনার দরজা থেকে নিয়ে যাই, আর ওয়েবসাইটে প্রথম অর্ডারে যেকোনো পরিমাণে ১০% কম লাগে।",
   points: "Free pickup & delivery on ৳499+ | Every item tagged and checked | Pickup across Uttara Sectors 1–18",
   pointsBn: "৳৪৯৯+ অর্ডারে ফ্রি পিকআপ ও ডেলিভারি | প্রতিটি আইটেম ট্যাগ ও যাচাই করা হয় | উত্তরা সেক্টর ১–১৮ জুড়ে পিকআপ",
-  cta: "Book now · 10% off signed in",
-  ctaBn: "এখনই বুক করুন · সাইন ইন করলে ১০% ছাড়",
-  fine: "For orders of ৳499 or more booked on the website while signed in. We apply the 10% when we confirm your order.",
-  fineBn: "সাইন ইন করে ওয়েবসাইটে বুক করা ৳৪৯৯ বা তার বেশি অর্ডারে প্রযোজ্য। অর্ডার কনফার্ম করার সময় আমরা ১০% ছাড় যোগ করি।",
-  href: "/book?source=promo_popup",
+  cta: "Sign in & book · 10% off",
+  ctaBn: "সাইন ইন করে বুক করুন · ১০% ছাড়",
+  fine: "For your first order booked on the website, whatever the amount. We apply the 10% when we confirm your order.",
+  fineBn: "ওয়েবসাইটে বুক করা প্রথম অর্ডারে প্রযোজ্য, যেকোনো পরিমাণে। অর্ডার কনফার্ম করার সময় আমরা ১০% ছাড় যোগ করি।",
+  href: SIGN_IN_THEN_BOOK("promo_popup"),
   proof: true,
 } satisfies Partial<PromoPopup>;
