@@ -127,7 +127,6 @@ export const en = {
       freeLabel: "Free pickup & delivery",
     },
     services: {
-      eyebrow: "Services",
       title: "What do you need cleaned?",
       intro: "Choose the service you need. If you are unsure, send us a photo or message Velto on WhatsApp.",
       dryCleaningCopy: "For suits, blazers, sarees, sherwanis and garments that need a closer look before cleaning.",
@@ -135,18 +134,13 @@ export const en = {
       ironingCopy: "Already washed? Send it to Velto for ironing and finishing.",
       view: "View {service}",
       householdTitle: "Curtains, carpets & bedding",
-      householdCopy: "Priced by size or by item. Where measurement or condition matters, we confirm the amount before pickup.",
       curtainsCopy: "Tell us roughly how many curtains you have and their size. We'll help you work out the price.",
       carpetsCopy: "Share the approximate dimensions. The material and condition may affect the final price.",
       blanketsCopy: "Pricing depends mainly on the item, type and size.",
       viewBlankets: "View Blanket Cleaning",
-      requestQuote: "Request a Quote",
     },
     process: {
-      eyebrow: "After pickup",
       title: "What happens to your clothes after pickup?",
-      intro:
-        "Once your order reaches Velto, we check it in, identify the items and look over the garments before cleaning starts. When the work is finished, everything is checked again, packed and returned.",
       stages: [
         { title: "Collected", copy: "We arrange pickup from your address in Uttara." },
         { title: "Checked in", copy: "We count the order and connect the items to the right customer and order." },
@@ -159,25 +153,20 @@ export const en = {
       ],
       movements: ["Pickup", "Intake", "Cleaning & finishing", "QC & return"],
       delicateTitle: "Some garments need a closer look.",
-      delicate1:
-        "A blazer, saree or sherwani isn't the same job as everyday laundry. We check the garment and visible stains before cleaning starts.",
       delicate2: "Some stains cannot be fully removed. If something needs extra attention, we'll explain the options first.",
       seeDryCleaning: "See Dry Cleaning",
     },
     reviews: {
-      eyebrow: "Customer proof",
       title: "What customers noticed",
       carouselLabel: "Customer reviews",
+      seeAll: "See all reviews on Google",
     },
     locations: {
-      eyebrow: "Locations",
       title: "Built around Uttara.",
-      intro1: "Velto serves Uttara Sectors 1–18, with locations in Sector 11 and Sector 18.",
       intro2: "Book a pickup from home or visit the outlet that works for you.",
       linkTo: "Laundry and dry cleaning in {name}",
     },
     findPrice: {
-      eyebrow: "Pricing",
       title: "Check the price before you send it.",
       intro: "Search for an item such as a shirt, blazer or saree to see the services available and the current Velto price.",
       turnaround: [
@@ -185,7 +174,6 @@ export const en = {
         { label: "Wash & Iron", value: "Usually around 72 hours" },
         { label: "Dry Cleaning", value: "Usually around 72 hours" },
       ],
-      mayTakeLonger: "Some garments and household items may take longer.",
       free: "Free pickup & delivery on orders of {amount}+.",
       smallerOrders: "For smaller orders, the applicable pickup and delivery charge will be shown before booking.",
       viewPricing: "View Full Pricing",
@@ -195,23 +183,11 @@ export const en = {
       popularNotOffered: "Not offered for this item",
     },
     household: {
-      eyebrow: "Household care",
       title: "For curtains, carpets and bedding, start with a few details.",
-      intro1:
-        "Size, material and condition can affect the price. Tell us what you have, add approximate measurements where useful and upload a photo if it helps.",
       intro2: "We will confirm the final amount when measurement or condition needs to be checked.",
-      rows: [
-        { title: "Curtains", copy: "Approximate quantity and dimensions help us quote more accurately." },
-        { title: "Carpets", copy: "Send the approximate length and width. Material and condition can change the final price." },
-        {
-          title: "Blankets & Comforters",
-          copy: "Pricing depends mainly on the item, type and size. These jobs can take longer than everyday laundry.",
-        },
-      ],
       requestQuote: "Request a Quote",
     },
     regular: {
-      eyebrow: "Regular laundry",
       title: "If the laundry comes back every week, make pickup part of the week.",
       intro1: "Regular laundry and ironing can be arranged as recurring pickups, so you don't need to book from scratch every time.",
       intro2: "On a fixed weekly or fortnightly pickup, regular orders of {amount}+ qualify for free pickup and delivery.",

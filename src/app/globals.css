@@ -396,66 +396,6 @@ body {
   transform: scaleY(0);
 }
 
-/* Process story crossfade — spec §20 section 03 */
-.process-frame {
-  opacity: 0;
-  transform: scale(1.015);
-  transition:
-    opacity 380ms ease,
-    transform 700ms ease;
-}
-.process-frame[data-active="true"] {
-  opacity: 1;
-  transform: scale(1);
-}
-@media (prefers-reduced-motion: reduce) {
-  .process-frame {
-    transition: none;
-    transform: none;
-  }
-}
-
-.process-stage .process-num {
-  transition: color 200ms ease;
-}
-.process-stage[data-active="true"] .process-num {
-  /* Action blue: the brand blue is just under AA at label size. */
-  color: var(--color-brand-action);
-}
-.process-stage .process-marker {
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform 450ms ease;
-}
-.process-stage[data-active="true"] .process-marker {
-  transform: scaleX(1);
-}
-/* Desktop active emphasis: inactive stages step back but stay AA-readable. */
-@media (min-width: 1024px) {
-  .process-stage .process-title {
-    color: var(--color-text-secondary);
-    transition: color 200ms ease;
-  }
-  .process-stage[data-active="true"] .process-title {
-    color: var(--velto-navy);
-  }
-}
-.process-tick {
-  background: var(--color-border);
-  transition: background-color 200ms ease;
-}
-.process-tick[data-active="true"] {
-  background: var(--velto-blue);
-}
-@media (prefers-reduced-motion: reduce) {
-  .process-stage .process-num,
-  .process-stage .process-marker,
-  .process-stage .process-title,
-  .process-tick {
-    transition: none;
-  }
-}
-
 /* Skeleton rows for pricing loading */
 @keyframes skeleton-pulse {
   0%,

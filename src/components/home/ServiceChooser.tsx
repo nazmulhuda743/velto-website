@@ -4,7 +4,7 @@ import { ArrowRight } from "@/components/ui/icons";
 import { ResponsiveImage } from "@/components/ui/ResponsiveImage";
 import { TextLink } from "@/components/ui/TextLink";
 import { IMAGES } from "@/content/mock";
-import { SERVICES, quoteHref } from "@/content/site";
+import { SERVICES } from "@/content/site";
 import { dictionary } from "@/content/i18n";
 import { fill } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
@@ -16,26 +16,39 @@ function ServiceItem({
   linkLabel,
   children,
   large = false,
+  rowOnMobile = false,
 }: {
   title: string;
   href: string;
   linkLabel: string;
   children: ReactNode;
   large?: boolean;
+  /** Phone: a compact list row (thumbnail beside the text); tablet and up: the large editorial item. */
+  rowOnMobile?: boolean;
 }) {
+  const heading = rowOnMobile ? "t-h4 md:t-h3" : large ? "t-h3" : "t-h4";
+  const copy = rowOnMobile ? "t-small md:t-body-lg" : large ? "t-body-lg" : "t-body";
   return (
     <>
-      <h3 className={`${large ? "t-h3" : "t-h4"} text-navy transition-colors group-hover/service:text-blue`}>{title}</h3>
-      <p className={`mt-3 max-w-[46ch] text-secondary ${large ? "t-body-lg" : "t-body"}`}>{children}</p>
-      <div className="mt-3">
+      <h3 className={`${heading} text-navy transition-colors group-hover/service:text-blue`}>{title}</h3>
+      <p className={`${rowOnMobile ? "mt-1 md:mt-3" : "mt-3"} max-w-[46ch] text-secondary ${copy}`}>{children}</p>
+      <div className={rowOnMobile ? "mt-1 md:mt-3" : "mt-3"}>
         {/* Stretched link: the whole article (photo and title too) opens the service page. */}
-        <TextLink href={href} placement="service_chooser" className="t-body after:absolute after:inset-0 after:content-['']">
+        <TextLink
+          href={href}
+          placement="service_chooser"
+          className={`${rowOnMobile ? "text-[14px] md:text-base" : "t-body"} after:absolute after:inset-0 after:content-['']`}
+        >
           {linkLabel}
         </TextLink>
       </div>
     </>
   );
 }
+
+/** Wash & Iron and Ironing: a thumbnail row on phones, an editorial item with a large photo from tablet up. */
+const ROW =
+  "group/service relative col-span-4 grid grid-cols-[5.5rem_1fr] items-start gap-x-4 border-t border-line py-4 md:block md:py-0";
 
 export async function ServiceChooser() {
   const locale = await getLocale();
@@ -51,19 +64,19 @@ export async function ServiceChooser() {
   return (
     <section id="services" aria-labelledby="services-title" className="bg-warm py-(--space-section)">
       <div className="container-page">
-        <SectionIntro id="services-title" eyebrow={t.eyebrow} title={t.title}>
+        <SectionIntro id="services-title" title={t.title}>
           <p>{t.intro}</p>
         </SectionIntro>
 
-        <div className="mt-(--space-intro-content) grid-page gap-y-12 md:gap-y-16 xl:gap-y-20">
+        <div className="mt-(--space-intro-content) grid-page gap-y-0 md:gap-y-16">
           {/* Dry Cleaning — strongest visual weight */}
           <article className="group/service relative col-span-4 md:col-span-5 xl:col-span-7">
             <ResponsiveImage
               image={IMAGES.dryCleaning}
-              aspect="aspect-[3/2]"
+              aspect="aspect-[16/9] md:aspect-[3/2] xl:aspect-[2/1]"
               sizes="(min-width: 1200px) 720px, (min-width: 768px) 60vw, 100vw"
             />
-            <div className="mt-6">
+            <div className="mt-5 md:mt-6">
               <ServiceItem
                 large
                 title={name(SERVICES.dryCleaning.slug)}
@@ -75,15 +88,16 @@ export async function ServiceChooser() {
             </div>
           </article>
 
-          <article className="group/service relative col-span-4 border-t border-line pt-8 md:col-span-3 md:border-0 md:pt-0 xl:col-span-5">
+          <article className={`${ROW} mt-8 md:col-span-3 md:mt-0 md:border-0 md:pt-0 xl:col-span-5`}>
             <ResponsiveImage
               image={IMAGES.washAndIron}
-              aspect="aspect-[3/2] md:aspect-[3/4] xl:aspect-[21/20]"
-              sizes="(min-width: 1200px) 500px, (min-width: 768px) 40vw, 100vw"
+              aspect="aspect-[4/3] md:aspect-[3/4] xl:aspect-[7/5]"
+              sizes="(min-width: 1200px) 500px, (min-width: 768px) 40vw, 88px"
             />
-            <div className="mt-6">
+            <div className="md:mt-6">
               <ServiceItem
                 large
+                rowOnMobile
                 title={name(SERVICES.washAndIron.slug)}
                 href={SERVICES.washAndIron.href}
                 linkLabel={view(SERVICES.washAndIron.slug)}
@@ -93,30 +107,29 @@ export async function ServiceChooser() {
             </div>
           </article>
 
-          <article className="group/service relative col-span-4 border-t border-line pt-8 md:col-span-3 xl:col-span-5">
+          <article className={`${ROW} border-b md:col-span-3 md:border-b-0 md:pt-8 xl:col-span-5`}>
             <ResponsiveImage
               image={IMAGES.ironing}
-              aspect="aspect-[3/2] md:aspect-[4/5] xl:aspect-[4/3]"
-              sizes="(min-width: 1200px) 500px, (min-width: 768px) 40vw, 100vw"
+              aspect="aspect-[4/3] md:aspect-square xl:aspect-[16/9]"
+              sizes="(min-width: 1200px) 500px, (min-width: 768px) 40vw, 88px"
             />
-            <div className="mt-6">
-              <ServiceItem large title={name(SERVICES.ironing.slug)} href={SERVICES.ironing.href} linkLabel={view(SERVICES.ironing.slug)}>
+            <div className="md:mt-6">
+              <ServiceItem large rowOnMobile title={name(SERVICES.ironing.slug)} href={SERVICES.ironing.href} linkLabel={view(SERVICES.ironing.slug)}>
                 {t.ironingCopy}
               </ServiceItem>
             </div>
           </article>
 
           {/* Household group — one panel of clickable rows, not cards */}
-          <div className="col-span-4 border-t border-line pt-8 md:col-span-5 xl:col-span-7">
+          <div className="col-span-4 mt-10 md:col-span-5 md:mt-0 md:border-t md:border-line md:pt-8 xl:col-span-7">
             <h3 className="t-h3 text-navy">{t.householdTitle}</h3>
-            <p className="mt-3 max-w-[52ch] t-body-lg text-secondary">{t.householdCopy}</p>
-            <ul className="mt-6 border-t border-navy">
+            <ul className="mt-4 border-t border-navy md:mt-6">
               {household.map((item) => (
                 <li key={item.slug} className="border-b border-line">
                   <Link
                     href={item.href}
                     data-placement="service_chooser"
-                    className="group grid grid-cols-[5.5rem_1fr_auto] items-center gap-x-4 py-4 transition-colors hover:bg-white md:grid-cols-[7.5rem_1fr_auto] md:gap-x-5 md:px-2"
+                    className="group grid grid-cols-[5.5rem_1fr_auto] items-center gap-x-3 py-4 transition-colors hover:bg-white md:grid-cols-[7.5rem_1fr_auto] md:gap-x-5 md:px-2"
                   >
                     <ResponsiveImage image={item.image} aspect="aspect-[4/3]" sizes="120px" decorative />
                     <span>
@@ -129,11 +142,6 @@ export async function ServiceChooser() {
                 </li>
               ))}
             </ul>
-            <div className="mt-5">
-              <TextLink href={quoteHref(undefined, "home_services")} placement="service_chooser">
-                {t.requestQuote}
-              </TextLink>
-            </div>
           </div>
         </div>
       </div>

@@ -2,169 +2,65 @@ import { ResponsiveImage } from "@/components/ui/ResponsiveImage";
 import { TextLink } from "@/components/ui/TextLink";
 import { IMAGES } from "@/content/mock";
 import { SERVICES } from "@/content/site";
-import { ProcessScrollSync } from "./ProcessScrollSync";
 import { dictionary } from "@/content/i18n";
 import { localDigits } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
 import { SectionIntro } from "./SectionIntro";
 
 /**
- * Four movements (mobile/tablet visual grouping). All eight stages stay in the
- * DOM; on desktop the grouping is transparent and the sticky story runs per stage,
- * each stage just tall enough to cross the sync line (~17vh), so the section stays compact.
- * Stage and movement text lives in the UI dictionary (home.process).
+ * Homepage "after pickup" story, shortened with the owner's approval: the four
+ * movements as a compact numbered list, each with the first stage's line, and
+ * one photo for the whole section. The full eight-stage walk-through lives on
+ * /how-it-works. Stage and movement text lives in the UI dictionary (home.process).
  */
-const MOVEMENTS = [
-  { stages: [0], image: 0 },
-  { stages: [1, 2, 3], image: 2 },
-  { stages: [4], image: 4 },
-  { stages: [5, 6, 7], image: 6 },
-];
+const MOVEMENT_FIRST_STAGE = [0, 1, 4, 5];
 
-export async function ProcessStory({
-  title,
-  eyebrow,
-  intro,
-  showInsert = true,
-}: {
-  title?: string;
-  eyebrow?: string;
-  intro?: React.ReactNode;
-  showInsert?: boolean;
-} = {}) {
+export async function ProcessStory() {
   const locale = await getLocale();
   const t = dictionary(locale).home.process;
-  const STAGES = t.stages;
-  const stage = (i: number) => STAGES[i];
   const num = (i: number) => localDigits(String(i + 1).padStart(2, "0"), locale);
-  title ??= t.title;
-  eyebrow ??= t.eyebrow;
-  intro ??= <p>{t.intro}</p>;
   return (
     <section id="process" aria-labelledby="process-title" className="py-(--space-section)">
       <div className="container-page">
-        <SectionIntro id="process-title" eyebrow={eyebrow} title={title} titleClassName="max-w-[18ch]">
-          {intro}
-        </SectionIntro>
+        <SectionIntro id="process-title" title={t.title} titleClassName="max-w-[18ch]" />
 
-        <div className="mt-(--space-intro-content) grid-page">
-          {/* Sticky visual — desktop/laptop only */}
-          <div className="hidden lg:col-span-4 lg:block xl:col-span-7" aria-hidden="true">
-            <div className="sticky top-[calc(100px+var(--promo-h,0px))]">
-              <div className="relative h-[min(58vh,560px)] min-h-[400px] overflow-hidden rounded-md">
-                {IMAGES.process.map((image, i) => (
-                  <div
-                    key={i}
-                    data-frame={i}
-                    data-active={i === 0}
-                    className="process-frame absolute inset-0"
-                  >
-                    <ResponsiveImage
-                      image={image}
-                      decorative
-                      aspect="h-full"
-                      sizes="(min-width: 1200px) 720px, 50vw"
-                    />
-                  </div>
-                ))}
-              </div>
-              <div className="mt-4 flex items-center gap-6">
-                <div className="relative h-5 flex-1">
-                  {STAGES.map((stage, i) => (
-                    <p
-                      key={i}
-                      data-frame={i}
-                      data-active={i === 0}
-                      className="process-frame absolute inset-0 t-caption text-secondary"
-                    >
-                      <span className="font-semibold text-navy">{num(i)}</span> / {localDigits("08", locale)} · {stage.title}
-                    </p>
-                  ))}
-                </div>
-                <div className="flex gap-1">
-                  {STAGES.map((_, i) => (
-                    <span key={i} data-frame={i} data-active={i === 0} className="process-tick h-0.5 w-5 rounded-full" />
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Narrative */}
-          <div className="col-span-4 md:col-span-8 lg:col-span-4 lg:pb-[10vh] xl:col-span-5">
-            {MOVEMENTS.map((movement, g) => (
-              <div
-                key={g}
-                className={`md:grid md:grid-cols-2 md:items-start md:gap-x-5 lg:block ${
-                  g > 0 ? "mt-8 md:mt-12 lg:mt-0" : ""
-                }`}
-              >
-                <div className="mb-4 md:mb-0 lg:hidden">
-                  <ResponsiveImage
-                    image={IMAGES.process[movement.image]}
-                    aspect="aspect-[2/1] md:aspect-[4/3]"
-                    sizes="(min-width: 768px) 45vw, 100vw"
-                  />
-                </div>
-                <div>
-                  <p className="mb-2 flex items-baseline gap-3 lg:hidden">
-                    <span className="t-label text-action">{num(g)}</span>
-                    <span className="t-h4 text-navy">{t.movements[g]}</span>
-                  </p>
-                  <ol start={movement.stages[0] + 1} className="list-none">
-                    {movement.stages.map((i) => (
-                      <li
-                        key={i}
-                        data-stage={i}
-                        data-active={i === 0}
-                        className="process-stage relative border-t border-line py-2.5 lg:flex lg:min-h-[17vh] lg:flex-col lg:pb-6 lg:pt-5"
-                      >
-                        <span
-                          aria-hidden="true"
-                          className="process-marker absolute -top-px left-0 hidden h-0.5 w-full bg-blue lg:block"
-                        />
-                        <span className="process-num hidden t-label text-secondary lg:block">{num(i)}</span>
-                        <h3 className="process-title inline text-[15px] font-semibold leading-snug text-navy lg:mt-2 lg:block lg:t-h4">
-                          {stage(i).title}
-                        </h3>
-                        <p className="ml-1.5 inline t-small text-secondary lg:mt-1.5 lg:ml-0 lg:block lg:max-w-[40ch] lg:t-body">
-                          {stage(i).copy}
-                        </p>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Delicate garment insert */}
-        {showInsert ? (
-        <div className="mt-(--space-related) grid-page gap-y-8 border-t border-line pt-(--space-related) lg:mt-0">
-          <div className="col-span-4 md:col-span-4 xl:col-span-6">
+        <div className="mt-(--space-intro-content) grid-page gap-y-6">
+          <div className="col-span-4 md:col-span-3 xl:col-span-5">
             <ResponsiveImage
-              image={IMAGES.delicate}
-              aspect="aspect-[16/9] md:aspect-[4/3] xl:aspect-[3/2]"
-              sizes="(min-width: 1200px) 610px, (min-width: 768px) 50vw, 100vw"
+              image={IMAGES.process[3]}
+              aspect="aspect-[16/9] md:aspect-[3/4] xl:aspect-[4/5]"
+              sizes="(min-width: 1200px) 500px, (min-width: 768px) 38vw, 100vw"
             />
           </div>
-          <div className="col-span-4 md:col-span-4 md:self-center xl:col-span-5 xl:col-start-8">
-            <h3 className="t-h3 max-w-[18ch] text-navy">{t.delicateTitle}</h3>
-            <div className="mt-5 max-w-[48ch] space-y-4 text-body">
-              <p>{t.delicate1}</p>
-              <p>{t.delicate2}</p>
-            </div>
-            <div className="mt-5">
-              <TextLink href={SERVICES.dryCleaning.href} placement="process_delicate">
-                {t.seeDryCleaning}
-              </TextLink>
+
+          <div className="col-span-4 md:col-span-5 xl:col-span-6 xl:col-start-7">
+            <ol className="list-none border-t border-navy">
+              {MOVEMENT_FIRST_STAGE.map((stage, g) => (
+                <li key={g} className="grid grid-cols-[2rem_1fr] gap-x-3 border-b border-line py-3.5 md:grid-cols-[2.5rem_1fr] md:py-5">
+                  <span aria-hidden="true" className="pt-1 t-label text-action">
+                    {num(g)}
+                  </span>
+                  <div>
+                    <h3 className="t-h4 text-navy">{t.movements[g]}</h3>
+                    <p className="mt-1 max-w-[48ch] t-small text-secondary md:t-body">{t.stages[stage].copy}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+
+            {/* Delicate garment note */}
+            <div className="mt-8 md:mt-10">
+              <h3 className="t-h4 text-navy">{t.delicateTitle}</h3>
+              <p className="mt-2 max-w-[48ch] t-small text-body md:t-body">{t.delicate2}</p>
+              <div className="mt-2">
+                <TextLink href={SERVICES.dryCleaning.href} placement="process_delicate">
+                  {t.seeDryCleaning}
+                </TextLink>
+              </div>
             </div>
           </div>
         </div>
-        ) : null}
       </div>
-      <ProcessScrollSync rootId="process" />
     </section>
   );
 }

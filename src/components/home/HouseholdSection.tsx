@@ -1,42 +1,23 @@
 import { ButtonLink } from "@/components/ui/Button";
-import { ResponsiveImage } from "@/components/ui/ResponsiveImage";
-import { IMAGES } from "@/content/mock";
 import { dictionary } from "@/content/i18n";
 import { getLocale } from "@/lib/i18n/server";
-import { SectionIntro } from "./SectionIntro";
 
+/**
+ * Curtains, carpets & bedding (section 07), kept as a compact strip: the three services are
+ * already listed, with photos and links, in the service chooser, so this section carries only
+ * the quote-based pricing note and the Request a Quote action.
+ */
 export async function HouseholdSection() {
   const t = dictionary(await getLocale()).home.household;
   return (
-    <section id="household" aria-labelledby="household-title" className="py-(--space-section)">
-      <div className="container-page grid-page gap-y-10">
-        <div className="col-span-4 md:col-span-4 xl:col-span-6">
-          <div className="md:sticky md:top-[calc(100px+var(--promo-h,0px))]">
-            <ResponsiveImage
-              image={IMAGES.householdSection}
-              aspect="aspect-[4/3] md:aspect-[4/5] xl:aspect-[4/3]"
-              sizes="(min-width: 1200px) 610px, (min-width: 768px) 50vw, 100vw"
-            />
-          </div>
-        </div>
-        <div className="col-span-4 md:col-span-4 xl:col-span-5 xl:col-start-8">
-          <SectionIntro
-            id="household-title"
-            eyebrow={t.eyebrow}
-            title={t.title}
-          >
-            <p>{t.intro1}</p>
-            <p>{t.intro2}</p>
-          </SectionIntro>
-          <ul className="mt-(--space-intro-content)">
-            {t.rows.map((row) => (
-              <li key={row.title} className="border-t border-line py-5 last:border-b">
-                <h3 className="t-h4 text-navy">{row.title}</h3>
-                <p className="mt-2 text-secondary">{row.copy}</p>
-              </li>
-            ))}
-          </ul>
-          <ButtonLink href="/quote?source=home_household" variant="secondary" className="mt-8">
+    <section id="household" aria-labelledby="household-title" className="py-(--space-related)">
+      <div className="container-page grid-page gap-y-5 md:items-center">
+        <h2 id="household-title" className="col-span-4 t-h3 text-navy md:col-span-5 md:max-w-[24ch] xl:col-span-7">
+          {t.title}
+        </h2>
+        <div className="col-span-4 md:col-span-3 xl:col-span-4 xl:col-start-9">
+          <p className="t-body text-body">{t.intro2}</p>
+          <ButtonLink href="/quote?source=home_household" variant="secondary" className="mt-5">
             {t.requestQuote}
           </ButtonLink>
         </div>
