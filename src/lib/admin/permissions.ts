@@ -45,7 +45,7 @@ export type Section = (typeof SECTIONS)[number];
 
 export const ROLE_INFO: Record<Role, { label: string; summary: string }> = {
   owner: { label: "Owner", summary: "Everything, including who has access and approving price changes." },
-  manager: { label: "Manager", summary: "Everything except Access and Approvals. Price changes wait for an Owner's approval." },
+  manager: { label: "Manager", summary: "Everything except Staff access and Price approvals. Price changes wait for an Owner's approval." },
   marketing: { label: "Marketing", summary: "Traffic, funnel, campaigns, revenue, consent, loyalty numbers, SEO, website text, reviews and the promo bar & popup." },
   designer: { label: "Designer", summary: "Images, logo, website text, SEO text, reviews, promo bar & popup and site settings. No customer data." },
   support: { label: "Customer support", summary: "Bookings, pickup & delivery, bring-back list, customer feedback, goal coupons, customer accounts and prices." },

@@ -93,7 +93,7 @@ export default async function RevenuePage({ searchParams }: { searchParams: Sear
   return (
     <>
       <AdminHeader
-        title="Revenue attribution"
+        title="Revenue by campaign"
         intro={`Which campaigns bring customers, what they cost and what they are worth · ${range.label}. Billed revenue from Velto Ops orders.`}
         actions={
           <RangePicker
@@ -187,10 +187,10 @@ export default async function RevenuePage({ searchParams }: { searchParams: Sear
           <Metric label="Repeat customers" value={fmt(s.repeatCustomers)} sub={`${pct(s.repeatRate)} of attributed`} />
           <Metric label="Existing (not acquisitions)" value={fmt(s.existing)} sub="ordered in prior 90 days" />
           <Metric label="Spend" value={paid.spend === null ? <span className="text-[17px] text-secondary">Spend not recorded</span> : money(paid.spend)} sub={paid.spend === null ? undefined : `${paid.campaignsWithSpend} campaigns`} />
-          <Metric label="CAC" value={paid.cac === null ? "—" : money(paid.cac)} sub={paid.spend === null ? "needs spend" : `${fmt(paid.acquired)} acquired by paid campaigns`} />
-          <Metric label="First-order ROAS" value={roas(paid.firstOrderRoas)} sub="first-order billed ÷ spend" />
+          <Metric label="Cost per new customer (CAC)" value={paid.cac === null ? "—" : money(paid.cac)} sub={paid.spend === null ? "needs spend" : `${fmt(paid.acquired)} acquired by paid campaigns`} />
+          <Metric label="Return on ad spend, first order (ROAS)" value={roas(paid.firstOrderRoas)} sub="first-order billed ÷ spend" />
           <Metric
-            label="30-day ROAS"
+            label="Return on ad spend, 30 days (ROAS)"
             value={paid.roas30Pending ? <span className="text-[17px] text-secondary">pending</span> : roas(paid.roas30)}
             sub={paid.roas30Pending ? "some customers < 30 days old" : "matured 30-day billed ÷ spend"}
           />
@@ -268,7 +268,7 @@ export default async function RevenuePage({ searchParams }: { searchParams: Sear
           <DataTable
             leftCols={2}
             caption="Revenue by campaign"
-            head={["Campaign", "Source", "Spend", "Leads", "Acquired", "Reactivated", "Existing", "First-order", "30d", "60d", "90d", "Repeat", "CAC", "ROAS", "Coverage"]}
+            head={["Campaign", "Source", "Spend", "Leads", "Acquired", "Reactivated", "Existing", "First-order", "30d", "60d", "90d", "Repeat", "Cost per new customer", "Return on ad spend", "Coverage"]}
           >
             {rows.map((r: CampaignRow) => (
               <tr key={r.key}>

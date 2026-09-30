@@ -9,7 +9,7 @@ import { readDashboardParams } from "@/lib/admin/page-helpers";
 import { SITE_URL } from "@/lib/seo/site";
 import { requireSection } from "@/lib/admin/session";
 
-export const metadata = { title: "Marketing · Velto Command Center" };
+export const metadata = { title: "Ads & campaigns · Velto Command Center" };
 
 const LINK_PAGES = SEO_ROUTES.filter((r) => !["/privacy", "/terms", "/cookies"].includes(r.path)).map((r) => ({ path: r.path, label: r.label, group: r.group }));
 
@@ -25,7 +25,7 @@ export default async function MarketingPage({ searchParams }: { searchParams: Se
   return (
     <>
       <AdminHeader
-        title="Acquisition & campaigns"
+        title="Ads & campaigns"
         intro={`Where visitors came from and which campaigns led to requests · ${range.label}.`}
         actions={<RangePicker basePath="/admin/marketing" params={flat} active={range.key} from={flat.from} to={flat.to} />}
       />
@@ -51,13 +51,13 @@ export default async function MarketingPage({ searchParams }: { searchParams: Se
 
       <Panel
         className="mt-6"
-        title="Campaigns (UTM)"
-        intro={`${fmt(tagged)} of ${fmt(rows.length)} sessions arrived with UTM tags (${pct(rows.length ? tagged / rows.length : null)}).`}
+        title="Campaign links (UTM tags)"
+        intro={`${fmt(tagged)} of ${fmt(rows.length)} sessions arrived through a tagged campaign link (${pct(rows.length ? tagged / rows.length : null)}).`}
       >
         {utm.length === 0 ? (
           <p className="t-small text-secondary">No tagged campaign traffic in this period. Use the link builder below for every ad and shared link.</p>
         ) : (
-          <DataTable leftCols={4} caption="Campaign performance by UTM" head={["Campaign", "Source / medium", "Content", "Landing page", "Sessions", "Starts", "Bookings", "Quotes", "WhatsApp", "Conv."]}>
+          <DataTable leftCols={4} caption="Campaign performance by campaign link" head={["Campaign", "Source / medium", "Content", "Landing page", "Sessions", "Starts", "Bookings", "Quotes", "WhatsApp", "Conv."]}>
             {utm.map((r) => (
               <tr key={r.key}>
                 <Td first>{r.campaign || "—"}</Td>

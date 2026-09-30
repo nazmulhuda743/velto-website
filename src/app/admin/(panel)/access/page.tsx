@@ -16,9 +16,9 @@ const SAVED: Record<string, string> = {
 
 const SECTION_LABEL: Record<Section, string> = {
   overview: "Overview",
-  funnel: "Funnel",
+  funnel: "Visitor journey",
   visitors: "Visitors",
-  marketing: "Marketing",
+  marketing: "Ads & campaigns",
   revenue: "Revenue",
   consent: "Consent",
   requests: "Bookings & quotes",
@@ -28,9 +28,9 @@ const SECTION_LABEL: Record<Section, string> = {
   retention: "Bring customers back",
   accounts: "Customer accounts",
   health: "Website health",
-  seo: "SEO",
-  images: "Images",
-  copy: "Text & copy",
+  seo: "Google search (SEO)",
+  images: "Photos",
+  copy: "Website text",
   reviews: "Reviews",
   settings: "Site settings",
   feedback: "Customer feedback",
@@ -40,9 +40,9 @@ const SECTION_LABEL: Record<Section, string> = {
   prices: "Prices",
   notifications: "Notifications",
   board: "Task board",
-  activity: "Activity",
-  approvals: "Approvals",
-  access: "Access",
+  activity: "Activity log",
+  approvals: "Price approvals",
+  access: "Staff access",
 };
 
 function PersonRow({ p, self }: { p: Person; self: boolean }) {
@@ -126,7 +126,7 @@ export default async function AccessPage({ searchParams }: { searchParams: Searc
   return (
     <>
       <AdminHeader
-        title="Access"
+        title="Staff access"
         intro="Who can use this dashboard, and what each person can open. Every page and every save checks the role on the server. People added here get no access to Velto Ops data."
       />
       <Notice error={one(params.error)} />

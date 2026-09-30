@@ -77,8 +77,8 @@ export default async function CopyPage({ searchParams }: { searchParams: SearchP
   return (
     <>
       <AdminHeader
-        title="Text & copy"
-        intro="Change any words on the website, in English and Bangla. Edits show on the site right away; the original is kept, so “Restore original” always brings it back. Every change is recorded in Activity."
+        title="Website text"
+        intro="Change any words on the website, in English and Bangla. Edits show on the site right away; the original is kept, so “Restore original” always brings it back. Every change is recorded in the Activity log."
       />
       {one(params.error) && !one(params.at) ? (
         <p role="alert" className="mt-6 rounded-md border border-error/30 bg-error-soft px-4 py-3 t-small font-medium text-error">

@@ -6,7 +6,7 @@ import { METHOD_LABELS } from "@/lib/admin/revenue-helpers";
 import { reviewLinkAction } from "../../../revenue-actions";
 import { requireSection } from "@/lib/admin/session";
 
-export const metadata = { title: "Attribution review · Velto Command Center" };
+export const metadata = { title: "Check campaign matches · Velto Command Center" };
 
 const ISSUES: Record<ReviewItem["issue"], { title: string; body: string; tone: "amber" | "neutral" }> = {
   name_mismatch: {
@@ -51,7 +51,7 @@ export default async function ReviewPage({ searchParams }: { searchParams: Searc
   return (
     <>
       <AdminHeader
-        title="Attribution review"
+        title="Check campaign matches"
         intro="Only exceptional cases appear here. Normal exact-phone matches are counted automatically and never need approval. Every decision is kept in an audit trail."
       />
       <RevenueTabs active="/admin/revenue/review" reviewCount={items.length} />

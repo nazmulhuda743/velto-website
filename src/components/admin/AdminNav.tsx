@@ -133,7 +133,7 @@ const I = {
 
 const matches = (href: string, path: string) => (href === "/admin" ? path === "/admin" : path.startsWith(href));
 const ALL_HREFS = NAV_GROUPS.flatMap((g) => g.items.map((i) => i.href));
-/** The most specific menu item wins: /admin/copy/footer lights "Footer links", not "Text & copy". */
+/** The most specific menu item wins: /admin/copy/footer lights "Footer links", not "Website text". */
 const isActive = (href: string, path: string) => matches(href, path) && !ALL_HREFS.some((h) => h.length > href.length && h.startsWith(href) && matches(h, path));
 
 function Icon({ name }: { name: NavIcon }) {

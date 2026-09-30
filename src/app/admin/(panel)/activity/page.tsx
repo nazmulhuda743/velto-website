@@ -6,9 +6,9 @@ import { requireSection } from "@/lib/admin/session";
 
 const SECTION_LABEL: Record<string, string> = {
   session: "Sign-in",
-  images: "Images",
-  copy: "Text & copy",
-  seo: "SEO",
+  images: "Photos",
+  copy: "Website text",
+  seo: "Google search (SEO)",
   reviews: "Reviews",
   settings: "Site settings",
   feedback: "Customer feedback",
@@ -18,9 +18,9 @@ const SECTION_LABEL: Record<string, string> = {
   retention: "Bring back",
   revenue: "Revenue",
   prices: "Prices",
-  approvals: "Approvals",
+  approvals: "Price approvals",
   board: "Task board",
-  access: "Access",
+  access: "Staff access",
 };
 
 const dhaka = (iso: string, opts: Intl.DateTimeFormatOptions) => new Date(iso).toLocaleString("en-GB", { timeZone: "Asia/Dhaka", ...opts });
@@ -88,7 +88,7 @@ export default async function ActivityPage({ searchParams }: { searchParams: Sea
   return (
     <>
       <AdminHeader
-        title="Activity"
+        title="Activity log"
         intro="Every change made in this dashboard and every sign-in: who, what and when (Dhaka time). The log can't be edited or deleted from the website."
       />
 

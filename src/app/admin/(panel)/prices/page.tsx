@@ -148,7 +148,7 @@ export default async function PricesPage({ searchParams }: { searchParams: Searc
         title="Prices"
         intro={
           owner
-            ? "The Velto Ops price list. Your changes apply to Ops billing and the website straight away; Managers' changes wait for you on the Approvals page."
+            ? "The Velto Ops price list. Your changes apply to Ops billing and the website straight away; Managers' changes wait for you on the Price approvals page."
             : editable
               ? "The Velto Ops price list. Add, change or remove prices here: each change waits for an Owner's approval, then updates Ops billing and the website together."
               : "The Velto Ops price list, as Ops bills it and the website shows it."

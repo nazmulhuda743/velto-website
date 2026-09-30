@@ -20,7 +20,7 @@ const UUID = /^[0-9a-f-]{36}$/i;
 const MESSAGES: Record<string, string> = {
   not_found: "That stop no longer exists. The board has been refreshed.",
   closed: "That stop was already finished, cancelled or merged.",
-  invalid: "Check the day and slot and try again.",
+  invalid: "Check the day and time window and try again.",
   assignee: "That person isn't active in Velto Ops any more.",
   past: "That day has already passed. Choose today or later.",
   reason: "Give a reason for cancelling.",
@@ -72,7 +72,7 @@ export async function planAction(form: FormData) {
 
   const r = await planJob(job, person ?? null, day || null, isSlot(slot) ? slot : null, admin.name, override || undefined);
   if (r.ok) {
-    const when = day && isSlot(slot) ? `${dayName(day)} ${slotLabel(slot).toLowerCase()}` : "no slot yet";
+    const when = day && isSlot(slot) ? `${dayName(day)} ${slotLabel(slot).toLowerCase()}` : "no time window yet";
     await logActivity(admin, {
       section: "dispatch",
       action: override ? "stop_planned_over_capacity" : "stop_planned",

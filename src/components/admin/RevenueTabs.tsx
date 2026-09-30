@@ -4,7 +4,7 @@ const TABS = [
   { href: "/admin/revenue", label: "Overview" },
   { href: "/admin/revenue/customers", label: "Customers" },
   { href: "/admin/revenue/spend", label: "Campaign spend" },
-  { href: "/admin/revenue/review", label: "Review queue" },
+  { href: "/admin/revenue/review", label: "Check matches" },
 ];
 
 export function RevenueTabs({ active, reviewCount }: { active: string; reviewCount?: number }) {

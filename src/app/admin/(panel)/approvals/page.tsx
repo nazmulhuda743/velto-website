@@ -10,7 +10,7 @@ const SERVICE_LABEL: Record<string, string> = { "Dry Cleaning": "Dry Cleaning", 
 const KIND_LABEL: Record<PriceChange["kind"], string> = { add: "New item", edit: "Price change", remove: "Remove", restore: "Restore" };
 const SAVED: Record<string, string> = {
   approve: "Approved. Velto Ops and the website now use it.",
-  reject: "Rejected. Nothing changed; your reason is saved with the request and in Activity.",
+  reject: "Rejected. Nothing changed; your reason is saved with the request and in the Activity log.",
 };
 
 function Change({ c, open }: { c: PriceChange; open: boolean }) {
@@ -115,7 +115,7 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Se
   return (
     <>
       <AdminHeader
-        title="Approvals"
+        title="Price approvals"
         intro="Price list changes waiting for an Owner. Approving writes the change to the Velto Ops price list, so Ops billing and the website change together. Nothing changes until you approve."
       />
       <Notice error={one(params.error)} />

@@ -89,6 +89,8 @@ test("every menu item opens a page its role may see", () => {
       for (const i of g.items) assert.ok(p.can(r, p.sectionForPath(i.href)), `${r} → ${i.href}`);
     }
   }
+  assert.equal(nav.sectionLabel("seo"), "Google search (SEO)");
+  assert.equal(nav.sectionLabel("dispatch"), "Pickup & delivery", "Today shares the section; the notice names the section's own page");
   const hrefs = nav.NAV_GROUPS.flatMap((g) => g.items.map((i) => i.href));
   assert.equal(new Set(hrefs).size, hrefs.length, "no duplicate menu items");
 });

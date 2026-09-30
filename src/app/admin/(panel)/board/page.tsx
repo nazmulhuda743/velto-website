@@ -315,7 +315,7 @@ export default async function BoardPage({ searchParams }: { searchParams: Search
                     <button type="submit" className="admin-btn-danger">
                       Archive task
                     </button>
-                    <p className="mt-1 t-caption text-secondary">Archived tasks leave the board; the change stays in Activity.</p>
+                    <p className="mt-1 t-caption text-secondary">Archived tasks leave the board; the change stays in the Activity log.</p>
                   </form>
                 ) : null}
                 {t.assignee_name ? (

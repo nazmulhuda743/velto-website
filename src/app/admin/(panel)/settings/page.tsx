@@ -12,7 +12,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Sea
   const { settings, brand } = await getSiteContent();
   return (
     <>
-      <AdminHeader title="Site settings" intro="Logo, contact details, the booking charge and the Google figures shown across the website. Menu, footer and page wording is edited on Text & copy; the top bar and popup on Promo & popup." />
+      <AdminHeader title="Site settings" intro="Logo, contact details, the booking charge and the Google figures shown across the website. Menu, footer and page wording is edited on Website text; the top bar and popup on Promo & popup." />
       <Notice saved={one(params.saved)} error={one(params.error)} />
 
       <section aria-labelledby="logo-title" className="admin-card mt-6 p-5 md:p-7">
