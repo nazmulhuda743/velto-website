@@ -3,11 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { assignAction } from "@/app/admin/today-actions";
-import type { SlotId } from "@/lib/admin/dispatch-logic";
 import type { TodayLang } from "./format";
 import { Icon, type IconName } from "./icons";
 import type { SheetData } from "./items";
 
+/** A time window id, taken from the sheet's own data (client code doesn't import the admin libraries). */
+type SlotId = SheetData["defaultSlot"];
 const WINDOWS: SlotId[] = ["morning", "afternoon", "evening"];
 /** The query the server adds to ask again about a full rider; dropped once the question is shown. */
 const ASK_PARAMS = ["error", "rider", "adate", "slot"];
