@@ -37,17 +37,18 @@ export function waitText(minutes: number, t: TodayText) {
   return t.waitingDays(Math.floor(minutes / (24 * 60)));
 }
 
-/** Clock time in Dhaka, "9:40" (12-hour, the way staff say it). */
-export function clock(iso: string) {
+/** Clock time in Dhaka, "9:40" / "৯:৪০" (12-hour, the way staff say it). */
+export function clock(iso: string, t: TodayText) {
   const d = new Date(Date.parse(iso) + 6 * 3_600_000);
   const h = d.getUTCHours() % 12 || 12;
-  return `${h}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+  const m = d.getUTCMinutes();
+  return `${t.num(h)}:${t.num(Math.floor(m / 10))}${t.num(m % 10)}`;
 }
 
-/** "9:40" when it was today (Dhaka), otherwise "28 September". */
+/** "9:40" when it was today (Dhaka), otherwise "28 September" (in the page's digits). */
 export function whenText(iso: string, today: string, t: TodayText) {
   const day = new Date(Date.parse(iso) + 6 * 3_600_000).toISOString().slice(0, 10);
-  if (day === today) return clock(iso);
+  if (day === today) return clock(iso, t);
   const d = new Date(`${day}T00:00:00Z`);
   return `${t.num(d.getUTCDate())} ${t.months[d.getUTCMonth()]}`;
 }

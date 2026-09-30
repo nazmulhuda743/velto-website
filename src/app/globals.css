@@ -703,7 +703,14 @@ dialog[data-today-sheet] {
   }
 }
 dialog[data-today-sheet]::backdrop {
-  background: rgb(0 30 55 / 0.45);
+  background: color-mix(in srgb, var(--velto-navy) 45%, transparent);
+}
+dialog[data-today-sheet] {
+  box-shadow: 0 -12px 40px color-mix(in srgb, var(--velto-navy) 18%, transparent);
+}
+/* The page behind the open sheet stays still. */
+html:has(dialog[data-today-sheet][open]) {
+  overflow: hidden;
 }
 /* "Marked as picked up": shown after a button worked, then fades by itself (no script). */
 @keyframes today-toast {

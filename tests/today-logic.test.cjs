@@ -2,7 +2,7 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
-const { tabFor, callQueue, riderLoad, riderChoices, dayStrip, nowWindow, changedTime, linkCandidates } = require("../.foundation-test-build/admin/today-logic.js");
+const { tabFor, callQueue, riderLoad, riderChoices, dayStrip, nowWindow, windowOver, changedTime, linkCandidates } = require("../.foundation-test-build/admin/today-logic.js");
 
 let n = 0;
 const job = (over = {}) => ({
@@ -80,6 +80,28 @@ test("rider choices: free riders first, full ones after, people who are off last
   // Nobody has room: nobody is "best".
   const full = riderChoices([riders[2]], jobs, date, "evening");
   assert.equal(full[0].best, false);
+});
+
+test("rider choices: the most room left wins, not the fewest stops (0/1 vs 1/8)", () => {
+  const date = "2026-10-02";
+  const riders = [
+    { id: "s", name: "Small", stopsPerWindow: 1, off: false },
+    { id: "l", name: "Large", stopsPerWindow: 8, off: false },
+  ];
+  const choices = riderChoices(riders, [scheduled("l", date, "morning")], date, "morning");
+  assert.deepEqual(choices.map((c) => `${c.name} ${c.load}/${c.stopsPerWindow}`), ["Large 1/8", "Small 0/1"]);
+  assert.deepEqual(choices.map((c) => c.best), [true, false]);
+  // Same room left: the lighter load for its size first (1/4 before 4/7), then the name.
+  const tie = riderChoices(
+    [
+      { id: "a", name: "Anik", stopsPerWindow: 7, off: false },
+      { id: "z", name: "Zaman", stopsPerWindow: 4, off: false },
+    ],
+    [...Array.from({ length: 4 }, () => scheduled("a", date, "morning")), scheduled("z", date, "morning")],
+    date,
+    "morning",
+  );
+  assert.deepEqual(tie.map((c) => c.name), ["Zaman", "Anik"]);
 });
 
 test("the day strip adds up room and planned stops per window, leaving out people who are off", () => {
@@ -186,4 +208,16 @@ test("link candidates: only pickups picked in the last 7 days (as website_dispat
   const day = 86_400_000;
   assert.equal(linkCandidates(p, recent, new Set(), Date.parse(picked) + 6 * day).length, 1);
   assert.deepEqual(linkCandidates(p, recent, new Set(), Date.parse(picked) + 7 * day + 1), []);
+});
+
+test("windowOver: a window of today is over at its end (Dhaka), other days by date", () => {
+  const at = (h) => new Date(Date.UTC(2026, 9, 2, h - 6, 5)); // 2 Oct, h:05 in Dhaka
+  assert.equal(windowOver("2026-10-02", "morning", at(11)), false);
+  assert.equal(windowOver("2026-10-02", "morning", at(12)), true);
+  assert.equal(windowOver("2026-10-02", "afternoon", at(15)), false);
+  assert.equal(windowOver("2026-10-02", "afternoon", at(16)), true);
+  assert.equal(windowOver("2026-10-02", "evening", at(19)), false);
+  assert.equal(windowOver("2026-10-02", "evening", at(20)), true);
+  assert.equal(windowOver("2026-10-03", "morning", at(21)), false);
+  assert.equal(windowOver("2026-10-01", "evening", at(8)), true);
 });

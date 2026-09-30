@@ -17,7 +17,7 @@ export function DayStrip({ strip, now, past, t }: { strip: { slot: SlotId; plann
             {isNow ? <span className="absolute -top-2.5 left-2 z-10 rounded-[4px] bg-white px-1.5 text-[11px] font-semibold leading-[18px] text-navy">{t.now}</span> : null}
             <div className={`relative h-[34px] overflow-hidden rounded-[8px] bg-white/10 ${isNow ? "outline-2 outline-offset-2 outline-white" : ""}`}>
               <div className={`absolute inset-y-0 left-0 ${past.includes(w.slot) ? "bg-cyan/55" : "bg-cyan"}`} style={{ width: `${pct}%` }} />
-              <span className="absolute inset-0 flex items-center justify-center text-[15px] font-semibold tabular-nums text-white [text-shadow:0_1px_2px_rgb(0_43_78/0.45)]">
+              <span className="absolute inset-0 flex items-center justify-center text-[15px] font-semibold tabular-nums text-white [text-shadow:0_1px_2px_color-mix(in_srgb,var(--velto-navy)_45%,transparent)]">
                 {t.num(w.planned)}/{t.num(w.capacity)}
               </span>
             </div>

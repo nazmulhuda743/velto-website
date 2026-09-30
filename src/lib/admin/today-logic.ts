@@ -54,14 +54,20 @@ export function riderLoad(jobs: DispatchJob[], riderId: string, date: string, sl
   return stopCount(jobs.filter((j) => j.stage === "scheduled" && j.assignee_id === riderId && j.slot_date === date && j.slot === slot));
 }
 
-/** Riders for one window, best first: people who are off last, full after free, then lightest load, then name. */
+/**
+ * Riders for one window, best first: people who are off last, full after free, then the most room
+ * left (stops per window minus load), then the lightest load for their size, then name. So a rider
+ * at 1/8 (7 left) comes before one at 0/1 (1 left).
+ */
 export function riderChoices(riders: Rider[], jobs: DispatchJob[], date: string, slot: SlotId): RiderChoice[] {
+  const room = (c: RiderChoice) => capacityOf(c) - c.load;
+  const ratio = (c: RiderChoice) => c.load / capacityOf(c);
   const choices = riders
     .map((r) => {
       const load = riderLoad(jobs, r.id, date, slot);
       return { ...r, load, full: load >= capacityOf(r), best: false };
     })
-    .sort((a, b) => Number(a.off) - Number(b.off) || Number(a.full) - Number(b.full) || a.load - b.load || a.name.localeCompare(b.name));
+    .sort((a, b) => Number(a.off) - Number(b.off) || Number(a.full) - Number(b.full) || room(b) - room(a) || ratio(a) - ratio(b) || a.name.localeCompare(b.name));
   if (choices[0] && !choices[0].off && !choices[0].full) choices[0].best = true;
   return choices;
 }
@@ -83,6 +89,14 @@ export function nowWindow(now = new Date()): SlotId | null {
   if (hour >= 12 && hour < 16) return "afternoon";
   if (hour >= 16 && hour < 20) return "evening";
   return null;
+}
+
+/** A window of `date` that has already ended in Dhaka (Morning at noon, Afternoon at 4 pm, Evening at 8 pm); earlier days are all over. */
+export function windowOver(date: string, slot: SlotId, now = new Date()): boolean {
+  const dhaka = new Date(now.getTime() + 6 * 3_600_000);
+  const today = dhaka.toISOString().slice(0, 10);
+  if (date !== today) return date < today;
+  return dhaka.getUTCHours() >= (SLOTS.find((s) => s.id === slot)?.end ?? 24);
 }
 
 /** The customer changed their time and nobody has acted since (drives the "Changed time" badge). */

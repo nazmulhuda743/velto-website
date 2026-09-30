@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { NotificationRefresher } from "@/components/admin/NotificationRefresher";
 import { DayStrip } from "@/components/admin/today/DayStrip";
-import { clock, dateLine, dayWord, place, whenText, windowText, type TodayLang } from "@/components/admin/today/format";
+import { clock, dateLine, dayWord, initials, place, whenText, windowText, type TodayLang } from "@/components/admin/today/format";
 import { HelpCard } from "@/components/admin/today/HelpCard";
 import { Icon } from "@/components/admin/today/icons";
 import type { AssignItem, CallItem, DeliverItem, ListItem, SheetData } from "@/components/admin/today/items";
@@ -20,7 +20,7 @@ import { callTimer } from "@/lib/admin/request-flow";
 import { analyseRequest } from "@/lib/admin/request-intel";
 import { requireSection } from "@/lib/admin/session";
 import { getRiders, getToday, isDay, TODAY_ERRORS, todayError, type TodayData, type TodayError } from "@/lib/admin/today";
-import { callQueue, changedTime, dayStrip, nowWindow, riderChoices, tabFor, type Rider, type TodayTab } from "@/lib/admin/today-logic";
+import { callQueue, changedTime, dayStrip, nowWindow, riderChoices, tabFor, windowOver, type Rider, type TodayTab } from "@/lib/admin/today-logic";
 import { normaliseBdPhone } from "@/lib/customer/validation";
 
 export const metadata = { title: "Today · Velto Command Center" };
@@ -154,7 +154,9 @@ export default async function TodayPage({ searchParams }: { searchParams: Search
       const s = suggestedSlot(j.requested, j.created_at, today);
       const slot = s.slot ?? fallback.slot;
       // A window with no day: today while it is still open, else tomorrow.
-      const day = s.date ?? (SLOTS.find((x) => x.id === slot)!.end > dhakaHour(nowMs) ? today : tomorrow);
+      const asked = s.date ?? (SLOTS.find((x) => x.id === slot)!.end > dhakaHour(nowMs) ? today : tomorrow);
+      // Never offer a window that is already over: the same window tomorrow.
+      const day = windowOver(asked, slot, new Date(nowMs)) ? tomorrow : asked;
       const minutes = callTimer(j, nowMs)?.minutes ?? minutesSince(j.created_at, nowMs);
       return {
         tab: "call",
@@ -168,13 +170,15 @@ export default async function TodayPage({ searchParams }: { searchParams: Search
         label: labelOf(j),
         minutes,
         late: minutes >= LATE_MINUTES,
-        asked: s.slot ? windowText(s.slot, s.date, today, t) : j.requested,
+        // In the page language when it reads as a window; a day that has passed is left out.
+        asked: s.slot ? windowText(s.slot, s.date, today, t) : null,
         confirm: { date: day, slot },
         attempts: j.contact_attempts,
       };
     }),
     ...(data?.callbacks ?? []).map((c): CallItem => {
       const minutes = minutesSince(c.created_at, nowMs);
+      const asked = suggestedSlot(c.preferred, c.created_at, today);
       return {
         tab: "call",
         source: "callback",
@@ -187,7 +191,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Search
         label: `Call-back – ${c.name}`,
         minutes,
         late: minutes >= LATE_MINUTES,
-        asked: c.preferred,
+        asked: asked.slot ? windowText(asked.slot, asked.date, today, t) : null,
         confirm: null,
         attempts: 0,
       };
@@ -267,19 +271,57 @@ export default async function TodayPage({ searchParams }: { searchParams: Search
   const errorCode = one(params.error);
   if (next && next.tab !== "call") {
     const plannable = (d: string | null | undefined) => (d && d >= today ? d : null);
-    const sheetDate = next.tab === "assign" ? (plannable(next.date) ?? plannable(date) ?? today) : (plannable(date) ?? today);
-    const sheetRiders = sheetDate === date ? riders : await getRiders(sheetDate);
-    const others = jobs.filter((j) => j.id !== next.id);
-    const choices = Object.fromEntries(SLOTS.map((s) => [s.id, riderChoices(sheetRiders, others, sheetDate, s.id)])) as SheetData["choices"];
     const askRider = one(params.rider);
     const askSlot = SLOTS.find((s) => s.id === one(params.slot))?.id;
-    const slot = next.tab === "assign" ? next.slot : null;
+    const askDate = plannable(isDay(one(params.adate) ?? "") ? one(params.adate) : null);
+    const pending = errorCode === "full" && jobParam === next.id && askRider && askSlot ? { rider: askRider, slot: askSlot } : null;
+    let sheetDate = (pending && askDate) || (next.tab === "assign" ? (plannable(next.date) ?? plannable(date) ?? today) : (plannable(date) ?? today));
+    // Every window of the day is over (after 8 pm): plan for the next day.
+    if (SLOTS.every((s) => windowOver(sheetDate, s.id, new Date(nowMs)))) sheetDate = addDays(sheetDate, 1);
+    const closed = SLOTS.filter((s) => windowOver(sheetDate, s.id, new Date(nowMs))).map((s) => s.id);
+    const open = SLOTS.map((s) => s.id).filter((s) => !closed.includes(s));
+    // The agreed window is over (or there is none): the manager picks one that is still open.
+    const agreed = next.tab === "assign" && next.slot && !closed.includes(next.slot) && sheetDate === next.date ? next.slot : null;
+    const sheetRiders = sheetDate === date ? riders : await getRiders(sheetDate);
+    const others = jobs.filter((j) => j.id !== next.id);
+    const windowWord = (w: SlotId) => (lang === "en" ? t.windowName[w].toLowerCase() : t.windowName[w]);
+    const offWord = sheetDate === today ? t.offToday : t.offDay;
+    const choices = Object.fromEntries(
+      SLOTS.map((s) => [
+        s.id,
+        riderChoices(sheetRiders, others, sheetDate, s.id).map((c) => ({
+          id: c.id,
+          name: c.name,
+          initial: initials(c.name),
+          off: c.off,
+          full: c.full,
+          best: c.best,
+          pct: Math.min(100, Math.round((c.load / (c.stopsPerWindow || 1)) * 100)),
+          stops: t.stopsOf(c.load, c.stopsPerWindow),
+          tag: c.off ? offWord : c.full ? t.full : c.best ? t.mostFree : null,
+          ask: c.full ? t.fullAsk(c.name, windowWord(s.id)) : null,
+        })),
+      ]),
+    ) as SheetData["choices"];
     sheet = {
       date: sheetDate,
-      slot,
-      defaultSlot: slot ?? (sheetDate === today ? fallback.slot : "morning"),
+      slot: agreed,
+      defaultSlot: agreed ?? (pending?.slot && open.includes(pending.slot) ? pending.slot : open.includes(fallback.slot) ? fallback.slot : (open[0] ?? "morning")),
+      closed,
       choices,
-      pending: errorCode === "full" && jobParam === next.id && askRider && askSlot ? { rider: askRider, slot: askSlot } : null,
+      pending,
+      text: {
+        trigger: next.tab === "assign" ? t.chooseRider : t.planDelivery,
+        title: t.assignTo(next.name),
+        hint: [next.place, t.assignHint].filter(Boolean).join(" · "),
+        fixed: agreed ? windowText(agreed, sheetDate, today, t) : null,
+        windows: t.windowName,
+        timeWindow: t.timeWindow,
+        close: t.close,
+        assignAnyway: t.assignAnyway,
+        back: t.back,
+        noRiders: t.noRiders,
+      },
     };
   }
 
@@ -369,7 +411,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Search
       {opsDown ? (
         <div role="alert" className="flex items-start gap-2.5 border-b border-warning/25 bg-warning-soft px-[18px] py-3 text-warning">
           <Icon name="alert" className="mt-0.5 size-5" />
-          <p className="min-w-0 flex-1 t-small font-semibold">{data?.loadedAt ? t.opsDown(clock(data.loadedAt)) : t.opsDownShort}</p>
+          <p className="min-w-0 flex-1 t-small font-semibold">{data?.loadedAt ? t.opsDown(clock(data.loadedAt, t)) : t.opsDownShort}</p>
           <Link href={href({ job: jobParam || undefined })} prefetch={false} className="-my-2 inline-flex min-h-11 shrink-0 items-center gap-1 rounded-md px-2 t-small font-semibold underline underline-offset-4 hover:bg-white/60">
             <Icon name="refresh" className="size-4" />
             {t.retry}
@@ -381,7 +423,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Search
         {showHelp && data ? <HelpCard title={t.howTitle} body={t.help} gotIt={t.gotIt} /> : null}
         {error ? (
           <p role="alert" className="mb-4 flex items-start gap-2.5 rounded-[10px] border border-warning/25 bg-warning-soft px-3 py-2.5 t-small font-semibold text-warning">
-            <Icon name="alert" className="mt-0.5" />
+            <Icon name="alert" className="mt-0.5 size-[18px]" />
             {error}
           </p>
         ) : null}
@@ -419,7 +461,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Search
               <h2 id="today-next" className="mb-2 text-[14px] font-semibold text-secondary">
                 {t.nextUp}
               </h2>
-              <NextUpCard item={next} t={t} lang={lang} today={today} view={date} sheet={sheet} />
+              <NextUpCard key={next.id} item={next} t={t} lang={lang} today={today} view={date} sheet={sheet} />
             </section>
             {rest.length ? (
               <section aria-labelledby="today-then" className="mt-5">
@@ -439,7 +481,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Search
 
       <div className="sticky bottom-0 z-10 border-t border-line bg-white">
         {toast ? (
-          <p role="status" data-today-toast className="pointer-events-none absolute bottom-full left-1/2 mb-3 w-max max-w-[calc(100%-32px)] -translate-x-1/2 rounded-[10px] bg-navy px-4 py-2.5 text-center t-small font-semibold text-white shadow-[0_8px_24px_rgb(0_43_78/0.25)]">
+          <p role="status" data-today-toast className="pointer-events-none absolute bottom-full left-1/2 mb-3 w-max max-w-[calc(100%-32px)] -translate-x-1/2 rounded-[10px] bg-navy px-4 py-2.5 text-center t-small font-semibold text-white shadow-[0_8px_24px_color-mix(in_srgb,var(--velto-navy)_25%,transparent)]">
             {toast}
           </p>
         ) : null}

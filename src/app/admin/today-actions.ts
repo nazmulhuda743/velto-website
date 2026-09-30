@@ -7,7 +7,7 @@ import { addDays, dayName, dhakaToday, isSlot, slotLabel, type SlotId } from "@/
 import { canEditCapacity } from "@/lib/admin/permissions";
 import { requireSection } from "@/lib/admin/session";
 import { getJob, getRiders, getWindowStops, isDay as isDate, orderLinkedElsewhere, saveRider, setDayOff, TODAY_ERRORS, type TodayError } from "@/lib/admin/today";
-import { riderChoices, type TodayTab } from "@/lib/admin/today-logic";
+import { riderChoices, windowOver, type TodayTab } from "@/lib/admin/today-logic";
 
 /**
  * Today (/admin/today): confirm a call, record no answer, give a job a rider and window, mark it
@@ -113,6 +113,8 @@ export async function assignAction(form: FormData) {
   if (!isDate(day) || !isSlot(slot)) back(form, "assign", { error: "invalid" });
   if (!plannable(day)) back(form, "assign", { error: "past" });
   const window = slot as SlotId;
+  // Today's Morning after noon (and so on) can't be given a rider any more.
+  if (windowOver(day, window)) back(form, "assign", { error: "slot_past" });
 
   const now = await getJob(job);
   if (now === null) back(form, "assign", { error: "not_found" });

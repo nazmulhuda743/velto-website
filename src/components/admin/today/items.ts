@@ -3,7 +3,6 @@
  * windows in the page language). Plain data, so the client rider sheet can take it too.
  */
 import type { SlotId } from "@/lib/admin/dispatch-logic";
-import type { RiderChoice } from "@/lib/admin/today-logic";
 
 export type Badges = { first?: boolean; callback?: boolean; weekly?: boolean; changed?: boolean };
 
@@ -41,13 +40,46 @@ export type DeliverItem = Common & { tab: "deliver"; order: string | null; ready
 
 export type ListItem = CallItem | AssignItem | DeliverItem;
 
+/** One rider in the sheet, with its words already in the page language (the sheet ships no dictionary). */
+export type SheetRider = {
+  id: string;
+  name: string;
+  initial: string;
+  off: boolean;
+  full: boolean;
+  best: boolean;
+  /** Load as a percentage of the rider's stops per window (the meter). */
+  pct: number;
+  /** "3/8 stops". */
+  stops: string;
+  /** "Most free", "Full", "Off today", or nothing. */
+  tag: string | null;
+  /** For a full rider: "Bappy is full in the morning. Assign anyway?". */
+  ask: string | null;
+};
+
 /** The rider sheet for the Next up job: riders for each window of the day it is planned on. */
 export type SheetData = {
   date: string;
   /** The window is already agreed (a pickup); null lets the manager choose (a delivery). */
   slot: SlotId | null;
   defaultSlot: SlotId;
-  choices: Record<SlotId, RiderChoice[]>;
+  /** Windows of `date` that are already over (today only): shown, not choosable. */
+  closed: SlotId[];
+  choices: Record<SlotId, SheetRider[]>;
   /** After "That rider is full" came back from the server: ask once for this rider. */
   pending: { rider: string; slot: SlotId } | null;
+  text: {
+    trigger: string;
+    title: string;
+    hint: string;
+    /** The agreed window as a line ("Tomorrow · Evening 4–8"), when there is one. */
+    fixed: string | null;
+    windows: Record<SlotId, string>;
+    timeWindow: string;
+    close: string;
+    assignAnyway: string;
+    back: string;
+    noRiders: string;
+  };
 };

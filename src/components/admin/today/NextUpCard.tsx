@@ -88,7 +88,7 @@ function CallCard({ item, t, today, view }: { item: CallItem; t: TodayText; toda
               <summary aria-label={t.otherTime} className="grid h-full min-h-[52px] w-[52px] cursor-pointer list-none place-items-center rounded-r-[12px] border-l border-white/30 bg-action text-white hover:bg-action-hover [&::-webkit-details-marker]:hidden">
                 <Icon name="down" className="size-5 transition-transform group-open:rotate-180" />
               </summary>
-              <form action={confirmAction} className="absolute inset-x-0 top-full z-20 mt-2 rounded-[12px] border border-line bg-white p-3 shadow-[0_12px_32px_rgb(0_43_78/0.16)]">
+              <form action={confirmAction} className="absolute inset-x-0 top-full z-20 mt-2 rounded-[12px] border border-line bg-white p-3 shadow-[0_12px_32px_color-mix(in_srgb,var(--velto-navy)_16%,transparent)]">
                 <Hidden fields={base} />
                 <p className="text-[14px] font-semibold text-navy">{t.otherTime}</p>
                 <label className="mt-2 block t-caption font-semibold text-secondary">
@@ -180,18 +180,7 @@ export function NextUpCard({ item, t, lang, today, view, sheet }: { item: ListIt
       {item.note ? <p className="mt-2.5 border-l-[3px] border-line pl-2.5 text-[14px] text-secondary [overflow-wrap:anywhere]">{item.note}</p> : null}
       {item.tab === "call" ? <CallCard item={item} t={t} today={today} view={view} /> : null}
       {item.tab !== "call" && sheet ? (
-        <RiderSheet
-          lang={lang}
-          job={item.id}
-          name={item.name}
-          place={item.place}
-          label={item.label}
-          tab={item.tab}
-          view={view}
-          today={today}
-          sheet={sheet}
-          trigger={item.tab === "assign" ? { text: t.chooseRider, icon: "bike" } : { text: t.planDelivery, icon: "bag" }}
-        />
+        <RiderSheet key={item.id} lang={lang} job={item.id} label={item.label} tab={item.tab} view={view} sheet={sheet} icon={item.tab === "assign" ? "bike" : "bag"} />
       ) : null}
     </article>
   );
