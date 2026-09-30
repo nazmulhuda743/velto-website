@@ -10,6 +10,8 @@
 export const formsEn = {
   common: {
     optional: ", optional",
+    /** Explains the * after a required field's label (fields.tsx). */
+    requiredNote: "Fields marked * are required.",
     sending: "Sending…",
     backHome: "Back to the homepage",
     sendOnWhatsApp: "Send on WhatsApp",
@@ -54,9 +56,9 @@ export const formsEn = {
       name: "Add your name.",
     },
     whatTitle: "What are we picking up?",
-    whatLabel: "In your own words",
+    whatLabel: "Anything else? In your own words",
     whatPlaceholder: "e.g. 4 curtains, a few shirts, 1 blazer",
-    whatHelp: "No need to count. We count and price everything at pickup. Tap a service too if you like.",
+    whatHelp: "No need to count. We count and price everything at pickup.",
     itemsOpen: "Add items and see prices (optional)",
     extrasOpen: "Add a return date, instructions or photos (optional)",
     servicesTitle: "Services",
@@ -168,6 +170,20 @@ export const formsEn = {
     failedBody: "Nothing is lost. Try again, or send the same details on WhatsApp.",
     errorsOne: "One thing needs checking above.",
     errorsMany: "{n} things need checking above.",
+    /** The error summary at the top of the form (the quote form's pattern and wording). */
+    errorSummaryOne: "Please check one field:",
+    errorSummaryMany: "Please check {n} fields:",
+    errorLabels: {
+      what: "What to pick up",
+      name: "Name",
+      phone: "Phone",
+      sector: "Sector",
+      address: "House and road",
+      date: "Pickup day",
+      slot: "Pickup window",
+      backBy: "Return date",
+      photos: "Photos",
+    } as Record<string, string>,
     submit: "Book Pickup",
     reassureTime: "Nothing to pay now. We call you to confirm a pickup time.",
     reassureTimeNight: "Nothing to pay now. It's late, so we'll call you in the morning, from 9 AM, to confirm a pickup time.",

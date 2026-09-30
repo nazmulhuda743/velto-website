@@ -7,7 +7,7 @@ import { WHATSAPP_URL } from "@/content/site";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import type { FormText } from "@/content/i18n/forms/en";
 import { fill, format, type Locale } from "@/lib/i18n/config";
-import { AREA_OPTIONS, FieldShell, OUTSIDE_AREA, SelectField, TextAreaField, TextField, normalisePhone, phoneOk } from "./fields";
+import { AREA_OPTIONS, FieldShell, OUTSIDE_AREA, RequiredMark, RequiredNote, SelectField, TextAreaField, TextField, normalisePhone, phoneOk } from "./fields";
 import { submitQuote, type QuoteFormData, type SubmitResult } from "./submit";
 import { useNightDhaka } from "./useNight";
 
@@ -220,9 +220,14 @@ export function QuoteForm({
         </div>
       ) : null}
 
+      <RequiredNote>{c.requiredNote}</RequiredNote>
+
       <fieldset>
-        <legend className="text-[15px] font-semibold text-navy">{t.legend}</legend>
-        <div className="mt-2 grid gap-2 md:grid-cols-3" role="radiogroup" aria-describedby={errors.service ? "service-error" : undefined}>
+        <legend className="text-[15px] font-semibold text-navy">
+          {t.legend}
+          <RequiredMark />
+        </legend>
+        <div className="mt-2 grid gap-2 md:grid-cols-3" role="radiogroup" aria-required="true" aria-describedby={errors.service ? "service-error" : undefined}>
           {SERVICE_VALUES.map((value) => (
             <label
               key={value}
