@@ -93,6 +93,33 @@ Status: applied and tested on **staging**; applied on **production** 2026-09-27 
 
 `portal_dispatch_plans()` (docs/technical/sql/website_dispatch_portal.sql) gives a linked customer their own planned stops: deliveries by their orders' numbers, pickups by their verified phone. The account home shows a "Today / Tomorrow, Evening 4–8 PM · with Rakib" banner and the delivery window on the active order card. Nothing shows until a manager has planned the stop.
 
+## Today (`/admin/today`): riders, sync, auto-link
+
+Design: `docs/superpowers/specs/2026-10-01-today-scheduling-design.md`. SQL:
+`docs/technical/sql/website_today.sql` (test: `docs/technical/sql/tests/website_today_test.sql`,
+staging only; rolls back). Status: applied and tested on **staging** 2026-09-30; production is
+applied by a human after review, together with `website_customer_pickups.sql`.
+
+- **Tables (service role only; RLS on, no policies, nothing granted to anon/authenticated):**
+  `website_riders` (`profile_id`, `can_ride`, `stops_per_window` 1–30, default 8, `updated_at`,
+  `updated_by`) and `website_rider_days_off` (`profile_id`, `day`). Until anyone has
+  `can_ride = true`, every active staff member counts as a rider at 8 stops.
+- **Cron:** pg_cron job `website-dispatch-sync`, `*/5 * * * *`:
+  `select public.website_dispatch_sync(); select public.website_dispatch_autolink();`. Opening the
+  admin still syncs too. Re-running the SQL updates the job by name; it never duplicates it.
+- **Weekly routines:** the sync also brings Ops' weekly pickup tasks (`tasks.source = 'weekly'`,
+  `type = 'pickup'`, due today or later) onto the board as job source `weekly`, stage `confirmed`
+  (To assign) on the due day in the routine's window. Once per task.
+- **Auto-link:** a `picked` pickup with no order gets the Ops order for the same phone created
+  between 1 day before and 2 days after the pickup, when it is the only such order (not cancelled,
+  not linked to another pickup) and no other picked job claims it. It goes through
+  `website_dispatch_link_order(..., 'Auto-link')` (history "order linked" by "Auto-link"). Two or
+  more candidates: nothing is linked; the manager picks on Today.
+- **Customer changes time** (`portal_pickup_change`): back to `new` (To call) either way, history
+  "customer changed time"; the rider is kept (job and Ops task) only while still free in the new
+  window: active, a rider, not off that day and below their stops per window (a combined trip
+  counts once). The 3-changes limit counts both the old "rescheduled" and the new action.
+
 ## Later: the Velto Ops engine
 
 The planned Ops engine (velto-ops-engine, design stage) replaces the legacy `tasks` list with `ops_tasks`, route templates and rider capacity. When it goes live, `website_dispatch_plan` should place jobs on its routes instead of writing `tasks`; the board and the overlap rules stay the same.
