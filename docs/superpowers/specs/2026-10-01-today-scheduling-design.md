@@ -1,6 +1,6 @@
 # Today: one screen for pickup & delivery scheduling (design)
 
-Status: **DESIGNED**, awaiting owner review of this written spec.
+Status: **APPROVED** by the owner (1 Oct, with mockup v2).
 Date: 2026-10-01. Owner decisions were taken in the brainstorming session of 30 Sep – 1 Oct.
 
 ## 1. Goal
@@ -35,30 +35,39 @@ to customers (the old per-area limits stay off).
 ## 3. The Today screen (`/admin/today`)
 
 First item under Operations; managers land on it after sign-in. Roles: those with the
-`dispatch` section today (owner, manager, customer support).
+`dispatch` section today (owner, manager, customer support). **Approved layout: mockup v2**
+(`today-v2.html`, shared 1 Oct): one list at a time, not one long page.
 
-- **Top bar:** day switcher (Today · Tomorrow · date), search (name, phone, VEL-number),
-  বাংলা / English switch (remembered per person in a cookie).
-- **Five sections, fixed order, each with a count.** An empty section is one line
-  ("Nothing to call ✓").
-  1. **📞 To call:** new website bookings, call-back requests (badge "Call-back"), routine
-     requests waiting to be confirmed (badge 🔁), and customer time changes (badge "Customer
-     changed time"). Oldest first; waiting over 30 min turns red and rises to the top.
-  2. **🛵 To assign:** confirmed jobs without a rider (including active routine pickups for the
-     day). Rider chips show load in that window ("Bappy 3/8").
-  3. **🧺 Ready to deliver:** Ops orders at Ready without a planned delivery. Window select +
-     rider chips on the card.
-  4. **🗓 On the road:** the day's plan, grouped by window, then by rider.
-  5. **✓ Done:** finished stops of the day, collapsed.
-- **Card rules:** name, area, asked-for window, badges (first website order · 10% off,
-  goal coupon, 🔁, call-back), notes; **one main button** for the next step; Cancel, Merge,
-  Change time, Notes and WhatsApp templates under **More**.
-- **Layout:** phone first (390px): one column, cards about one thumb-height, touch targets
-  ≥ 44px. From 1024px, sections 1–3 sit in columns above "On the road".
+- **Header (navy):** date, "Today" title, বাংলা / EN switch (remembered per person in a
+  cookie), and the **day strip**: three bars, Morning 9–12 · Afternoon 12–4 · Evening 4–8,
+  each filled by planned stops against total rider capacity ("6/24"), the current window
+  outlined and tagged "now". The strip is the page's one bold element.
+- **Bottom tabs (thumb zone), each with a count:** **Call · Assign · Deliver · Route**. The
+  Call count turns red when someone waits over 30 min. Tabs are URL state (`?tab=call`),
+  server-rendered.
+- **List tabs (Call, Assign, Deliver):** a red "N customer(s) waiting over 30 min" line when
+  it applies; **Next up**: the most urgent job as a large card with its one filled button;
+  **Then**: every other job as a compact row (name, area · window, waiting pill or chevron);
+  tapping a row makes it Next up.
+  - Call: oldest first, late first. Card: name, waiting minutes, area · asked-for window, badges
+    (first website order · 10% off, Call-back, Weekly, Changed time), notes, Call and WhatsApp
+    buttons, **Confirmed for [window]** (filled), "No answer" as a text link.
+  - Assign: card with window pill and **Choose rider** (filled) → rider sheet.
+  - Deliver: Ops order number, Ready since, **Plan delivery** (filled) → rider sheet with a
+    window picker (Morning / Afternoon / Evening).
+  - Empty tab: "✓ All done here · Nothing left in this list."
+- **Rider sheet (slides up once, never repeated per card):** riders sorted by load in that
+  window, the emptiest marked "Most free", full riders marked "Full" in red (assigning needs one
+  confirm), riders off that day greyed at the bottom and not tappable. One tap assigns.
+- **Route tab:** per window, the riders with stops (avatar, stops as ↑ pickup / ↓ delivery,
+  load dots, "3/8"), then "Free: …" for riders without stops; a legend; each stop has
+  Picked up / Delivered under More.
+- Search (name, phone, VEL-number) and the day switcher (Today · Tomorrow · date) sit in a
+  "More" row under the header, not in the main flow.
+- Simple line icons (no emoji); red is used only for "late"; built from the existing admin
+  tokens and primitives, with an amber warning token added instead of hard-coded ambers.
 - **Refresh:** the page re-fetches every 60 s while visible (existing `NotificationRefresher`
   pattern) and after every action.
-- Built with the existing admin primitives (`AdminHeader`, `Badge`, `.admin-btn*`,
-  `.admin-card`) and design tokens; no new visual language.
 
 ## 4. Steps, names and buttons
 
@@ -90,7 +99,10 @@ switched on).
 
 - **New table `website_riders`** (service role only): `profile_id` (Ops profile), `can_ride`
   (bool), `stops_per_window` (int, default 8), `updated_at`, `updated_by`.
-  Riders = Ops profiles with role `rider` plus anyone ticked "Can do pickups & deliveries".
+  Riders = staff ticked "Can do pickups & deliveries". Production has **no active profile with
+  role `rider`** (1 Oct: 1 admin, 6 managers, 1 worker), so the role cannot decide it: **until
+  anyone is ticked, every active admin/manager/rider/worker is offered** (today's behaviour, via
+  `getStaff()`), each at 8 stops.
 - **New table `website_rider_days_off`**: `profile_id`, `day` (date). "Off today / Off tomorrow"
   switch removes the rider from that day's chips.
 - **Load** = stops assigned to the rider in that window; pickup + delivery at the same phone
@@ -103,7 +115,8 @@ switched on).
 
 ## 6. Automation
 
-1. **Sync every 5 minutes** with pg_cron calling `website_dispatch_sync()` (and the existing
+1. **Sync every 5 minutes** with pg_cron (already running Ops jobs such as
+   `velto-task-reminders`, `*/5 * * * *`) calling `website_dispatch_sync()` (and the existing
    Ready-order delivery sync, including older Ready orders). Opening Today also syncs. The
    separate `capacity_sync_jobs()` step is no longer needed for confirmation.
 2. **Auto-link the Ops order:** for a picked pickup with no order, an Ops order created for the
@@ -167,8 +180,7 @@ reviewed with the repo's `i18n:review` script before release.
 - Existing suites (security, typecheck, lint, foundation, Command Center, i18n, build) stay
   green.
 
-## 12. Open items for the plan
+## 12. Settled for the plan
 
-- Where exactly pg_cron is enabled (production already runs Ops' cron jobs; confirm the website
-  sync can join them).
-- Whether customer support should also see Settings → Riders & windows (default: no).
+- pg_cron is enabled in production (7 jobs, 1 Oct); the website sync and auto-link join them.
+- Customer support does not see Settings → Riders & windows.
