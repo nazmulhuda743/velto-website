@@ -159,9 +159,9 @@ function todayShape(value, path = "") {
   return [`${path}:${typeof value}`];
 }
 /** These take text that is already in the page language (a window label, a name), so the sample is text. */
-const TODAY_TEXT_ARGS = ["confirmFor", "assignTo"];
+const TODAY_TEXT_ARGS = ["confirmFor", "assignTo", "everyWeekday", "fullAsk"];
 function todayStrings(value, path = "", out = []) {
-  if (typeof value === "function") out.push([path, TODAY_TEXT_ARGS.includes(path) ? value("X") : value(3, 5)]);
+  if (typeof value === "function") out.push([path, TODAY_TEXT_ARGS.includes(path) ? value("X", "Y") : value(3, 5)]);
   else if (value && typeof value === "object") for (const k of Object.keys(value)) todayStrings(value[k], path ? `${path}.${k}` : k, out);
   else out.push([path, value]);
   return out;

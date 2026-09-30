@@ -110,7 +110,10 @@ test("every dashboard page and every admin action checks its section on the serv
   const pagesDir = path.join(root, "(panel)");
   for (const file of walk(pagesDir).filter((f) => f.endsWith("page.tsx"))) {
     const rel = path.relative(pagesDir, file);
-    const section = rel === "page.tsx" ? "overview" : rel.split(path.sep)[0];
+    // Pages that belong to another section: Today is the dispatch section's screen (spec 2026-10-01 §3).
+    const alias = { today: "dispatch" };
+    const folder = rel.split(path.sep)[0];
+    const section = rel === "page.tsx" ? "overview" : (alias[folder] ?? folder);
     assert.match(fs.readFileSync(file, "utf8"), new RegExp(`requireSection\\("${section}"\\)`), `${rel} must call requireSection("${section}")`);
   }
   for (const file of walk(root).filter((f) => /actions\.ts$/.test(f))) {

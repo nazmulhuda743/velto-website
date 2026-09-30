@@ -47,7 +47,7 @@ export function Badge({ children, tone = "neutral" }: { children: ReactNode; ton
     neutral: "bg-soft text-secondary",
     blue: "bg-[#e8f3fb] text-action-hover",
     green: "bg-success-soft text-success",
-    amber: "bg-[#fff4e5] text-[#8a5300]",
+    amber: "bg-warning-soft text-warning",
   };
   return <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 t-caption font-semibold ${tones[tone]}`}>{children}</span>;
 }

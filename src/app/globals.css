@@ -46,6 +46,9 @@
   --color-error-soft: #fef3f2;
   --color-success: #137a4a;
   --color-success-soft: #eff8f3;
+  /* Warnings (amber): "can't reach Ops", a failed button. Text on the soft fill is 8:1. Red stays for errors and "late". */
+  --color-warning: #8a5300;
+  --color-warning-soft: #fff4e5;
 
   /* WhatsApp is only used on the dedicated WhatsApp action (spec §16). */
   --color-whatsapp: #25d366;
@@ -124,6 +127,8 @@
   --color-error-soft: #fef3f2;
   --color-success: #137a4a;
   --color-success-soft: #eff8f3;
+  --color-warning: #8a5300;
+  --color-warning-soft: #fff4e5;
   --color-whatsapp: #25d366;
 
   /* Layout breakpoints — spec §14 */
@@ -732,5 +737,58 @@ body:has([data-account-frame]) footer[data-site-footer] {
   }
   [data-booking-success] > :nth-child(n + 4) {
     animation-delay: 120ms;
+  }
+}
+
+/* ---------- Admin "Today" (/admin/today) ---------- */
+/* Bangla keeps its natural spacing here too (the admin root is lang="en"). */
+[data-today][lang="bn"] * {
+  letter-spacing: normal;
+}
+/* The rider sheet: a native modal <dialog> pinned to the bottom, one column wide. */
+dialog[data-today-sheet] {
+  margin: auto auto 0;
+  width: 100%;
+  max-width: min(520px, 100%);
+  max-height: 88dvh;
+}
+/* On a wider screen the sheet rises in the middle as a card. */
+@media (min-width: 768px) {
+  dialog[data-today-sheet] {
+    margin: auto;
+    border-radius: 18px;
+  }
+  dialog[data-today-sheet] [data-grab] {
+    display: none;
+  }
+}
+dialog[data-today-sheet]::backdrop {
+  background: rgb(0 30 55 / 0.45);
+}
+/* "Marked as picked up": shown after a button worked, then fades by itself (no script). */
+@keyframes today-toast {
+  0%,
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+[data-today-toast] {
+  animation: today-toast 4.5s ease-in forwards;
+}
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes today-sheet-in {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+  dialog[data-today-sheet][open] {
+    animation: today-sheet-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 }
