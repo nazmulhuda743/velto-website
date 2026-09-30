@@ -22,6 +22,8 @@ test("each job lands in one tab, or none", () => {
   assert.equal(tabFor(job({ stage: "scheduled", assignee_id: "b", slot_date: "2026-10-02", slot: "morning" })), "route");
   assert.equal(tabFor(job({ stage: "picked" })), "done");
   assert.equal(tabFor(job({ kind: "delivery", source: "ops_order", stage: "new" })), "deliver");
+  assert.equal(tabFor(job({ kind: "delivery", source: "ops_order", stage: "confirmed" })), "deliver");
+  assert.equal(tabFor(job({ kind: "delivery", source: "ops_order", stage: "assigned", assignee_id: "b" })), "deliver");
   assert.equal(tabFor(job({ kind: "delivery", source: "ops_order", stage: "scheduled" })), "route");
   assert.equal(tabFor(job({ kind: "delivery", source: "ops_order", stage: "done" })), "done");
   assert.equal(tabFor(job({ stage: "cancelled" })), null);
@@ -117,4 +119,25 @@ test("the current window follows Dhaka time (UTC+6)", () => {
   assert.equal(nowWindow(at("13:59")), "evening");
   assert.equal(nowWindow(at("14:30")), null); // 20:30 Dhaka
   assert.equal(nowWindow(at("02:59")), null); // 08:59 Dhaka
+});
+
+test("an off rider's scheduled stops still count as planned", () => {
+  const date = "2026-10-02";
+  const riders = [
+    { id: "b", name: "Bappy", stopsPerWindow: 8, off: false },
+    { id: "o", name: "Oli", stopsPerWindow: 8, off: true },
+  ];
+  const jobs = [scheduled("b", date, "morning"), scheduled("o", date, "morning"), scheduled("o", date, "morning")];
+  const [morning] = dayStrip(riders, jobs, date);
+  assert.equal(morning.planned, 3);
+  assert.equal(morning.capacity, 8);
+});
+
+test("a rider with no stops-per-window set uses the default of 8", () => {
+  const date = "2026-10-02";
+  const riders = [{ id: "z", name: "Zia", stopsPerWindow: 0, off: false }];
+  const eight = Array.from({ length: 8 }, () => scheduled("z", date, "morning"));
+  assert.equal(dayStrip(riders, [], date)[0].capacity, 8);
+  assert.equal(riderChoices(riders, eight.slice(0, 7), date, "morning")[0].full, false);
+  assert.equal(riderChoices(riders, eight, date, "morning")[0].full, true);
 });

@@ -13,6 +13,9 @@ export type Rider = { id: string; name: string; stopsPerWindow: number; off: boo
 /** A rider with their load in one window; `best` is the one to pick (most room, not off, not full). */
 export type RiderChoice = Rider & { load: number; full: boolean; best: boolean };
 
+/** Stops a rider can do in one window (the default when none is set). */
+const capacityOf = (r: Rider) => r.stopsPerWindow || DEFAULT_CAPACITY;
+
 /**
  * The tab a job is waiting in. "done" is finished work, null is not for this screen (cancelled,
  * merged, or a quote request, which has no pickup to plan).
@@ -31,7 +34,7 @@ export function tabFor(job: DispatchJob): TodayTab | "done" | null {
     case "new":
       return job.kind === "delivery" ? "deliver" : "call";
     default:
-      // confirmed, or assigned (a person or a slot, not both): still to be planned.
+      // confirmed, or assigned with only a person or only a slot: still needs a person and a slot.
       return job.kind === "delivery" ? "deliver" : "assign";
   }
 }
@@ -42,7 +45,7 @@ export function callQueue(jobs: DispatchJob[], now = Date.now()): DispatchJob[] 
     .filter((j) => tabFor(j) === "call")
     .sort((a, b) => {
       const late = Number(callTimer(b, now)?.tone === "late") - Number(callTimer(a, now)?.tone === "late");
-      return late || a.created_at.localeCompare(b.created_at);
+      return late || Date.parse(a.created_at) - Date.parse(b.created_at);
     });
 }
 
@@ -56,7 +59,7 @@ export function riderChoices(riders: Rider[], jobs: DispatchJob[], date: string,
   const choices = riders
     .map((r) => {
       const load = riderLoad(jobs, r.id, date, slot);
-      return { ...r, load, full: load >= (r.stopsPerWindow || DEFAULT_CAPACITY), best: false };
+      return { ...r, load, full: load >= capacityOf(r), best: false };
     })
     .sort((a, b) => Number(a.off) - Number(b.off) || Number(a.full) - Number(b.full) || a.load - b.load || a.name.localeCompare(b.name));
   if (choices[0] && !choices[0].off && !choices[0].full) choices[0].best = true;
@@ -65,7 +68,7 @@ export function riderChoices(riders: Rider[], jobs: DispatchJob[], date: string,
 
 /** One day as three windows: stops planned against the room of everyone who is working. */
 export function dayStrip(riders: Rider[], jobs: DispatchJob[], date: string): { slot: SlotId; planned: number; capacity: number }[] {
-  const capacity = riders.filter((r) => !r.off).reduce((sum, r) => sum + r.stopsPerWindow, 0);
+  const capacity = riders.filter((r) => !r.off).reduce((sum, r) => sum + capacityOf(r), 0);
   return SLOTS.map((s) => ({
     slot: s.id,
     planned: riders.reduce((sum, r) => sum + riderLoad(jobs, r.id, date, s.id), 0),
