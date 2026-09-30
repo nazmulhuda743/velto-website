@@ -5,6 +5,8 @@ import Link from "@/components/i18n/Link";
 import { track } from "@/components/layout/Analytics";
 import { fallbackDays, hoursText } from "@/components/forms/PickupWindows";
 import type { RhythmText } from "@/content/i18n/rhythm";
+import type { NotifyText } from "@/content/i18n/notify";
+import { NotifyCard } from "@/components/notify/NotifyCard";
 import { bookable, type AvailabilityDay, type WindowId } from "@/lib/capacity-logic";
 import { fill } from "@/lib/i18n/config";
 import { addDays, dayLabel, dhakaToday, type DateWords } from "@/lib/pickup-when";
@@ -25,6 +27,7 @@ export function RepeatByLink({
   words,
   slotLabels,
   whatsappHref,
+  notify,
   preview = false,
 }: {
   code: string;
@@ -34,6 +37,8 @@ export function RepeatByLink({
   words: DateWords;
   slotLabels: Record<string, string>;
   whatsappHref: string;
+  /** "Want updates on this pickup?" after booking (the code ties it to this phone). */
+  notify: NotifyText;
   preview?: boolean;
 }) {
   const [load, setLoad] = useState<Load>({ state: "loading" });
@@ -107,9 +112,12 @@ export function RepeatByLink({
 
   if (send.kind === "done") {
     return (
-      <div role="status" className="rounded-lg border border-success/40 bg-success-soft p-5" data-rhythm="done">
-        <p className="text-[20px] font-semibold text-navy">✓ {t.doneTitle}</p>
-        <p className="mt-1 text-body">{send.reference ? fill(t.doneBody, { ref: send.reference }, words.locale) : t.doneBodyNoRef}</p>
+      <div className="space-y-4">
+        <div role="status" className="rounded-lg border border-success/40 bg-success-soft p-5" data-rhythm="done">
+          <p className="text-[20px] font-semibold text-navy">✓ {t.doneTitle}</p>
+          <p className="mt-1 text-body">{send.reference ? fill(t.doneBody, { ref: send.reference }, words.locale) : t.doneBodyNoRef}</p>
+        </div>
+        <NotifyCard t={notify} lang={words.locale === "bn" ? "bn" : "en"} variant="after" code={code} />
       </div>
     );
   }

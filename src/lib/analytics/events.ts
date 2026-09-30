@@ -41,6 +41,10 @@ export const ANALYTICS_EVENTS = [
   "promo_view",
   "promo_click",
   "promo_dismiss",
+  // Notifications: "Turn on" tapped (the phone's prompt shown), allowed, or blocked.
+  "notify_prompt",
+  "notify_on",
+  "notify_denied",
 ] as const;
 
 export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[number];

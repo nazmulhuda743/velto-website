@@ -4,6 +4,7 @@ import { RepeatByLink } from "@/components/rhythm/RepeatByLink";
 import { formText } from "@/content/i18n/forms";
 import { WHATSAPP_URL } from "@/content/site";
 import { rhythmText, type RhythmText } from "@/content/i18n/rhythm";
+import { notifyText } from "@/content/i18n/notify";
 import { fill } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
 import { sectorOf } from "@/lib/capacity-logic";
@@ -89,6 +90,7 @@ export default async function ReminderPage({ params }: { params: Promise<{ code:
           sector={sector}
           t={t}
           preview={preview}
+          notify={notifyText(locale)}
           whatsappHref={`${WHATSAPP_URL}?text=${encodeURIComponent(fill(t.whatsappText, { code }, locale))}`}
           slotLabels={f.booking.slots}
           words={{ today: f.booking.today, tomorrow: f.booking.tomorrow, weekdays: f.common.weekdays, months: f.common.months, dayMonth: f.common.dayMonth, locale }}

@@ -127,6 +127,33 @@ self.addEventListener("fetch", (event) => {
     }
   })());
 });
+
+// Notifications (docs/technical/RHYTHM.md): order updates and reminders the customer allowed.
+self.addEventListener("push", (event) => {
+  let d = {};
+  try { d = event.data ? event.data.json() : {}; } catch (e) { d = {}; }
+  const url = typeof d.url === "string" && d.url.startsWith("/") ? d.url : "/";
+  event.waitUntil(self.registration.showNotification(typeof d.title === "string" ? d.title : "Velto", {
+    body: typeof d.body === "string" ? d.body : "",
+    icon: "/icons/icon-192.png",
+    badge: "/icons/icon-monochrome-512.png",
+    tag: typeof d.tag === "string" ? d.tag : undefined,
+    data: { url },
+  }));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = new URL((event.notification.data && event.notification.data.url) || "/", self.location.origin);
+  if (target.origin !== self.location.origin) return;
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    for (const w of windows) {
+      if (new URL(w.url).pathname === target.pathname && "focus" in w) return w.focus();
+    }
+    return self.clients.openWindow(target.href);
+  })());
+});
 `;
 
 export function GET() {

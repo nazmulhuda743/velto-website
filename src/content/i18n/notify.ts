@@ -1,0 +1,62 @@
+import type { Locale } from "@/lib/i18n/config";
+
+/** The "Get updates on your phone" card (account page and after a one-tap booking). */
+const en = {
+  title: "Get updates on your phone",
+  intro: "No need to call or check. Velto tells you:",
+  points: ["When we've picked up your clothes", "When they're cleaned, checked and ready", "When they're delivered", "When your usual pickup is due, so you never run out of clean clothes"],
+  turnOn: "Turn on notifications",
+  turning: "Turning on…",
+  notNow: "Not now",
+  promise: "No ads. Only your orders and your usual pickup. Turn off any time.",
+  afterBookTitle: "Want updates on this pickup?",
+  afterBookBody: "We'll tell you when we've picked up your clothes and when they're ready.",
+  afterBookButton: "Yes, notify me",
+  onTitle: "Notifications are on",
+  onBody: "Velto will tell you on this phone when your order moves along.",
+  orderUpdates: "Order updates (picked up, ready, delivered)",
+  reminders: "A reminder when your usual pickup is due",
+  test: "Send me a test",
+  testSent: "Sent. It should appear in a few seconds.",
+  testFailed: "That didn't arrive. Turn notifications off and on again.",
+  turnOff: "Turn off on this phone",
+  offDone: "Notifications are off on this phone.",
+  denied: "Notifications are blocked for Velto in this browser. To allow them: tap the lock or ⓘ icon next to the address, then Notifications → Allow, and reload.",
+  iosTitle: "On iPhone, first add Velto to your Home Screen",
+  iosSteps: ["Tap the Share button (the square with an arrow)", "Choose “Add to Home Screen”", "Open Velto from your Home Screen and sign in, then turn on notifications here"],
+  unsupported: "This browser can't show notifications. Chrome on Android works best.",
+  failed: "That didn't work. Try again in a moment.",
+  signIn: "Sign in again, then turn notifications on.",
+};
+
+export type NotifyText = typeof en;
+
+const bn: NotifyText = {
+  title: "ফোনেই অর্ডারের খবর পান",
+  intro: "ফোন করা বা খোঁজ নেওয়ার দরকার নেই। Velto নিজেই জানাবে:",
+  points: ["কাপড় যখন আমরা নিয়ে আসি", "যখন পরিষ্কার, চেক করা ও রেডি", "যখন ডেলিভারি হয়", "আপনার নিয়মিত পিকআপের সময় হলে, যাতে পরিষ্কার কাপড় কখনো ফুরিয়ে না যায়"],
+  turnOn: "নোটিফিকেশন চালু করুন",
+  turning: "চালু হচ্ছে…",
+  notNow: "এখন না",
+  promise: "কোনো বিজ্ঞাপন নয়। শুধু আপনার অর্ডার আর নিয়মিত পিকআপ। যেকোনো সময় বন্ধ করা যায়।",
+  afterBookTitle: "এই পিকআপের খবর পেতে চান?",
+  afterBookBody: "কাপড় নিয়ে এলে আর রেডি হলে আমরা জানাব।",
+  afterBookButton: "হ্যাঁ, জানাবেন",
+  onTitle: "নোটিফিকেশন চালু আছে",
+  onBody: "অর্ডার যখন এগোবে, Velto এই ফোনে জানাবে।",
+  orderUpdates: "অর্ডারের খবর (পিকআপ, রেডি, ডেলিভারি)",
+  reminders: "নিয়মিত পিকআপের সময় হলে রিমাইন্ডার",
+  test: "একটা টেস্ট পাঠান",
+  testSent: "পাঠানো হয়েছে। কয়েক সেকেন্ডে দেখা যাবে।",
+  testFailed: "আসেনি। নোটিফিকেশন বন্ধ করে আবার চালু করুন।",
+  turnOff: "এই ফোনে বন্ধ করুন",
+  offDone: "এই ফোনে নোটিফিকেশন বন্ধ।",
+  denied: "এই ব্রাউজারে Velto-র নোটিফিকেশন ব্লক করা আছে। চালু করতে: ঠিকানার পাশের তালা বা ⓘ চিহ্নে ট্যাপ করুন, Notifications → Allow দিন, তারপর পেজটি রিলোড করুন।",
+  iosTitle: "iPhone-এ আগে Velto হোম স্ক্রিনে যোগ করুন",
+  iosSteps: ["Share বাটনে ট্যাপ করুন (তীর চিহ্নসহ বাক্স)", "“Add to Home Screen” বেছে নিন", "হোম স্ক্রিন থেকে Velto খুলে সাইন ইন করুন, তারপর এখানে নোটিফিকেশন চালু করুন"],
+  unsupported: "এই ব্রাউজারে নোটিফিকেশন দেখানো যায় না। Android-এ Chrome সবচেয়ে ভালো কাজ করে।",
+  failed: "হয়নি। একটু পরে আবার চেষ্টা করুন।",
+  signIn: "আবার সাইন ইন করে নোটিফিকেশন চালু করুন।",
+};
+
+export const notifyText = (locale: Locale): NotifyText => (locale === "bn" ? bn : en);

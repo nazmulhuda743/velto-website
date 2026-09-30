@@ -64,7 +64,7 @@ export const rhythmReady = () => isSupabaseConfigured();
 export const refreshRhythm = () => supabaseRpc<number>("website_rhythm_refresh", {});
 export const rhythmCandidates = (playbook: Playbook, limit: number) =>
   supabaseRpc<Candidate[]>("website_rhythm_candidates", { p_playbook: playbook, p_limit: limit });
-export const recordTouch = (customer: string, playbook: Playbook, channel: "sms" | "holdout", lang: RhythmLang) =>
+export const recordTouch = (customer: string, playbook: Playbook, channel: "sms" | "push" | "holdout", lang: RhythmLang) =>
   supabaseRpc<string | null>("website_rhythm_record", { p_customer: customer, p_playbook: playbook, p_channel: channel, p_lang: lang });
 export const markTouch = (code: string, sent: boolean) => supabaseRpc<null>("website_rhythm_mark", { p_code: code, p_sent: sent });
 export const staffTask = (customer: string) => supabaseRpc<string | null>("website_rhythm_staff_task", { p_customer: customer });

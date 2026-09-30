@@ -4,11 +4,15 @@ import { markTouch, recordTouch, refreshRhythm, rhythmCandidates, rhythmReady, r
 import { getSiteContent } from "@/lib/site-content";
 import { SITE_URL } from "@/lib/site-url";
 import { sendSms, smsConfigured } from "@/lib/sms/send";
+import { reminderMessage } from "@/lib/push/messages";
+import { sendAndRecord, type PushTarget } from "@/lib/push/server";
+import { supabaseRpc } from "@/lib/supabase-server";
 
 /**
  * The daily Velto Rhythm run, called by pg_cron (docs/technical/sql/website_rhythm_schedule.sql)
  * with the key stored in the database:
- *   evening  refresh, then SMS "regular, due now" customers (Admin → Reminders must switch it on)
+ *   evening  refresh, then remind "regular, due now" customers (Admin → Reminders must switch it on):
+ *            a free notification when they allowed it, otherwise (or if it fails) an SMS
  *   morning  refresh, then Ops call tasks for slipping regulars (same)
  * Who qualifies (caps, open orders, opt-outs, hold-out) is decided in the database.
  */
@@ -30,13 +34,13 @@ export async function POST(request: NextRequest) {
 
   const { rhythm } = await getSiteContent();
   const refreshed = await refreshRhythm();
-  const summary = { ok: true, mode, refreshed, sent: 0, failed: 0, holdout: 0, tasks: 0, skipped: "" as string };
+  const summary = { ok: true, mode, refreshed, sent: 0, pushed: 0, failed: 0, holdout: 0, tasks: 0, skipped: "" as string };
 
   if (mode === "evening") {
     const p = rhythm.regularDue;
     if (!p.enabled) return json({ ...summary, skipped: "off" });
-    if (!smsConfigured()) return json({ ...summary, skipped: "sms_not_configured" });
     if (!smsHourOk()) return json({ ...summary, skipped: "quiet_hours" });
+    const sms = smsConfigured();
     const list = await rhythmCandidates("regular_due", p.maxPerRun);
     await inBatches(list, 5, async (c: Candidate) => {
       if (c.holdout) {
@@ -44,6 +48,22 @@ export async function POST(request: NextRequest) {
         summary.holdout++;
         return;
       }
+      // Allowed notifications on a phone: a free push first.
+      const targets = await supabaseRpc<PushTarget[]>("website_push_targets_for_customer", { p_customer: c.customer_id }).catch(() => []);
+      if (targets.length) {
+        const pushCode = await recordTouch(c.customer_id, "regular_due", "push", p.lang);
+        if (pushCode) {
+          const results = await Promise.all(
+            targets.slice(0, 5).map((t) => { const lang = t.lang === "en" ? "en" : "bn"; return sendAndRecord(t, reminderMessage({ firstName: c.first_name, service: c.usual_service, code: pushCode }, lang)); }),
+          );
+          await markTouch(pushCode, results.some(Boolean));
+          if (results.some(Boolean)) {
+            summary.pushed++;
+            return;
+          }
+        }
+      }
+      if (!sms) return;
       const code = await recordTouch(c.customer_id, "regular_due", "sms", p.lang);
       if (!code) return;
       const text = renderMessage(p.lang === "bn" ? p.textBn : p.textEn, { firstName: c.first_name, service: c.usual_service, link: rhythmLink(SITE_URL, code, p.lang) }, p.lang);
