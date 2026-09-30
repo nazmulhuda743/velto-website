@@ -4,7 +4,7 @@
  * unit-tested on its own; the loader and the page only call it.
  */
 import { DEFAULT_CAPACITY, SLOTS, stopCount, type DispatchJob, type SlotId } from "./dispatch-logic";
-import { callTimer } from "./request-flow";
+import { callTimer, type CustomerContext } from "./request-flow";
 
 /** The four tabs: call new requests, assign confirmed ones, arrange deliveries, run the routes. */
 export type TodayTab = "call" | "assign" | "deliver" | "route";
@@ -87,3 +87,29 @@ export function nowWindow(now = new Date()): SlotId | null {
 
 /** The customer changed their time and nobody has acted since (drives the "Changed time" badge). */
 export const changedTime = (job: DispatchJob) => job.history[job.history.length - 1]?.action === "customer changed time";
+
+/** An Ops order that could be the one made from a picked-up request. */
+export type OrderCandidate = { orderNumber: string; createdAt: string };
+
+const DAY_MS = 86_400_000;
+const ORDER_NUMBER = /^VELR?-\d{3,6}$/;
+
+/**
+ * "Which order?": the same phone's Ops orders that could belong to a picked pickup with no order
+ * yet: created from a day before the pickup (but not before the request itself) to two days after,
+ * not cancelled, and not already linked to another pickup (`taken`). Oldest first. The same rule
+ * as website_dispatch_autolink() (website_today.sql), which links on its own when there is one.
+ */
+export function linkCandidates(job: DispatchJob, recent: CustomerContext["recent"] | undefined, taken: ReadonlySet<string>): OrderCandidate[] {
+  if (job.kind !== "pickup" || job.stage !== "picked" || job.order_number || !job.picked_at || !recent) return [];
+  const picked = Date.parse(job.picked_at);
+  const from = Math.max(picked - DAY_MS, Date.parse(job.created_at));
+  const to = picked + 2 * DAY_MS;
+  return recent
+    .filter((o) => {
+      const at = Date.parse(o.createdAt);
+      return ORDER_NUMBER.test(o.orderNumber) && o.status !== "Cancelled" && !taken.has(o.orderNumber) && at >= from && at <= to;
+    })
+    .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt))
+    .map((o) => ({ orderNumber: o.orderNumber, createdAt: o.createdAt }));
+}

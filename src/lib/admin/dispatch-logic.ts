@@ -27,7 +27,8 @@ export type DispatchJob = {
   kind: JobKind;
   task_id: string | null;
   order_number: string | null;
-  source: "website_booking" | "website_quote" | "ops_order";
+  /** "weekly": an Ops weekly-routine pickup (website_today.sql); it starts confirmed, at To assign. */
+  source: "website_booking" | "website_quote" | "ops_order" | "weekly";
   customer_name: string | null;
   phone: string | null;
   phone_key: string | null;

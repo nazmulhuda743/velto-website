@@ -15,7 +15,7 @@ export type StaffMember = { id: string; name: string; role: string };
 export type DispatchResult = { ok: true } | { ok: false; error: string };
 
 const NOT_INSTALLED = "Pickup & delivery isn't installed in this database yet (docs/technical/sql/website_dispatch.sql).";
-const COLUMNS =
+export const JOB_COLUMNS =
   "id,kind,task_id,order_number,source,customer_name,phone,phone_key,address,area,outlet_code,requested,stage,slot_date,slot,assignee_id,assignee_name,trip_key,merged_into,reason,contact_attempts,last_contact_at,confirmed_at,confirmed_by,picked_at,history,created_at,updated_at";
 
 /* ---------- local preview (next dev + VELTO_ADMIN_PREVIEW=1): an in-memory board ---------- */
@@ -85,6 +85,8 @@ function previewBoard(): DispatchJob[] {
     j({ kind: "delivery", source: "ops_order", order_number: "VEL-01930", customer_name: "Nusrat Jahan", phone: "01719 454545", phone_key: "01719454545", address: "House 11, Road 3", area: "Uttara", created_at: ago(72) }),
     j({ kind: "delivery", source: "ops_order", order_number: "VEL-01880", customer_name: "Habib Rahman", phone: "01710 565656", phone_key: "01710565656", address: "House 7, Road 12", area: "Uttara", created_at: ago(400) }),
     j({ kind: "delivery", source: "ops_order", order_number: "VEL-01872", customer_name: "Tania Akter", phone: "01711 676767", phone_key: "01711676767", address: "House 19, Road 5", area: "Uttara", created_at: ago(500) }),
+    // A weekly routine pickup from Velto Ops: it starts confirmed, waiting for a rider (Today → Assign).
+    j({ source: "weekly", customer_name: "Farhana Akter", phone: "01911 000003", phone_key: "01911000003", address: "House 40, Road 2", area: "Uttara Sector 13", requested: "Weekly routine, Morning", stage: "confirmed", slot_date: addDays(today, 1), slot: "morning", confirmed_at: ago(1), confirmed_by: "Weekly routine", created_at: ago(1) }),
     j({ customer_name: "Rahim Mia", phone: "01715 909090", phone_key: "01715909090", area: "Uttara Sector 12", stage: "cancelled", reason: "No answer after 3 calls", contact_attempts: 3, created_at: ago(60) }),
   ];
   return previewJobs;
@@ -114,8 +116,8 @@ export async function getDispatch(): Promise<Loaded<DispatchJob[]>> {
   try {
     const since = new Date(Date.now() - 3 * 86_400_000).toISOString();
     const q = new URLSearchParams({
-      select: COLUMNS,
-      or: `(stage.in.(new,assigned,scheduled),updated_at.gte.${since})`,
+      select: JOB_COLUMNS,
+      or: `(stage.in.(new,confirmed,assigned,scheduled),updated_at.gte.${since})`,
       order: "created_at.asc",
       limit: "1000",
     });
@@ -129,12 +131,12 @@ export async function getDispatch(): Promise<Loaded<DispatchJob[]>> {
 }
 
 /** Active Velto Ops staff: the people a pickup or delivery can be given to. */
-export async function getStaff(): Promise<StaffMember[]> {
+export async function getStaff(fetcher: typeof supabaseFetch = supabaseFetch): Promise<StaffMember[]> {
   if (isAdminPreview()) return PREVIEW_STAFF;
   if (!isSupabaseConfigured()) return [];
   try {
     const q = new URLSearchParams({ select: "id,name,role", active: "eq.true", role: "in.(admin,manager,rider,worker)", order: "name.asc" });
-    const res = await supabaseFetch(`/rest/v1/profiles?${q}`, { cache: "no-store" });
+    const res = await fetcher(`/rest/v1/profiles?${q}`, { cache: "no-store" });
     if (!res.ok) return [];
     return ((await res.json()) as { id: string; name: string | null; role: string }[])
       .filter((p) => p.name)
@@ -253,7 +255,7 @@ export async function getRequestJobs(): Promise<Loaded<{ pickups: DispatchJob[];
   }
   try {
     const since = new Date(Date.now() - 60 * 86_400_000).toISOString();
-    const q = new URLSearchParams({ select: COLUMNS, kind: "eq.pickup", created_at: `gte.${since}`, order: "created_at.desc", limit: "500" });
+    const q = new URLSearchParams({ select: JOB_COLUMNS, kind: "eq.pickup", created_at: `gte.${since}`, order: "created_at.desc", limit: "500" });
     const res = await supabaseFetch(`/rest/v1/website_dispatch_jobs?${q}`, { cache: "no-store" });
     if (res.status === 404) return { state: "error", message: NOT_INSTALLED };
     if (!res.ok) return { state: "error", message: "Booking requests could not be read right now." };
@@ -261,7 +263,7 @@ export async function getRequestJobs(): Promise<Loaded<{ pickups: DispatchJob[];
     const orders = [...new Set(pickups.map((j) => j.order_number).filter((o): o is string => Boolean(o)))];
     let deliveries: DispatchJob[] = [];
     if (orders.length) {
-      const dq = new URLSearchParams({ select: COLUMNS, kind: "eq.delivery", order_number: `in.(${orders.join(",")})`, order: "created_at.desc", limit: "500" });
+      const dq = new URLSearchParams({ select: JOB_COLUMNS, kind: "eq.delivery", order_number: `in.(${orders.join(",")})`, order: "created_at.desc", limit: "500" });
       const dr = await supabaseFetch(`/rest/v1/website_dispatch_jobs?${dq}`, { cache: "no-store" });
       if (dr.ok) deliveries = (await dr.json()) as DispatchJob[];
     }
@@ -278,6 +280,7 @@ const PREVIEW_ORDERS: Record<string, LinkedOrder> = {
   "VEL-01948": { status: "Ready", orderDate: null, deliveryDate: null, total: 820, due: 0, items: 5, updatedAt: new Date().toISOString() },
   "VEL-01960": { status: "Picked", orderDate: null, deliveryDate: null, total: 640, due: 640, items: 4, updatedAt: new Date().toISOString() },
   "VEL-01963": { status: "Picked", orderDate: null, deliveryDate: null, total: 910, due: 910, items: 6, updatedAt: new Date().toISOString() },
+  "VEL-01965": { status: "Picked", orderDate: null, deliveryDate: null, total: 480, due: 480, items: 3, updatedAt: new Date().toISOString() },
   "VEL-01944": { status: "Ready", orderDate: null, deliveryDate: addDays(dhakaToday(), 1), total: 560, due: 560, items: 4, updatedAt: new Date().toISOString() },
   "VEL-01930": { status: "Ready", orderDate: null, deliveryDate: addDays(dhakaToday(), -2), total: 1200, due: 300, items: 7, updatedAt: new Date(Date.now() - 3 * 86_400_000).toISOString() },
   "VEL-01880": { status: "Ready", orderDate: null, deliveryDate: addDays(dhakaToday(), -15), total: 950, due: 950, items: 6, updatedAt: new Date(Date.now() - 16 * 86_400_000).toISOString() },
@@ -290,9 +293,16 @@ export async function getRequestContext(phoneKeys: string[], orders: string[]): 
   const empty: RequestContext = { customers: {}, orders: {} };
   if (isAdminPreview()) {
     const ago = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString();
-    // Laila's order was made at the outlet 2 hours ago (a link candidate); Arif is a regular.
+    // Laila has two orders made at the outlet since her pickup (two link candidates: "Which order?"); Arif is a regular.
     const known: Record<string, CustomerContext> = {
-      "01912606060": { orders: 1, lastOrder: null, recent: [{ orderNumber: "VEL-01963", status: "Picked", orderDate: null, createdAt: ago(2) }] },
+      "01912606060": {
+        orders: 2,
+        lastOrder: null,
+        recent: [
+          { orderNumber: "VEL-01965", status: "Picked", orderDate: null, createdAt: ago(1) },
+          { orderNumber: "VEL-01963", status: "Picked", orderDate: null, createdAt: ago(2) },
+        ],
+      },
       "01811505050": { orders: 6, lastOrder: null, recent: [{ orderNumber: "VEL-01702", status: "Delivered", orderDate: null, createdAt: ago(24 * 40) }] },
     };
     return {

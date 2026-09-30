@@ -2,7 +2,7 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
-const { tabFor, callQueue, riderLoad, riderChoices, dayStrip, nowWindow, changedTime } = require("../.foundation-test-build/admin/today-logic.js");
+const { tabFor, callQueue, riderLoad, riderChoices, dayStrip, nowWindow, changedTime, linkCandidates } = require("../.foundation-test-build/admin/today-logic.js");
 
 let n = 0;
 const job = (over = {}) => ({
@@ -140,4 +140,40 @@ test("a rider with no stops-per-window set uses the default of 8", () => {
   assert.equal(dayStrip(riders, [], date)[0].capacity, 8);
   assert.equal(riderChoices(riders, eight.slice(0, 7), date, "morning")[0].full, false);
   assert.equal(riderChoices(riders, eight, date, "morning")[0].full, true);
+});
+
+test("weekly routine pickups (source 'weekly') wait in Assign like website pickups, then Route", () => {
+  assert.equal(tabFor(job({ source: "weekly", stage: "confirmed", slot_date: "2026-10-02", slot: "afternoon" })), "assign");
+  assert.equal(tabFor(job({ source: "weekly", stage: "assigned", assignee_id: "b" })), "assign");
+  assert.equal(tabFor(job({ source: "weekly", stage: "scheduled", assignee_id: "b", slot_date: "2026-10-02", slot: "morning" })), "route");
+  assert.equal(tabFor(job({ source: "weekly", stage: "new" })), "call");
+});
+
+test("link candidates: same phone's orders from a day before to two days after the pickup, not cancelled or taken", () => {
+  const picked = "2026-10-01T10:00:00Z";
+  const at = (h) => new Date(Date.parse(picked) + h * 3_600_000).toISOString();
+  const p = job({ stage: "picked", picked_at: picked, created_at: at(-48) });
+  const recent = [
+    { orderNumber: "VEL-00005", status: "Picked", orderDate: null, createdAt: at(60) }, // 2.5 days after: too late
+    { orderNumber: "VEL-00004", status: "Picked", orderDate: null, createdAt: at(30) },
+    { orderNumber: "VEL-00003", status: "Cancelled", orderDate: null, createdAt: at(5) },
+    { orderNumber: "VEL-00002", status: "Picked", orderDate: null, createdAt: at(2) },
+    { orderNumber: "VEL-00009", status: "Picked", orderDate: null, createdAt: at(1) }, // linked to another pickup
+    { orderNumber: "not-an-order", status: "Picked", orderDate: null, createdAt: at(1) },
+    { orderNumber: "VEL-00001", status: "Delivered", orderDate: null, createdAt: at(-23) },
+    { orderNumber: "VEL-00000", status: "Delivered", orderDate: null, createdAt: at(-25) }, // over a day before
+  ];
+  assert.deepEqual(linkCandidates(p, recent, new Set(["VEL-00009"])), [
+    { orderNumber: "VEL-00001", createdAt: at(-23) },
+    { orderNumber: "VEL-00002", createdAt: at(2) },
+    { orderNumber: "VEL-00004", createdAt: at(30) },
+  ]);
+  // Not before the booking itself reached the board.
+  assert.deepEqual(linkCandidates({ ...p, created_at: at(-2) }, recent, new Set()).map((o) => o.orderNumber), ["VEL-00009", "VEL-00002", "VEL-00004"]);
+  // Only picked pickups that have no order yet.
+  assert.deepEqual(linkCandidates({ ...p, order_number: "VEL-00002" }, recent, new Set()), []);
+  assert.deepEqual(linkCandidates({ ...p, stage: "scheduled" }, recent, new Set()), []);
+  assert.deepEqual(linkCandidates({ ...p, kind: "delivery" }, recent, new Set()), []);
+  assert.deepEqual(linkCandidates({ ...p, picked_at: null }, recent, new Set()), []);
+  assert.deepEqual(linkCandidates(p, undefined, new Set()), []);
 });
