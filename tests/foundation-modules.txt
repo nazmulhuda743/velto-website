@@ -3,6 +3,7 @@
 src/lib/attribution.ts
 src/lib/integrations/errors.ts
 src/lib/integrations/ops/validation.ts
+src/lib/integrations/ops/supabase-rpc.ts
 src/lib/integrations/pricing/validation.ts
 src/lib/customer/validation.ts
 src/lib/customer/rhythm.ts

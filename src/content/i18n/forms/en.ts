@@ -94,10 +94,9 @@ export const formsEn = {
     callbackSending: "Sending…",
     callbackDone: "Thanks, {name}. Velto will call you soon.",
     callbackFailed: "That didn't go through. Please try again, or message us on WhatsApp.",
-    callbackTooMany: "We already have your request. Velto will call you soon.",
+    callbackBlocked: "We've already had several call-back requests from this number today, so we can't take another here. Please message us on WhatsApp and we'll reply.",
     /** Asked at night (9 PM to 9 AM, Dhaka): the call comes in the morning. */
     callbackDoneNight: "Thanks, {name}. It's late now, so Velto will call you in the morning, from 9 AM.",
-    callbackTooManyNight: "We already have your request. Velto will call you in the morning, from 9 AM.",
     callbackCancel: "Cancel",
     reassureBooked: "Nothing to pay now. Your pickup window is booked the moment you confirm.",
     phoneHelpBooked: "The rider calls this number when nearby.",
