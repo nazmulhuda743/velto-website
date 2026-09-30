@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { NotificationRefresher } from "@/components/admin/NotificationRefresher";
 import { AdminHeader, Badge, DataNotice, one, type SearchParams } from "@/components/admin/ui";
+import { TryTodayBanner } from "@/components/admin/TryTodayBanner";
 import { WhatsAppSend } from "@/components/admin/WhatsAppSend";
 import { getDispatch, getRequestContext, getStaff, type StaffMember } from "@/lib/admin/dispatch";
 import {
@@ -410,6 +411,7 @@ export default async function DispatchPage({ searchParams }: { searchParams: Sea
   return (
     <>
       <NotificationRefresher />
+      <TryTodayBanner />
       <AdminHeader
         title="Pickup & delivery"
         intro="Every customer request and every Ready order, from new to done. Give each stop a person and a slot: it appears in Velto Ops under that person's “Assigned to me”, with the usual reminder before the slot ends."

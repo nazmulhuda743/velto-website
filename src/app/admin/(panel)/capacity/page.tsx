@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AdminHeader, Badge, DataNotice, one, type SearchParams } from "@/components/admin/ui";
+import { TryTodayBanner } from "@/components/admin/TryTodayBanner";
 import { StaffPickupFields } from "@/components/admin/StaffPickupFields";
 import { formText } from "@/content/i18n/forms";
 import { dhakaToday } from "@/lib/admin/dispatch-logic";
@@ -446,6 +447,7 @@ export default async function CapacityPage({ searchParams }: { searchParams: Sea
 
   return (
     <>
+      <TryTodayBanner />
       <AdminHeader
         title="Capacity"
         intro="How many pickups and deliveries each window can take, per zone. The website and the dispatch board book from these same numbers, so a window the website shows as open always has a place held for it."

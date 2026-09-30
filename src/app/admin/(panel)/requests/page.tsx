@@ -3,6 +3,7 @@ import { BarList, fmt } from "@/components/admin/charts";
 import { MarkRequestsSeen } from "@/components/admin/MarkRequestsSeen";
 import { NotificationRefresher } from "@/components/admin/NotificationRefresher";
 import { AdminHeader, Badge, DataNotice, one, type SearchParams } from "@/components/admin/ui";
+import { TryTodayBanner } from "@/components/admin/TryTodayBanner";
 import { WhatsAppSend } from "@/components/admin/WhatsAppSend";
 import { CHANNEL_LABELS } from "@/lib/analytics/classify";
 import { getRequests } from "@/lib/admin/analytics-data";
@@ -972,6 +973,7 @@ export default async function RequestsPage({ searchParams }: { searchParams: Sea
     <>
       <NotificationRefresher />
       <MarkRequestsSeen newest={newest} />
+      <TryTodayBanner />
       <AdminHeader
         title="Bookings & quotes"
         intro="Every pickup booking and household quote from the website, from the first call to delivery. Open a request to see where it is and do the next step right there."

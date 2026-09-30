@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
+import { NAV_GROUPS, navFor, type NavGroup, type NavIcon } from "@/lib/admin/nav";
 
 /** 20px line icons, one per section, so the menu scans by shape as well as by word. */
 const I = {
@@ -22,6 +23,19 @@ const I = {
     </>
   ),
   consent: <path d="M12 3.5 5 6.5v5c0 4.2 3 7.6 7 9 4-1.4 7-4.8 7-9v-5l-7-3ZM9 12l2 2 4-4" />,
+  today: (
+    <>
+      <rect x="5" y="4.5" width="14" height="16" rx="2" />
+      <path d="M9.5 3v3h5V3M8.5 13l2.3 2.3L15.5 10.5" />
+    </>
+  ),
+  riders: (
+    <>
+      <circle cx="6" cy="17" r="2.5" />
+      <circle cx="18" cy="17" r="2.5" />
+      <path d="M8.5 17h5.5l2-6h-3.5M16 11l2 6M4 12.5h5.5l2 4.5" />
+    </>
+  ),
   requests: (
     <>
       <rect x="4" y="5" width="16" height="15" rx="2" />
@@ -115,66 +129,14 @@ const I = {
       <circle cx="8.5" cy="7.5" r="1.2" />
     </>
   ),
-} satisfies Record<string, ReactNode>;
-
-type Item = { href: string; label: string; icon: keyof typeof I };
-
-const GROUPS: { label: string; items: Item[] }[] = [
-  {
-    label: "Insights",
-    items: [
-      { href: "/admin", label: "Overview", icon: "home" },
-      { href: "/admin/funnel", label: "Funnel", icon: "funnel" },
-      { href: "/admin/visitors", label: "Visitors", icon: "visitors" },
-      { href: "/admin/marketing", label: "Marketing", icon: "marketing" },
-      { href: "/admin/revenue", label: "Revenue", icon: "revenue" },
-      { href: "/admin/consent", label: "Consent & tracking", icon: "consent" },
-    ],
-  },
-  {
-    label: "Operations",
-    items: [
-      { href: "/admin/requests", label: "Bookings & quotes", icon: "requests" },
-      { href: "/admin/dispatch", label: "Pickup & delivery", icon: "dispatch" },
-      { href: "/admin/capacity", label: "Capacity", icon: "capacity" },
-      { href: "/admin/retention", label: "Bring customers back", icon: "retention" },
-      { href: "/admin/feedback", label: "Customer feedback", icon: "feedback" },
-      { href: "/admin/loyalty", label: "Loyalty", icon: "loyalty" },
-      { href: "/admin/coupons", label: "Goal coupons", icon: "coupons" },
-      { href: "/admin/accounts", label: "Customer accounts", icon: "accounts" },
-      { href: "/admin/health", label: "Website health", icon: "health" },
-    ],
-  },
-  {
-    label: "Content",
-    items: [
-      { href: "/admin/seo", label: "SEO", icon: "seo" },
-      { href: "/admin/images", label: "Images", icon: "images" },
-      { href: "/admin/copy", label: "Text & copy", icon: "copy" },
-      { href: "/admin/copy/footer", label: "Footer links", icon: "copy" },
-      { href: "/admin/reviews", label: "Reviews", icon: "reviews" },
-      { href: "/admin/promo", label: "Promo & popup", icon: "promo" },
-      { href: "/admin/settings", label: "Site settings", icon: "settings" },
-      { href: "/admin/prices", label: "Prices", icon: "prices" },
-    ],
-  },
-  {
-    label: "Team",
-    items: [
-      { href: "/admin/board", label: "Task board", icon: "board" },
-      { href: "/admin/approvals", label: "Approvals", icon: "approvals" },
-      { href: "/admin/activity", label: "Activity", icon: "activity" },
-      { href: "/admin/access", label: "Access", icon: "access" },
-    ],
-  },
-];
+} satisfies Record<NavIcon, ReactNode>;
 
 const matches = (href: string, path: string) => (href === "/admin" ? path === "/admin" : path.startsWith(href));
-const ALL_HREFS = GROUPS.flatMap((g) => g.items.map((i) => i.href));
+const ALL_HREFS = NAV_GROUPS.flatMap((g) => g.items.map((i) => i.href));
 /** The most specific menu item wins: /admin/copy/footer lights "Footer links", not "Text & copy". */
 const isActive = (href: string, path: string) => matches(href, path) && !ALL_HREFS.some((h) => h.length > href.length && h.startsWith(href) && matches(h, path));
 
-function Icon({ name }: { name: keyof typeof I }) {
+function Icon({ name }: { name: NavIcon }) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" className="size-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
       {I[name]}
@@ -182,7 +144,7 @@ function Icon({ name }: { name: keyof typeof I }) {
   );
 }
 
-function Links({ path, badges, groups, onNavigate }: { path: string; badges: Record<string, number>; groups: typeof GROUPS; onNavigate?: () => void }) {
+function Links({ path, badges, groups, onNavigate }: { path: string; badges: Record<string, number>; groups: NavGroup[]; onNavigate?: () => void }) {
   return (
     <div className="flex flex-col gap-6">
       {groups.map((group) => (
@@ -224,14 +186,11 @@ function Links({ path, badges, groups, onNavigate }: { path: string; badges: Rec
  * Mobile: the current section plus a Menu button that opens the same grouped
  * list, instead of a long sideways-scrolling strip.
  */
-/** "/admin" → "overview", "/admin/images" → "images" (same rule as lib/admin/permissions). */
-const sectionOf = (href: string) => (href === "/admin" ? "overview" : href.split("/")[2]);
-
 export function AdminNav({ badges = {}, allowed }: { badges?: Record<string, number>; allowed: string[] }) {
   const path = usePathname();
   const [open, setOpen] = useState(false);
   // Only the sections this role may open (the server enforces it too).
-  const groups = GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => allowed.includes(sectionOf(i.href))) })).filter((g) => g.items.length);
+  const groups = navFor(allowed);
   const current = groups.flatMap((g) => g.items).find((i) => isActive(i.href, path));
   const total = Object.values(badges).reduce((a, b) => a + b, 0);
 
