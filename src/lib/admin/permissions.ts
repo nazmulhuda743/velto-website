@@ -21,6 +21,7 @@ export const SECTIONS = [
   "requests",
   "dispatch",
   "capacity",
+  "riders",
   "retention",
   "feedback",
   "loyalty",
