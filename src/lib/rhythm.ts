@@ -1,0 +1,122 @@
+/**
+ * Velto Rhythm (docs/technical/RHYTHM.md): reminder settings and message text. Pure and
+ * runtime-neutral, so the admin page, the daily run and the unit tests share it
+ * (tests/command-center/rhythm.test.cjs). Who is reminded, and how often, is decided in the
+ * database (docs/technical/sql/website_rhythm.sql), never here.
+ */
+
+export type RhythmLang = "bn" | "en";
+
+export type RhythmSettings = {
+  regularDue: {
+    enabled: boolean;
+    /** Most SMS one evening run sends. */
+    maxPerRun: number;
+    lang: RhythmLang;
+    textBn: string;
+    textEn: string;
+  };
+  slipping: {
+    enabled: boolean;
+    /** Most staff call tasks one morning run makes. */
+    maxPerDay: number;
+  };
+  updatedAt: string;
+};
+
+/** {hi} = "Nazmul, " (or nothing), {service} = "আয়রনের কাপড়" / "ironing", {link} = the one-tap link. */
+export const DEFAULT_TEXT_BN = "Velto: {hi}{service} জমেছে? পিকআপ এক ট্যাপে: {link}";
+export const DEFAULT_TEXT_EN = "Velto: {hi}time for your {service} pickup? Book in one tap: {link}";
+
+export const DEFAULT_RHYTHM: RhythmSettings = {
+  regularDue: { enabled: false, maxPerRun: 40, lang: "bn", textBn: DEFAULT_TEXT_BN, textEn: DEFAULT_TEXT_EN },
+  slipping: { enabled: false, maxPerDay: 8 },
+  updatedAt: "",
+};
+
+const rec = (v: unknown) => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {});
+const int = (v: unknown, min: number, max: number, fallback: number) => {
+  const n = Number(v);
+  return Number.isInteger(n) && n >= min && n <= max ? n : fallback;
+};
+
+/** A template is usable when it carries the link and stays within three SMS parts. */
+export function templateProblem(text: string): string | null {
+  const t = text.trim();
+  if (!t) return "Write the message.";
+  if (!t.includes("{link}")) return "The message must include {link}, the one-tap booking link.";
+  if (smsParts(renderMessage(t, { firstName: "Nazmul", service: "Wash + Iron", link: SAMPLE_LINK }, "bn")).parts > 3) {
+    return "The message is too long: keep it to 3 SMS parts or fewer.";
+  }
+  return null;
+}
+
+export function parseRhythm(v: unknown): RhythmSettings {
+  const r = rec(v);
+  const d = rec(r.regularDue);
+  const s = rec(r.slipping);
+  const text = (x: unknown, fallback: string) => (typeof x === "string" && !templateProblem(x) ? x.trim().slice(0, 400) : fallback);
+  return {
+    regularDue: {
+      enabled: d.enabled === true,
+      maxPerRun: int(d.maxPerRun, 1, 150, DEFAULT_RHYTHM.regularDue.maxPerRun),
+      lang: d.lang === "en" ? "en" : "bn",
+      textBn: text(d.textBn, DEFAULT_TEXT_BN),
+      textEn: text(d.textEn, DEFAULT_TEXT_EN),
+    },
+    slipping: {
+      enabled: s.enabled === true,
+      maxPerDay: int(s.maxPerDay, 1, 40, DEFAULT_RHYTHM.slipping.maxPerDay),
+    },
+    updatedAt: typeof r.updatedAt === "string" ? r.updatedAt.slice(0, 40) : "",
+  };
+}
+
+const SERVICE_WORDS: Record<string, Record<RhythmLang, string>> = {
+  Ironing: { bn: "আয়রনের কাপড়", en: "ironing" },
+  "Wash + Iron": { bn: "ধোয়ার কাপড়", en: "wash & iron" },
+  "Dry Cleaning": { bn: "ড্রাই ক্লিনিংয়ের কাপড়", en: "dry cleaning" },
+};
+
+/** The customer's usual service as the message says it. */
+export const serviceWords = (service: string | null | undefined, lang: RhythmLang) =>
+  SERVICE_WORDS[service?.trim() ?? ""]?.[lang] ?? (lang === "bn" ? "লন্ড্রির কাপড়" : "laundry");
+
+export const SAMPLE_LINK = "www.velto.com.bd/bn/r/Ab3xK9pQ";
+
+/** The link as it appears in the SMS: no https://, the page language, the 8-character code. */
+export function rhythmLink(siteUrl: string, code: string, lang: RhythmLang) {
+  const host = siteUrl.replace(/^https?:\/\//, "").replace(/\/+$/, "");
+  return `${host}${lang === "bn" ? "/bn" : ""}/r/${code}`;
+}
+
+/** The message for one customer. A missing first name drops the greeting cleanly. */
+export function renderMessage(template: string, f: { firstName: string | null; service: string | null; link: string }, lang: RhythmLang) {
+  const name = f.firstName?.trim().split(/\s+/)[0]?.slice(0, 20) ?? "";
+  const hi = lang === "bn" ? (name ? `${name}, ` : "") : name ? `Hi ${name}, ` : "Hi, ";
+  return template
+    .replaceAll("{hi}", hi)
+    .replaceAll("{service}", serviceWords(f.service, lang))
+    .replaceAll("{link}", f.link)
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+// GSM 03.38 basic set (plus the extension characters, which count double).
+const GSM = "@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !\"#¤%&'()*+,-./0123456789:;<=>?¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà";
+const GSM_EXT = "^{}\\[~]|€";
+
+/** How many SMS parts a message costs: 160/153 characters in plain text, 70/67 with Bangla. */
+export function smsParts(text: string): { unicode: boolean; length: number; parts: number } {
+  const chars = [...text];
+  const unicode = chars.some((c) => !GSM.includes(c) && !GSM_EXT.includes(c));
+  const length = unicode ? chars.reduce((n, c) => n + (c.codePointAt(0)! > 0xffff ? 2 : 1), 0) : chars.reduce((n, c) => n + (GSM_EXT.includes(c) ? 2 : 1), 0);
+  const [single, multi] = unicode ? [70, 67] : [160, 153];
+  return { unicode, length, parts: length === 0 ? 0 : length <= single ? 1 : Math.ceil(length / multi) };
+}
+
+/** Evening SMS only go out between 10:00 and 20:00 Dhaka, whatever calls the run. */
+export function smsHourOk(now = new Date()) {
+  const h = (now.getUTCHours() + 6) % 24;
+  return h >= 10 && h < 20;
+}

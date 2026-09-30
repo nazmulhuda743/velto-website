@@ -28,6 +28,7 @@ execFileSync(
     "src/lib/pwa/sw-rules.ts",
     "src/lib/promo.ts",
     "src/lib/footer-links.ts",
+    "src/lib/rhythm.ts",
     "src/lib/i18n/copy-overrides.ts",
     "src/content/mock.ts",
   ],
