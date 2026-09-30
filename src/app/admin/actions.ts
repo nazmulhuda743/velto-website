@@ -6,6 +6,7 @@ import { IMAGE_SLOTS } from "@/content/mock";
 import { getSeoRoute } from "@/content/seo-routes";
 import { saveContent, uploadImage } from "@/lib/admin/content-store";
 import { SEEN_COOKIE } from "@/lib/admin/notifications";
+import { nextSeen, readSeen as readRequestsSeen, REQUESTS_SEEN_COOKIE } from "@/lib/admin/requests-seen";
 import { logServerEvent } from "@/lib/analytics/store";
 import { logActivity } from "@/lib/admin/activity";
 import { slotName } from "@/lib/admin/image-pages";
@@ -380,4 +381,24 @@ export async function logRetentionAction(form: FormData) {
   const label = { messaged: "Messaged", not_now: "Marked not now", wrong_number: "Marked wrong number", opt_out: "Marked don't contact" }[outcome];
   await logActivity(admin, { section: "retention", action: `retention_${outcome}`, target: customerId, summary: `${label}: a customer on the ${bucket} list` });
   back(target, { bucket, lang, saved: outcome });
+}
+
+/* ---------- Bookings & quotes: what this person has seen ---------- */
+
+/**
+ * Called once when Bookings & quotes is opened: everything up to the newest request shown is
+ * seen, so the menu badge counts only requests that arrive after this visit.
+ */
+export async function markRequestsSeenAction(newestShown: number) {
+  await requireSection("requests");
+  const jar = await cookies();
+  const next = nextSeen(readRequestsSeen(jar.get(REQUESTS_SEEN_COOKIE)?.value), Number(newestShown));
+  if (next === null) return;
+  jar.set(REQUESTS_SEEN_COOKIE, String(next), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/admin",
+    maxAge: 60 * 60 * 24 * 90,
+  });
 }

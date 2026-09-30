@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { Suspense } from "react";
 import { AdminNav } from "@/components/admin/AdminNav";
@@ -10,6 +11,7 @@ import { myOpenTasks } from "@/lib/admin/board";
 import { pendingPriceCount } from "@/lib/admin/price-changes";
 import { openFeedbackCount } from "@/lib/admin/customer-extras";
 import { requireAdmin } from "@/lib/admin/session";
+import { readSeen, REQUESTS_SEEN_COOKIE, unseenCount } from "@/lib/admin/requests-seen";
 import { DeniedNotice } from "@/components/admin/DeniedNotice";
 import { logoutAction } from "../actions";
 
@@ -45,8 +47,10 @@ export default async function AdminPanelLayout({ children }: { children: React.R
     can(admin.role, "feedback") ? openFeedbackCount() : 0,
   ]);
   const unread = notifications?.unread ?? 0;
-  // Live count next to "Bookings & quotes": requests still open in Velto Ops.
-  const openRequests = requests?.state === "ok" ? requests.data.filter((r) => r.status !== "done").length : 0;
+  // Next to "Bookings & quotes": requests that came in since this person last opened the page.
+  // (Open ones already seen stay in the list, not in the badge, so a new one stands out.)
+  const seen = readSeen((await cookies()).get(REQUESTS_SEEN_COOKIE)?.value);
+  const newRequests = requests?.state === "ok" ? unseenCount(requests.data, seen) : 0;
   return (
     <div className="lg:grid lg:min-h-dvh lg:grid-cols-[280px_1fr]">
       <aside className="bg-navy px-4 py-3 text-white lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:overflow-y-auto lg:px-5 lg:py-6">
@@ -60,7 +64,7 @@ export default async function AdminPanelLayout({ children }: { children: React.R
         </div>
         <p className="mt-3 hidden t-caption uppercase tracking-[0.08em] text-white/50 lg:block">Website Command Center</p>
         <div className="mt-3 lg:mt-7">
-          <AdminNav badges={{ "/admin/requests": openRequests, "/admin/approvals": approvals, "/admin/board": myTasks, "/admin/feedback": openFeedback }} allowed={allowed} />
+          <AdminNav badges={{ "/admin/requests": newRequests, "/admin/approvals": approvals, "/admin/board": myTasks, "/admin/feedback": openFeedback }} allowed={allowed} />
         </div>
         <div className="mt-4 hidden border-t border-white/15 pt-4 lg:mt-auto lg:block">
           <Link href="/" target="_blank" className="t-small text-white/70 underline underline-offset-4 hover:text-white">
