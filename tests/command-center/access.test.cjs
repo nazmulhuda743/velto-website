@@ -37,6 +37,13 @@ test("support handles customers but not site content or marketing", () => {
   for (const s of ["images", "settings", "seo", "revenue", "marketing"]) assert.equal(p.can("support", s), false, s);
 });
 
+test("riders & windows settings are for owners and managers only", () => {
+  assert.ok(p.can("owner", "riders"));
+  assert.ok(p.can("manager", "riders"));
+  for (const r of ["support", "marketing", "designer"]) assert.equal(p.can(r, "riders"), false, r);
+  assert.equal(p.sectionForPath("/admin/riders"), "riders");
+});
+
 test("unknown roles and sections are refused", () => {
   assert.equal(p.can(null, "images"), false);
   assert.equal(p.can("superuser", "images"), false);

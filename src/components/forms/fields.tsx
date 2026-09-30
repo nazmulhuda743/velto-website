@@ -11,6 +11,8 @@ type FieldShellProps = {
   id: string;
   label: string;
   optional?: boolean;
+  /** Adds the visible * after the label. The control itself carries `required` for assistive tech. */
+  required?: boolean;
   /** Text after an optional field's label, in the page language. */
   optionalText?: string;
   helper?: ReactNode;
@@ -18,11 +20,12 @@ type FieldShellProps = {
   children: ReactNode;
 };
 
-export function FieldShell({ id, label, optional, optionalText = ", optional", helper, error, children }: FieldShellProps) {
+export function FieldShell({ id, label, optional, required, optionalText = ", optional", helper, error, children }: FieldShellProps) {
   return (
     <div>
       <label htmlFor={id} className="block text-[15px] font-semibold text-navy">
         {label}
+        {required ? <RequiredMark /> : null}
         {optional ? <span className="font-normal text-secondary">{optionalText}</span> : null}
       </label>
       {helper ? (
@@ -41,17 +44,32 @@ export function FieldShell({ id, label, optional, optionalText = ", optional", h
   );
 }
 
+/** The visible required marker. Hidden from assistive tech: the control's `required` already says it. */
+export function RequiredMark() {
+  return (
+    <span aria-hidden="true" className="ml-0.5 text-error">
+      *
+    </span>
+  );
+}
+
+/** "Fields marked * are required." at the top of a form that uses RequiredMark. */
+export function RequiredNote({ children }: { children: ReactNode }) {
+  return <p className="t-small text-secondary">{children}</p>;
+}
+
 const describedBy = (id: string, helper?: ReactNode, error?: string) =>
   [helper ? `${id}-help` : null, error ? `${id}-error` : null].filter(Boolean).join(" ") || undefined;
 
-type Common = { id: string; label: string; optional?: boolean; optionalText?: string; helper?: ReactNode; error?: string };
+type Common = { id: string; label: string; optional?: boolean; required?: boolean; optionalText?: string; helper?: ReactNode; error?: string };
 
-export function TextField({ id, label, optional, optionalText, helper, error, ...rest }: Common & InputHTMLAttributes<HTMLInputElement> & { ref?: Ref<HTMLInputElement> }) {
+export function TextField({ id, label, optional, required, optionalText, helper, error, ...rest }: Common & InputHTMLAttributes<HTMLInputElement> & { ref?: Ref<HTMLInputElement> }) {
   return (
-    <FieldShell id={id} label={label} optional={optional} optionalText={optionalText} helper={helper} error={error}>
+    <FieldShell id={id} label={label} optional={optional} required={required} optionalText={optionalText} helper={helper} error={error}>
       <input
         id={id}
         name={id}
+        required={required}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy(id, helper, error)}
         className={`${control} h-[54px] border-line-strong md:h-[52px]`}
@@ -65,6 +83,7 @@ export function SelectField({
   id,
   label,
   optional,
+  required,
   optionalText,
   helper,
   error,
@@ -72,11 +91,12 @@ export function SelectField({
   ...rest
 }: Common & SelectHTMLAttributes<HTMLSelectElement>) {
   return (
-    <FieldShell id={id} label={label} optional={optional} optionalText={optionalText} helper={helper} error={error}>
+    <FieldShell id={id} label={label} optional={optional} required={required} optionalText={optionalText} helper={helper} error={error}>
       <div className="relative">
         <select
           id={id}
           name={id}
+          required={required}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy(id, helper, error)}
           className={`${control} h-[54px] appearance-none border-line-strong pr-11 md:h-[52px]`}
@@ -92,12 +112,13 @@ export function SelectField({
   );
 }
 
-export function TextAreaField({ id, label, optional, optionalText, helper, error, ...rest }: Common & TextareaHTMLAttributes<HTMLTextAreaElement>) {
+export function TextAreaField({ id, label, optional, required, optionalText, helper, error, ...rest }: Common & TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
-    <FieldShell id={id} label={label} optional={optional} optionalText={optionalText} helper={helper} error={error}>
+    <FieldShell id={id} label={label} optional={optional} required={required} optionalText={optionalText} helper={helper} error={error}>
       <textarea
         id={id}
         name={id}
+        required={required}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy(id, helper, error)}
         className={`${control} min-h-[120px] border-line-strong py-3 leading-[1.4]`}

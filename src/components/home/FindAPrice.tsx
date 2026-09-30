@@ -18,15 +18,17 @@ export async function FindAPrice() {
           <SectionIntro id="price-title" title={t.title}>
             <p>{t.intro}</p>
           </SectionIntro>
-          <div className="mt-(--space-intro-content) space-y-10">
-            {/* The everyday prices first, without typing; then the search for everything else. */}
-            <PopularPrices />
-            {/* Each priced service can be booked straight from the result, like on /pricing. */}
-            <PriceFinder bookFromResult={{ source: "home_pricing" }} />
+          <div className="mt-(--space-intro-content)">
+            {/* Popular prices show under the search until the visitor types. Each priced service
+                can be booked straight from the result, like on /pricing. */}
+            <PriceFinder
+              bookFromResult={{ source: "home_pricing" }}
+              popular={<PopularPrices source="home_popular" placement="home_popular_price" />}
+            />
           </div>
         </div>
 
-        <div className="col-span-4 md:col-span-8 xl:col-span-4 xl:col-start-9 xl:pt-2">
+        <div className="col-span-4 md:col-span-8 xl:col-span-4 xl:col-start-9 xl:sticky xl:top-28 xl:self-start xl:pt-2">
           {/* Turnaround is stated once on the homepage, in the hero figures; /pricing carries the full table. */}
           <p className="border-t border-navy pt-4 t-h4 text-navy [text-wrap:balance]">
             {fill(t.free, { amount: FREE_DELIVERY_THRESHOLD }, locale)}

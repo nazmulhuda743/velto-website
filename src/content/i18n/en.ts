@@ -177,7 +177,7 @@ export const en = {
       free: "Free pickup & delivery on orders of {amount}+.",
       smallerOrders: "For smaller orders, the applicable pickup and delivery charge will be shown before booking.",
       viewPricing: "View Full Pricing",
-      popularTitle: "Everyday prices",
+      popularTitle: "Popular items",
       popularItem: "Item",
       popularNote: "Per item, from the current Velto price list. Tap a price to book that service.",
       popularNotOffered: "Not offered for this item",

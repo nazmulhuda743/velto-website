@@ -24,6 +24,7 @@ const SECTION_LABEL: Record<Section, string> = {
   requests: "Bookings & quotes",
   dispatch: "Pickup & delivery",
   capacity: "Capacity",
+  riders: "Riders & windows",
   retention: "Bring customers back",
   accounts: "Customer accounts",
   health: "Website health",
