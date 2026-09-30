@@ -29,3 +29,4 @@ src/lib/admin/requests-seen.ts
 src/lib/admin/today-logic.ts
 src/lib/admin/dispatch.ts
 src/lib/admin/today.ts
+src/lib/popular-prices.ts

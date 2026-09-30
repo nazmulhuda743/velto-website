@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { FormText } from "@/content/i18n/forms/en";
+import { RequiredMark } from "./fields";
 import { fill, localDigits, type Locale } from "@/lib/i18n/config";
 import {
   addDaysIso,
@@ -203,11 +204,16 @@ export function PickupWindows({
       </fieldset>
 
       <fieldset className="min-w-0">
-        <legend className="text-[15px] font-semibold text-navy">{t.slotLabel}</legend>
+        <legend className="text-[15px] font-semibold text-navy">
+          {t.slotLabel}
+          <RequiredMark />
+        </legend>
         {current && current.windows.some((w) => bookable(w.status)) ? null : <p className="mt-2 t-small text-navy">{t.noWindowsDay}</p>}
         <div className="mt-2 grid gap-2 sm:grid-cols-2">
-          {(current?.windows ?? []).map((w, i) => {
+          {(current?.windows ?? []).map((w) => {
             const ok = bookable(w.status);
+            // The first window that can be chosen carries the id the booking error summary links to.
+            const first = w === current?.windows.find((x) => bookable(x.status));
             const chosen = value?.date === current?.date && value?.window === w.id;
             const status =
               !live && ok
@@ -220,19 +226,20 @@ export function PickupWindows({
             return (
               <label
                 key={w.id}
-                className={`flex min-h-14 items-center justify-between gap-3 rounded-md border px-4 py-3 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-blue ${
+                className={`relative flex min-h-14 items-center justify-between gap-3 rounded-md border px-4 py-3 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-blue ${
                   !ok ? "cursor-not-allowed border-line bg-soft" : chosen ? "cursor-pointer border-action bg-[#e8f3fb]" : "cursor-pointer border-line-strong bg-white hover:border-navy/60"
                 }`}
                 data-window={w.id}
                 data-status={w.status}
               >
                 <input
-                  id={i === 0 ? "booking-slot" : undefined}
+                  id={first ? "booking-slot" : undefined}
                   type="radio"
                   name="pickup-window"
                   value={w.id}
                   checked={chosen}
                   disabled={!ok}
+                  required
                   onChange={() => current && onChange({ date: current.date, window: w.id, starts: w.starts, ends: w.ends, booked: live })}
                   aria-describedby={errorSlot ? "booking-slot-error" : undefined}
                   className="sr-only"

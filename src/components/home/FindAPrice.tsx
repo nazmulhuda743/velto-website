@@ -18,11 +18,13 @@ export async function FindAPrice() {
           <SectionIntro id="price-title" eyebrow={t.eyebrow} title={t.title}>
             <p>{t.intro}</p>
           </SectionIntro>
-          <div className="mt-(--space-intro-content) space-y-10">
-            {/* The everyday prices first, without typing; then the search for everything else. */}
-            <PopularPrices />
-            {/* Each priced service can be booked straight from the result, like on /pricing. */}
-            <PriceFinder bookFromResult={{ source: "home_pricing" }} />
+          <div className="mt-(--space-intro-content)">
+            {/* Popular prices show under the search until the visitor types. Each priced service
+                can be booked straight from the result, like on /pricing. */}
+            <PriceFinder
+              bookFromResult={{ source: "home_pricing" }}
+              popular={<PopularPrices source="home_popular" placement="home_popular_price" />}
+            />
           </div>
         </div>
 

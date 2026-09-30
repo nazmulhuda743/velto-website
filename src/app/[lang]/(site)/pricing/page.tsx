@@ -1,6 +1,7 @@
 import { pageMetadata } from "@/lib/seo/page-metadata";
 import { FAQ, faqItems } from "@/components/home/FAQ";
 import { FinalBookingCTA } from "@/components/home/FinalBookingCTA";
+import { PopularPrices } from "@/components/home/PopularPrices";
 import { PriceFinder } from "@/components/home/PriceFinder";
 import { Eyebrow, SectionIntro } from "@/components/home/SectionIntro";
 import { Breadcrumbs } from "@/components/pages/Breadcrumbs";
@@ -19,8 +20,9 @@ import { getLocale } from "@/lib/i18n/server";
 export const generateMetadata = () => pageMetadata("/pricing");
 
 /**
- * Pricing page. The only price data shown comes through PriceFinder → /api/prices,
- * which the Codex pricing adapter replaces. No prices are hardcoded here.
+ * Pricing page. Price data comes only from the Velto Ops price list: PriceFinder → /api/prices,
+ * and the popular prices shown before searching (PopularPrices, read on the server). No prices
+ * are hardcoded here.
  */
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -57,7 +59,12 @@ export default async function PricingPage({ searchParams }: { searchParams: Sear
                 <p>{t.intro}</p>
               </div>
               <div className="mt-(--space-intro-content)">
-                <PriceFinder initialQuery={initialQuery} syncUrl bookFromResult={{ source: "pricing-result" }} />
+                <PriceFinder
+                  initialQuery={initialQuery}
+                  syncUrl
+                  bookFromResult={{ source: "pricing-result" }}
+                  popular={<PopularPrices source="pricing_popular" placement="pricing_popular_price" />}
+                />
               </div>
             </div>
             <aside aria-label={t.asideLabel} className="col-span-4 md:col-span-8 xl:col-span-4 xl:col-start-9 xl:pt-2">
