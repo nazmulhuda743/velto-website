@@ -28,7 +28,7 @@ function DayOff({ person, day, label, off }: { person: RiderSetting; day: string
         aria-pressed={off}
         aria-label={off ? `${person.name} is ${label.toLowerCase()} (${dayName(day)}). Press to put back on.` : `Mark ${person.name} ${label.toLowerCase()} (${dayName(day)})`}
         className={`flex min-h-11 w-full flex-col items-center justify-center rounded-lg border px-3 py-1 text-center t-small font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action ${
-          off ? "border-[#8a5300]/40 bg-[#fff4e5] text-[#8a5300]" : "border-line-strong bg-white text-navy hover:border-navy"
+          off ? "border-warning/40 bg-warning-soft text-warning" : "border-line-strong bg-white text-navy hover:border-navy"
         }`}
       >
         {label}

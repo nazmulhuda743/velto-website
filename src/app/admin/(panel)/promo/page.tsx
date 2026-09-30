@@ -122,7 +122,7 @@ export default async function PromoPage({ searchParams }: { searchParams: Search
           </p>
         ) : null}
         {problem ? (
-          <p className="mt-3 rounded-md border border-[#f0c987] bg-[#fff4e5] px-4 py-3 t-small font-medium text-[#8a5300]">To go live: {problem}</p>
+          <p className="mt-3 rounded-md border border-warning/30 bg-warning-soft px-4 py-3 t-small font-medium text-warning">To go live: {problem}</p>
         ) : null}
 
         <form action={savePromoPopupAction} className="mt-5 grid gap-6 lg:grid-cols-[1fr_300px]">

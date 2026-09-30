@@ -182,7 +182,7 @@ export default async function PricesPage({ searchParams }: { searchParams: Searc
             </Link>
           </div>
           {editing?.pending ? (
-            <p className="mt-3 rounded-md bg-[#fff4e5] px-3 py-2 t-small text-[#8a5300]">
+            <p className="mt-3 rounded-md bg-warning-soft px-3 py-2 t-small text-warning">
               {editing.pending.by} already asked to {editing.pending.kind} this price on {requestDate(editing.pending.at)}. It must be approved or withdrawn first.
             </p>
           ) : (

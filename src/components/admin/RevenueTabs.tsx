@@ -21,7 +21,7 @@ export function RevenueTabs({ active, reviewCount }: { active: string; reviewCou
         >
           {t.label}
           {t.href.endsWith("review") && reviewCount ? (
-            <span className="ml-1.5 rounded-full bg-[#fff4e5] px-1.5 py-0.5 t-caption font-bold text-[#8a5300]">{reviewCount}</span>
+            <span className="ml-1.5 rounded-full bg-warning-soft px-1.5 py-0.5 t-caption font-bold text-warning">{reviewCount}</span>
           ) : null}
         </Link>
       ))}

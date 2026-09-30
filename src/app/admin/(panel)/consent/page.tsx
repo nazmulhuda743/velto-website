@@ -133,7 +133,7 @@ export default async function ConsentPage({ searchParams }: { searchParams: Sear
             <ul className="space-y-2">
               {warnings.map((w) => (
                 <li key={w} className="flex gap-2.5 t-small text-body">
-                  <span aria-hidden="true" className="mt-1.5 size-2 shrink-0 rounded-full bg-[#c77c02]" />
+                  <span aria-hidden="true" className="mt-1.5 size-2 shrink-0 rounded-full bg-warning" />
                   {w}
                 </li>
               ))}

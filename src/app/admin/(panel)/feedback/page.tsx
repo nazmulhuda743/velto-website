@@ -29,7 +29,7 @@ function lastMonth(rows: FeedbackRow[]) {
 function Stars({ n }: { n: number }) {
   return (
     <span className="whitespace-nowrap text-[18px] leading-none tracking-[1px]" aria-label={`${n} of 5`}>
-      <span className="text-[#f5a623]">{"★".repeat(n)}</span>
+      <span className="text-warning">{"★".repeat(n)}</span>
       <span className="text-line-strong">{"★".repeat(5 - n)}</span>
     </span>
   );

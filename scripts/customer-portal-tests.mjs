@@ -30,8 +30,9 @@ for (const file of files) {
   if (isClient) {
     for (const mod of SERVER_ONLY) {
       for (const m of src.matchAll(/from "([^"]+)"/g)) {
-        // upload-limits holds plain constants shared with the admin upload input (PR #18).
-        if (m[1].startsWith(mod) && m[1] !== "@/lib/admin/upload-limits") {
+        // upload-limits holds plain constants shared with the admin upload input (PR #18); nav is the
+        // menu's names and links (pure, like the permissions matrix it reads), drawn by AdminNav.
+        if (m[1].startsWith(mod) && m[1] !== "@/lib/admin/upload-limits" && m[1] !== "@/lib/admin/nav") {
           failures.push(`${file}: client component imports server-only module ${m[1]}`);
         }
       }

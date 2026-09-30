@@ -307,7 +307,7 @@ function JobCard({ job, staff, today, keep, trip, order, regular, canOverride = 
 function OverlapCard({ o, keep, board }: { o: Overlap; keep: string; board: JobKind }) {
   if (o.kind === "duplicate") {
     return (
-      <li className="rounded-md border border-[#f0d49a] bg-[#fff8eb] px-4 py-3">
+      <li className="rounded-md border border-warning/30 bg-warning-soft px-4 py-3">
         <p className="t-small text-navy">
           <span className="font-semibold">{o.keep.customer_name ?? "A customer"}</span> sent {o.others.length + 1} pickup requests ({[o.keep, ...o.others].map((j) => j.requested ?? `${waited(j.created_at)} ago`).join(" · ")}).
         </p>
@@ -438,7 +438,7 @@ export default async function DispatchPage({ searchParams }: { searchParams: Sea
             className={`rounded-full border px-4 py-2 t-small font-semibold ${board === k ? "border-navy bg-navy text-white" : "border-line bg-white text-navy hover:border-navy"}`}
           >
             {k === "pickup" ? "Pickups" : "Deliveries"}
-            {counts(k) ? <span className={`ml-2 rounded-full px-1.5 ${board === k ? "bg-white/20" : "bg-[#fff1d6] text-[#8a5a00]"}`}>{counts(k)}</span> : null}
+            {counts(k) ? <span className={`ml-2 rounded-full px-1.5 ${board === k ? "bg-white/20" : "bg-warning-soft text-warning"}`}>{counts(k)}</span> : null}
           </Link>
         ))}
       </nav>
@@ -480,7 +480,7 @@ export default async function DispatchPage({ searchParams }: { searchParams: Sea
                   </>
                 );
                 return g.id === "waiting" ? (
-                  <details key={g.id} className="rounded-md border border-[#f0d49a] bg-[#fff8eb] p-3">
+                  <details key={g.id} className="rounded-md border border-warning/30 bg-warning-soft p-3">
                     <summary className="cursor-pointer t-small font-semibold">{heading}</summary>
                     <p className="mt-1 t-caption text-secondary">{g.hint}</p>
                     {list}

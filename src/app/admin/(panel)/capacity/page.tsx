@@ -27,7 +27,7 @@ const SOURCE: Record<string, string> = { website: "Website", staff: "Staff", dis
 
 const TONE = {
   ok: { bar: "bg-success", text: "text-success" },
-  busy: { bar: "bg-[#c98a00]", text: "text-[#8a5a00]" },
+  busy: { bar: "bg-warning", text: "text-warning" },
   full: { bar: "bg-error", text: "text-error" },
   closed: { bar: "bg-line-strong", text: "text-secondary" },
 } as const;
@@ -74,7 +74,7 @@ function ZoneRow({ slot, zoneName, date, keep, canEdit }: { slot: BoardSlot; zon
                   <span className="font-semibold text-navy">{r.customerName ?? "Customer"}</span>
                   {r.area ? <span className="text-secondary"> · {r.area}</span> : null}
                   {r.orderNumber || r.taskRef ? <span className="text-secondary"> · {r.orderNumber ?? r.taskRef}</span> : null}
-                  {r.over ? <span className="block t-caption text-[#8a5a00]">Over capacity: {r.reason ?? "no reason"}{r.by ? ` (${r.by})` : ""}</span> : null}
+                  {r.over ? <span className="block t-caption text-warning">Over capacity: {r.reason ?? "no reason"}{r.by ? ` (${r.by})` : ""}</span> : null}
                 </span>
                 <span className="t-caption text-secondary">
                   {SOURCE[r.source] ?? r.source}
@@ -324,7 +324,7 @@ function Settings({ board, keep }: { board: Board; keep: string }) {
         <h3 className="font-semibold text-navy">Zones</h3>
         <p className="t-small text-secondary">Sectors that share riders. Each Uttara sector belongs to one zone; addresses without a sector count under “Other”.</p>
         {problems.overlap.length || problems.missing.length ? (
-          <p role="status" className="rounded-md border border-[#e8c46b] bg-[#fff8e6] px-3 py-2 t-small text-[#8a5a00]">
+          <p role="status" className="rounded-md border border-warning/30 bg-warning-soft px-3 py-2 t-small text-warning">
             {problems.missing.length ? `Not in any zone: Sector ${sectorsText(problems.missing)}. Customers there can't book a window. ` : ""}
             {problems.overlap.length ? `In more than one zone: Sector ${sectorsText(problems.overlap)}.` : ""}
           </p>

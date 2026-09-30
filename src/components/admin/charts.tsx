@@ -168,7 +168,7 @@ export function HourStrip({ hours }: { hours: number[] }) {
 export function StatusDot({ status }: { status: "healthy" | "warning" | "error" }) {
   const map = {
     healthy: ["bg-success", "Healthy"],
-    warning: ["bg-[#c77c02]", "Warning"],
+    warning: ["bg-warning", "Warning"],
     error: ["bg-error", "Error"],
   } as const;
   const [bg, text] = map[status];

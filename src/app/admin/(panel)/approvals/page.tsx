@@ -68,7 +68,7 @@ function Change({ c, open }: { c: PriceChange; open: boolean }) {
       )}
 
       {jump !== null && Math.abs(jump) >= 50 ? (
-        <p role="alert" className="mt-3 rounded-md border border-[#e6c48a] bg-[#fff4e5] px-3 py-2 t-small font-medium text-[#8a5300]">
+        <p role="alert" className="mt-3 rounded-md border border-warning/30 bg-warning-soft px-3 py-2 t-small font-medium text-warning">
           Price {jump > 0 ? "rises" : "falls"} by {Math.abs(jump)}%. Check it isn&apos;t a typo before approving.
         </p>
       ) : null}

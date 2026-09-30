@@ -11,7 +11,7 @@ export const metadata = { title: "Notifications · Velto Command Center" };
 const TONES = {
   error: { label: "Problem", dot: "bg-error" },
   action: { label: "New", dot: "bg-blue" },
-  warning: { label: "Warning", dot: "bg-[#c77c02]" },
+  warning: { label: "Warning", dot: "bg-warning" },
   info: { label: "Setup", dot: "bg-line-strong" },
 } as const;
 

@@ -35,7 +35,7 @@ export function SpendCsvImport() {
             </thead>
             <tbody className="divide-y divide-line">
               {preview.rows.map((r) => (
-                <tr key={r.line} className={r.error ? "bg-error-soft" : r.duplicate ? "bg-[#fff8ec]" : ""}>
+                <tr key={r.line} className={r.error ? "bg-error-soft" : r.duplicate ? "bg-warning-soft" : ""}>
                   <td className="px-3 py-1.5 tabular-nums">{r.line}</td>
                   <td className="px-3 py-1.5">{r.value?.spend_date ?? "—"}</td>
                   <td className="px-3 py-1.5">{r.value?.platform ?? "—"}</td>
