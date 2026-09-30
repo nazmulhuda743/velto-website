@@ -36,7 +36,7 @@ import { PickupWindows, hoursText, type PickedWindow } from "./PickupWindows";
 import { submitBooking, uploadBookingPhoto, type BookingFormData, type SubmitResult } from "./submit";
 import { CallbackRequest } from "./CallbackRequest";
 import { useNightDhaka } from "./useNight";
-import { ACCOUNT_OFFER } from "@/lib/account-offer";
+import { FIRST_ORDER_OFFER } from "@/lib/first-order-offer";
 import { DRAFT_KEY, makeDraft, readDraft, type BookingDraft } from "@/lib/booking-recovery";
 
 type Text = FormText["booking"];
@@ -430,7 +430,8 @@ function ServiceChips({
 /** The order summary right above Confirm: items and prices, pickup & delivery, and the estimated total. */
 type Coupon = { code: string; kind: "delivery" | "taka"; amount: number };
 /** The 10% account offer line: "yours" (signed in) or "guest" (asked to sign in first). */
-type AccountOffer = "guest" | "yours";
+/** The first-order 10% line: "yours" for a signed-in customer's first website order, "guest" asks to sign in first. */
+type FirstOrderLine = "guest" | "yours";
 
 /** A free-delivery reward makes the pickup & delivery line free whatever the subtotal; an amount off is applied by Velto at confirmation. */
 const withCoupon = (e: BookingEstimate, coupon?: Coupon): BookingEstimate =>
@@ -443,7 +444,7 @@ function OrderSummary({
   chargeMinor,
   offer,
   coupon,
-  accountOffer,
+  firstOrder,
   signInHref,
   popular = [],
   hints = NO_HINTS,
@@ -455,7 +456,7 @@ function OrderSummary({
   chargeMinor: number | null;
   offer?: string;
   coupon?: Coupon;
-  accountOffer?: AccountOffer;
+  firstOrder?: FirstOrderLine;
   signInHref?: string;
   popular?: PriceItem[];
   /** What this customer usually sends and what customers send together (smart add-ons). */
@@ -587,14 +588,14 @@ function OrderSummary({
             {format(t.summaryCoupon, { code: coupon.code, what: coupon.kind === "delivery" ? t.couponDelivery : fill(t.couponTaka, { n: coupon.amount }, locale) })}
           </p>
         ) : null}
-        {accountOffer ? (
-          <p className="font-semibold text-navy" data-account-offer={accountOffer}>
-            {fill(accountOffer === "guest" ? t.accountOfferGuest : coupon ? t.accountOfferOrCoupon : t.accountOfferYours, { percent: ACCOUNT_OFFER.percent, amount: `৳${localDigits(ACCOUNT_OFFER.minimumTaka, locale)}` }, locale)}
-            {accountOffer === "guest" && signInHref ? (
+        {firstOrder ? (
+          <p className="font-semibold text-navy" data-first-order={firstOrder}>
+            {fill(firstOrder === "guest" ? t.firstOrderGuest : coupon ? t.firstOrderOrCoupon : t.firstOrderYours, { percent: FIRST_ORDER_OFFER.percent }, locale)}
+            {firstOrder === "guest" && signInHref ? (
               <>
                 {" "}
                 <a href={signInHref} className="underline decoration-blue/50 underline-offset-4 hover:decoration-blue">
-                  {t.accountOfferSignIn}
+                  {t.firstOrderSignIn}
                 </a>
               </>
             ) : null}
@@ -830,7 +831,7 @@ export function BookingForm({
   repeatItems = [],
   offer,
   coupon,
-  accountOffer,
+  firstOrder,
   signInHref,
   savedAddresses = [],
   upsellHints = NO_HINTS,
@@ -857,8 +858,8 @@ export function BookingForm({
   offer?: string;
   /** The signed-in customer's monthly-goal reward for this month (the server adds it to the Ops notes). */
   coupon?: Coupon;
-  /** The 10% account offer: "yours" when signed in (with a goal coupon, whichever saves more), "guest" asks to sign in first. */
-  accountOffer?: AccountOffer;
+  /** The first-order 10%: "yours" for a signed-in first website order (with a goal coupon, whichever saves more), "guest" asks to sign in first. */
+  firstOrder?: FirstOrderLine;
   /** Guests: the sign-in page that comes back to /book. */
   signInHref?: string;
   /** Signed-in customer's saved pickup addresses (Profile): one tap fills the area and address. */
@@ -1339,7 +1340,7 @@ export function BookingForm({
             </Fold>
           </Group>
 
-          {s.items.length || coupon || offer || accountOffer ? (
+          {s.items.length || coupon || offer || firstOrder ? (
             <OrderSummary
               s={s}
               t={t}
@@ -1347,7 +1348,7 @@ export function BookingForm({
               chargeMinor={pickupChargeMinor}
               offer={offer}
               coupon={coupon}
-              accountOffer={accountOffer}
+              firstOrder={firstOrder}
               signInHref={signInHref}
               popular={popularItems}
               hints={upsellHints}

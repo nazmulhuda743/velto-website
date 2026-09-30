@@ -110,6 +110,7 @@ export const accountEn = {
   pages: {
     signInTitle: "Continue with your mobile",
     signInIntroBook: "Sign in and we'll fill in your details for this pickup.",
+    bookAsGuest: "Rather not sign in? Book without an account",
     signInIntro: "New or returning, just your number. We’ll text you a code.",
     notices: {
       link_expired: "That link has expired or was already used. Please sign in below.",
@@ -163,8 +164,8 @@ export const accountEn = {
     welcome: "Welcome to your Velto account.",
     ordersFailed: "We couldn't load your orders just now. Please refresh in a moment.",
     bookAnother: "Book another pickup",
-    offerTitle: "{percent}% off when you book from your account",
-    offerBody: "Every website booking of {amount} or more while signed in. Nothing to type: we apply it when we confirm your order.",
+    offerTitle: "{percent}% off your first website order",
+    offerBody: "Book your first pickup here on the website, whatever the amount. Nothing to type: we apply it when we confirm your order.",
     offerCoupon: "You also hold a reward coupon: we apply whichever saves you more, not both.",
     book: "Book a pickup",
     viewAll: "View all orders",

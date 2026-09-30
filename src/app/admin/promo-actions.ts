@@ -5,7 +5,7 @@ import { logActivity } from "@/lib/admin/activity";
 import { saveContent, uploadImage } from "@/lib/admin/content-store";
 import { requireSection } from "@/lib/admin/session";
 import { logServerEvent } from "@/lib/analytics/store";
-import { ACCOUNT_OFFER_TEMPLATE, POPUP_FREQUENCIES, popupFingerprint, popupProblem, promoHrefOk, type PopupFrequency, type PromoPopup } from "@/lib/promo";
+import { FIRST_ORDER_TEMPLATE, POPUP_FREQUENCIES, popupFingerprint, popupProblem, promoHrefOk, type PopupFrequency, type PromoPopup } from "@/lib/promo";
 import { getSiteContent, type SiteSettings } from "@/lib/site-content";
 
 const PAGE = "/admin/promo";
@@ -137,15 +137,15 @@ export async function savePromoPopupAction(form: FormData) {
 }
 
 /**
- * Fill the popup with the "book signed in, 10% off" campaign. It is saved switched off, so
+ * Fill the popup with the first-order 10% campaign (sign in, then book). It is saved switched off, so
  * the owner previews it and switches it on; the poster is removed so the designed card shows.
  */
-export async function loadAccountOfferTemplateAction() {
+export async function loadFirstOrderTemplateAction() {
   const admin = await requireSection("promo");
   const { promo } = await getSiteContent();
   const next: PromoPopup = {
     ...promo,
-    ...ACCOUNT_OFFER_TEMPLATE,
+    ...FIRST_ORDER_TEMPLATE,
     enabled: false,
     frequency: "day",
     delaySeconds: 6,

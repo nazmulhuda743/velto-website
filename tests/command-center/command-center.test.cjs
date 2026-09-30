@@ -169,6 +169,15 @@ test("request intelligence reads Ops descriptions without inventing fields", () 
   assert.equal(legacy.landing, null);
   assert.equal(legacy.device, null);
   assert.equal(legacy.channel, "direct");
+  assert.equal(legacy.firstOrder, false);
+});
+
+test("request intelligence: the first-website-order badge comes from the server's line in the notes", () => {
+  const request = (notes) => ({ id: "3", title: "t", type: "pickup", status: "open", source: "website_booking", outlet_code: "S11", description: ["Name: A", `Notes: ${notes}`].join("\n"), created_at: "2026-09-30T10:00:00Z", done_at: null, done_by_name: null });
+  assert.equal(analyseRequest(request("Items: 2 × Shirt – Ironing. First website order: apply 10% off (any amount). Note: Gate 12")).firstOrder, true);
+  assert.equal(analyseRequest(request("First website order: apply 10% off (any amount), OR Coupon VG-A1B2C3: ৳200 off (valid to 2026-10-31): apply whichever saves the customer more, not both (an unused coupon stays open).")).firstOrder, true);
+  assert.equal(analyseRequest(request("Items: 1 × Shirt – Ironing. Note: (typed by customer, not verified) first web order: apply 10% off")).firstOrder, false);
+  assert.equal(analyseRequest({ ...request("First website order: apply 10% off (any amount)."), source: "website_quote" }).firstOrder, false);
 });
 
 test("customer-account pages stay out of analytics and order numbers are redacted", () => {

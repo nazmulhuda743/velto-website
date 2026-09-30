@@ -19,6 +19,7 @@ import { getGoal } from "@/lib/customer/portal";
 import { usableCoupon } from "@/lib/customer/goal";
 import { keepBanglaSuffixes } from "@/lib/i18n/config";
 import { repeatItemsFor } from "@/lib/booking-repeat";
+import { firstWebsiteBooking } from "@/lib/first-order-lookup";
 import { getItemPairs, getUsualItems } from "@/lib/upsell-data";
 
 /** Quick picks on /book: the everyday items customers send most, exactly as the Ops price list names them. */
@@ -55,10 +56,13 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
     return loyalty.goal.enabled ? getGoal(loyalty.goal.doubleFirst) : null;
   })() : null;
   const coupon = goal ? usableCoupon(goal.coupons, goal.today) : null;
-  // 10% for any booking made signed in (with a goal coupon, whichever saves more); guests are asked
-  // to sign in. Staff, unfinished profiles and unavailable accounts see neither line.
+  // 10% off a number's first website order (lib/first-order-offer.ts): guests are asked to sign in
+  // first; a signed-in customer sees it only while their number has no website booking yet. Staff,
+  // unfinished profiles and unavailable accounts see neither line. Ops gets the note either way.
   const guest = session.kind === "anonymous";
-  const accountOffer = account ? ("yours" as const) : guest ? ("guest" as const) : undefined;
+  const firstOrder = account
+    ? account.phone && (await firstWebsiteBooking(account.phone)) === "first" ? ("yours" as const) : undefined
+    : guest ? ("guest" as const) : undefined;
   const returnTo = `/book${service ? `?service=${encodeURIComponent(service)}` : ""}`;
   const signInHref = guest ? await loginRedirectPath(returnTo) : undefined;
   const locale = await getLocale();
@@ -130,7 +134,7 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
                 pickupChargeMinor={pickupChargeMinor}
                 offer={offer || undefined}
                 coupon={coupon ? { code: coupon.code, kind: coupon.kind, amount: coupon.amount } : undefined}
-                accountOffer={accountOffer}
+                firstOrder={firstOrder}
                 signInHref={signInHref}
                 presetNote={joinNotes(routineNote ?? (repeat ? format(t.repeatNote, { n: repeat }) : t.presetNotes[service ?? ""]), prefs ? careNote(prefs.care, t.care) : "")}
                 savedAddresses={prefs?.addresses ?? []}

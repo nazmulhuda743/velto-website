@@ -468,6 +468,7 @@ function RequestCard({ card, staff, today, ret, open, canPlan }: { card: Card; s
       <details className="group" open={open || undefined}>
         <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-5 py-4">
           <Badge tone={job.source === "website_quote" ? "amber" : "blue"}>{job.source === "website_quote" ? "Quote" : "Booking"}</Badge>
+          {insight?.firstOrder ? <Badge tone="green">First website order · 10% off</Badge> : null}
           <span className="font-semibold text-navy">{job.customer_name ?? "Customer"}</span>
           <span className="t-small text-secondary">{job.phone}</span>
           <span className="t-small text-secondary">{insight?.service ?? ""}</span>
@@ -485,6 +486,13 @@ function RequestCard({ card, staff, today, ret, open, canPlan }: { card: Card; s
         </summary>
         <div className="space-y-5 border-t border-line px-5 py-5">
           <StageBar state={state} />
+
+          {insight?.firstOrder ? (
+            <p className="rounded-md border border-success/40 bg-success-soft px-4 py-3 t-small font-semibold text-navy" data-first-order>
+              This number&apos;s first order on the website: apply 10% off (any amount) when you create the order in Velto Ops.
+              {insight.details.Notes?.includes(" OR Coupon ") ? " They also hold a goal coupon: apply whichever saves them more, not both." : ""}
+            </p>
+          ) : null}
 
           {card.duplicateOf ? (
             <div className="rounded-md border border-[#f0d49a] bg-[#fff8eb] px-4 py-3 t-small text-navy">
