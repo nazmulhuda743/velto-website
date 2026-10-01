@@ -280,3 +280,10 @@ export function deliveryBucket(order: { deliveryDate: string | null; updatedAt: 
 
 /** Whole days since `iso` (e.g. how long an order has been Ready). */
 export const daysSince = (iso: string, now = Date.now()) => Math.max(0, Math.floor((now - Date.parse(iso)) / DAY_MS));
+
+/** 01XXXXXXXXX from any spelling (+880…, 880…, spaces, dashes), or null. */
+export function localPhone(raw: string | null | undefined): string | null {
+  let d = String(raw ?? "").replace(/\D/g, "");
+  if (d.startsWith("880")) d = d.slice(2);
+  return /^01\d{9}$/.test(d) ? d : null;
+}

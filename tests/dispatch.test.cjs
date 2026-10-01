@@ -2,7 +2,7 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
-const { suggestedSlot, findOverlaps, nextFreeSlot, dayPlan, stopCount, needsPlan } = require("../.foundation-test-build/admin/dispatch-logic.js");
+const { suggestedSlot, findOverlaps, nextFreeSlot, dayPlan, stopCount, needsPlan, localPhone } = require("../.foundation-test-build/admin/dispatch-logic.js");
 
 let n = 0;
 const job = (over = {}) => ({
@@ -98,4 +98,15 @@ test("deliveries are grouped by urgency; long-Ready orders wait at the outlet", 
   assert.equal(b(null, old), "waiting");
   assert.equal(deliveryBucket(null, "2026-09-28", now), "nodate", "unknown order: ask for a date");
   assert.equal(daysSince(old, now), 18);
+});
+
+test("localPhone gives one local form for every spelling, and nothing for a non-mobile", () => {
+  for (const raw of ["01712345678", "+8801712345678", "8801712345678", "01712-345 678", "+880 1712-345678"]) {
+    assert.equal(localPhone(raw), "01712345678");
+  }
+  for (const raw of [null, undefined, "", "1712345678", "0171234567", "02-9876543", "017123456789"]) {
+    assert.equal(localPhone(raw), null);
+  }
+  // Two different customers never compare equal.
+  assert.notEqual(localPhone("01712345678"), localPhone("01812345678"));
 });

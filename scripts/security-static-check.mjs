@@ -39,3 +39,11 @@ for (const file of files) {
 
 assert.deepEqual(findings, [], `Potential secret exposure detected:\n${findings.join("\n")}`);
 console.log(`Static security audit passed across ${files.length} tracked text files.`);
+
+// Transport and framing protection must stay on every response (next.config.ts headers()).
+const nextConfig = readFileSync("next.config.ts", "utf8");
+assert.match(nextConfig, /key: "Strict-Transport-Security", value: "max-age=\d{7,}/, "HSTS header missing from next.config.ts");
+assert.match(nextConfig, /key: "Content-Security-Policy", value: enforcedCsp/, "Enforced CSP header missing from next.config.ts");
+assert.match(nextConfig, /"frame-ancestors 'none'"/, "CSP must forbid framing (frame-ancestors 'none')");
+assert.match(nextConfig, /key: "Content-Security-Policy-Report-Only"/, "Report-only CSP missing from next.config.ts");
+assert.doesNotMatch(nextConfig, /value: "max-age=\d+;[^"]*(includeSubDomains|preload)/, "HSTS includeSubDomains/preload needs an owner decision first");
