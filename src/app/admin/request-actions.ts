@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { logActivity } from "@/lib/admin/activity";
-import { contactJob, linkOrder, noteJob, pickJob, type DispatchResult } from "@/lib/admin/dispatch";
+import { contactJob, linkOrder, noteJob, orderMatchesRequestPhone, pickJob, type DispatchResult } from "@/lib/admin/dispatch";
 import { addDays, dayName, dhakaToday, isSlot, slotLabel } from "@/lib/admin/dispatch-logic";
 import { requireSection } from "@/lib/admin/session";
 
@@ -24,6 +24,8 @@ const MESSAGES: Record<string, string> = {
   past: "That day has already passed. Choose today or later.",
   order: "There is no order with that number in Velto Ops yet. Check the number, or link it later.",
   order_format: "Order numbers look like VEL-01952.",
+  phone_mismatch: "That order is under a different phone number, so it was not linked. The customer would see its status and amounts. Check the number; if the order really is theirs (booked under a family member's phone), tick “Order is under a different phone” and link again.",
+  phone_unknown: "The phone on that order couldn't be checked right now. Nothing was linked; try again.",
   note: "Write a note first.",
   slot_full: "That time is full for this area (Capacity). Agree another time with the customer, or ask an Owner or Manager to book it over capacity on Pickup & delivery.",
   slot_closed: "That time is blocked or closed for this area (Capacity). Agree another time with the customer.",
@@ -99,9 +101,17 @@ export async function linkOrderAction(form: FormData) {
   const label = text(form, "label", 120) || "a request";
   if (!UUID.test(job)) back(form, job, { error: MESSAGES.not_found });
   if (!clear && !ORDER.test(order)) back(form, job, { error: MESSAGES.order_format });
+  // The linked order is shown to the customer who made this request, so it must be theirs.
+  // Staff can still link an order booked under another phone, but only deliberately.
+  const otherPhone = form.get("other_phone") === "1";
+  if (!clear && !otherPhone) {
+    const check = await orderMatchesRequestPhone(job, order);
+    if (check === "mismatch") back(form, job, { error: MESSAGES.phone_mismatch });
+    if (check === "unknown") back(form, job, { error: MESSAGES.phone_unknown });
+  }
   const r = await linkOrder(job, order || null, admin.name);
   if (r.ok) {
-    await logActivity(admin, { section: "requests", action: clear ? "request_order_unlinked" : "request_order_linked", target: job, summary: clear ? `Unlinked the order from ${label}` : `Linked ${order} to ${label}` });
+    await logActivity(admin, { section: "requests", action: clear ? "request_order_unlinked" : "request_order_linked", target: job, summary: clear ? `Unlinked the order from ${label}` : `Linked ${order} to ${label}${otherPhone ? " (order under a different phone)" : ""}` });
   }
   finish(form, job, r, clear ? "unlinked" : "linked");
 }

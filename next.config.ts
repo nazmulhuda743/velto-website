@@ -2,7 +2,43 @@ import type { NextConfig } from "next";
 
 const isVercelPreview = Boolean(process.env.VERCEL_ENV) && process.env.VERCEL_ENV !== "production";
 
+/**
+ * Content-Security-Policy, in two layers.
+ *
+ * ENFORCED — only directives that cannot break a working page: no framing of the site, no
+ * <base> hijack, no plugins. This already stops clickjacking of the customer portal and the
+ * staff admin, which carry sessions with real authority.
+ *
+ * REPORT-ONLY — the full allowlist the site should converge on (GTM after consent, Supabase,
+ * Google Maps embeds). Browsers log every violation without blocking anything, so it can be
+ * checked in the browser console on each page type before it is promoted to enforced.
+ * `'unsafe-inline'` remains for scripts because Next.js injects inline bootstrap scripts;
+ * removing it needs nonce-based CSP (middleware + dynamic rendering), a separate change.
+ */
+const enforcedCsp = ["frame-ancestors 'none'", "base-uri 'self'", "object-src 'none'"].join("; ");
+
+const reportOnlyCsp = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://*.googletagmanager.com https://*.google-analytics.com",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https:",
+  "font-src 'self' data:",
+  "connect-src 'self' https://*.supabase.co https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com",
+  "frame-src https://maps.google.com https://www.google.com https://www.googletagmanager.com",
+  "form-action 'self' https://accounts.google.com https://*.supabase.co",
+  "worker-src 'self'",
+  "manifest-src 'self'",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "object-src 'none'",
+].join("; ");
+
 const securityHeaders = [
+  // One year, this host only: no includeSubDomains/preload until every velto.com.bd
+  // subdomain is confirmed HTTPS-only (preload is effectively irreversible).
+  { key: "Strict-Transport-Security", value: "max-age=31536000" },
+  { key: "Content-Security-Policy", value: enforcedCsp },
+  { key: "Content-Security-Policy-Report-Only", value: reportOnlyCsp },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
