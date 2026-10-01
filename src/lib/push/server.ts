@@ -39,15 +39,21 @@ export async function sendPush(target: PushTarget, message: PushMessage): Promis
         "Content-Encoding": "aes128gcm",
         "Content-Type": "application/octet-stream",
         TTL: "86400",
-        Urgency: "normal",
+        // Every Velto notification is something the customer should see now; "normal" lets Android
+        // hold it back while the phone saves battery.
+        Urgency: "high",
         Authorization: vapidAuthorization(target.endpoint, keys, SITE_URL),
       },
       body: new Uint8Array(body),
       signal: AbortSignal.timeout(8000),
       cache: "no-store",
     });
-    return { ok: res.status >= 200 && res.status < 300, gone: res.status === 404 || res.status === 410 };
-  } catch {
+    const ok = res.status >= 200 && res.status < 300;
+    // The push service's answer, without the subscription token (Vercel logs).
+    if (!ok) console.warn("push refused", new URL(target.endpoint).hostname, res.status, (await res.text().catch(() => "")).slice(0, 160));
+    return { ok, gone: res.status === 404 || res.status === 410 };
+  } catch (e) {
+    console.warn("push failed", new URL(target.endpoint).hostname, e instanceof Error ? e.name : "error");
     return { ok: false, gone: false };
   }
 }

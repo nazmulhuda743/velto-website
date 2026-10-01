@@ -138,6 +138,7 @@ self.addEventListener("push", (event) => {
     icon: "/icons/icon-192.png",
     badge: "/icons/icon-monochrome-512.png",
     tag: typeof d.tag === "string" ? d.tag : undefined,
+    renotify: typeof d.tag === "string",
     data: { url },
   }));
 });
