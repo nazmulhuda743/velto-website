@@ -4,7 +4,7 @@
  * unit-tested on its own; the loader and the page only call it.
  */
 import { DEFAULT_CAPACITY, SLOTS, stopCount, type DispatchJob, type SlotId } from "./dispatch-logic";
-import { callTimer, type CustomerContext } from "./request-flow";
+import type { CustomerContext } from "./request-flow";
 
 /** The four tabs: call new requests, assign confirmed ones, arrange deliveries, run the routes. */
 export type TodayTab = "call" | "assign" | "deliver" | "route";
@@ -39,14 +39,12 @@ export function tabFor(job: DispatchJob): TodayTab | "done" | null {
   }
 }
 
-/** New requests still to call: late ones first, then the one that has waited longest. */
-export function callQueue(jobs: DispatchJob[], now = Date.now()): DispatchJob[] {
-  return jobs
-    .filter((j) => tabFor(j) === "call")
-    .sort((a, b) => {
-      const late = Number(callTimer(b, now)?.tone === "late") - Number(callTimer(a, now)?.tone === "late");
-      return late || Date.parse(a.created_at) - Date.parse(b.created_at);
-    });
+/** Waiting this long for the first call is late (red) on Today. Bookings & quotes keeps its own 24-hour "late". */
+export const TODAY_LATE_MINUTES = 30;
+
+/** New requests still to call, the one that has waited longest first (so the late ones lead). */
+export function callQueue(jobs: DispatchJob[]): DispatchJob[] {
+  return jobs.filter((j) => tabFor(j) === "call").sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at));
 }
 
 /** Stops a rider has in one window: only scheduled jobs, a combined trip counts once. */

@@ -66,6 +66,8 @@ export async function confirmAction(form: FormData) {
   if (!UUID.test(job)) back(form, "call", { error: "not_found" });
   if (!isDate(day) || !isSlot(slot)) back(form, "call", { error: "invalid" });
   if (!plannable(day)) back(form, "call", { error: "past" });
+  // Today's Morning after noon (and so on) has already ended.
+  if (windowOver(day, slot as SlotId)) back(form, "call", { error: "slot_past" });
 
   const now = await getJob(job);
   if (now === null) back(form, "call", { error: "not_found" });
@@ -124,8 +126,10 @@ export async function assignAction(form: FormData) {
 
   const riders = await getRiders(day);
   const stops = await getWindowStops(day, window);
+  // Without the window's stops the "full" check can't be made: say so rather than skip it.
+  if (stops === null) back(form, tab, { error: "unavailable" });
   // The job itself doesn't count against the rider (moving a stop within their own window).
-  const choice = riderChoices(riders, (stops ?? []).filter((j) => j.id !== job), day, window).find((r) => r.id === riderId);
+  const choice = riderChoices(riders, stops.filter((j) => j.id !== job), day, window).find((r) => r.id === riderId);
   if (!choice) back(form, tab, { error: "assignee" });
   if (choice.off) back(form, tab, { error: "off" });
   if (choice.full && !force) back(form, tab, { error: "full", extra: { rider: riderId, adate: day, slot: window } });

@@ -39,8 +39,8 @@ test("the call queue is oldest first, and only requests that still need a first 
   const c = job({ created_at: ago(12) });
   const late = job({ created_at: ago(30 * 60) });
   const confirmed = job({ stage: "confirmed", created_at: ago(90) });
-  assert.deepEqual(callQueue([a, b, c], now).map((j) => j.id), [b.id, c.id, a.id]);
-  assert.deepEqual(callQueue([a, late, b, confirmed], now).map((j) => j.id), [late.id, b.id, a.id]);
+  assert.deepEqual(callQueue([a, b, c]).map((j) => j.id), [b.id, c.id, a.id]);
+  assert.deepEqual(callQueue([a, late, b, confirmed]).map((j) => j.id), [late.id, b.id, a.id]);
 });
 
 test("a rider's load counts scheduled stops in that window, a combined trip once", () => {

@@ -20,7 +20,7 @@ import { callTimer } from "@/lib/admin/request-flow";
 import { analyseRequest } from "@/lib/admin/request-intel";
 import { requireSection } from "@/lib/admin/session";
 import { getRiders, getToday, isDay, TODAY_ERRORS, todayError, type TodayData, type TodayError } from "@/lib/admin/today";
-import { callQueue, changedTime, dayStrip, nowWindow, riderChoices, tabFor, windowOver, type Rider, type TodayTab } from "@/lib/admin/today-logic";
+import { callQueue, changedTime, dayStrip, nowWindow, riderChoices, tabFor, TODAY_LATE_MINUTES, windowOver, type Rider, type TodayTab } from "@/lib/admin/today-logic";
 import { normaliseBdPhone } from "@/lib/customer/validation";
 
 export const metadata = { title: "Today · Velto Command Center" };
@@ -34,8 +34,6 @@ export const metadata = { title: "Today · Velto Command Center" };
  */
 
 const TABS: readonly TodayTab[] = ["call", "assign", "deliver", "route"];
-/** Waiting this long for the first call is late (red). */
-const LATE_MINUTES = 30;
 /** Done codes today-actions.ts sends back. */
 const DONE = ["confirmed", "no_answer", "assigned", "picked", "delivered", "linked", "rider_saved", "day_off", "day_on"] as const;
 type Done = (typeof DONE)[number];
@@ -150,7 +148,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Search
   const fallback = nextWindow(today, nowMs);
 
   const callItems: CallItem[] = [
-    ...callQueue(jobs, nowMs).map((j): CallItem => {
+    ...callQueue(jobs).map((j): CallItem => {
       const s = suggestedSlot(j.requested, j.created_at, today);
       const slot = s.slot ?? fallback.slot;
       // A window with no day: today while it is still open, else tomorrow.
@@ -169,7 +167,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Search
         note: noteOf(insightOf(j)?.details),
         label: labelOf(j),
         minutes,
-        late: minutes >= LATE_MINUTES,
+        late: minutes >= TODAY_LATE_MINUTES,
         // In the page language when it reads as a window; a day that has passed is left out.
         asked: s.slot ? windowText(s.slot, s.date, today, t) : null,
         confirm: { date: day, slot },
@@ -190,7 +188,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Search
         note: [c.what, c.services].filter(Boolean).join(" · ") || null,
         label: `Call-back – ${c.name}`,
         minutes,
-        late: minutes >= LATE_MINUTES,
+        late: minutes >= TODAY_LATE_MINUTES,
         asked: asked.slot ? windowText(asked.slot, asked.date, today, t) : null,
         confirm: null,
         attempts: 0,
@@ -209,7 +207,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Search
         note: r.note,
         label: `Weekly pickup – ${r.name}`,
         minutes,
-        late: minutes >= LATE_MINUTES,
+        late: minutes >= TODAY_LATE_MINUTES,
         asked: `${t.everyWeekday(t.weekdays[r.weekday])} · ${t.windows[r.window]}`,
         confirm: null,
         attempts: 0,
