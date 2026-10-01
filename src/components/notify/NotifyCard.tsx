@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { track } from "@/components/layout/Analytics";
 import type { NotifyText } from "@/content/i18n/notify";
 import { currentSubscription, permission, pushSupport, subscribe, unsubscribe } from "@/lib/push/client";
@@ -28,6 +28,26 @@ function Bell() {
         <path d="M10 20a2 2 0 0 0 4 0" />
       </svg>
     </span>
+  );
+}
+
+/** One setting with its switch (Profile → Notifications). The whole row toggles it. */
+function SwitchRow({ icon, tone, title, hint, checked, onChange }: { icon: ReactNode; tone: string; title: string; hint: string; checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="flex min-h-16 cursor-pointer items-center gap-3 py-3.5">
+      <span aria-hidden="true" className={`inline-flex size-10 shrink-0 items-center justify-center rounded-[11px] ${tone}`}>
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[15.5px] font-semibold text-navy">{title}</span>
+        <span className="block t-small text-secondary">{hint}</span>
+      </span>
+      <input type="checkbox" role="switch" className="peer sr-only" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+      <span
+        aria-hidden="true"
+        className="relative h-7 w-[46px] shrink-0 rounded-full bg-[#c9d2d9] transition-colors after:absolute after:left-[3px] after:top-[3px] after:size-[22px] after:rounded-full after:bg-white after:shadow after:transition-[left] peer-checked:bg-action peer-checked:after:left-[21px] peer-focus-visible:ring-2 peer-focus-visible:ring-action peer-focus-visible:ring-offset-2"
+      />
+    </label>
   );
 }
 
@@ -150,44 +170,61 @@ export function NotifyCard({
     );
   }
 
-  const check = "size-5 accent-[#0078bc]";
-
   if (variant === "settings") {
-    // Profile → Notifications: plain settings, like the rest of the page.
+    // Profile → Notifications (owner-approved "Version A"): a heading with On/Off, then switches.
+    const on = view === "on";
+    const svg = "size-[21px]";
     return (
       <div data-notify={view}>
-        {view === "on" ? (
+        <div className="flex items-center justify-between gap-3">
+          <h2 id="notify-settings-title" className="t-h3 text-navy">
+            {t.settingsTitle}
+          </h2>
+          <span className={`rounded-full px-2.5 py-1 text-[12.5px] font-semibold ${on ? "bg-success-soft text-success" : "bg-[#eef1f3] text-secondary"}`}>
+            {on ? `● ${t.stateOn}` : t.stateOff}
+          </span>
+        </div>
+        {on ? (
           <>
-            <p className="text-body">{t.settingsOn}</p>
-            <div className="mt-3 space-y-1">
-              <label className="flex min-h-11 items-center gap-3">
-                <input type="checkbox" className={check} checked={prefs.orderUpdates} onChange={(e) => savePrefs({ ...prefs, orderUpdates: e.target.checked })} />
-                <span className="font-medium text-navy">{t.orderUpdates}</span>
-              </label>
-              <label className="flex min-h-11 items-center gap-3">
-                <input type="checkbox" className={check} checked={prefs.reminders} onChange={(e) => savePrefs({ ...prefs, reminders: e.target.checked })} />
-                <span className="font-medium text-navy">{t.reminders}</span>
-              </label>
+            <p className="mt-1 text-body">{t.settingsOn}</p>
+            <div className="mt-2 divide-y divide-line">
+              <SwitchRow
+                tone="bg-[#e9f4fb] text-action"
+                icon={<svg viewBox="0 0 24 24" className={svg} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 7H4l1.5 12h13z" /><path d="M9 7a3 3 0 0 1 6 0" /></svg>}
+                title={t.orderUpdatesTitle}
+                hint={t.orderUpdatesHint}
+                checked={prefs.orderUpdates}
+                onChange={(v) => savePrefs({ ...prefs, orderUpdates: v })}
+              />
+              <SwitchRow
+                tone="bg-success-soft text-success"
+                icon={<svg viewBox="0 0 24 24" className={svg} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></svg>}
+                title={t.remindersTitle}
+                hint={t.remindersHint}
+                checked={prefs.reminders}
+                onChange={(v) => savePrefs({ ...prefs, reminders: v })}
+              />
             </div>
-            <button type="button" onClick={off} disabled={busy} className="mt-3 min-h-11 t-small font-semibold text-secondary underline underline-offset-4 hover:text-navy">
+            <button type="button" onClick={off} disabled={busy} className="mt-1 min-h-11 t-small font-semibold text-secondary underline underline-offset-4 hover:text-navy">
               {t.turnOff}
             </button>
           </>
         ) : view === "offer" ? (
           <>
-            <p className="max-w-[62ch] text-body">{t.settingsOff}</p>
-            <button type="button" onClick={turnOn} disabled={busy} data-analytics="notify_click" className="mt-4 inline-flex min-h-12 items-center justify-center rounded-md bg-action px-6 font-semibold text-white hover:bg-action-hover disabled:opacity-60">
+            <p className="mt-1 text-body">{t.settingsOff}</p>
+            <button type="button" onClick={turnOn} disabled={busy} data-analytics="notify_click" className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-md bg-action px-6 font-semibold text-white hover:bg-action-hover disabled:opacity-60">
               {busy ? t.turning : t.turnOn}
             </button>
+            <p className="mt-3 t-small text-secondary">{t.settingsPromise}</p>
           </>
         ) : view === "ios" ? (
-          <ol className="list-decimal space-y-1.5 pl-5 text-body">
+          <ol className="mt-2 list-decimal space-y-1.5 pl-5 text-body">
             {t.iosSteps.map((s) => (
               <li key={s}>{s}</li>
             ))}
           </ol>
         ) : (
-          <p className="max-w-[62ch] text-body">{view === "denied" ? t.denied : t.unsupported}</p>
+          <p className="mt-1 text-body">{view === "denied" ? t.denied : t.unsupported}</p>
         )}
         {note ? <p role="status" className="mt-2 t-small text-secondary">{note}</p> : null}
       </div>

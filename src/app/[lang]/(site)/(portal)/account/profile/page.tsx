@@ -58,12 +58,7 @@ export default async function ProfilePage() {
       </section>
 
       <section id="notifications" aria-labelledby="notify-settings-title" className="scroll-mt-24 rounded-lg border border-line bg-white p-5 md:p-8" data-notify-settings>
-        <h2 id="notify-settings-title" className="t-h3 text-navy">
-          {n.settingsTitle}
-        </h2>
-        <div className="mt-3">
-          <NotifyCard t={n} lang={locale === "bn" ? "bn" : "en"} variant="settings" initialPrefs={push ? { orderUpdates: push.orderUpdates, reminders: push.reminders } : undefined} />
-        </div>
+        <NotifyCard t={n} lang={locale === "bn" ? "bn" : "en"} variant="settings" initialPrefs={push ? { orderUpdates: push.orderUpdates, reminders: push.reminders } : undefined} />
       </section>
 
       <section aria-labelledby="sign-in-title" className="rounded-lg border border-line bg-white p-5 md:p-8">
