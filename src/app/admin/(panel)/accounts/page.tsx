@@ -6,6 +6,8 @@ import { displayBdPhone } from "@/lib/customer/validation";
 import { requestDate } from "@/lib/admin/request-details";
 import { decideLinkAction } from "../../actions";
 import { requireSection } from "@/lib/admin/session";
+import { deviceLabel, getPushDevices, type PushDevice } from "@/lib/admin/push-admin";
+import { sendTestPushAction } from "../../push-actions";
 
 const SAVED: Record<string, string> = {
   approve: "Linked. The customer can now see their Velto orders.",
@@ -132,6 +134,40 @@ function Flag({ f }: { f: IdentityFlag }) {
   );
 }
 
+
+const PUSH: Record<string, string> = {
+  sent: "Sent. The push service accepted it; it should appear on the phone within a few seconds. If it doesn't, the phone's own settings are blocking it (Android: Settings → Apps → Chrome → Notifications).",
+  none: "This phone has no active notifications. The customer needs to turn them on in their account.",
+  failed: "The push service refused it. The customer should turn notifications off and on again in their account.",
+  invalid: "That isn't a Bangladeshi mobile number.",
+  unavailable: "Couldn't reach the database. Try again in a moment.",
+};
+
+/** One phone that allowed notifications: is it working, and a test button. */
+function PushRow({ d }: { d: PushDevice }) {
+  const status = !d.active ? { tone: "neutral" as const, text: "Off" } : d.failures > 0 ? { tone: "amber" as const, text: `Failing ×${d.failures}` } : { tone: "green" as const, text: "Working" };
+  return (
+    <li className="flex flex-wrap items-center justify-between gap-3 py-3">
+      <div className="min-w-0">
+        <p className="font-semibold text-navy">
+          {d.phone ? displayBdPhone(d.phone) : "Unknown number"} <Badge tone={status.tone}>{status.text}</Badge>
+        </p>
+        <p className="mt-0.5 t-small text-secondary">
+          {deviceLabel(d.device)} · {d.lang === "en" ? "English" : "Bangla"} · on since {whenDhaka(d.createdAt)} · last delivered {d.lastSentAt ? whenDhaka(d.lastSentAt) : "never"}
+        </p>
+      </div>
+      {d.active && d.phone ? (
+        <form action={sendTestPushAction}>
+          <input type="hidden" name="phone" value={d.phone} />
+          <button type="submit" className="admin-btn-secondary">
+            Send test notification
+          </button>
+        </form>
+      ) : null}
+    </li>
+  );
+}
+
 export default async function AccountsPage({ searchParams }: { searchParams: SearchParams }) {
   await requireSection("accounts");
   const params = await searchParams;
@@ -146,6 +182,9 @@ export default async function AccountsPage({ searchParams }: { searchParams: Sea
   const saved = one(params.saved);
   const flags = await getIdentityFlags();
   const openFlags = flags.state === "ok" ? flags.data.filter((f) => !f.reviewedAt) : [];
+  const push = await getPushDevices();
+  const pushResult = one(params.push);
+  const activePhones = push.state === "ok" ? new Set(push.devices.filter((d) => d.active).map((d) => d.phone)).size : 0;
 
   return (
     <>
@@ -198,6 +237,31 @@ export default async function AccountsPage({ searchParams }: { searchParams: Sea
           <ul className="mt-4 space-y-3">
             {flags.data.slice(0, 50).map((f) => (
               <Flag key={`${f.authUserId}-${f.customerId}`} f={f} />
+            ))}
+          </ul>
+        )}
+      </section>
+      <section id="notifications" aria-labelledby="push-title" className="mt-10 scroll-mt-24">
+        <h2 id="push-title" className="t-h4 text-navy">
+          Phone notifications {push.state === "ok" ? <span className="text-secondary">({activePhones} {activePhones === 1 ? "phone" : "phones"})</span> : null}
+        </h2>
+        <p className="mt-1 max-w-[70ch] t-small text-secondary">
+          Customers who turned on order updates on their phone. “Last delivered” is when the push service last accepted a notification for that phone. Use “Send test notification” to check one phone.
+        </p>
+        {pushResult && PUSH[pushResult] ? (
+          <p role="status" className={`mt-4 rounded-md px-4 py-3 t-small font-medium ${pushResult === "sent" ? "border border-success/30 bg-success-soft text-success" : "border border-warning/40 bg-warning-soft text-navy"}`}>
+            {PUSH[pushResult]}
+            {pushResult === "failed" && one(params.status) ? ` (answer: ${one(params.status)})` : ""}
+          </p>
+        ) : null}
+        {push.state !== "ok" ? (
+          <p className="mt-4 t-small text-secondary">{push.state === "missing" ? "Not set up here yet." : "Couldn't load notifications. Refresh to try again."}</p>
+        ) : push.devices.length === 0 ? (
+          <p className="mt-4 admin-card p-5 t-small text-secondary">No customer has turned on notifications yet.</p>
+        ) : (
+          <ul className="mt-4 admin-card divide-y divide-line px-5">
+            {push.devices.slice(0, 100).map((d, i) => (
+              <PushRow key={`${d.phone}-${d.createdAt}-${i}`} d={d} />
             ))}
           </ul>
         )}
