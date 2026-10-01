@@ -33,7 +33,8 @@ function Bell() {
 
 /**
  * "Get updates on your phone". The value comes first (what Velto will tell them); the phone's own
- * prompt only appears after "Turn on". Account variant: the full card with settings once on.
+ * prompt only appears after "Turn on". Account variant: the offer only (nothing once on, so the
+ * account home stays about orders). Settings variant (Profile): on/off and what to receive.
  * After-booking variant (the one-tap reminder page): one short question, tied to the reminder code.
  * `demo` fixes the state for design review (local QA pages only).
  */
@@ -47,7 +48,7 @@ export function NotifyCard({
 }: {
   t: NotifyText;
   lang: "bn" | "en";
-  variant?: "account" | "after";
+  variant?: "account" | "after" | "settings";
   code?: string;
   initialPrefs?: Prefs;
   demo?: View;
@@ -149,42 +150,58 @@ export function NotifyCard({
     );
   }
 
-  if (view === "on") {
-    // Already on: one quiet line, with the choices folded away. Nothing to do here day to day.
+  const check = "size-5 accent-[#0078bc]";
+
+  if (variant === "settings") {
+    // Profile → Notifications: plain settings, like the rest of the page.
     return (
-      <section aria-label={t.onTitle} className="border-y border-line py-3" data-notify="on">
-        <details className="group">
-          <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2.5 [&::-webkit-details-marker]:hidden">
-            <span aria-hidden="true" className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-success-soft text-success">
-              <svg viewBox="0 0 20 20" className="size-3.5">
-                <path d="M4.5 10.5l3.5 3.5 7.5-8" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </span>
-            <span className="t-small font-semibold text-navy">{t.onTitle}</span>
-            <span className="ml-auto inline-flex items-center gap-1 t-small text-secondary">
-              {t.settings}
-              <svg aria-hidden="true" viewBox="0 0 20 20" className="size-4 transition-transform group-open:rotate-180">
-                <path d="M5 8l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </span>
-          </summary>
-          <div className="pb-1 pl-8.5 pt-1">
-            <label className="flex min-h-11 items-center gap-3 t-small text-navy">
-              <input type="checkbox" className="size-5" checked={prefs.orderUpdates} onChange={(e) => savePrefs({ ...prefs, orderUpdates: e.target.checked })} />
-              {t.orderUpdates}
-            </label>
-            <label className="flex min-h-11 items-center gap-3 t-small text-navy">
-              <input type="checkbox" className="size-5" checked={prefs.reminders} onChange={(e) => savePrefs({ ...prefs, reminders: e.target.checked })} />
-              {t.reminders}
-            </label>
-            <button type="button" onClick={off} disabled={busy} className="min-h-11 t-small font-semibold text-secondary underline underline-offset-4 hover:text-navy">
+      <div data-notify={view}>
+        {view === "on" ? (
+          <>
+            <p className="text-body">{t.settingsOn}</p>
+            <div className="mt-3 space-y-1">
+              <label className="flex min-h-11 items-center gap-3">
+                <input type="checkbox" className={check} checked={prefs.orderUpdates} onChange={(e) => savePrefs({ ...prefs, orderUpdates: e.target.checked })} />
+                <span className="font-medium text-navy">{t.orderUpdates}</span>
+              </label>
+              <label className="flex min-h-11 items-center gap-3">
+                <input type="checkbox" className={check} checked={prefs.reminders} onChange={(e) => savePrefs({ ...prefs, reminders: e.target.checked })} />
+                <span className="font-medium text-navy">{t.reminders}</span>
+              </label>
+            </div>
+            <button type="button" onClick={off} disabled={busy} className="mt-3 min-h-11 t-small font-semibold text-secondary underline underline-offset-4 hover:text-navy">
               {t.turnOff}
             </button>
-          </div>
-        </details>
-        {note ? <p role="status" className="mt-1 t-small text-secondary">{note}</p> : null}
-      </section>
+          </>
+        ) : view === "offer" ? (
+          <>
+            <p className="max-w-[62ch] text-body">{t.settingsOff}</p>
+            <button type="button" onClick={turnOn} disabled={busy} data-analytics="notify_click" className="mt-4 inline-flex min-h-12 items-center justify-center rounded-md bg-action px-6 font-semibold text-white hover:bg-action-hover disabled:opacity-60">
+              {busy ? t.turning : t.turnOn}
+            </button>
+          </>
+        ) : view === "ios" ? (
+          <ol className="list-decimal space-y-1.5 pl-5 text-body">
+            {t.iosSteps.map((s) => (
+              <li key={s}>{s}</li>
+            ))}
+          </ol>
+        ) : (
+          <p className="max-w-[62ch] text-body">{view === "denied" ? t.denied : t.unsupported}</p>
+        )}
+        {note ? <p role="status" className="mt-2 t-small text-secondary">{note}</p> : null}
+      </div>
     );
+  }
+
+  if (view === "on") {
+    // Account home: once on, nothing stays here (settings live in Profile). Right after turning on,
+    // one line confirms it and says a notification is on its way.
+    return note ? (
+      <p role="status" className="rounded-md bg-success-soft px-4 py-3 t-small font-semibold text-success" data-notify="on">
+        ✓ {note}
+      </p>
+    ) : null;
   }
 
   return (

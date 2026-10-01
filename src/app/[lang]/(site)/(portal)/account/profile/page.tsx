@@ -9,6 +9,9 @@ import { WHATSAPP_URL } from "@/content/site";
 import { getCustomerSession, getPreferences } from "@/lib/customer/portal";
 import { fill } from "@/lib/i18n/config";
 import { displayBdPhone } from "@/lib/customer/validation";
+import { NotifyCard } from "@/components/notify/NotifyCard";
+import { notifyText } from "@/content/i18n/notify";
+import { supabaseRpc } from "@/lib/supabase-server";
 
 export default async function ProfilePage() {
   const session = await getCustomerSession();
@@ -23,6 +26,10 @@ export default async function ProfilePage() {
     ...Array.from({ length: 18 }, (_, i) => ({ value: String(i + 1), label: fill(text.forms.areaSector, { n: i + 1 }, locale) })),
     { value: "outside", label: text.forms.areaOutside },
   ];
+
+  // What this login receives (the card itself checks whether this browser is on).
+  const push = await supabaseRpc<{ devices: number; orderUpdates: boolean; reminders: boolean }>("website_push_status", { p_auth_user_id: session.user.id }).catch(() => null);
+  const n = notifyText(locale);
 
   return (
     <div className="space-y-8">
@@ -47,6 +54,15 @@ export default async function ProfilePage() {
         <p className="mt-2 max-w-[62ch] text-body">{text.prefs.intro}</p>
         <div className="mt-6">
           <PreferencesForm initial={prefs} t={text.prefs} areas={areas} />
+        </div>
+      </section>
+
+      <section id="notifications" aria-labelledby="notify-settings-title" className="scroll-mt-24 rounded-lg border border-line bg-white p-5 md:p-8" data-notify-settings>
+        <h2 id="notify-settings-title" className="t-h3 text-navy">
+          {n.settingsTitle}
+        </h2>
+        <div className="mt-3">
+          <NotifyCard t={n} lang={locale === "bn" ? "bn" : "en"} variant="settings" initialPrefs={push ? { orderUpdates: push.orderUpdates, reminders: push.reminders } : undefined} />
         </div>
       </section>
 
