@@ -23,8 +23,8 @@ by person and links back to each booking.
 
 Data: `docs/technical/sql/website_dispatch_stages.sql` (stages `confirmed` and `picked`, call
 attempts, notes, order link, `website_dispatch_context`). A pickup task finished in Velto Ops now
-means "picked". Delivery jobs are only created for orders that became Ready in the last 7 days or
-are due from yesterday on. Test: `docs/technical/sql/tests/website_dispatch_stages_test.sql`
+means "picked". Delivery jobs are only created for orders that became Ready in the last 30 days (7 before
+`website_today.sql`) or are due from yesterday on. Test: `docs/technical/sql/tests/website_dispatch_stages_test.sql`
 (staging only; rolls back). Rules: `src/lib/admin/request-flow.ts`, tested in `tests/request-flow.test.cjs`.
 
 ## The flow
@@ -104,15 +104,23 @@ applied by a human after review, together with `website_customer_pickups.sql`.
   `website_riders` (`profile_id`, `can_ride`, `stops_per_window` 1–30, default 8, `updated_at`,
   `updated_by`) and `website_rider_days_off` (`profile_id`, `day`). Until anyone has
   `can_ride = true`, every active staff member counts as a rider at 8 stops.
+- **Owner of `website_dispatch_sync()`:** `website_today.sql`. Do not re-apply the older
+  definitions in `website_dispatch.sql`, `website_dispatch_stages.sql` or
+  `website_dispatch_deliveries.sql`; they would undo the changes below.
 - **Cron:** pg_cron job `website-dispatch-sync`, `*/5 * * * *`:
   `select public.website_dispatch_sync(); select public.website_dispatch_autolink();`. Opening the
-  admin still syncs too. Re-running the SQL updates the job by name; it never duplicates it.
+  admin still syncs too; one sync runs at a time (transaction advisory lock) and every insert is
+  `on conflict do nothing`, so the cron and a page open never collide. Re-running the SQL updates
+  the job by name; it never duplicates it.
+- **Ready orders:** orders Ready in the last 30 days (or due from yesterday on) come onto the
+  board; orders Ready for longer are left to Ops.
 - **Weekly routines:** the sync also brings Ops' weekly pickup tasks (`tasks.source = 'weekly'`,
-  `type = 'pickup'`, due today or later) onto the board as job source `weekly`, stage `confirmed`
-  (To assign) on the due day in the routine's window. Once per task.
+  `type = 'pickup'`, due today or later, still open, routine `active`) onto the board as job source
+  `weekly`, stage `confirmed` (To assign) on the due day in the routine's window. Once per task.
 - **Auto-link:** a `picked` pickup with no order gets the Ops order for the same phone created
-  between 1 day before and 2 days after the pickup, when it is the only such order (not cancelled,
-  not linked to another pickup) and no other picked job claims it. It goes through
+  between 1 day before and 2 days after the pickup, but not before the job reached the board, when
+  it is the only such order (not cancelled, not linked to another pickup) and no other picked job
+  claims it. One run at a time (a concurrent run returns 0). It goes through
   `website_dispatch_link_order(..., 'Auto-link')` (history "order linked" by "Auto-link"). Two or
   more candidates: nothing is linked; the manager picks on Today.
 - **Customer changes time** (`portal_pickup_change`): back to `new` (To call) either way, history

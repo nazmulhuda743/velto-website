@@ -12,11 +12,17 @@
 --    type 'pickup', made by create_weekly_pickup_tasks) due today or later onto the board. The
 --    customer already agreed to the routine, so they start at "confirmed" (To assign) on the day
 --    the task is due, in the routine's window. Idempotent on task_id. New job source: 'weekly'.
---    Everything else is the live definition (website_dispatch_deliveries.sql, staging = production
---    by md5 on 2026-09-30), unchanged.
+--    Only active subscriptions, and not tasks already done or cancelled in Ops.
+--    Otherwise the live definition (website_dispatch_deliveries.sql, staging = production by md5 on
+--    2026-09-30), with three changes: one sync at a time (transaction advisory lock, so the cron and
+--    a page-open sync never race), `on conflict do nothing` on every insert, and Ready orders from the
+--    last 30 days (was 7) come onto the board; orders Ready for longer are left to Ops.
+--    THIS FILE NOW OWNS website_dispatch_sync(): do not re-apply the older definitions in
+--    website_dispatch.sql, website_dispatch_stages.sql or website_dispatch_deliveries.sql.
 -- 4. website_dispatch_autolink(): a picked pickup with no order gets the Ops order made for the same
---    phone between 1 day before and 2 days after the pickup, when that order is the only candidate
---    (and the job its only match). Two or more: nothing is linked; the manager picks on Today.
+--    phone between 1 day before and 2 days after the pickup (never before the job reached the board),
+--    when that order is the only candidate (and the job its only match). One run at a time: a second
+--    concurrent run returns 0. Two or more: nothing is linked; the manager picks on Today.
 --    Linking goes through website_dispatch_link_order(..., 'Auto-link'). Returns links made.
 -- 5. pg_cron job "website-dispatch-sync", every 5 minutes: sync, then auto-link. cron.schedule with
 --    a job name updates the existing job of that name (pg_cron >= 1.3), so re-running is safe.
@@ -24,7 +30,8 @@
 -- Requires website_dispatch.sql, website_dispatch_stages.sql, website_dispatch_deliveries.sql and
 -- website_routines.sql (Ops weekly_subscriptions). Tables and functions: service role only.
 -- Orders are only read. Idempotent.
--- Status: applied and tested on staging 2026-09-30. Production: not applied (a human applies it).
+-- Status: applied and tested on staging 2026-09-30 (with the review fixes: sync lock, auto-link
+-- lower bound and lock, 30-day Ready orders, active routines only). Production: not applied (a human applies it).
 
 begin;
 
@@ -81,6 +88,9 @@ declare
   v_closed integer;
   v_today date := (now() at time zone 'Asia/Dhaka')::date;
 begin
+  -- One sync at a time (cron and page opens): a second caller waits for the first to commit.
+  perform pg_advisory_xact_lock(hashtext('website_dispatch_sync'));
+
   insert into public.website_dispatch_jobs (kind, task_id, source, customer_name, phone, phone_key, address, area, outlet_code, requested, stage, picked_at)
   select 'pickup', t.id, t.source,
          left(public.website_dispatch_line(t.description, 'Name'), 120),
@@ -95,12 +105,13 @@ begin
     from public.tasks t
    where t.source in ('website_booking', 'website_quote')
      and t.created_at > now() - interval '30 days'
-     and not exists (select 1 from public.website_dispatch_jobs j where j.task_id = t.id);
+     and not exists (select 1 from public.website_dispatch_jobs j where j.task_id = t.id)
+  on conflict (task_id) do nothing;
   get diagnostics v_new_pickups = row_count;
 
-  -- Ops weekly routine pickups due today or later: the customer already agreed, so they start at
-  -- "confirmed" (To assign) on the due day, in the routine's window when it is one of ours.
-  -- A task already done in Ops moves to "picked" in the closing step below.
+  -- Ops weekly routine pickups due today or later, for active routines and still open in Ops: the
+  -- customer already agreed, so they start at "confirmed" (To assign) on the due day, in the
+  -- routine's window when it is one of ours.
   insert into public.website_dispatch_jobs (kind, task_id, source, customer_name, phone, phone_key, address, area, outlet_code,
                                             requested, stage, slot_date, slot, confirmed_at, confirmed_by)
   select 'pickup', t.id, 'weekly',
@@ -116,16 +127,19 @@ begin
          w.slot,
          now(), 'Weekly routine'
     from public.tasks t
-    left join public.weekly_subscriptions s on s.id::text = t.source_ref
+    join public.weekly_subscriptions s on s.id::text = t.source_ref and s.status = 'active'
     cross join lateral (
       select case when lower(btrim(s.time_window)) in ('morning', 'afternoon', 'evening') then lower(btrim(s.time_window)) end as slot
     ) w
    where t.source = 'weekly' and t.type = 'pickup'
+     and t.status not in ('done', 'cancelled')
      and (t.due_at at time zone 'Asia/Dhaka')::date >= v_today
      and not exists (select 1 from public.website_dispatch_jobs j where j.task_id = t.id)
   on conflict (task_id) do nothing;
   get diagnostics v_new_weekly = row_count;
 
+  -- Orders that are Ready (or already out) with no live delivery job: those that became Ready in the
+  -- last 30 days or are due from yesterday on. Orders Ready for longer than 30 days are left to Ops.
   insert into public.website_dispatch_jobs (kind, order_number, source, customer_name, phone, phone_key, address, area, outlet_code, requested, stage)
   select 'delivery', o.order_number, 'ops_order',
          left(o.name_snapshot, 120), left(o.phone_snapshot, 32), public.website_dispatch_phone_key(o.phone_snapshot),
@@ -135,11 +149,12 @@ begin
     from public.orders o
    where o.order_status in ('Ready', 'Out for Delivery')
      and o.order_number ~ '^VELR?-[0-9]{3,6}$'
-     and (o.updated_at > now() - interval '7 days' or o.delivery_date >= v_today - 1)
+     and (o.updated_at > now() - interval '30 days' or o.delivery_date >= v_today - 1)
      and not exists (
        select 1 from public.website_dispatch_jobs j
         where j.kind = 'delivery' and j.order_number = o.order_number
-          and (j.stage not in ('cancelled', 'merged') or (j.stage = 'cancelled' and j.updated_at >= o.updated_at)));
+          and (j.stage not in ('cancelled', 'merged') or (j.stage = 'cancelled' and j.updated_at >= o.updated_at)))
+  on conflict do nothing;
   get diagnostics v_new_deliveries = row_count;
 
   with closed as (
@@ -188,17 +203,23 @@ declare
   r jsonb;
   v_links integer := 0;
 begin
+  -- One run at a time; a run that finds another in progress does nothing (the next one catches up).
+  if not pg_try_advisory_xact_lock(hashtext('website_dispatch_autolink')) then
+    return 0;
+  end if;
   for c in
     -- Candidate pairs: an order for the job's phone, created from 1 day before to 2 days after the
-    -- pickup, not cancelled and not already linked to a pickup job. orders.phone_snapshot is
-    -- constrained to 01XXXXXXXXX, the same form website_dispatch_phone_key gives phone_key, so the
-    -- match is a plain (indexed) equality.
+    -- pickup but not before the job itself (an order made before the booking reached the board is
+    -- not that booking's order), not cancelled and not already linked to a pickup job.
+    -- orders.phone_snapshot is constrained to 01XXXXXXXXX, the same form website_dispatch_phone_key
+    -- gives phone_key, so the match is a plain (indexed) equality.
     with pairs as (
       select j.id as job_id, o.order_number
         from public.website_dispatch_jobs j
         join public.orders o
           on o.phone_snapshot = j.phone_key
-         and o.created_at between j.picked_at - interval '1 day' and j.picked_at + interval '2 days'
+         and o.created_at >= greatest(j.picked_at - interval '1 day', j.created_at)
+         and o.created_at <= j.picked_at + interval '2 days'
        where j.kind = 'pickup' and j.stage = 'picked' and j.order_number is null
          and j.picked_at > now() - interval '7 days'
          and j.phone_key ~ '^01[0-9]{9}$'
@@ -213,11 +234,15 @@ begin
               from pairs p) p
      where p.per_job = 1 and p.per_order = 1
   loop
-    -- Still unlinked (a manager may have linked it meanwhile); a job locked elsewhere waits for the next run.
+    -- Still unlinked and the order still free (a manager may have linked either meanwhile); a job
+    -- locked elsewhere waits for the next run.
     perform 1 from public.website_dispatch_jobs
      where id = c.job_id and stage = 'picked' and order_number is null
      for update skip locked;
     if not found then continue; end if;
+    if exists (select 1 from public.website_dispatch_jobs x where x.kind = 'pickup' and x.order_number = c.order_number) then
+      continue;
+    end if;
     r := public.website_dispatch_link_order(c.job_id, c.order_number, 'Auto-link');
     if coalesce((r ->> 'ok')::boolean, false) then v_links := v_links + 1; end if;
   end loop;
