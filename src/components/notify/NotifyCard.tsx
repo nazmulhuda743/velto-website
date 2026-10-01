@@ -88,6 +88,7 @@ export function NotifyCard({
     setBusy(false);
     if (r.ok) {
       track("notify_on", { placement: variant });
+      if (r.welcomed) setNote(t.welcomeSent);
       setView("on");
     } else if (r.reason === "denied") {
       track("notify_denied", { placement: variant });
@@ -109,13 +110,6 @@ export function NotifyCard({
   async function savePrefs(next: Prefs) {
     setPrefs(next);
     await fetch("/api/push/manage", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "prefs", ...next }) }).catch(() => null);
-  }
-
-  async function test() {
-    setNote(null);
-    const res = await fetch("/api/push/manage", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "test" }) }).catch(() => null);
-    const body = (await res?.json().catch(() => null)) as { ok?: boolean } | null;
-    setNote(body?.ok ? t.testSent : t.testFailed);
   }
 
   async function off() {
@@ -156,35 +150,38 @@ export function NotifyCard({
   }
 
   if (view === "on") {
+    // Already on: one quiet line, with the choices folded away. Nothing to do here day to day.
     return (
-      <section aria-labelledby="notify-title" className={shell} data-notify="on">
-        <div className="flex gap-3">
-          <Bell />
-          <div className="min-w-0">
-            <h2 id="notify-title" className="text-[18px] font-semibold text-navy">
-              {t.onTitle}
-            </h2>
-            <p className="mt-0.5 t-small text-body">{t.onBody}</p>
+      <section aria-label={t.onTitle} className="border-y border-line py-3" data-notify="on">
+        <details className="group">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2.5 [&::-webkit-details-marker]:hidden">
+            <span aria-hidden="true" className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-success-soft text-success">
+              <svg viewBox="0 0 20 20" className="size-3.5">
+                <path d="M4.5 10.5l3.5 3.5 7.5-8" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+            <span className="t-small font-semibold text-navy">{t.onTitle}</span>
+            <span className="ml-auto inline-flex items-center gap-1 t-small text-secondary">
+              {t.settings}
+              <svg aria-hidden="true" viewBox="0 0 20 20" className="size-4 transition-transform group-open:rotate-180">
+                <path d="M5 8l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+          </summary>
+          <div className="pb-1 pl-8.5 pt-1">
+            <label className="flex min-h-11 items-center gap-3 t-small text-navy">
+              <input type="checkbox" className="size-5" checked={prefs.orderUpdates} onChange={(e) => savePrefs({ ...prefs, orderUpdates: e.target.checked })} />
+              {t.orderUpdates}
+            </label>
+            <label className="flex min-h-11 items-center gap-3 t-small text-navy">
+              <input type="checkbox" className="size-5" checked={prefs.reminders} onChange={(e) => savePrefs({ ...prefs, reminders: e.target.checked })} />
+              {t.reminders}
+            </label>
+            <button type="button" onClick={off} disabled={busy} className="min-h-11 t-small font-semibold text-secondary underline underline-offset-4 hover:text-navy">
+              {t.turnOff}
+            </button>
           </div>
-        </div>
-        <div className="mt-4 space-y-2">
-          <label className="flex min-h-11 items-center gap-3 t-small text-navy">
-            <input type="checkbox" className="size-5" checked={prefs.orderUpdates} onChange={(e) => savePrefs({ ...prefs, orderUpdates: e.target.checked })} />
-            {t.orderUpdates}
-          </label>
-          <label className="flex min-h-11 items-center gap-3 t-small text-navy">
-            <input type="checkbox" className="size-5" checked={prefs.reminders} onChange={(e) => savePrefs({ ...prefs, reminders: e.target.checked })} />
-            {t.reminders}
-          </label>
-        </div>
-        <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">
-          <button type="button" onClick={test} className="min-h-11 t-small font-semibold text-action underline underline-offset-4">
-            {t.test}
-          </button>
-          <button type="button" onClick={off} disabled={busy} className="min-h-11 t-small font-semibold text-secondary underline underline-offset-4 hover:text-navy">
-            {t.turnOff}
-          </button>
-        </div>
+        </details>
         {note ? <p role="status" className="mt-1 t-small text-secondary">{note}</p> : null}
       </section>
     );

@@ -40,7 +40,7 @@ export async function currentSubscription(): Promise<PushSubscription | null> {
   }
 }
 
-export type SubscribeResult = { ok: true } | { ok: false; reason: "denied" | "unsupported" | "failed" | "sign_in" };
+export type SubscribeResult = { ok: true; welcomed: boolean } | { ok: false; reason: "denied" | "unsupported" | "failed" | "sign_in" };
 
 /** Ask the phone, subscribe, and save it on the Velto server (signed in, or with a reminder code). */
 export async function subscribe(lang: "bn" | "en", code?: string): Promise<SubscribeResult> {
@@ -60,7 +60,9 @@ export async function subscribe(lang: "bn" | "en", code?: string): Promise<Subsc
       body: JSON.stringify({ subscription: sub.toJSON(), lang, ...(code ? { code } : {}) }),
     });
     if (res.status === 401) return { ok: false, reason: "sign_in" };
-    return res.ok ? { ok: true } : { ok: false, reason: "failed" };
+    if (!res.ok) return { ok: false, reason: "failed" };
+    const saved = (await res.json().catch(() => null)) as { welcomed?: boolean } | null;
+    return { ok: true, welcomed: saved?.welcomed === true };
   } catch {
     return { ok: false, reason: "failed" };
   }

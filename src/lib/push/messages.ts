@@ -59,7 +59,8 @@ export function reminderMessage(
     : { title: `${name ? `${name}, time` : "Time"} for your ${svc} pickup?`, body: "Same as last time. One tap to book.", url, tag: "reminder" };
 }
 
-export const testMessage = (lang: PushLang): PushMessage =>
+/** Sent once, right after a phone turns notifications on: proof that it works, no test button needed. */
+export const welcomeMessage = (lang: PushLang): PushMessage =>
   lang === "bn"
-    ? { title: "নোটিফিকেশন চালু হয়েছে", body: "অর্ডারের খবর এভাবেই Velto আপনাকে জানাবে।", url: "/bn/account", tag: "test" }
-    : { title: "Notifications are on", body: "This is how Velto will tell you about your orders.", url: "/account", tag: "test" };
+    ? { title: "নোটিফিকেশন চালু হয়েছে", body: "অর্ডারের খবর এভাবেই Velto আপনাকে জানাবে।", url: "/bn/account", tag: "welcome" }
+    : { title: "Notifications are on", body: "This is how Velto will tell you about your orders.", url: "/account", tag: "welcome" };
