@@ -49,3 +49,19 @@ test("SMS only between 10:00 and 20:00 Dhaka", () => {
   assert.equal(r.smsHourOk(new Date("2026-10-01T03:00:00Z")), false, "09:00 Dhaka");
   assert.equal(r.smsHourOk(new Date("2026-10-01T04:30:00Z")), true, "10:30 Dhaka");
 });
+
+test("first-timer and season playbooks: off by default, valid texts, short enough", () => {
+  const s = r.parseRhythm({ onetimer: { enabled: true, maxPerRun: 20 }, seasonal: { textBn: "no link" } });
+  assert.equal(s.onetimer.enabled, true);
+  assert.equal(s.onetimer.maxPerRun, 20);
+  assert.equal(s.seasonal.enabled, false);
+  assert.equal(s.seasonal.textBn, r.DEFAULT_TEXTS.seasonal.bn);
+  assert.deepEqual([...r.SMS_PLAYBOOKS], ["regularDue", "onetimer", "seasonal"]);
+  assert.equal(r.PLAYBOOK_ID.onetimer, "onetimer");
+  for (const k of r.SMS_PLAYBOOKS) {
+    assert.equal(r.templateProblem(r.DEFAULT_TEXTS[k].bn), null, k);
+    assert.equal(r.templateProblem(r.DEFAULT_TEXTS[k].en), null, k);
+    const bn = r.renderMessage(r.DEFAULT_TEXTS[k].bn, { firstName: "Nazmul", service: "Dry Cleaning", link: r.SAMPLE_LINK }, "bn");
+    assert.ok(r.smsParts(bn).parts <= 2, `${k} Bangla SMS is ${r.smsParts(bn).parts} parts`);
+  }
+});

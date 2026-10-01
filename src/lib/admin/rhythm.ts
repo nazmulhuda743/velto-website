@@ -3,12 +3,14 @@ import "server-only";
 import type { Loaded } from "./analytics-data";
 import { isAdminPreview } from "./preview";
 import { isSupabaseConfigured } from "../supabase-server";
-import { refreshRhythm, rhythmCandidates, rhythmStats, type Candidate, type Playbook, type RhythmStats } from "../rhythm-server";
+import { pushCount, refreshRhythm, rhythmCandidates, rhythmStats, type Candidate, type Playbook, type RhythmStats } from "../rhythm-server";
 
 /** Admin → Reminders: today's queue per playbook and the last 30 days' results. */
 export type RhythmOverview = {
   stats: RhythmStats;
   queue: Record<Playbook, { total: number; holdout: number; rows: Candidate[] }>;
+  /** Customers who allowed notifications (null when the push tables aren't installed yet). */
+  push: { devices: number; customers: number; reminders: number } | null;
 };
 
 const previewRow = (i: number, holdout = false): Candidate => ({
@@ -32,8 +34,11 @@ const PREVIEW: RhythmOverview = {
   },
   queue: {
     regular_due: { total: 44, holdout: 4, rows: [previewRow(1), previewRow(2), previewRow(3, true)] },
+    onetimer: { total: 38, holdout: 4, rows: [previewRow(6), previewRow(7)] },
+    seasonal: { total: 120, holdout: 11, rows: [previewRow(8), previewRow(9)] },
     slipping: { total: 35, holdout: 3, rows: [previewRow(4), previewRow(5)] },
   },
+  push: { devices: 7, customers: 6, reminders: 5 },
 };
 
 export async function getRhythmOverview(): Promise<Loaded<RhythmOverview>> {
@@ -46,9 +51,15 @@ export async function getRhythmOverview(): Promise<Loaded<RhythmOverview>> {
       await refreshRhythm();
       stats = await rhythmStats(30);
     }
-    const [due, slip] = await Promise.all([rhythmCandidates("regular_due", 200), rhythmCandidates("slipping", 200)]);
+    const [due, one, season, slip, push] = await Promise.all([
+      rhythmCandidates("regular_due", 200),
+      rhythmCandidates("onetimer", 200),
+      rhythmCandidates("seasonal", 200),
+      rhythmCandidates("slipping", 200),
+      pushCount().catch(() => null),
+    ]);
     const q = (list: Candidate[]) => ({ total: list.length, holdout: list.filter((c) => c.holdout).length, rows: list.slice(0, 8) });
-    return { state: "ok", data: { stats, queue: { regular_due: q(due), slipping: q(slip) } } };
+    return { state: "ok", data: { stats, queue: { regular_due: q(due), onetimer: q(one), seasonal: q(season), slipping: q(slip) }, push } };
   } catch (e) {
     const m = e instanceof Error ? e.message : "";
     return { state: "error", message: /HTTP 404/.test(m) ? "Reminders aren't installed in this database yet (docs/technical/sql/website_rhythm.sql)." : "Reminders could not be read right now." };

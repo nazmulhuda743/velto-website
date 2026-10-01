@@ -1,5 +1,6 @@
 -- Velto Rhythm, step 1 (docs/technical/RHYTHM.md): every customer's laundry rhythm, and the
--- reminders it triggers.
+-- reminders it triggers. Playbooks: regular_due and onetimer and seasonal (SMS or push), slipping
+-- (a staff call task).
 --
 --   website_rhythm           one row per Ops customer, rebuilt by website_rhythm_refresh():
 --                            group (segment), usual gap, usual service, open order, hold-out
@@ -40,7 +41,7 @@ create table if not exists public.website_rhythm_touches (
   id            uuid primary key default gen_random_uuid(),
   customer_id   uuid not null references public.customers (id) on delete cascade,
   phone         text,
-  playbook      text not null check (playbook in ('regular_due', 'slipping')),
+  playbook      text not null check (playbook in ('regular_due', 'slipping', 'onetimer', 'seasonal')),
   channel       text not null check (channel in ('sms', 'staff', 'holdout')),
   status        text not null check (status in ('sending', 'sent', 'failed', 'holdout', 'task')),
   code          text unique check (code is null or code ~ '^[A-Za-z0-9_-]{8}$'),
@@ -56,6 +57,10 @@ create table if not exists public.website_rhythm_touches (
   booking_ref   text check (booking_ref is null or char_length(booking_ref) <= 80),
   created_at    timestamptz not null default now()
 );
+-- Playbooks added later (re-running this file on an older table widens the check).
+alter table public.website_rhythm_touches drop constraint if exists website_rhythm_touches_playbook_check;
+alter table public.website_rhythm_touches add constraint website_rhythm_touches_playbook_check
+  check (playbook in ('regular_due', 'slipping', 'onetimer', 'seasonal'));
 create index if not exists website_rhythm_touches_customer_idx on public.website_rhythm_touches (customer_id, created_at desc);
 create index if not exists website_rhythm_touches_created_idx on public.website_rhythm_touches (created_at desc);
 
@@ -159,7 +164,21 @@ set search_path = ''
 as $$
   select r.customer_id, r.phone, r.first_name, r.usual_service, r.cadence_days, r.days_since, r.last_order, r.lifetime, r.holdout
     from public.website_rhythm r
-   where r.segment = case p_playbook when 'regular_due' then 'regular_due' when 'slipping' then 'slipping' end
+   where case p_playbook
+           -- 3+ orders and their usual gap is up
+           when 'regular_due' then r.segment = 'regular_due'
+           -- more than twice their usual gap: a person calls
+           when 'slipping' then r.segment = 'slipping'
+           -- one order, 14-30 days ago: when second orders usually happen (median day 18)
+           when 'onetimer' then r.segment = 'onetimer_warm' and r.days_since between 14 and 30
+           -- came for dry cleaning, quiet for 30+ days: the season's items (blankets, jackets…)
+           when 'seasonal' then r.segment in ('occasional', 'lapsed', 'onetimer_gone') and r.days_since >= 30
+                            and exists (select 1 from public.orders o where o.customer_id = r.customer_id
+                                          and 'Dry Cleaning' = any (o.service_category) and o.order_status is distinct from 'Cancelled')
+                            and not exists (select 1 from public.website_rhythm_touches t where t.customer_id = r.customer_id
+                                              and t.playbook = 'seasonal' and t.status <> 'failed' and t.created_at > now() - interval '60 days')
+           else false
+         end
      and not r.open_order
      and r.phone ~ '^01[3-9][0-9]{8}$'
      and r.days_since >= 3

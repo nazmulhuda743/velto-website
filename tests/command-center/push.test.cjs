@@ -84,3 +84,9 @@ test("reminder push opens the one-tap page", () => {
   assert.equal(en.title, "Time for your laundry pickup?");
   assert.equal(en.url, "/r/Ab3xK9pQ");
 });
+
+test("reminder push wording follows the playbook", () => {
+  assert.equal(msg.reminderMessage({ firstName: "Rafi", service: "Ironing", code: "Ab3xK9pQ", playbook: "onetimer" }, "en").title, "Rafi, how was your first order?");
+  assert.equal(msg.reminderMessage({ firstName: null, service: null, code: "Ab3xK9pQ", playbook: "seasonal" }, "bn").title, "শীতের কাপড় পরিষ্কারের সময়");
+  assert.equal(msg.reminderMessage({ firstName: null, service: null, code: "Ab3xK9pQ", playbook: "seasonal" }, "bn").url, "/bn/r/Ab3xK9pQ");
+});

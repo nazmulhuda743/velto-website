@@ -9,7 +9,7 @@ import type { RhythmLang } from "./rhythm";
  * usual service.
  */
 
-export type Playbook = "regular_due" | "slipping";
+export type Playbook = "regular_due" | "slipping" | "onetimer" | "seasonal";
 
 export type Candidate = {
   customer_id: string;
@@ -69,6 +69,7 @@ export const recordTouch = (customer: string, playbook: Playbook, channel: "sms"
 export const markTouch = (code: string, sent: boolean) => supabaseRpc<null>("website_rhythm_mark", { p_code: code, p_sent: sent });
 export const staffTask = (customer: string) => supabaseRpc<string | null>("website_rhythm_staff_task", { p_customer: customer });
 export const rhythmStats = (days = 30) => supabaseRpc<RhythmStats>("website_rhythm_stats", { p_days: days });
+export const pushCount = () => supabaseRpc<{ devices: number; customers: number; reminders: number }>("website_push_count", {});
 export const runKeyOk = (key: string) => supabaseRpc<boolean>("website_rhythm_check_key", { p_key: key });
 
 export async function linkView(code: string): Promise<LinkView> {

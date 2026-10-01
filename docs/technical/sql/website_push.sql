@@ -332,6 +332,21 @@ begin
 end;
 $$;
 
+-- For the admin: how many customers get notifications.
+create or replace function public.website_push_count()
+returns jsonb
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select jsonb_build_object(
+    'devices', count(*),
+    'customers', count(distinct coalesce(customer_id::text, phone)),
+    'reminders', count(distinct coalesce(customer_id::text, phone)) filter (where reminders))
+    from public.website_push_subs where active
+$$;
+
 /* ---------- grants ---------- */
 
 revoke all on function public.website_push_keys_get() from public, anon, authenticated;
@@ -346,6 +361,7 @@ revoke all on function public.website_push_targets_for_user(uuid) from public, a
 revoke all on function public.website_push_targets_for_customer(uuid) from public, anon, authenticated;
 revoke all on function public.website_push_result(text, boolean, boolean) from public, anon, authenticated;
 revoke all on function public.website_push_order_events(integer) from public, anon, authenticated;
+revoke all on function public.website_push_count() from public, anon, authenticated;
 revoke all on function public.website_rhythm_record(uuid, text, text, text) from public, anon, authenticated;
 revoke all on function public.website_rhythm_booking_data(text) from public, anon, authenticated;
 
@@ -361,5 +377,6 @@ grant execute on function public.website_push_targets_for_user(uuid) to service_
 grant execute on function public.website_push_targets_for_customer(uuid) to service_role;
 grant execute on function public.website_push_result(text, boolean, boolean) to service_role;
 grant execute on function public.website_push_order_events(integer) to service_role;
+grant execute on function public.website_push_count() to service_role;
 grant execute on function public.website_rhythm_record(uuid, text, text, text) to service_role;
 grant execute on function public.website_rhythm_booking_data(text) to service_role;

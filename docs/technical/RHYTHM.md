@@ -9,8 +9,19 @@ Built:
 - **Step 2:** notifications. The customer turns them on from the account page or after a one-tap
   booking. They get order updates, and their reminder by push instead of SMS.
 
-Still to come: the first-timer journey and seasonal messages (step 3), and WhatsApp Business
-messages (step 4).
+- **Step 3:** two more reminder playbooks, “First-timer” and “Season · winter items”, a test SMS
+  to your own phone from the admin, and the notification offer on the booking success screen.
+
+Still to come: WhatsApp Business messages (step 4), once Meta approves the business account.
+
+Playbooks (all off until an Owner or Manager switches them on):
+
+| Playbook | Who | When |
+| --- | --- | --- |
+| Regular, due now | 3+ orders, usual gap is up | evening before their usual day |
+| First-timer | 1 order, 14–30 days ago | once, never repeated |
+| Season | sent dry cleaning before, 30+ days quiet | at most once in 60 days, while switched on |
+| Slipping regulars | 3+ orders, more than twice their gap | an Ops call task each morning |
 
 ## How it works
 

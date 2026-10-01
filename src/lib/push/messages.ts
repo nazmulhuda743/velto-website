@@ -36,12 +36,27 @@ const SERVICE: Record<string, Record<PushLang, string>> = {
   "Dry Cleaning": { bn: "ড্রাই ক্লিনিংয়ের কাপড়", en: "dry cleaning" },
 };
 
-export function reminderMessage(f: { firstName: string | null; service: string | null; code: string }, lang: PushLang): PushMessage {
+/** The reminder as a notification; it opens the same one-tap page as the SMS link. */
+export function reminderMessage(
+  f: { firstName: string | null; service: string | null; code: string; playbook?: "regular_due" | "onetimer" | "seasonal" },
+  lang: PushLang,
+): PushMessage {
   const svc = SERVICE[f.service ?? ""]?.[lang] ?? (lang === "bn" ? "লন্ড্রির কাপড়" : "laundry");
   const name = f.firstName?.trim().split(/\s+/)[0] ?? "";
+  const url = lang === "bn" ? `/bn/r/${f.code}` : `/r/${f.code}`;
+  if (f.playbook === "onetimer") {
+    return lang === "bn"
+      ? { title: `${name ? `${name}, ` : ""}প্রথম অর্ডারটা কেমন লাগল?`, body: "আবার লাগলে আগের মতোই পিকআপ, এক ট্যাপে।", url, tag: "reminder" }
+      : { title: `${name ? `${name}, how` : "How"} was your first order?`, body: "When you're ready again, book the same in one tap.", url, tag: "reminder" };
+  }
+  if (f.playbook === "seasonal") {
+    return lang === "bn"
+      ? { title: "শীতের কাপড় পরিষ্কারের সময়", body: "কম্বল, লেপ, জ্যাকেট: পিকআপ এক ট্যাপে।", url, tag: "reminder" }
+      : { title: "Winter's coming", body: "Blankets, comforters and jackets: book a pickup in one tap.", url, tag: "reminder" };
+  }
   return lang === "bn"
-    ? { title: `${name ? `${name}, ` : ""}${svc} জমেছে?`, body: "আগের মতোই পিকআপ, এক ট্যাপে বুক করুন।", url: path(`/r/${f.code}`, lang), tag: "reminder" }
-    : { title: `${name ? `${name}, time` : "Time"} for your ${svc} pickup?`, body: "Same as last time. One tap to book.", url: `/r/${f.code}`, tag: "reminder" };
+    ? { title: `${name ? `${name}, ` : ""}${svc} জমেছে?`, body: "আগের মতোই পিকআপ, এক ট্যাপে বুক করুন।", url, tag: "reminder" }
+    : { title: `${name ? `${name}, time` : "Time"} for your ${svc} pickup?`, body: "Same as last time. One tap to book.", url, tag: "reminder" };
 }
 
 export const testMessage = (lang: PushLang): PushMessage =>

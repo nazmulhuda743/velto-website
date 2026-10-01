@@ -7,15 +7,23 @@
 
 export type RhythmLang = "bn" | "en";
 
-export type RhythmSettings = {
-  regularDue: {
-    enabled: boolean;
-    /** Most SMS one evening run sends. */
-    maxPerRun: number;
-    lang: RhythmLang;
-    textBn: string;
-    textEn: string;
-  };
+/** A reminder sent by SMS (or by push when the customer allowed it). */
+export type SmsPlaybook = {
+  enabled: boolean;
+  /** Most reminders one evening run sends for this playbook. */
+  maxPerRun: number;
+  lang: RhythmLang;
+  textBn: string;
+  textEn: string;
+};
+
+/** The SMS playbooks, in the order the evening run works through them. */
+export const SMS_PLAYBOOKS = ["regularDue", "onetimer", "seasonal"] as const;
+export type SmsPlaybookKey = (typeof SMS_PLAYBOOKS)[number];
+/** The database's name for each (website_rhythm_candidates). */
+export const PLAYBOOK_ID: Record<SmsPlaybookKey, "regular_due" | "onetimer" | "seasonal"> = { regularDue: "regular_due", onetimer: "onetimer", seasonal: "seasonal" };
+
+export type RhythmSettings = Record<SmsPlaybookKey, SmsPlaybook> & {
   slipping: {
     enabled: boolean;
     /** Most staff call tasks one morning run makes. */
@@ -27,9 +35,26 @@ export type RhythmSettings = {
 /** {hi} = "Nazmul, " (or nothing), {service} = "আয়রনের কাপড়" / "ironing", {link} = the one-tap link. */
 export const DEFAULT_TEXT_BN = "Velto: {hi}{service} জমেছে? পিকআপ এক ট্যাপে: {link}";
 export const DEFAULT_TEXT_EN = "Velto: {hi}time for your {service} pickup? Book in one tap: {link}";
+export const DEFAULT_TEXTS: Record<SmsPlaybookKey, { bn: string; en: string; max: number }> = {
+  regularDue: { bn: DEFAULT_TEXT_BN, en: DEFAULT_TEXT_EN, max: 40 },
+  onetimer: {
+    bn: "Velto: {hi}প্রথম অর্ডারটা কেমন লাগল? আবার লাগলে পিকআপ এক ট্যাপে: {link}",
+    en: "Velto: {hi}how was your first order? When you're ready again, book in one tap: {link}",
+    max: 40,
+  },
+  seasonal: {
+    bn: "Velto: {hi}শীতের কম্বল, লেপ, জ্যাকেট পরিষ্কারের সময়। পিকআপ এক ট্যাপে: {link}",
+    en: "Velto: {hi}winter's coming. Blankets, comforters and jackets cleaned and ready. Book in one tap: {link}",
+    max: 60,
+  },
+};
+
+const smsDefault = (k: SmsPlaybookKey): SmsPlaybook => ({ enabled: false, maxPerRun: DEFAULT_TEXTS[k].max, lang: "bn", textBn: DEFAULT_TEXTS[k].bn, textEn: DEFAULT_TEXTS[k].en });
 
 export const DEFAULT_RHYTHM: RhythmSettings = {
-  regularDue: { enabled: false, maxPerRun: 40, lang: "bn", textBn: DEFAULT_TEXT_BN, textEn: DEFAULT_TEXT_EN },
+  regularDue: smsDefault("regularDue"),
+  onetimer: smsDefault("onetimer"),
+  seasonal: smsDefault("seasonal"),
   slipping: { enabled: false, maxPerDay: 8 },
   updatedAt: "",
 };
@@ -53,17 +78,22 @@ export function templateProblem(text: string): string | null {
 
 export function parseRhythm(v: unknown): RhythmSettings {
   const r = rec(v);
-  const d = rec(r.regularDue);
   const s = rec(r.slipping);
   const text = (x: unknown, fallback: string) => (typeof x === "string" && !templateProblem(x) ? x.trim().slice(0, 400) : fallback);
-  return {
-    regularDue: {
+  const sms = (k: SmsPlaybookKey): SmsPlaybook => {
+    const d = rec(r[k]);
+    return {
       enabled: d.enabled === true,
-      maxPerRun: int(d.maxPerRun, 1, 150, DEFAULT_RHYTHM.regularDue.maxPerRun),
+      maxPerRun: int(d.maxPerRun, 1, 150, DEFAULT_TEXTS[k].max),
       lang: d.lang === "en" ? "en" : "bn",
-      textBn: text(d.textBn, DEFAULT_TEXT_BN),
-      textEn: text(d.textEn, DEFAULT_TEXT_EN),
-    },
+      textBn: text(d.textBn, DEFAULT_TEXTS[k].bn),
+      textEn: text(d.textEn, DEFAULT_TEXTS[k].en),
+    };
+  };
+  return {
+    regularDue: sms("regularDue"),
+    onetimer: sms("onetimer"),
+    seasonal: sms("seasonal"),
     slipping: {
       enabled: s.enabled === true,
       maxPerDay: int(s.maxPerDay, 1, 40, DEFAULT_RHYTHM.slipping.maxPerDay),

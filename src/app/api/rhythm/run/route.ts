@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { renderMessage, rhythmLink, smsHourOk } from "@/lib/rhythm";
+import { PLAYBOOK_ID, renderMessage, rhythmLink, smsHourOk, SMS_PLAYBOOKS } from "@/lib/rhythm";
 import { markTouch, recordTouch, refreshRhythm, rhythmCandidates, rhythmReady, runKeyOk, staffTask, type Candidate } from "@/lib/rhythm-server";
 import { getSiteContent } from "@/lib/site-content";
 import { SITE_URL } from "@/lib/site-url";
@@ -11,8 +11,9 @@ import { supabaseRpc } from "@/lib/supabase-server";
 /**
  * The daily Velto Rhythm run, called by pg_cron (docs/technical/sql/website_rhythm_schedule.sql)
  * with the key stored in the database:
- *   evening  refresh, then remind "regular, due now" customers (Admin → Reminders must switch it on):
- *            a free notification when they allowed it, otherwise (or if it fails) an SMS
+ *   evening  refresh, then each switched-on reminder playbook in turn (regular, due now; first-timer;
+ *            season), one reminder per customer: a free notification when they allowed it,
+ *            otherwise (or if it fails) an SMS
  *   morning  refresh, then Ops call tasks for slipping regulars (same)
  * Who qualifies (caps, open orders, opt-outs, hold-out) is decided in the database.
  */
@@ -37,41 +38,48 @@ export async function POST(request: NextRequest) {
   const summary = { ok: true, mode, refreshed, sent: 0, pushed: 0, failed: 0, holdout: 0, tasks: 0, skipped: "" as string };
 
   if (mode === "evening") {
-    const p = rhythm.regularDue;
-    if (!p.enabled) return json({ ...summary, skipped: "off" });
+    if (!SMS_PLAYBOOKS.some((k) => rhythm[k].enabled)) return json({ ...summary, skipped: "off" });
     if (!smsHourOk()) return json({ ...summary, skipped: "quiet_hours" });
     const sms = smsConfigured();
-    const list = await rhythmCandidates("regular_due", p.maxPerRun);
-    await inBatches(list, 5, async (c: Candidate) => {
-      if (c.holdout) {
-        await recordTouch(c.customer_id, "regular_due", "holdout", p.lang);
-        summary.holdout++;
-        return;
-      }
-      // Allowed notifications on a phone: a free push first.
-      const targets = await supabaseRpc<PushTarget[]>("website_push_targets_for_customer", { p_customer: c.customer_id }).catch(() => []);
-      if (targets.length) {
-        const pushCode = await recordTouch(c.customer_id, "regular_due", "push", p.lang);
-        if (pushCode) {
-          const results = await Promise.all(
-            targets.slice(0, 5).map((t) => { const lang = t.lang === "en" ? "en" : "bn"; return sendAndRecord(t, reminderMessage({ firstName: c.first_name, service: c.usual_service, code: pushCode }, lang)); }),
-          );
-          await markTouch(pushCode, results.some(Boolean));
-          if (results.some(Boolean)) {
-            summary.pushed++;
-            return;
+    // In order; the database's one-a-week rule keeps a customer to one reminder across playbooks.
+    for (const key of SMS_PLAYBOOKS) {
+      const p = rhythm[key];
+      if (!p.enabled) continue;
+      const playbook = PLAYBOOK_ID[key];
+      const list = await rhythmCandidates(playbook, p.maxPerRun);
+      await inBatches(list, 5, async (c: Candidate) => {
+        if (c.holdout) {
+          await recordTouch(c.customer_id, playbook, "holdout", p.lang);
+          summary.holdout++;
+          return;
+        }
+        // Allowed notifications on a phone: a free push first.
+        const targets = await supabaseRpc<PushTarget[]>("website_push_targets_for_customer", { p_customer: c.customer_id }).catch(() => []);
+        if (targets.length) {
+          const pushCode = await recordTouch(c.customer_id, playbook, "push", p.lang);
+          if (pushCode) {
+            const results = await Promise.all(
+              targets.slice(0, 5).map((t) =>
+                sendAndRecord(t, reminderMessage({ firstName: c.first_name, service: c.usual_service, code: pushCode, playbook }, t.lang === "en" ? "en" : "bn")),
+              ),
+            );
+            await markTouch(pushCode, results.some(Boolean));
+            if (results.some(Boolean)) {
+              summary.pushed++;
+              return;
+            }
           }
         }
-      }
-      if (!sms) return;
-      const code = await recordTouch(c.customer_id, "regular_due", "sms", p.lang);
-      if (!code) return;
-      const text = renderMessage(p.lang === "bn" ? p.textBn : p.textEn, { firstName: c.first_name, service: c.usual_service, link: rhythmLink(SITE_URL, code, p.lang) }, p.lang);
-      const r = await sendSms(c.phone, text);
-      await markTouch(code, r.ok);
-      if (r.ok) summary.sent++;
-      else summary.failed++;
-    });
+        if (!sms) return;
+        const code = await recordTouch(c.customer_id, playbook, "sms", p.lang);
+        if (!code) return;
+        const text = renderMessage(p.lang === "bn" ? p.textBn : p.textEn, { firstName: c.first_name, service: c.usual_service, link: rhythmLink(SITE_URL, code, p.lang) }, p.lang);
+        const r = await sendSms(c.phone, text);
+        await markTouch(code, r.ok);
+        if (r.ok) summary.sent++;
+        else summary.failed++;
+      });
+    }
     return json(summary);
   }
 

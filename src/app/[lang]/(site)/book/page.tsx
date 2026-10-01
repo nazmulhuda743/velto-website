@@ -21,6 +21,7 @@ import { keepBanglaSuffixes } from "@/lib/i18n/config";
 import { repeatItemsFor } from "@/lib/booking-repeat";
 import { firstWebsiteBooking } from "@/lib/first-order-lookup";
 import { getItemPairs, getUsualItems } from "@/lib/upsell-data";
+import { notifyText } from "@/content/i18n/notify";
 
 /** Quick picks on /book: the everyday items customers send most, exactly as the Ops price list names them. */
 const POPULAR_ITEMS = ["Shirt", "Pant", "T-Shirt", "Panjabi", "Kamiz", "Salwar", "Sari (Cotton)", "Jeans", "Blazer", "Bed Sheet (Medium)"];
@@ -99,6 +100,7 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
           <div className="col-span-4 md:col-span-8 xl:col-span-7">
             <div className="max-w-[640px]">
               <BookingForm
+                notify={notifyText(locale)}
                 t={f.booking}
                 common={f.common}
                 intro={

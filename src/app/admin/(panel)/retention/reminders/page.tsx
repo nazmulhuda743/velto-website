@@ -1,25 +1,45 @@
 import { AdminHeader, Badge, DataNotice, Field, one, type SearchParams } from "@/components/admin/ui";
 import { getRhythmOverview } from "@/lib/admin/rhythm";
 import { requireSection } from "@/lib/admin/session";
-import { renderMessage, rhythmLink, SAMPLE_LINK, smsParts, type RhythmLang } from "@/lib/rhythm";
+import { PLAYBOOK_ID, renderMessage, rhythmLink, SAMPLE_LINK, smsParts, SMS_PLAYBOOKS, type RhythmLang, type SmsPlaybook, type SmsPlaybookKey } from "@/lib/rhythm";
 import type { Candidate, PlaybookStats } from "@/lib/rhythm-server";
 import { getSiteContent } from "@/lib/site-content";
 import { SITE_URL } from "@/lib/site-url";
-import { refreshRhythmAction, saveRhythmAction } from "../../../rhythm-actions";
+import { refreshRhythmAction, saveRhythmAction, testRhythmSmsAction } from "../../../rhythm-actions";
 
 const SEGMENTS: { id: string; label: string; plan: string }[] = [
   { id: "new", label: "New", plan: "Order updates only" },
-  { id: "onetimer_warm", label: "First-timer, still warm", plan: "Step 3" },
+  { id: "onetimer_warm", label: "First-timer, still warm", plan: "One “how was it?” around day 14–30" },
   { id: "regular_due", label: "Regular, due now", plan: "SMS the evening before" },
   { id: "regular_on_track", label: "Regular, on track", plan: "Nothing" },
   { id: "slipping", label: "Slipping regular", plan: "Staff call task" },
-  { id: "occasional", label: "Occasional", plan: "Seasonal, step 3" },
-  { id: "lapsed", label: "Lapsed repeat", plan: "Step 3" },
-  { id: "onetimer_gone", label: "One order, long gone", plan: "Seasonal, step 3" },
+  { id: "occasional", label: "Occasional", plan: "Season message (dry cleaning)" },
+  { id: "lapsed", label: "Lapsed repeat", plan: "Season message (dry cleaning)" },
+  { id: "onetimer_gone", label: "One order, long gone", plan: "Season message (dry cleaning)" },
 ];
+
+const SMS_COPY: Record<SmsPlaybookKey, { title: string; who: string }> = {
+  regularDue: {
+    title: "Regular, due now",
+    who: "Customers with 3+ orders whose usual gap is up. One reminder the evening before, with a link that books the same service in one tap (or replies on WhatsApp).",
+  },
+  onetimer: {
+    title: "First-timer",
+    who: "One order, 14–30 days ago: when second orders usually happen (half of all second orders come by day 18). One message asking how it went, with the same one-tap link. Never repeated.",
+  },
+  seasonal: {
+    title: "Season · winter items",
+    who: "Customers who sent dry cleaning before and have been quiet for 30+ days. One message for blankets, comforters and jackets, at most once in 60 days. Switch it on when the season starts and off when it ends.",
+  },
+};
 
 const SAVED: Record<string, string> = {
   regular_due: "Saved. The evening run uses this from tonight.",
+  onetimer: "Saved. The evening run uses this from tonight.",
+  seasonal: "Saved. The evening run uses this from tonight.",
+  test_regular_due: "Test SMS sent. Its link opens the example page.",
+  test_onetimer: "Test SMS sent. Its link opens the example page.",
+  test_seasonal: "Test SMS sent. Its link opens the example page.",
   slipping: "Saved. The morning run uses this from tomorrow.",
   refresh: "Groups rebuilt from the latest Velto Ops orders.",
 };
@@ -87,6 +107,101 @@ function Example({ template, lang, name, service }: { template: string; lang: Rh
   );
 }
 
+function SmsPlaybookCard({
+  k,
+  p,
+  canEdit,
+  inline,
+  queue,
+  results,
+}: {
+  k: SmsPlaybookKey;
+  p: SmsPlaybook;
+  canEdit: boolean;
+  inline: (id: string) => React.ReactNode;
+  queue?: { total: number; holdout: number; rows: Candidate[] };
+  results?: PlaybookStats;
+}) {
+  const id = PLAYBOOK_ID[k];
+  const copy = SMS_COPY[k];
+  const sample = queue?.rows.find((r) => !r.holdout);
+  return (
+    <section id={id} aria-labelledby={`${id}-title`} className="admin-card mt-6 scroll-mt-6 p-5 md:p-7">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 id={`${id}-title`} className="t-h4 text-navy">
+          {copy.title} · SMS or notification
+        </h2>
+        <Badge tone={p.enabled ? "green" : "neutral"}>{p.enabled ? "On · every evening 6:25 pm" : "Off"}</Badge>
+      </div>
+      <p className="mt-1 t-small text-secondary">
+        {copy.who} Not sent to anyone with an open order, anyone reminded in the last 7 days, or anyone who said stop.
+      </p>
+      {inline(id)}
+      {inline(`test_${id}`)}
+      {queue ? <Queue {...queue} /> : null}
+      <form action={saveRhythmAction} className="mt-5 space-y-4">
+        <input type="hidden" name="playbook" value={id} />
+        <fieldset disabled={!canEdit} className="space-y-4">
+          <label className="flex items-center gap-3">
+            <input type="checkbox" name="enabled" defaultChecked={p.enabled} className="size-4" />
+            <span className="font-semibold text-navy">Send these every evening</span>
+          </label>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label="Message in Bangla" hint="{hi} = the first name and a comma (or nothing), {service} = their usual service, {link} = the one-tap link (required).">
+              <textarea name="textBn" lang="bn" rows={3} maxLength={400} defaultValue={p.textBn} className="admin-input" />
+            </Field>
+            <Field label="Message in English" hint="Same placeholders. {hi} becomes “Hi Nazmul, ” or “Hi, ”.">
+              <textarea name="textEn" rows={3} maxLength={400} defaultValue={p.textEn} className="admin-input" />
+            </Field>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <p className="t-small font-semibold text-navy">How it reads (Bangla)</p>
+              <Example template={p.textBn} lang="bn" name={sample?.first_name ?? "Nazmul"} service={sample?.usual_service ?? "Ironing"} />
+            </div>
+            <div>
+              <p className="t-small font-semibold text-navy">How it reads (English)</p>
+              <Example template={p.textEn} lang="en" name={sample?.first_name ?? "Nazmul"} service={sample?.usual_service ?? "Ironing"} />
+            </div>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label="Language sent" hint="Bangla by default.">
+              <select name="lang" defaultValue={p.lang} className="admin-input">
+                <option value="bn">Bangla</option>
+                <option value="en">English</option>
+              </select>
+            </Field>
+            <Field label="Most per evening" hint="Customers who have spent the most go first; the rest go the next evening.">
+              <input name="max" type="number" min={1} max={150} defaultValue={p.maxPerRun} className="admin-input" />
+            </Field>
+          </div>
+          <p className="t-caption text-secondary">Links look like {rhythmLink(SITE_URL, "Ab3xK9pQ", p.lang)} and expire after 7 days.</p>
+          <button type="submit" className="admin-btn">
+            Save
+          </button>
+        </fieldset>
+      </form>
+      {canEdit ? (
+        <form action={testRhythmSmsAction} className="mt-4 flex flex-wrap items-end gap-3 rounded-md bg-soft p-3">
+          <input type="hidden" name="playbook" value={id} />
+          <label className="block">
+            <span className="block t-small font-semibold text-navy">Send this SMS to my phone</span>
+            <input name="phone" inputMode="tel" placeholder="01XXXXXXXXX" maxLength={20} className="admin-input mt-1 w-48" />
+          </label>
+          <button type="submit" className="admin-btn-secondary">
+            Send a test
+          </button>
+          <span className="t-caption text-secondary">Saved text, your first name; the link opens the example page.</span>
+        </form>
+      ) : (
+        <p className="mt-3 t-small text-secondary">Only an Owner or a Manager can change reminders.</p>
+      )}
+      <h3 className="mt-6 t-small font-semibold text-navy">Last 30 days</h3>
+      <Results s={results} />
+    </section>
+  );
+}
+
 export default async function RemindersPage({ searchParams }: { searchParams: SearchParams }) {
   const admin = await requireSection("retention");
   const params = await searchParams;
@@ -95,9 +210,7 @@ export default async function RemindersPage({ searchParams }: { searchParams: Se
   const errorAt = one(params.playbook);
   const [{ rhythm }, overview] = await Promise.all([getSiteContent(), getRhythmOverview()]);
   const canEdit = admin.role === "owner" || admin.role === "manager";
-  const due = rhythm.regularDue;
   const data = overview.state === "ok" ? overview.data : null;
-  const sample = data?.queue.regular_due.rows.find((r) => !r.holdout);
   const inline = (id: string) =>
     error && errorAt === id ? (
       <p role="alert" className="mt-4 rounded-md border border-error/30 bg-error-soft px-4 py-3 t-small font-medium text-error">
@@ -159,65 +272,24 @@ export default async function RemindersPage({ searchParams }: { searchParams: Se
         </section>
       ) : null}
 
-      <section id="regular_due" aria-labelledby="due-title" className="admin-card mt-6 scroll-mt-6 p-5 md:p-7">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 id="due-title" className="t-h4 text-navy">
-            Regular, due now · SMS
-          </h2>
-          <Badge tone={due.enabled ? "green" : "neutral"}>{due.enabled ? "On · every evening 6:25 pm" : "Off"}</Badge>
-        </div>
-        <p className="mt-1 t-small text-secondary">
-          Customers with 3+ orders whose usual gap is up. One SMS the evening before, with a link that books the same service in one tap
-          (or replies on WhatsApp). Not sent to anyone with an open order, anyone reminded in the last 7 days, or anyone who said stop.
+      {data?.push ? (
+        <p className="mt-6 rounded-md border border-line bg-white px-4 py-3 t-small text-body">
+          <span className="font-semibold text-navy">{data.push.customers}</span> customer{data.push.customers === 1 ? "" : "s"} allowed notifications
+          {data.push.customers ? <> ({data.push.reminders} want reminders): they get the reminder as a free notification instead of an SMS, and order updates automatically.</> : <>. They turn them on in their account or after a one-tap booking.</>}
         </p>
-        {inline("regular_due")}
-        {data ? <Queue {...data.queue.regular_due} /> : null}
-        <form action={saveRhythmAction} className="mt-5 space-y-4">
-          <input type="hidden" name="playbook" value="regular_due" />
-          <fieldset disabled={!canEdit} className="space-y-4">
-            <label className="flex items-center gap-3">
-              <input type="checkbox" name="enabled" defaultChecked={due.enabled} className="size-4" />
-              <span className="font-semibold text-navy">Send these SMS every evening</span>
-            </label>
-            <div className="grid gap-4 md:grid-cols-2">
-              <Field label="Message in Bangla" hint="{hi} = the first name and a comma (or nothing), {service} = their usual service, {link} = the one-tap link (required).">
-                <textarea name="textBn" lang="bn" rows={3} maxLength={400} defaultValue={due.textBn} className="admin-input" />
-              </Field>
-              <Field label="Message in English" hint="Same placeholders. {hi} becomes “Hi Nazmul, ” or “Hi, ”.">
-                <textarea name="textEn" rows={3} maxLength={400} defaultValue={due.textEn} className="admin-input" />
-              </Field>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <p className="t-small font-semibold text-navy">How it reads (Bangla)</p>
-                <Example template={due.textBn} lang="bn" name={sample?.first_name ?? "Nazmul"} service={sample?.usual_service ?? "Ironing"} />
-              </div>
-              <div>
-                <p className="t-small font-semibold text-navy">How it reads (English)</p>
-                <Example template={due.textEn} lang="en" name={sample?.first_name ?? "Nazmul"} service={sample?.usual_service ?? "Ironing"} />
-              </div>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <Field label="Language sent" hint="Bangla by default.">
-                <select name="lang" defaultValue={due.lang} className="admin-input">
-                  <option value="bn">Bangla</option>
-                  <option value="en">English</option>
-                </select>
-              </Field>
-              <Field label="Most SMS per evening" hint="Customers who have spent the most go first; the rest go the next evening.">
-                <input name="max" type="number" min={1} max={150} defaultValue={due.maxPerRun} className="admin-input" />
-              </Field>
-            </div>
-            <p className="t-caption text-secondary">Links look like {rhythmLink(SITE_URL, "Ab3xK9pQ", due.lang)} and expire after 7 days.</p>
-            <button type="submit" className="admin-btn">
-              Save
-            </button>
-          </fieldset>
-          {!canEdit ? <p className="t-small text-secondary">Only an Owner or a Manager can change reminders.</p> : null}
-        </form>
-        <h3 className="mt-6 t-small font-semibold text-navy">Last 30 days</h3>
-        <Results s={data?.stats.playbooks.regular_due} />
-      </section>
+      ) : null}
+
+      {SMS_PLAYBOOKS.map((key) => (
+        <SmsPlaybookCard
+          key={key}
+          k={key}
+          p={rhythm[key]}
+          canEdit={canEdit}
+          inline={inline}
+          queue={data?.queue[PLAYBOOK_ID[key]]}
+          results={data?.stats.playbooks[PLAYBOOK_ID[key]]}
+        />
+      ))}
 
       <section id="slipping" aria-labelledby="slip-title" className="admin-card mt-6 scroll-mt-6 p-5 md:p-7">
         <div className="flex flex-wrap items-center justify-between gap-3">

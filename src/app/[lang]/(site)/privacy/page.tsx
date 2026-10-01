@@ -80,6 +80,18 @@ const SECTIONS: LegalSection[] = [
           it does not use your name, IP address or device to identify you.
         </p>
         <p>
+          <strong>Reminders:</strong> from your order dates and services we work out your usual pickup rhythm, and may
+          send you a reminder by SMS (or as a notification, if you turned those on) with a link that books the same
+          service. You get at most one reminder a week, and none while an order is in progress. Every reminder page has{" "}
+          &ldquo;Stop these reminders&rdquo;, and you can also ask us to stop.
+        </p>
+        <p>
+          <strong>Notifications, only if you turn them on:</strong> when you allow notifications, your browser gives us
+          an address to send them to (it is not your phone number). We keep it with your phone number to tell you when
+          we&apos;ve picked up your clothes, when they&apos;re ready and when they&apos;re delivered, and, if you choose,
+          to remind you. You can turn them off in your account or in your browser at any time.
+        </p>
+        <p>
           <strong>Website use, only with your permission:</strong> if you allow Analytics, we measure which pages and
           services are viewed, price searches, clicks on buttons such as Book a Pickup, and whether a booking or quote was
           completed. This uses random identifiers and the type of device (mobile, tablet or desktop). It does{" "}
