@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { WhatsAppButton } from "@/components/ui/Button";
 import { SearchIcon } from "@/components/ui/icons";
 import { track } from "@/components/layout/Analytics";
@@ -43,7 +43,13 @@ export function PriceFinder({
   initialQuery = "",
   syncUrl = false,
   bookFromResult,
+  popular,
 }: {
+  /**
+   * Shown while the search is empty (server-rendered, e.g. <PopularPrices />), so prices are
+   * visible before anything is typed. Search results replace it once the visitor types.
+   */
+  popular?: ReactNode;
   /** Pre-fill and search on load (e.g. /pricing?q=blazer). */
   initialQuery?: string;
   /** Keep ?q= in the address bar in step with the selected item. */
@@ -168,6 +174,8 @@ export function PriceFinder({
   };
 
   const showResult = selected && status !== "loading";
+  // Search starts at two characters; until then the popular prices stay in view.
+  const showPopular = Boolean(popular) && !selected && status === "idle" && query.trim().length < 2;
 
   return (
     <div>
@@ -241,6 +249,9 @@ export function PriceFinder({
           ))}
         </p>
       </form>
+
+      {/* Outside the live region, so clearing the search doesn't read the whole table aloud. */}
+      {showPopular ? <div className="mt-8">{popular}</div> : null}
 
       <div aria-live="polite" className="mt-8 empty:hidden">
         {status === "loading" ? (

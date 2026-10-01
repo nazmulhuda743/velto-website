@@ -1,10 +1,13 @@
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/admin/LoginForm";
 import { Logo } from "@/components/ui/Logo";
+import { homeFor } from "@/lib/admin/permissions";
 import { getAdmin } from "@/lib/admin/session";
 
 export default async function AdminLoginPage() {
-  if (await getAdmin()) redirect("/admin");
+  // Already signed in: straight to this role's home (Today for everyone who schedules).
+  const admin = await getAdmin();
+  if (admin) redirect(homeFor(admin.role));
   return (
     <main className="flex min-h-dvh items-center justify-center px-5 py-12">
       <div className="w-full max-w-[420px] rounded-lg border border-line bg-white p-7 md:p-9">

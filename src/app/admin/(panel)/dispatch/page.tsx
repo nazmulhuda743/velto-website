@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { NotificationRefresher } from "@/components/admin/NotificationRefresher";
 import { AdminHeader, Badge, DataNotice, one, type SearchParams } from "@/components/admin/ui";
+import { TryTodayBanner } from "@/components/admin/TryTodayBanner";
 import { WhatsAppSend } from "@/components/admin/WhatsAppSend";
 import { getDispatch, getRequestContext, getStaff, type StaffMember } from "@/lib/admin/dispatch";
 import {
@@ -43,14 +44,14 @@ const SAVED: Record<string, string> = {
   done: "Marked done.",
   cancelled: "Closed with your reason. The Velto Ops task is closed too.",
   merged: "Merged. The duplicate is closed in Velto Ops.",
-  combined: "Combined into one trip: same person, same slot.",
+  combined: "Combined into one trip: same person, same time window.",
   split: "Taken out of the trip.",
 };
 
 const STAGE: Record<string, { label: string; tone: "neutral" | "blue" | "green" | "amber" }> = {
   new: { label: "New", tone: "amber" },
   confirmed: { label: "Confirmed · needs a person", tone: "amber" },
-  assigned: { label: "Needs a slot", tone: "amber" },
+  assigned: { label: "Needs a time window", tone: "amber" },
   picked: { label: "Picked up", tone: "green" },
   scheduled: { label: "Scheduled", tone: "blue" },
   done: { label: "Done", tone: "green" },
@@ -97,9 +98,9 @@ function PlanForm({ job, staff, today, keep, suggestion, canOverride }: { job: D
         </select>
       </label>
       <label className="block t-caption font-semibold text-secondary">
-        Slot
+        Time window
         <select name="slot" defaultValue={job.slot ?? suggestion.slot ?? ""} className="admin-input mt-1">
-          <option value="">No slot yet</option>
+          <option value="">No time window yet</option>
           {SLOTS.map((s) => (
             <option key={s.id} value={s.id}>
               {s.label} ({s.hours})
@@ -306,7 +307,7 @@ function JobCard({ job, staff, today, keep, trip, order, regular, canOverride = 
 function OverlapCard({ o, keep, board }: { o: Overlap; keep: string; board: JobKind }) {
   if (o.kind === "duplicate") {
     return (
-      <li className="rounded-md border border-[#f0d49a] bg-[#fff8eb] px-4 py-3">
+      <li className="rounded-md border border-warning/30 bg-warning-soft px-4 py-3">
         <p className="t-small text-navy">
           <span className="font-semibold">{o.keep.customer_name ?? "A customer"}</span> sent {o.others.length + 1} pickup requests ({[o.keep, ...o.others].map((j) => j.requested ?? `${waited(j.created_at)} ago`).join(" · ")}).
         </p>
@@ -342,7 +343,7 @@ function OverlapCard({ o, keep, board }: { o: Overlap; keep: string; board: JobK
           <input type="hidden" name="label" value={o.lead.customer_name ?? ""} />
           <input type="hidden" name="keep" value={keep} />
           <button type="submit" className="admin-btn-secondary">
-            Combine into one trip{o.lead.slot_date ? " (same person and slot)" : ""}
+            Combine into one trip{o.lead.slot_date ? " (same person and time window)" : ""}
           </button>
         </form>
       </li>
@@ -410,9 +411,10 @@ export default async function DispatchPage({ searchParams }: { searchParams: Sea
   return (
     <>
       <NotificationRefresher />
+      <TryTodayBanner />
       <AdminHeader
         title="Pickup & delivery"
-        intro="Every customer request and every Ready order, from new to done. Give each stop a person and a slot: it appears in Velto Ops under that person's “Assigned to me”, with the usual reminder before the slot ends."
+        intro="Every customer request and every Ready order, from new to done. Give each stop a person and a time window: it appears in Velto Ops under that person's “Assigned to me”, with the usual reminder before the window ends."
       />
       {loaded.state === "error" ? <div className="mt-4"><DataNotice state="error" message={loaded.message} /></div> : null}
       {loaded.state === "not_configured" ? <p className="mt-6 t-small text-secondary">Velto Ops is not connected on this server.</p> : null}
@@ -436,7 +438,7 @@ export default async function DispatchPage({ searchParams }: { searchParams: Sea
             className={`rounded-full border px-4 py-2 t-small font-semibold ${board === k ? "border-navy bg-navy text-white" : "border-line bg-white text-navy hover:border-navy"}`}
           >
             {k === "pickup" ? "Pickups" : "Deliveries"}
-            {counts(k) ? <span className={`ml-2 rounded-full px-1.5 ${board === k ? "bg-white/20" : "bg-[#fff1d6] text-[#8a5a00]"}`}>{counts(k)}</span> : null}
+            {counts(k) ? <span className={`ml-2 rounded-full px-1.5 ${board === k ? "bg-white/20" : "bg-warning-soft text-warning"}`}>{counts(k)}</span> : null}
           </Link>
         ))}
       </nav>
@@ -460,7 +462,7 @@ export default async function DispatchPage({ searchParams }: { searchParams: Sea
             Needs a plan <span className="text-secondary">({waiting.length})</span>
           </h2>
           <p className="mt-1 t-small text-secondary">
-            {board === "pickup" ? "New requests from the website, oldest first. Call the customer, then give it a person and a slot." : "Orders that are Ready in Velto Ops, most urgent first. Give each one a person and a slot; red amounts are what the rider collects."}
+            {board === "pickup" ? "New requests from the website, oldest first. Call the customer, then give it a person and a time window." : "Orders that are Ready in Velto Ops, most urgent first. Give each one a person and a time window; red amounts are what the rider collects."}
           </p>
           {waiting.length && board === "delivery" ? (
             <div className="mt-3 space-y-5">
@@ -478,7 +480,7 @@ export default async function DispatchPage({ searchParams }: { searchParams: Sea
                   </>
                 );
                 return g.id === "waiting" ? (
-                  <details key={g.id} className="rounded-md border border-[#f0d49a] bg-[#fff8eb] p-3">
+                  <details key={g.id} className="rounded-md border border-warning/30 bg-warning-soft p-3">
                     <summary className="cursor-pointer t-small font-semibold">{heading}</summary>
                     <p className="mt-1 t-caption text-secondary">{g.hint}</p>
                     {list}
@@ -499,7 +501,7 @@ export default async function DispatchPage({ searchParams }: { searchParams: Sea
               ))}
             </ul>
           ) : (
-            <p className="mt-3 rounded-md border border-dashed border-line px-4 py-6 text-center t-small text-secondary">Nothing waiting. Every {board} has a person and a slot.</p>
+            <p className="mt-3 rounded-md border border-dashed border-line px-4 py-6 text-center t-small text-secondary">Nothing waiting. Every {board} has a person and a time window.</p>
           )}
         </section>
 
@@ -552,7 +554,7 @@ export default async function DispatchPage({ searchParams }: { searchParams: Sea
                       ))}
                   </div>
                 ) : (
-                  <p className="mt-1 t-small text-secondary">No {board === "pickup" ? "pickups" : "deliveries"} in this slot.</p>
+                  <p className="mt-1 t-small text-secondary">No {board === "pickup" ? "pickups" : "deliveries"} in this time window.</p>
                 )}
               </div>
             ))}

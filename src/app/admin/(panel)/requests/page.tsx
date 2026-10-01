@@ -3,6 +3,7 @@ import { BarList, fmt } from "@/components/admin/charts";
 import { MarkRequestsSeen } from "@/components/admin/MarkRequestsSeen";
 import { NotificationRefresher } from "@/components/admin/NotificationRefresher";
 import { AdminHeader, Badge, DataNotice, one, type SearchParams } from "@/components/admin/ui";
+import { TryTodayBanner } from "@/components/admin/TryTodayBanner";
 import { WhatsAppSend } from "@/components/admin/WhatsAppSend";
 import { CHANNEL_LABELS } from "@/lib/analytics/classify";
 import { getRequests } from "@/lib/admin/analytics-data";
@@ -468,10 +469,10 @@ function RequestCard({ card, staff, today, ret, open, canPlan }: { card: Card; s
   const d = insight?.details ?? {};
   const label = cardLabel(job);
   return (
-    <li id={`r-${job.id}`} className={`admin-card scroll-mt-24 ${timer?.tone === "late" ? "border-error/40" : timer?.tone === "soon" ? "border-[#f0d49a]" : ""}`}>
+    <li id={`r-${job.id}`} className={`admin-card scroll-mt-24 ${timer?.tone === "late" ? "border-error/40" : timer?.tone === "soon" ? "border-warning/30" : ""}`}>
       <details className="group" open={open || undefined}>
         <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-5 py-4">
-          <Badge tone={job.source === "website_quote" ? "amber" : "blue"}>{job.source === "website_quote" ? "Quote" : "Booking"}</Badge>
+          <Badge tone={job.source === "website_quote" ? "amber" : "blue"}>{job.source === "website_quote" ? "Quote" : job.source === "weekly" ? "Weekly" : "Booking"}</Badge>
           {insight?.firstOrder ? <Badge tone="green">First website order · 10% off</Badge> : null}
           <span className="font-semibold text-navy">{job.customer_name ?? "Customer"}</span>
           <span className="t-small text-secondary">{job.phone}</span>
@@ -479,7 +480,7 @@ function RequestCard({ card, staff, today, ret, open, canPlan }: { card: Card; s
           <span className="t-small text-secondary">{job.area ?? ""}</span>
           <span className="ml-auto flex items-center gap-2 t-small text-secondary">
             {timer ? (
-              <span className={`rounded-full px-2 py-0.5 t-caption font-semibold ${timer.tone === "late" ? "bg-error-soft text-error" : timer.tone === "soon" ? "bg-[#fff1d6] text-[#8a5a00]" : "bg-soft text-navy"}`}>
+              <span className={`rounded-full px-2 py-0.5 t-caption font-semibold ${timer.tone === "late" ? "bg-error-soft text-error" : timer.tone === "soon" ? "bg-warning-soft text-warning" : "bg-soft text-navy"}`}>
                 Waiting {minutesLabel(timer.minutes)}
               </span>
             ) : null}
@@ -499,7 +500,7 @@ function RequestCard({ card, staff, today, ret, open, canPlan }: { card: Card; s
           ) : null}
 
           {card.duplicateOf ? (
-            <div className="rounded-md border border-[#f0d49a] bg-[#fff8eb] px-4 py-3 t-small text-navy">
+            <div className="rounded-md border border-warning/30 bg-warning-soft px-4 py-3 t-small text-navy">
               <p>
                 The same number sent another request {requestDate(card.duplicateOf.created_at)} ({card.duplicateOf.requested ?? "no preferred time"}). One visit is enough.
               </p>
@@ -976,6 +977,7 @@ export default async function RequestsPage({ searchParams }: { searchParams: Sea
     <>
       <NotificationRefresher />
       <MarkRequestsSeen newest={newest} />
+      <TryTodayBanner />
       <AdminHeader
         title="Bookings & quotes"
         intro="Every pickup booking and household quote from the website, from the first call to delivery. Open a request to see where it is and do the next step right there."

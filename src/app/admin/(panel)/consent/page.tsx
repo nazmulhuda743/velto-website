@@ -30,7 +30,7 @@ export default async function ConsentPage({ searchParams }: { searchParams: Sear
       detail: gtm ? `Container ${gtm} is configured. It loads only after a visitor allows Analytics or Marketing.` : "GTM container ID is missing (NEXT_PUBLIC_GTM_ID). GA4 and Meta Pixel cannot run.",
     },
     {
-      label: "GA4",
+      label: "Google Analytics (GA4)",
       status: gtm ? "warning" : "error",
       detail: gtm
         ? "Managed inside GTM, so the website can't see it directly. Confirm in GTM that the GA4 tag requires analytics_storage consent."
@@ -133,7 +133,7 @@ export default async function ConsentPage({ searchParams }: { searchParams: Sear
             <ul className="space-y-2">
               {warnings.map((w) => (
                 <li key={w} className="flex gap-2.5 t-small text-body">
-                  <span aria-hidden="true" className="mt-1.5 size-2 shrink-0 rounded-full bg-[#c77c02]" />
+                  <span aria-hidden="true" className="mt-1.5 size-2 shrink-0 rounded-full bg-warning" />
                   {w}
                 </li>
               ))}

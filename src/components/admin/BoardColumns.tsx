@@ -32,11 +32,11 @@ type Column = { key: string; label: string };
 
 const PRIORITY_TONE: Record<string, string> = {
   urgent: "bg-error-soft text-error",
-  high: "bg-[#fff4e5] text-[#8a5300]",
+  high: "bg-warning-soft text-warning",
   normal: "bg-soft text-secondary",
   low: "bg-soft text-muted",
 };
-const DUE_TONE: Record<string, string> = { overdue: "text-error font-semibold", today: "text-[#8a5300] font-semibold", soon: "text-navy", later: "text-secondary" };
+const DUE_TONE: Record<string, string> = { overdue: "text-error font-semibold", today: "text-warning font-semibold", soon: "text-navy", later: "text-secondary" };
 
 export function BoardColumns({
   columns,
@@ -113,8 +113,8 @@ export function BoardColumns({
               <ol className="flex min-h-16 flex-col gap-2">
                 {extra.map((l) => (
                   <li key={l.id}>
-                    <Link href={l.href} className="block rounded-md border border-dashed border-[#e6c48a] bg-[#fffaf2] p-3 hover:border-[#8a5300]">
-                      <span className="t-caption font-semibold uppercase tracking-[0.04em] text-[#8a5300]">Needs approval</span>
+                    <Link href={l.href} className="block rounded-md border border-dashed border-warning/30 bg-warning-soft p-3 hover:border-warning">
+                      <span className="t-caption font-semibold uppercase tracking-[0.04em] text-warning">Needs approval</span>
                       <span className="mt-0.5 block t-small font-semibold text-navy">{l.title}</span>
                       <span className="block t-caption text-secondary">{l.sub}</span>
                     </Link>

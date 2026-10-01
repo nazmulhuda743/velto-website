@@ -1,11 +1,15 @@
 import type { ReactNode } from "react";
 
-export function AdminHeader({ title, intro, actions, level = 1 }: { title: string; intro?: ReactNode; actions?: ReactNode; level?: 1 | 2 }) {
+/** `term`: the trade word, in small secondary text after the plain name ("Google search" · SEO). */
+export function AdminHeader({ title, term, intro, actions, level = 1 }: { title: string; term?: string; intro?: ReactNode; actions?: ReactNode; level?: 1 | 2 }) {
   const Heading = level === 1 ? "h1" : "h2";
   return (
     <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
       <div>
-        <Heading className="t-h3 text-navy">{title}</Heading>
+        <Heading className="t-h3 text-navy">
+          {title}
+          {term ? <span className="ml-2 align-middle t-small font-medium text-secondary">({term})</span> : null}
+        </Heading>
         {intro ? <p className="mt-2 max-w-[70ch] text-secondary">{intro}</p> : null}
       </div>
       {actions ? <div className="flex gap-2">{actions}</div> : null}
@@ -47,7 +51,7 @@ export function Badge({ children, tone = "neutral" }: { children: ReactNode; ton
     neutral: "bg-soft text-secondary",
     blue: "bg-[#e8f3fb] text-action-hover",
     green: "bg-success-soft text-success",
-    amber: "bg-[#fff4e5] text-[#8a5300]",
+    amber: "bg-warning-soft text-warning",
   };
   return <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 t-caption font-semibold ${tones[tone]}`}>{children}</span>;
 }

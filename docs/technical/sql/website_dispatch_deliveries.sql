@@ -7,6 +7,10 @@
 --
 -- Requires website_dispatch_stages.sql. Service role only. Idempotent.
 -- Status: applied and tested on staging; applied on production 2026-09-28.
+--
+-- SUPERSEDED for website_dispatch_sync(): website_today.sql now owns that function (weekly routine
+-- pickups, one sync at a time, Ready orders from the last 30 days). Do not re-apply this file's
+-- definition (nor the older ones in website_dispatch.sql / website_dispatch_stages.sql) after it.
 
 begin;
 

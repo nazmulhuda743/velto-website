@@ -7,14 +7,19 @@ Nothing here is active in production: every write path is behind switches that d
 
 The website dashboard owns **website content, marketing intelligence, visitor analytics, campaign
 attribution, consent, conversion and website health**. Velto Ops remains the source of truth for
-orders, customers, payments, staff and operations. The Command Center reads Ops tasks and does not
-change them. There is no second request-status workflow.
+orders, customers, payments, staff and operations. The Command Center reads Ops tasks and changes
+them only through the pickup & delivery functions (Today, Pickup & delivery, Bookings & quotes; see
+`DISPATCH.md`): giving a job a rider and a time window sets the Ops task's assignee and due time (the
+window's end) or creates the rider's delivery task; closing, cancelling or merging a job marks its Ops
+task done with who and why; a customer's time change clears the planned rider and moves the due time.
+It never changes orders, customers or payments. There is no second request-status workflow.
 
 ## Admin routes
 
 | Route | Purpose |
 |---|---|
 | `/admin` | Command center: conversion rate, visitors, sessions, booking starts, bookings, quotes, WhatsApp, deltas vs the previous period, compact funnel, secondary signals, needs-attention, latest requests, content status |
+| `/admin/today`, `/admin/riders` | **Today** (spec `docs/superpowers/specs/2026-10-01-today-scheduling-design.md`): call, assign riders and plan deliveries on one phone-first screen. First under Operations and the home page after sign-in for everyone with the `dispatch` section (Owner, Manager, Customer support; other roles keep their first allowed page). **Riders & windows** (Owner, Manager) follows it in the menu. Week 1: Bookings & quotes, Pickup & delivery and Capacity show "Try the new Today screen" |
 | `/admin/funnel` | Funnel (landing → service → pricing → clicked Book → started → entered phone → sent, plus WhatsApp fallback), filterable by date, service, source, campaign and device; breakdowns by device and source. **After the request** (`website_request_outcomes`, docs/technical/sql/website_request_outcomes.sql): every request → picked up → first order delivered → ordered again, with open/cancelled and new/returning customers, by source. It counts all requests, not only consented sessions, so it follows the Service and Source filters only |
 | `/admin/marketing` | Traffic and conversions by channel, a UTM campaign table, and the tracked campaign link builder |
 | `/admin/visitors` | New vs returning, devices, grouped journeys, top/landing/exit pages, service interest, price searches, time of day |

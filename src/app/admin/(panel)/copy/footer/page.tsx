@@ -26,7 +26,7 @@ export default async function FooterLinksPage({ searchParams }: { searchParams: 
     <>
       <AdminHeader
         title="Footer links"
-        intro="The link lists at the bottom of every page. Add a link, change its label or address, change the order or hide it. Saved changes are live straight away and recorded in Activity. The headings (“Services”, “Help”) are edited on Text & copy."
+        intro="The link lists at the bottom of every page. Add a link, change its label or address, change the order or hide it. Saved changes are live straight away and recorded in the Activity log. The headings (“Services”, “Help”) are edited on Website text."
         actions={
           <a href="/#site-footer" target="_blank" rel="noopener noreferrer" className="admin-btn-secondary">
             See the footer ↗

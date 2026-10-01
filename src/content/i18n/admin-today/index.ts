@@ -1,0 +1,13 @@
+import { todayBn } from "./bn";
+import { todayEn, type TodayText } from "./en";
+
+export type { TodayText };
+
+/** Cookie that remembers the staff member's language on the Today page. */
+export const TODAY_LANG_COOKIE = "velto_admin_lang";
+
+/** Cookie set when someone closes the "How Today works" card (it stays closed for them). */
+export const TODAY_HELP_COOKIE = "velto_today_help";
+
+/** Text for the Today page in a language. No server-only code, so pages and client components can both use it. */
+export const todayText = (lang: "en" | "bn"): TodayText => (lang === "bn" ? todayBn : todayEn);

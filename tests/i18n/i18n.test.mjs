@@ -15,6 +15,9 @@ const { formsEn } = requireTs("src/content/i18n/forms/en.ts");
 const { formsBn } = requireTs("src/content/i18n/forms/bn.ts");
 const { accountEn } = requireTs("src/content/i18n/account/en.ts");
 const { accountBn } = requireTs("src/content/i18n/account/bn.ts");
+const { todayEn } = requireTs("src/content/i18n/admin-today/en.ts");
+const { todayBn } = requireTs("src/content/i18n/admin-today/bn.ts");
+const { todayText, TODAY_LANG_COOKIE } = requireTs("src/content/i18n/admin-today/index.ts");
 const { SERVICE_PAGES, servicePages } = requireTs("src/content/services.ts");
 const { BANGLA_READY_PATHS } = requireTs("src/lib/i18n/config.ts");
 const { SHORT_ADDRESS } = requireTs("src/content/seo-routes.ts");
@@ -147,4 +150,60 @@ test("only translated pages are advertised in Bangla", () => {
     // Search titles are required for every advertised page except service pages (they carry their own meta).
     assert.ok(bn.seo[p]?.title && bn.seo[p]?.description, `${p} has no Bangla search title/description`);
   }
+});
+
+/** Today page: function values are called with sample arguments so both languages can be compared. */
+function todayShape(value, path = "") {
+  if (typeof value === "function") return [`${path}:fn${value.length}`];
+  if (value && typeof value === "object") return Object.keys(value).sort().flatMap((k) => todayShape(value[k], path ? `${path}.${k}` : k));
+  return [`${path}:${typeof value}`];
+}
+/** These take text that is already in the page language (a window label, a name), so the sample is text. */
+const TODAY_TEXT_ARGS = ["confirmFor", "assignTo", "everyWeekday", "fullAsk"];
+function todayStrings(value, path = "", out = []) {
+  if (typeof value === "function") out.push([path, TODAY_TEXT_ARGS.includes(path) ? value("X", "Y") : value(3, 5)]);
+  else if (value && typeof value === "object") for (const k of Object.keys(value)) todayStrings(value[k], path ? `${path}.${k}` : k, out);
+  else out.push([path, value]);
+  return out;
+}
+
+test("Today text: Bangla has exactly the English keys and function shapes", () => {
+  assert.deepEqual(todayShape(todayBn), todayShape(todayEn));
+  assert.deepEqual(Object.keys(todayBn.windows).sort(), ["afternoon", "evening", "morning"]);
+});
+
+test("Today text: every value is a non-empty string, Bangla shows Bangla digits and no stray English", () => {
+  for (const [key, value] of todayStrings(todayEn)) {
+    assert.equal(typeof value, "string", `en.${key}`);
+    assert.ok(value.trim().length > 0, `en.${key} is empty`);
+  }
+  for (const [key, value] of todayStrings(todayBn)) {
+    assert.equal(typeof value, "string", `bn.${key}`);
+    assert.ok(value.trim().length > 0, `bn.${key} is empty`);
+    assert.ok(!/[0-9]/.test(value), `bn.${key} has Western digits: ${value}`);
+    const latin = value.replace(/\b(?:Velto|Ops|WhatsApp)\b/g, "");
+    assert.ok(!/[A-Za-z]{3,}/.test(latin), `bn.${key} has untranslated English: ${value}`);
+  }
+});
+
+test("Today text: exact English copy and Bangla digits", () => {
+  assert.equal(todayEn.title, "Today");
+  assert.deepEqual(todayEn.tabs, { call: "Call", assign: "Assign", deliver: "Deliver", route: "Route" });
+  assert.equal(todayEn.lateNote(1), "1 customer waiting over 30 min");
+  assert.equal(todayEn.lateNote(3), "3 customers waiting over 30 min");
+  assert.equal(todayEn.confirmFor("Evening 4–8"), "Confirmed for Evening 4–8");
+  assert.equal(todayEn.readySince("9:40"), "Ready since 9:40");
+  assert.equal(todayEn.stopsOf(3, 8), "3/8 stops");
+  assert.equal(todayEn.opsDown("9:40"), "Can't reach Velto Ops right now. Showing the list from 9:40.");
+  assert.equal(todayEn.firstOrder, "First website order · 10% off");
+  assert.equal(todayBn.stopsOf(3, 8), "৩/৮ স্টপ");
+  assert.equal(todayBn.readySince("9:40"), "প্রস্তুত ৯:৪০ থেকে");
+  assert.equal(todayBn.windows.evening, "সন্ধ্যা ৪–৮");
+  assert.equal(todayEn.windows.morning, "Morning 9–12");
+});
+
+test("Today text: todayText picks the language and the cookie name is fixed", () => {
+  assert.equal(TODAY_LANG_COOKIE, "velto_admin_lang");
+  assert.equal(todayText("en"), todayEn);
+  assert.equal(todayText("bn"), todayBn);
 });

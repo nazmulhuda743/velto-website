@@ -13,46 +13,38 @@ export async function FindAPrice() {
   const t = d.home.findPrice;
   return (
     <section id="find-a-price" aria-labelledby="price-title" className="bg-soft py-(--space-section)">
-      <div className="container-page grid-page gap-y-12">
+      <div className="container-page grid-page gap-y-10">
         <div className="col-span-4 md:col-span-8 xl:col-span-7">
-          <SectionIntro id="price-title" eyebrow={t.eyebrow} title={t.title}>
+          <SectionIntro id="price-title" title={t.title}>
             <p>{t.intro}</p>
           </SectionIntro>
-          <div className="mt-(--space-intro-content) space-y-10">
-            {/* The everyday prices first, without typing; then the search for everything else. */}
-            <PopularPrices />
-            {/* Each priced service can be booked straight from the result, like on /pricing. */}
-            <PriceFinder bookFromResult={{ source: "home_pricing" }} />
+          <div className="mt-(--space-intro-content)">
+            {/* Popular prices show under the search until the visitor types. Each priced service
+                can be booked straight from the result, like on /pricing. */}
+            <PriceFinder
+              bookFromResult={{ source: "home_pricing" }}
+              popular={<PopularPrices source="home_popular" placement="home_popular_price" />}
+            />
           </div>
         </div>
 
-        <div className="col-span-4 md:col-span-8 xl:col-span-4 xl:col-start-9 xl:pt-2">
-          <div className="md:grid md:grid-cols-2 md:gap-5 xl:block">
-            <div>
-              <dl className="border-t border-navy">
-                {t.turnaround.map((row) => (
-                  <div key={row.label} className="border-b border-line py-4">
-                    <dt className="t-label uppercase text-navy">{row.label}</dt>
-                    <dd className="mt-1 text-body">{row.value}</dd>
-                  </div>
-                ))}
-              </dl>
-              <p className="mt-4 t-small text-secondary">{t.mayTakeLonger}</p>
-            </div>
+        <div className="col-span-4 md:col-span-8 xl:col-span-4 xl:col-start-9 xl:sticky xl:top-28 xl:self-start xl:pt-2">
+          {/* Turnaround is stated once on the homepage, in the hero figures; /pricing carries the full table. */}
+          <p className="border-t border-navy pt-4 t-h4 text-navy [text-wrap:balance]">
+            {fill(t.free, { amount: FREE_DELIVERY_THRESHOLD }, locale)}
+          </p>
+          <p className="mt-3 max-w-[48ch] t-small text-secondary">{t.smallerOrders}</p>
 
-            <div className="mt-10 md:mt-0 xl:mt-10">
-              <p className="border-t border-navy pt-4 t-h4 text-navy [text-wrap:balance]">
-                {fill(t.free, { amount: FREE_DELIVERY_THRESHOLD }, locale)}
-              </p>
-              <p className="mt-3 t-small text-secondary">{t.smallerOrders}</p>
-            </div>
-          </div>
-
-          <div className="mt-10 flex flex-col gap-3 md:flex-row xl:flex-col 2xl:flex-row">
-            <ButtonLink href={bookHref("home_pricing")} event="book_pickup_click" placement="pricing">
+          <div className="mt-6 flex flex-wrap gap-2.5 md:mt-8 md:gap-3 xl:flex-col 2xl:flex-row">
+            <ButtonLink
+              href={bookHref("home_pricing")}
+              event="book_pickup_click"
+              placement="pricing"
+              className="flex-auto max-md:px-4 md:flex-none"
+            >
               {d.common.bookPickup}
             </ButtonLink>
-            <ButtonLink href="/pricing" variant="secondary">
+            <ButtonLink href="/pricing" variant="secondary" className="flex-auto max-md:px-4 md:flex-none">
               {t.viewPricing}
             </ButtonLink>
           </div>

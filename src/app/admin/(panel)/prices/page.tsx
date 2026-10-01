@@ -148,7 +148,7 @@ export default async function PricesPage({ searchParams }: { searchParams: Searc
         title="Prices"
         intro={
           owner
-            ? "The Velto Ops price list. Your changes apply to Ops billing and the website straight away; Managers' changes wait for you on the Approvals page."
+            ? "The Velto Ops price list. Your changes apply to Ops billing and the website straight away; Managers' changes wait for you on the Price approvals page."
             : editable
               ? "The Velto Ops price list. Add, change or remove prices here: each change waits for an Owner's approval, then updates Ops billing and the website together."
               : "The Velto Ops price list, as Ops bills it and the website shows it."
@@ -182,7 +182,7 @@ export default async function PricesPage({ searchParams }: { searchParams: Searc
             </Link>
           </div>
           {editing?.pending ? (
-            <p className="mt-3 rounded-md bg-[#fff4e5] px-3 py-2 t-small text-[#8a5300]">
+            <p className="mt-3 rounded-md bg-warning-soft px-3 py-2 t-small text-warning">
               {editing.pending.by} already asked to {editing.pending.kind} this price on {requestDate(editing.pending.at)}. It must be approved or withdrawn first.
             </p>
           ) : (

@@ -31,7 +31,7 @@ import { BookingItems, lineUnit, money, repeatLine, type ItemLine, type PriceIte
 
 /** One line of an earlier order, as the book page reads it on the server. */
 export type RepeatItem = { item: string; service: ItemService | ""; quantity: number; listed?: PriceItem };
-import { normalisePhone, phoneOk } from "./fields";
+import { normalisePhone, phoneOk, RequiredNote, SelectField, TextField } from "./fields";
 import { MAX_BOOKING_PHOTOS } from "@/lib/booking-photos";
 import { shrinkPhoto } from "./shrink-photo";
 import { PickupWindows, hoursText, type PickedWindow } from "./PickupWindows";
@@ -316,6 +316,19 @@ function validate(s: FormState, t: Text, c: Common, locale: Locale): Errors {
 
 const FIELD_ORDER: ErrorKey[] = ["what", "name", "phone", "sector", "address", "date", "slot", "backBy", "photos"];
 
+/** Where each error-summary link goes: the field itself (for "what", the first service chip). */
+const ERROR_TARGET: Record<ErrorKey, string> = {
+  what: "booking-service-dry-cleaning",
+  name: "booking-name",
+  phone: "booking-phone",
+  sector: "booking-sector",
+  address: "booking-address",
+  date: "booking-date",
+  slot: "booking-slot",
+  backBy: "booking-backBy",
+  photos: "booking-photos",
+};
+
 /* ---------- presentational pieces (booking page only) ---------- */
 
 const inputBase =
@@ -341,7 +354,7 @@ function Group({
   children: ReactNode;
 }) {
   return (
-    <fieldset id={id} className="min-w-0 scroll-mt-28 border-t border-line pt-5 first:border-t-0 first:pt-0">
+    <fieldset id={id} className="min-w-0 scroll-mt-28 border-t border-line pt-5 first-of-type:border-t-0 first-of-type:pt-0">
       <legend className="contents">
         <span className="flex items-baseline gap-3 t-h4 text-navy">
           <span aria-hidden="true" className="w-4 shrink-0 text-action tabular-nums">
@@ -378,8 +391,8 @@ function ErrorText({ id, children }: { id: string; children?: string }) {
 }
 
 /**
- * Optional service chips under "What are we picking up?": the three garment services (any mix)
- * and one household service (curtains, carpets or bedding). A service page preselects its own.
+ * Service chips, the first thing under "What are we picking up?": the three garment services (any
+ * mix) and one household service (curtains, carpets or bedding). A service page preselects its own.
  */
 function ServiceChips({
   t,
@@ -387,24 +400,28 @@ function ServiceChips({
   household,
   onServices,
   onHousehold,
+  describedBy,
 }: {
   t: Text;
   services: GarmentService[];
   household: string | null;
   onServices: (v: GarmentService[]) => void;
   onHousehold: (v: string | null) => void;
+  describedBy?: string;
 }) {
+  // `relative` keeps each visually hidden checkbox inside its chip, so an error-summary link lands on it.
   const chip = (checked: boolean) =>
-    `inline-flex min-h-11 cursor-pointer items-center rounded-full border px-4 text-[15px] transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-blue ${
+    `relative inline-flex min-h-11 cursor-pointer items-center rounded-full border px-4 text-[15px] transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-blue ${
       checked ? "border-blue bg-[#f0f7fc] font-semibold text-navy" : "border-line-strong bg-white text-navy hover:border-navy/50"
     }`;
   return (
-    <div role="group" aria-label={t.servicesTitle} className="flex flex-wrap gap-2" data-service-chips>
+    <div role="group" aria-labelledby="booking-services-label" aria-describedby={describedBy} className="flex flex-wrap gap-2" data-service-chips>
       {GARMENT_SERVICES.map((slug) => {
         const checked = services.includes(slug);
         return (
           <label key={slug} className={chip(checked)}>
             <input
+              id={`booking-service-${slug}`}
               type="checkbox"
               className="sr-only"
               checked={checked}
@@ -419,7 +436,7 @@ function ServiceChips({
         const checked = household === slug;
         return (
           <label key={slug} className={chip(checked)}>
-            <input type="checkbox" className="sr-only" checked={checked} onChange={() => onHousehold(checked ? null : slug)} />
+            <input id={`booking-service-${slug}`} type="checkbox" className="sr-only" checked={checked} onChange={() => onHousehold(checked ? null : slug)} />
             {checked ? <span aria-hidden="true" className="mr-1.5 text-action">✓</span> : null}
             {t.services[slug]}
           </label>
@@ -905,6 +922,7 @@ export function BookingForm({
   const started = useRef(false);
   const phoneEntered = useRef(false);
   const statusRef = useRef<HTMLDivElement>(null);
+  const summaryRef = useRef<HTMLDivElement>(null);
 
   // A booking started earlier on this device and not sent: offer to continue it (not over a repeat order).
   const storedDraft = useSyncExternalStore(noSubscribe, readStoredDraft, () => null);
@@ -1014,11 +1032,12 @@ export function BookingForm({
     if (status.state === "submitting") return;
     const found = validate(s, t, c, locale);
     setErrors(found);
-    const first = FIELD_ORDER.find((k) => found[k]);
-    if (first) {
-      const el = document.getElementById(`booking-${first}`);
-      el?.scrollIntoView({ block: "center" });
-      el?.focus({ preventScroll: true });
+    if (FIELD_ORDER.some((k) => found[k])) {
+      // Like the quote form: the error summary takes focus and links to each field.
+      requestAnimationFrame(() => {
+        summaryRef.current?.scrollIntoView({ block: "start" });
+        summaryRef.current?.focus({ preventScroll: true });
+      });
       return;
     }
     setStatus({ state: "submitting" });
@@ -1064,7 +1083,8 @@ export function BookingForm({
   }
 
   const submitting = status.state === "submitting";
-  const errorCount = Object.values(errors).filter(Boolean).length;
+  const errorList = FIELD_ORDER.filter((k) => errors[k]);
+  const errorCount = errorList.length;
   const earliest = earliestBackBy(s);
   const words = pageWords(t, c, locale);
 
@@ -1081,6 +1101,29 @@ export function BookingForm({
           aria-labelledby="page-title"
           className="space-y-6 [&_input]:scroll-mt-32 [&_select]:scroll-mt-32 [&_textarea]:scroll-mt-32"
         >
+          {errorList.length ? (
+            <div
+              ref={summaryRef}
+              tabIndex={-1}
+              role="alert"
+              className="scroll-mt-28 rounded-md border border-error bg-error-soft p-4 focus:outline-2 focus:outline-error"
+              data-error-summary
+            >
+              <p className="font-semibold text-error">
+                {errorList.length === 1 ? t.errorSummaryOne : fill(t.errorSummaryMany, { n: errorList.length }, locale)}
+              </p>
+              <ul className="mt-2 space-y-1 t-small">
+                {errorList.map((k) => (
+                  <li key={k}>
+                    <a href={`#${ERROR_TARGET[k]}`} className="text-error underline underline-offset-2">
+                      {t.errorLabels[k]}: {errors[k]}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          <RequiredNote>{c.requiredNote}</RequiredNote>
           {draftOffer ? (
             <div role="region" aria-labelledby="draft-title" className="rounded-md border border-blue/30 bg-[#f0f7fc] p-4" data-draft>
               <p id="draft-title" className="font-semibold text-navy">
@@ -1098,38 +1141,37 @@ export function BookingForm({
             </div>
           ) : null}
           <Group step={1} title={t.whatTitle} stepOf={t.stepOf} locale={locale}>
+            {/* Services first; the customer's own words follow as an "anything else?" line. */}
             <div>
-              <FieldLabel htmlFor="booking-what">
-                {t.whatLabel}
-                {isHousehold(s) || s.services.length || s.items.length ? <span className="font-normal text-secondary">{c.optional}</span> : null}
-              </FieldLabel>
-              <input
-                id="booking-what"
-                name="what"
-                type="text"
-                enterKeyHint="next"
-                maxLength={WHAT_MAX}
-                placeholder={t.whatPlaceholder}
-                value={s.what}
-                onChange={(e) => update("what", e.target.value)}
-                aria-invalid={errors.what ? true : undefined}
-                aria-describedby={errors.what ? "booking-what-help booking-what-error" : "booking-what-help"}
-                className={`${inputBase} ${inputHeight} mt-2`}
-              />
-              <p id="booking-what-help" className="mt-2 t-small text-secondary">
-                {t.whatHelp}
+              <p id="booking-services-label" className="text-[15px] font-semibold text-navy">
+                {t.servicesTitle}
               </p>
-              <div className="mt-3">
+              <div className="mt-2">
                 <ServiceChips
                   t={t}
                   services={s.services}
                   household={isHousehold(s) ? s.service : null}
                   onServices={(v) => update("services", v)}
                   onHousehold={(v) => update("service", v)}
+                  describedBy={errors.what ? "booking-what-error" : undefined}
                 />
               </div>
-              <ErrorText id="booking-what-error">{errors.what}</ErrorText>
             </div>
+            <TextField
+              id="booking-what"
+              name="what"
+              label={t.whatLabel}
+              optional={Boolean(isHousehold(s) || s.services.length || s.items.length)}
+              optionalText={c.optional}
+              helper={t.whatHelp}
+              error={errors.what}
+              type="text"
+              enterKeyHint="next"
+              maxLength={WHAT_MAX}
+              placeholder={t.whatPlaceholder}
+              value={s.what}
+              onChange={(e) => update("what", e.target.value)}
+            />
             <Fold
               id="booking-items-fold"
               label={t.itemsOpen}
@@ -1157,46 +1199,36 @@ export function BookingForm({
           </Group>
 
           <Group step={2} title={t.youTitle} stepOf={t.stepOf} locale={locale}>
-            <div>
-              <FieldLabel htmlFor="booking-name">{t.nameLabel}</FieldLabel>
-              <input
-                id="booking-name"
-                name="name"
-                type="text"
-                autoComplete="name"
-                autoCapitalize="words"
-                enterKeyHint="next"
-                value={s.name}
-                onChange={(e) => update("name", e.target.value)}
-                aria-invalid={errors.name ? true : undefined}
-                aria-describedby={errors.name ? "booking-name-error" : undefined}
-                className={`${inputBase} ${inputHeight} mt-2`}
-              />
-              <ErrorText id="booking-name-error">{errors.name}</ErrorText>
-            </div>
+            <TextField
+              id="booking-name"
+              name="name"
+              label={t.nameLabel}
+              required
+              error={errors.name}
+              type="text"
+              autoComplete="name"
+              autoCapitalize="words"
+              enterKeyHint="next"
+              value={s.name}
+              onChange={(e) => update("name", e.target.value)}
+            />
 
-            <div>
-              <FieldLabel htmlFor="booking-phone">{t.phoneLabel}</FieldLabel>
-              <p id="booking-phone-help" className="mt-1 t-small text-secondary">
-                {s.pickup?.booked ? t.phoneHelpBooked : t.phoneHelp}
-              </p>
-              <input
-                id="booking-phone"
-                name="phone"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                enterKeyHint="next"
-                placeholder="01XXX XXXXXX"
-                value={s.phone}
-                onChange={(e) => update("phone", e.target.value)}
-                onBlur={checkPhoneOnBlur}
-                aria-invalid={errors.phone ? true : undefined}
-                aria-describedby={errors.phone ? "booking-phone-help booking-phone-error" : "booking-phone-help"}
-                className={`${inputBase} ${inputHeight} mt-2`}
-              />
-              <ErrorText id="booking-phone-error">{errors.phone}</ErrorText>
-            </div>
+            <TextField
+              id="booking-phone"
+              name="phone"
+              label={t.phoneLabel}
+              required
+              helper={s.pickup?.booked ? t.phoneHelpBooked : t.phoneHelp}
+              error={errors.phone}
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              enterKeyHint="next"
+              placeholder="01XXX XXXXXX"
+              value={s.phone}
+              onChange={(e) => update("phone", e.target.value)}
+              onBlur={checkPhoneOnBlur}
+            />
 
             {savedAddresses.length ? (
               <div data-saved-addresses>
@@ -1226,57 +1258,41 @@ export function BookingForm({
               </div>
             ) : null}
 
-            <div>
-              <FieldLabel htmlFor="booking-sector">{t.sectorLabel}</FieldLabel>
-              <div className="relative mt-2">
-                <select
-                  id="booking-sector"
-                  name="sector"
-                  value={s.sector}
-                  onChange={(e) => update("sector", e.target.value)}
-                  aria-invalid={errors.sector ? true : undefined}
-                  aria-describedby={errors.sector ? "booking-sector-error" : s.sector === OUTSIDE ? "booking-outside" : undefined}
-                  className={`${inputBase} ${inputHeight} appearance-none pr-11`}
-                >
-                  <option value="" disabled>
-                    {t.sectorPlaceholder}
-                  </option>
-                  {SECTORS.map((n) => (
-                    <option key={n} value={String(n)}>
-                      {fill(t.sectorOption, { n }, locale)}
-                    </option>
-                  ))}
-                  <option value={OUTSIDE}>{t.outsideOption}</option>
-                </select>
-                <svg viewBox="0 0 16 16" aria-hidden="true" className="pointer-events-none absolute right-4 top-1/2 size-4 -translate-y-1/2 text-navy">
-                  <path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-              <ErrorText id="booking-sector-error">{errors.sector}</ErrorText>
-              {s.sector === OUTSIDE ? (
-                <p id="booking-outside" className="mt-2 t-small text-navy">
-                  {t.outsideNote}
-                </p>
-              ) : null}
-            </div>
+            <SelectField
+              id="booking-sector"
+              name="sector"
+              label={t.sectorLabel}
+              required
+              error={errors.sector}
+              // As on the quote form, the outside-area note shows as the field's helper.
+              helper={s.sector === OUTSIDE ? <span className="text-navy">{t.outsideNote}</span> : undefined}
+              value={s.sector}
+              onChange={(e) => update("sector", e.target.value)}
+            >
+              <option value="" disabled>
+                {t.sectorPlaceholder}
+              </option>
+              {SECTORS.map((n) => (
+                <option key={n} value={String(n)}>
+                  {fill(t.sectorOption, { n }, locale)}
+                </option>
+              ))}
+              <option value={OUTSIDE}>{t.outsideOption}</option>
+            </SelectField>
 
-            <div>
-              <FieldLabel htmlFor="booking-address">{t.addressLabel}</FieldLabel>
-              <input
-                id="booking-address"
-                name="address"
-                type="text"
-                autoComplete="address-line1"
-                enterKeyHint="next"
-                placeholder={t.addressPlaceholder}
-                value={s.address}
-                onChange={(e) => update("address", e.target.value)}
-                aria-invalid={errors.address ? true : undefined}
-                aria-describedby={errors.address ? "booking-address-error" : undefined}
-                className={`${inputBase} ${inputHeight} mt-2`}
-              />
-              <ErrorText id="booking-address-error">{errors.address}</ErrorText>
-            </div>
+            <TextField
+              id="booking-address"
+              name="address"
+              label={t.addressLabel}
+              required
+              error={errors.address}
+              type="text"
+              autoComplete="address-line1"
+              enterKeyHint="next"
+              placeholder={t.addressPlaceholder}
+              value={s.address}
+              onChange={(e) => update("address", e.target.value)}
+            />
           </Group>
 
           <Group step={3} id="booking-pickup" title={t.pickupTitle} stepOf={t.stepOf} locale={locale}>
@@ -1395,8 +1411,9 @@ export function BookingForm({
               </div>
             ) : null}
 
+            {/* A reminder by the button; the error summary at the top is what gets announced. */}
             {errorCount > 0 ? (
-              <p role="status" className="mb-4 t-small font-medium text-error">
+              <p className="mb-4 t-small font-medium text-error">
                 {errorCount === 1 ? t.errorsOne : fill(t.errorsMany, { n: errorCount }, locale)}
               </p>
             ) : null}

@@ -8,7 +8,7 @@ import { readDashboardParams, SERVICE_OPTIONS } from "@/lib/admin/page-helpers";
 import { outcomeFunnel, outcomesByChannel, type OutcomeRow } from "@/lib/admin/request-outcomes";
 import { requireSection } from "@/lib/admin/session";
 
-export const metadata = { title: "Funnel · Velto Command Center" };
+export const metadata = { title: "Visitor journey · Velto Command Center" };
 
 function Select({ name, label, value, options }: { name: string; label: string; value?: string; options: { value: string; label: string }[] }) {
   return (
@@ -40,7 +40,8 @@ export default async function FunnelPage({ searchParams }: { searchParams: Searc
   return (
     <>
       <AdminHeader
-        title="Conversion funnel"
+        title="Visitor journey"
+        term="funnel"
         intro={`From landing to a sent request · ${range.label}. Each session is counted at the furthest stage it reached, so every stage includes the ones after it.`}
         actions={<RangePicker basePath="/admin/funnel" params={flat} active={range.key} from={flat.from} to={flat.to} />}
       />

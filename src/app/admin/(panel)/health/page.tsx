@@ -54,7 +54,7 @@ export default async function HealthPage() {
             <span className="font-semibold text-success">{counts.healthy}</span> healthy
           </span>
           <span>
-            <span className="font-semibold text-[#8a5300]">{counts.warning}</span> warning
+            <span className="font-semibold text-warning">{counts.warning}</span> warning
           </span>
           <span>
             <span className="font-semibold text-error">{counts.error}</span> error

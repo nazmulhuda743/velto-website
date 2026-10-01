@@ -39,14 +39,15 @@ export async function FAQ({
   className = "",
 }: {
   title?: string;
-  eyebrow?: string;
+  /** null: no label above the heading (homepage). */
+  eyebrow?: string | null;
   items?: FAQItem[];
   className?: string;
 }) {
   const locale = await getLocale();
   const t = dictionary(locale).home.faq;
   title ??= t.title;
-  eyebrow ??= t.eyebrow;
+  if (eyebrow === undefined) eyebrow = t.eyebrow;
   items ??= locale === "bn" ? FAQS_BN : FAQS;
   // The questions and answers shown here, for AI assistants and search engines. Google shows FAQ rich
   // results only for government and health sites, so this is for understanding, not a SERP feature.
@@ -57,7 +58,7 @@ export async function FAQ({
       <div className="container-page grid-page gap-y-(--space-intro-content)">
         <div className="col-span-4 md:col-span-8 xl:col-span-4">
           <div className="xl:sticky xl:top-[calc(100px+var(--promo-h,0px))]">
-            <Eyebrow>{eyebrow}</Eyebrow>
+            {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
             <h2 id="faq-title" className="t-h2 max-w-[16ch] text-navy">
               {title}
             </h2>

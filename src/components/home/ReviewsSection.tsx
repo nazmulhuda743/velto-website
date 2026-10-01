@@ -1,10 +1,9 @@
 import { Stars } from "@/components/ui/icons";
 import { LOCATIONS } from "@/content/site";
-import { GoogleProof } from "./ProofLine";
-import { Eyebrow } from "./SectionIntro";
+import { TextLink } from "@/components/ui/TextLink";
 import type { Review } from "@/content/mock";
-import { ReviewCarousel } from "@/components/reviews/ReviewCarousel";
 import { getHomeReviews } from "@/lib/reviews";
+import { getLocations } from "@/lib/site-content";
 import { dictionary } from "@/content/i18n";
 import { fill, type Locale } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
@@ -150,27 +149,45 @@ function ReviewSourceLink({ review, label, opens, className }: { review: Review;
   );
 }
 
+/** Homepage shows two reviews in full view; the rest are one link away on Google. */
+const HOME_REVIEW_COUNT = 2;
+
 /**
- * "What customers noticed": a moving strip of every review Velto can show
- * (owner-verified, plus live Google reviews when configured). Pauses on hover.
+ * "What customers noticed": two owner-verified (or live Google) reviews, still and readable,
+ * stacked on a phone and side by side from tablet up. Reviews with a verified pull line lead.
  */
 export async function ReviewsSection() {
-  const reviews = await getHomeReviews();
+  const reviews = (await getHomeReviews())
+    .filter((r) => r.text && r.name)
+    .sort((a, b) => Number(Boolean(b.highlight)) - Number(Boolean(a.highlight)))
+    .slice(0, HOME_REVIEW_COUNT);
   if (!reviews.length) return null;
+  const [primary] = await getLocations();
   const t = dictionary(await getLocale()).home.reviews;
   return (
     <section id="reviews" aria-labelledby="reviews-title" className="bg-warm py-(--space-section)">
-      <div className="container-page flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <Eyebrow>{t.eyebrow}</Eyebrow>
-          <h2 id="reviews-title" className="t-h2 text-navy">
-            {t.title}
-          </h2>
+      <div className="container-page">
+        <h2 id="reviews-title" className="t-h2 text-navy">
+          {t.title}
+        </h2>
+        <ul className="mt-(--space-intro-content) grid gap-10 md:grid-cols-2 md:gap-x-10 xl:gap-x-16">
+          {reviews.map((review) => (
+            <li key={`${review.name}|${review.branch ?? ""}`}>
+              <ReviewBlock review={review} />
+            </li>
+          ))}
+        </ul>
+        <div className="mt-8">
+          <TextLink
+            href={primary.reviewsUrl}
+            external
+            event="google_reviews_click"
+            placement="reviews"
+            branch={primary.id}
+          >
+            {t.seeAll}
+          </TextLink>
         </div>
-        <GoogleProof placement="reviews" />
-      </div>
-      <div className="mt-(--space-intro-content)">
-        <ReviewCarousel reviews={reviews} label={t.carouselLabel} />
       </div>
     </section>
   );

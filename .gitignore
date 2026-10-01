@@ -9,3 +9,9 @@ next-env.d.ts
 .vercel
 .DS_Store
 .i18n-review-build/
+
+# Superpowers subagent-driven-development scratch (ledger, briefs, reports)
+.superpowers/
+
+# Agent worktrees
+.claude/worktrees/

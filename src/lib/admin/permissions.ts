@@ -21,6 +21,7 @@ export const SECTIONS = [
   "requests",
   "dispatch",
   "capacity",
+  "riders",
   "retention",
   "feedback",
   "loyalty",
@@ -44,7 +45,7 @@ export type Section = (typeof SECTIONS)[number];
 
 export const ROLE_INFO: Record<Role, { label: string; summary: string }> = {
   owner: { label: "Owner", summary: "Everything, including who has access and approving price changes." },
-  manager: { label: "Manager", summary: "Everything except Access and Approvals. Price changes wait for an Owner's approval." },
+  manager: { label: "Manager", summary: "Everything except Staff access and Price approvals. Price changes wait for an Owner's approval." },
   marketing: { label: "Marketing", summary: "Traffic, funnel, campaigns, revenue, consent, loyalty numbers, SEO, website text, reviews and the promo bar & popup." },
   designer: { label: "Designer", summary: "Images, logo, website text, SEO text, reviews, promo bar & popup and site settings. No customer data." },
   support: { label: "Customer support", summary: "Bookings, pickup & delivery, bring-back list, customer feedback, goal coupons, customer accounts and prices." },
@@ -65,19 +66,27 @@ export function can(role: Role | null | undefined, section: Section): boolean {
   return Boolean(role && MATRIX[role]?.has(section));
 }
 
+/** Pages whose folder isn't their section: Today is the dispatch section's screen (spec 2026-10-01 §3). */
+const PATH_SECTION: Record<string, Section> = { today: "dispatch" };
+
 /** Dashboard path → section. Unknown admin paths belong to no section (so nobody but owners). */
 export function sectionForPath(path: string): Section | null {
   const clean = path.split(/[?#]/)[0].replace(/\/+$/, "") || "/admin";
   if (clean === "/admin") return "overview";
   const first = clean.replace(/^\/admin\//, "").split("/")[0];
+  if (Object.hasOwn(PATH_SECTION, first)) return PATH_SECTION[first];
   return (SECTIONS as readonly string[]).includes(first) ? (first as Section) : null;
 }
 
-/** Where a role lands after signing in (their first allowed section, in menu order). */
-const MENU_ORDER: Section[] = ["overview", "requests", "dispatch", "images", "funnel", "retention", "seo"];
+/**
+ * Where a role lands after signing in: their first allowed section, in this order. Everyone who
+ * schedules pickups and deliveries (the dispatch section) starts on Today (spec 2026-10-01 §3).
+ */
+const MENU_ORDER: Section[] = ["dispatch", "overview", "requests", "images", "funnel", "retention", "seo"];
+const HOME_PATH: Partial<Record<Section, string>> = { overview: "/admin", dispatch: "/admin/today" };
 export function homeFor(role: Role): string {
   const first = MENU_ORDER.find((s) => can(role, s)) ?? SECTIONS.find((s) => can(role, s));
-  return !first || first === "overview" ? "/admin" : `/admin/${first}`;
+  return first ? (HOME_PATH[first] ?? `/admin/${first}`) : "/admin";
 }
 
 export type AdminAccess = {

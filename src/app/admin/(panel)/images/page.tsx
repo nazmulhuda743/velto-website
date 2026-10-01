@@ -27,7 +27,7 @@ export default async function ImagesPage({ searchParams }: { searchParams: Searc
   return (
     <>
       <AdminHeader
-        title="Images"
+        title="Photos"
         intro="Choose a page, then replace any photo on it. Uploads are JPG, PNG, WebP or AVIF up to 4 MB; the site resizes them for every screen. A photo shared by several pages changes on all of them (listed under “Also on”)."
       />
       <Notice saved={one(params.saved) ? true : undefined} error={errorSlot ? undefined : one(params.error)} />

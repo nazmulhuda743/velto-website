@@ -4,6 +4,7 @@ const test = require("node:test");
 
 const build = "../../.command-center-test-build";
 const p = require(`${build}/lib/admin/permissions.js`);
+const nav = require(`${build}/lib/admin/nav.js`);
 const pages = require(`${build}/lib/admin/image-pages.js`);
 const { IMAGE_SLOTS } = require(`${build}/content/mock.js`);
 const diff = require(`${build}/lib/admin/price-diff.js`);
@@ -37,6 +38,13 @@ test("support handles customers but not site content or marketing", () => {
   for (const s of ["images", "settings", "seo", "revenue", "marketing"]) assert.equal(p.can("support", s), false, s);
 });
 
+test("riders & windows settings are for owners and managers only", () => {
+  assert.ok(p.can("owner", "riders"));
+  assert.ok(p.can("manager", "riders"));
+  for (const r of ["support", "marketing", "designer"]) assert.equal(p.can(r, "riders"), false, r);
+  assert.equal(p.sectionForPath("/admin/riders"), "riders");
+});
+
 test("unknown roles and sections are refused", () => {
   assert.equal(p.can(null, "images"), false);
   assert.equal(p.can("superuser", "images"), false);
@@ -55,7 +63,36 @@ test("paths map to sections, and everyone lands on a page they may open", () => 
     assert.ok(p.can(r, p.sectionForPath(home)), `${r} → ${home}`);
   }
   assert.equal(p.homeFor("designer"), "/admin/images");
-  assert.equal(p.homeFor("support"), "/admin/requests");
+  assert.equal(p.homeFor("marketing"), "/admin");
+  // Everyone who schedules starts on Today (spec 2026-10-01 §3); it is the dispatch section's page.
+  for (const r of ["owner", "manager", "support"]) assert.equal(p.homeFor(r), "/admin/today", r);
+  assert.equal(p.sectionForPath("/admin/today?tab=call"), "dispatch");
+});
+
+const menuFor = (role) => nav.navFor(p.SECTIONS.filter((s) => p.can(role, s)));
+const operations = (role) => menuFor(role).find((g) => g.label === "Operations")?.items.map((i) => i.href) ?? [];
+
+test("Operations lists Today first for everyone who schedules", () => {
+  for (const r of ["owner", "manager", "support"]) assert.equal(operations(r)[0], "/admin/today", r);
+  for (const r of ["marketing", "designer"]) assert.ok(!menuFor(r).some((g) => g.items.some((i) => i.href === "/admin/today")), r);
+});
+
+test("Riders & windows follows Today, for owners and managers only", () => {
+  for (const r of ["owner", "manager"]) assert.deepEqual(operations(r).slice(0, 2), ["/admin/today", "/admin/riders"], r);
+  for (const r of ["support", "marketing", "designer"]) assert.ok(!menuFor(r).some((g) => g.items.some((i) => i.href === "/admin/riders")), r);
+});
+
+test("every menu item opens a page its role may see", () => {
+  for (const r of p.ROLES) {
+    for (const g of menuFor(r)) {
+      assert.ok(g.items.length, `${r}: empty group ${g.label}`);
+      for (const i of g.items) assert.ok(p.can(r, p.sectionForPath(i.href)), `${r} → ${i.href}`);
+    }
+  }
+  assert.equal(nav.sectionLabel("seo"), "Google search (SEO)");
+  assert.equal(nav.sectionLabel("dispatch"), "Pickup & delivery", "Today shares the section; the notice names the section's own page");
+  const hrefs = nav.NAV_GROUPS.flatMap((g) => g.items.map((i) => i.href));
+  assert.equal(new Set(hrefs).size, hrefs.length, "no duplicate menu items");
 });
 
 test("Ops admins are always owners; deactivated staff are always refused", () => {
@@ -103,7 +140,10 @@ test("every dashboard page and every admin action checks its section on the serv
   const pagesDir = path.join(root, "(panel)");
   for (const file of walk(pagesDir).filter((f) => f.endsWith("page.tsx"))) {
     const rel = path.relative(pagesDir, file);
-    const section = rel === "page.tsx" ? "overview" : rel.split(path.sep)[0];
+    // Pages that belong to another section: Today is the dispatch section's screen (spec 2026-10-01 §3).
+    const alias = { today: "dispatch" };
+    const folder = rel.split(path.sep)[0];
+    const section = rel === "page.tsx" ? "overview" : (alias[folder] ?? folder);
     assert.match(fs.readFileSync(file, "utf8"), new RegExp(`requireSection\\("${section}"\\)`), `${rel} must call requireSection("${section}")`);
   }
   for (const file of walk(root).filter((f) => /actions\.ts$/.test(f))) {

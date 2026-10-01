@@ -23,8 +23,8 @@ by person and links back to each booking.
 
 Data: `docs/technical/sql/website_dispatch_stages.sql` (stages `confirmed` and `picked`, call
 attempts, notes, order link, `website_dispatch_context`). A pickup task finished in Velto Ops now
-means "picked". Delivery jobs are only created for orders that became Ready in the last 7 days or
-are due from yesterday on. Test: `docs/technical/sql/tests/website_dispatch_stages_test.sql`
+means "picked". Delivery jobs are only created for orders that became Ready in the last 30 days (7 before
+`website_today.sql`) or are due from yesterday on. Test: `docs/technical/sql/tests/website_dispatch_stages_test.sql`
 (staging only; rolls back). Rules: `src/lib/admin/request-flow.ts`, tested in `tests/request-flow.test.cjs`.
 
 ## The flow
@@ -92,6 +92,41 @@ Status: applied and tested on **staging**; applied on **production** 2026-09-27 
 ## In the customer account
 
 `portal_dispatch_plans()` (docs/technical/sql/website_dispatch_portal.sql) gives a linked customer their own planned stops: deliveries by their orders' numbers, pickups by their verified phone. The account home shows a "Today / Tomorrow, Evening 4–8 PM · with Rakib" banner and the delivery window on the active order card. Nothing shows until a manager has planned the stop.
+
+## Today (`/admin/today`): riders, sync, auto-link
+
+Design: `docs/superpowers/specs/2026-10-01-today-scheduling-design.md`. SQL:
+`docs/technical/sql/website_today.sql` (test: `docs/technical/sql/tests/website_today_test.sql`,
+staging only; rolls back). Status: applied and tested on **staging** 2026-09-30; production is
+applied by a human after review, together with `website_customer_pickups.sql`.
+
+- **Tables (service role only; RLS on, no policies, nothing granted to anon/authenticated):**
+  `website_riders` (`profile_id`, `can_ride`, `stops_per_window` 1–30, default 8, `updated_at`,
+  `updated_by`) and `website_rider_days_off` (`profile_id`, `day`). Until anyone has
+  `can_ride = true`, every active staff member counts as a rider at 8 stops.
+- **Owner of `website_dispatch_sync()`:** `website_today.sql`. Do not re-apply the older
+  definitions in `website_dispatch.sql`, `website_dispatch_stages.sql` or
+  `website_dispatch_deliveries.sql`; they would undo the changes below.
+- **Cron:** pg_cron job `website-dispatch-sync`, `*/5 * * * *`:
+  `select public.website_dispatch_sync(); select public.website_dispatch_autolink();`. Opening the
+  admin still syncs too; one sync runs at a time (transaction advisory lock) and every insert is
+  `on conflict do nothing`, so the cron and a page open never collide. Re-running the SQL updates
+  the job by name; it never duplicates it.
+- **Ready orders:** orders Ready in the last 30 days (or due from yesterday on) come onto the
+  board; orders Ready for longer are left to Ops.
+- **Weekly routines:** the sync also brings Ops' weekly pickup tasks (`tasks.source = 'weekly'`,
+  `type = 'pickup'`, due today or later, still open, routine `active`) onto the board as job source
+  `weekly`, stage `confirmed` (To assign) on the due day in the routine's window. Once per task.
+- **Auto-link:** a `picked` pickup with no order gets the Ops order for the same phone created
+  between 1 day before and 2 days after the pickup, but not before the job reached the board, when
+  it is the only such order (not cancelled, not linked to another pickup) and no other picked job
+  claims it. One run at a time (a concurrent run returns 0). It goes through
+  `website_dispatch_link_order(..., 'Auto-link')` (history "order linked" by "Auto-link"). Two or
+  more candidates: nothing is linked; the manager picks on Today.
+- **Customer changes time** (`portal_pickup_change`): back to `new` (To call) either way, history
+  "customer changed time"; the rider is kept (job and Ops task) only while still free in the new
+  window: active, a rider, not off that day and below their stops per window (a combined trip
+  counts once). The 3-changes limit counts both the old "rescheduled" and the new action.
 
 ## Later: the Velto Ops engine
 

@@ -40,7 +40,8 @@ export default async function SeoPage({ searchParams }: { searchParams: SearchPa
   return (
     <>
       <AdminHeader
-        title="SEO"
+        title="Google search"
+        term="SEO"
         intro="Title and description shown in Google results, the image used when a page is shared, and whether a page may be indexed. Leave a field empty to use the built-in text."
       />
       <Notice error={one(params.error)} />

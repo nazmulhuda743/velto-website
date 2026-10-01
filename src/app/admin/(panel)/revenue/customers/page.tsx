@@ -8,7 +8,7 @@ import { getRevenueData } from "@/lib/admin/revenue-data";
 import { CLASSIFICATION_LABELS, METHOD_LABELS, money, parseRevenueRange } from "@/lib/admin/revenue-helpers";
 import { requireSection } from "@/lib/admin/session";
 
-export const metadata = { title: "Attributed customers · Velto Command Center" };
+export const metadata = { title: "Customers from campaigns · Velto Command Center" };
 
 const RANGES = [
   { key: "30d", label: "30 days" },
@@ -40,7 +40,7 @@ export default async function RevenueCustomersPage({ searchParams }: { searchPar
   return (
     <>
       <AdminHeader
-        title="Attributed customers"
+        title="Customers from campaigns"
         intro={`Customers linked to a website booking or quote, by attributed order date · ${range.label}. Identified by their Velto Ops customer code only.`}
         actions={
           <RangePicker basePath="/admin/revenue/customers" params={flat} active={range.key} from={flat.from} to={flat.to} options={RANGES} maxNote="Up to two years of Velto Ops orders." />

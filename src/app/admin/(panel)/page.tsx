@@ -162,11 +162,11 @@ export default async function CommandCenter({ searchParams }: { searchParams: Se
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
         <Panel
-          title="Conversion funnel"
+          title="Visitor journey"
           intro="Sessions by the furthest stage reached."
           action={
             <Link href={`/admin/funnel?${new URLSearchParams({ range: range.key, ...(flat.from ? { from: flat.from, to: flat.to ?? "" } : {}) })}`} className="font-semibold text-navy underline underline-offset-4">
-              Filter the funnel
+              Filter the journey
             </Link>
           }
         >
