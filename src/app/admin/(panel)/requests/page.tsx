@@ -359,6 +359,10 @@ function NextStep({ card, staff, today, ret, canPlan }: { card: Card; staff: Sta
             Or type the order number
             <input id={`l-${job.id}-order`} name="order" placeholder="VEL-01952" required pattern="[Vv][Ee][Ll][Rr]?-[0-9]{3,6}" maxLength={11} className="admin-input mt-1 w-44 uppercase" />
           </label>
+          <label className="flex items-center gap-2 t-caption text-secondary">
+            <input type="checkbox" name="other_phone" value="1" />
+            Order is under a different phone
+          </label>
           <button type="submit" className="admin-btn-secondary">
             Link order
           </button>

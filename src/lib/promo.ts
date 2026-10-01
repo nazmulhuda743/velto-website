@@ -172,11 +172,11 @@ export function popupDue(p: Pick<PromoPopup, "version" | "frequency">, seen: See
 
 /**
  * Pages where the popup never opens: the customer is already signing up, booking, tracking or
- * inside their account, and the legal pages should read undisturbed.
+ * inside their account (or on a one-tap reminder page, /r), and the legal pages should read undisturbed.
  */
 export function popupExcluded(pathname: string): boolean {
   const path = pathname.replace(/^\/(?:en|bn)(?=\/|$)/, "") || "/";
-  return /^\/(?:book|quote|track|account|auth|login|signup|forgot-password|reset-password|offline|privacy|cookies|terms|admin)(?:\/|$)/.test(path);
+  return /^\/(?:book|quote|track|account|auth|login|signup|forgot-password|reset-password|offline|privacy|cookies|terms|admin|r)(?:\/|$)/.test(path);
 }
 
 /**

@@ -60,6 +60,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/admin/capacity", label: "Capacity", icon: "capacity" },
       { href: "/admin/feedback", label: "Customer feedback", icon: "feedback" },
       { href: "/admin/retention", label: "Bring customers back", icon: "retention" },
+      { href: "/admin/retention/reminders", label: "Reminders", icon: "retention" },
       { href: "/admin/accounts", label: "Customer accounts", icon: "accounts" },
       { href: "/admin/coupons", label: "Goal coupons", icon: "coupons" },
       { href: "/admin/loyalty", label: "Loyalty", icon: "loyalty" },
