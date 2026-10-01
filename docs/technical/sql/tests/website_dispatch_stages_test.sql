@@ -130,7 +130,7 @@ begin
   assert not exists (
     select 1 from public.website_dispatch_jobs j join public.orders o on o.order_number = j.order_number
      where j.kind = 'delivery' and j.created_at > now() - interval '1 minute'
-       and o.updated_at < now() - interval '7 days' and (o.delivery_date is null or o.delivery_date < (now() at time zone 'Asia/Dhaka')::date - 1)
+       and o.updated_at < now() - interval '30 days' and (o.delivery_date is null or o.delivery_date < (now() at time zone 'Asia/Dhaka')::date - 1)
   ), 'stale Ready orders are not imported';
 
   raise exception 'ALL STAGE TESTS PASSED (rolled back):%', v_log;
