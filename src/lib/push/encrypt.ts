@@ -66,4 +66,6 @@ export function pushEndpointOk(endpoint: string) {
   }
 }
 
-export type PushMessage = { title: string; body: string; url: string; tag?: string };
+/** A button under the notification (Android shows up to two); `url` is a site path. */
+export type PushAction = { action: string; title: string; url: string };
+export type PushMessage = { title: string; body: string; url: string; tag?: string; icon?: string; actions?: PushAction[] };

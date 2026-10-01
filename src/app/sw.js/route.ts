@@ -132,20 +132,28 @@ self.addEventListener("fetch", (event) => {
 self.addEventListener("push", (event) => {
   let d = {};
   try { d = event.data ? event.data.json() : {}; } catch (e) { d = {}; }
-  const url = typeof d.url === "string" && d.url.startsWith("/") ? d.url : "/";
+  const local = (u) => typeof u === "string" && u.startsWith("/") && !u.startsWith("//");
+  const url = local(d.url) ? d.url : "/";
+  // Up to two buttons; each opens its own site path (the order, or /go/call for the dialer).
+  const buttons = Array.isArray(d.actions) ? d.actions.filter((a) => a && typeof a.action === "string" && typeof a.title === "string" && local(a.url)).slice(0, 2) : [];
+  const links = {};
+  for (const a of buttons) links[a.action] = a.url;
   event.waitUntil(self.registration.showNotification(typeof d.title === "string" ? d.title : "Velto", {
     body: typeof d.body === "string" ? d.body : "",
-    icon: "/icons/icon-192.png",
+    icon: local(d.icon) ? d.icon : "/icons/icon-192.png",
+    actions: buttons.map((a) => ({ action: a.action, title: a.title })),
     badge: "/icons/icon-monochrome-512.png",
     tag: typeof d.tag === "string" ? d.tag : undefined,
     renotify: typeof d.tag === "string",
-    data: { url },
+    data: { url, links },
   }));
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const target = new URL((event.notification.data && event.notification.data.url) || "/", self.location.origin);
+  const data = event.notification.data || {};
+  const path = (event.action && data.links && data.links[event.action]) || data.url || "/";
+  const target = new URL(path, self.location.origin);
   if (target.origin !== self.location.origin) return;
   event.waitUntil((async () => {
     const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });

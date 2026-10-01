@@ -69,8 +69,15 @@ test("order update texts in both languages, with local links", () => {
   assert.equal(bn.title, "আপনার কাপড় আমরা নিয়েছি");
   assert.match(bn.body, /১২টি আইটেম/);
   assert.equal(bn.url, "/bn/account");
-  assert.equal(msg.orderMessage("Ready", { orderNumber: "VEL-1", items: null }, "en").title, "Your clothes are ready");
-  assert.equal(msg.orderMessage("Picked", { orderNumber: "VEL-1", items: 1 }, "en").body, "Order VEL-1: 1 item. We'll tell you when they're ready.");
+  assert.equal(msg.orderMessage("Ready", { orderNumber: "VEL-1", items: null }, "en").title, "Your clothes are ready ✓");
+  assert.equal(msg.orderMessage("Picked", { orderNumber: "VEL-1", items: 1 }, "en").body, "VEL-1 · 1 item. We'll tell you when they're ready.");
+  // One picture per step, and the two buttons: the order, and the dialer.
+  const ready = msg.orderMessage("Ready", { orderNumber: "VEL-1", items: 2 }, "en");
+  assert.equal(ready.icon, "/notify/ready.png");
+  assert.equal(msg.orderMessage("Picked", { orderNumber: "VEL-1", items: 2 }, "bn").icon, "/notify/picked.png");
+  assert.equal(msg.orderMessage("Delivered", { orderNumber: "VEL-1", items: 2 }, "en").icon, "/notify/delivered.png");
+  assert.deepEqual(ready.actions.map((a) => [a.action, a.url]), [["order", "/account"], ["call", "/go/call"]]);
+  assert.deepEqual(msg.orderMessage("Ready", { orderNumber: "VEL-1", items: 2 }, "bn").actions.map((a) => a.url), ["/bn/account", "/go/call"]);
   assert.match(msg.orderMessage("Delivered", { orderNumber: "VEL-1", items: 3 }, "en").body, /Tap to rate/);
   assert.equal(msg.orderMessage("Cancelled", { orderNumber: "VEL-1", items: 3 }, "en"), null);
   assert.equal(msg.orderMessage("Ready", { orderNumber: "VEL-9", items: 2 }, "bn").tag, "order-VEL-9");
@@ -83,6 +90,8 @@ test("reminder push opens the one-tap page", () => {
   const en = msg.reminderMessage({ firstName: null, service: null, code: "Ab3xK9pQ" }, "en");
   assert.equal(en.title, "Time for your laundry pickup?");
   assert.equal(en.url, "/r/Ab3xK9pQ");
+  assert.equal(en.icon, "/notify/reminder.png");
+  assert.deepEqual(en.actions.map((a) => [a.title, a.url]), [["Book pickup", "/r/Ab3xK9pQ"], ["Call Velto", "/go/call"]]);
 });
 
 test("reminder push wording follows the playbook", () => {
