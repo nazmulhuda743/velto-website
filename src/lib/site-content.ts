@@ -11,6 +11,7 @@ import type { CopyOverrides } from "./i18n/copy-overrides";
 import { parsePopup, type PromoPopup } from "./promo";
 import { parseLoyalty, type LoyaltySettings } from "./customer/loyalty";
 import { parseFooterLinks, type FooterLinks } from "./footer-links";
+import { parseRhythm, type RhythmSettings } from "./rhythm";
 
 /** Cache tag invalidated by every admin save. */
 export const SITE_CONTENT_TAG = "site-content";
@@ -62,6 +63,8 @@ export type SiteContent = {
   loyalty: LoyaltySettings;
   /** Footer link columns (Content → Footer links); null columns use the built-in links. */
   footer: FooterLinks;
+  /** Reminders (admin → Reminders): which playbooks run and their SMS text. */
+  rhythm: RhythmSettings;
   seo: Record<string, SeoEntry>;
   images: Record<string, ImageOverride>;
   reviews: ReviewEntry[];
@@ -225,6 +228,7 @@ export const getSiteContent = cache(async (): Promise<SiteContent> => {
     promo: parsePopup(rows.promo),
     loyalty: parseLoyalty(rows.loyalty),
     footer: parseFooterLinks(rows.footer),
+    rhythm: parseRhythm(rows.rhythm),
   };
 });
 

@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode, type Ref } from "react";
 import { track } from "@/components/layout/Analytics";
+import { NotifyCard } from "@/components/notify/NotifyCard";
+import type { NotifyText } from "@/content/i18n/notify";
 import { ButtonLink } from "@/components/ui/Button";
 import { WhatsAppIcon } from "@/components/ui/icons";
 import { FREE_DELIVERY_THRESHOLD, WHATSAPP_URL } from "@/content/site";
@@ -835,6 +837,7 @@ export function BookingForm({
   signInHref,
   savedAddresses = [],
   upsellHints = NO_HINTS,
+  notify,
 }: {
   /** Form text in the page language (formText(locale).booking), passed by the page. */
   t: Text;
@@ -866,6 +869,8 @@ export function BookingForm({
   savedAddresses?: { label: string; address: string; area: string }[];
   /** Smart add-ons: this customer's regular items and what customers send together (server-read). */
   upsellHints?: UpsellHints;
+  /** After booking: "Want updates on this pickup?" (signed in: turn on; guests: sign in first). */
+  notify?: NotifyText;
 }) {
   const locale = useLocale();
   const [initialItems] = useState(() => repeatItems.map((r) => repeatLine(r.item, r.service, r.quantity, r.listed)));
@@ -1052,6 +1057,8 @@ export function BookingForm({
         c={c}
         locale={locale}
         chargeMinor={pickupChargeMinor}
+        notify={notify}
+        signedIn={Boolean(initialContact)}
       />
     );
   }
@@ -1443,6 +1450,8 @@ function BookingSuccess({
   c,
   locale,
   chargeMinor,
+  notify,
+  signedIn,
 }: {
   headingRef: Ref<HTMLHeadingElement>;
   state: FormState;
@@ -1451,6 +1460,8 @@ function BookingSuccess({
   c: Common;
   locale: Locale;
   chargeMinor: number | null;
+  notify?: NotifyText;
+  signedIn: boolean;
 }) {
   const words = pageWords(t, c, locale);
   const when = pickupLabel(state, words, t.slots);
@@ -1504,6 +1515,22 @@ function BookingSuccess({
           </li>
         ))}
       </ol>
+
+      {notify ? (
+        <div className="mt-8" data-booking-notify>
+          {signedIn ? (
+            <NotifyCard t={notify} lang={locale === "bn" ? "bn" : "en"} variant="after" />
+          ) : (
+            <div className="rounded-lg border border-line bg-white p-4">
+              <p className="font-semibold text-navy">{notify.afterBookTitle}</p>
+              <p className="mt-1 t-small text-body">{notify.guestBody}</p>
+              <ButtonLink href="/login?next=/account" variant="secondary" className="mt-3 !h-11 !px-5">
+                {notify.guestButton}
+              </ButtonLink>
+            </div>
+          )}
+        </div>
+      ) : null}
 
       <div className="mt-8 flex flex-col gap-3 border-t border-line pt-6 md:flex-row md:flex-wrap md:items-center">
         <WhatsAppFallback

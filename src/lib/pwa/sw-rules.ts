@@ -45,7 +45,7 @@ export function swStrategy(req: SwRequest, origin: string): SwStrategy {
   // Personal, live or state-changing areas: never cached, never answered from a cache.
   const NEVER = [
     "/api", "/admin", "/account", "/auth", "/login", "/signup", "/forgot-password", "/reset-password",
-    "/book", "/quote", "/track", "/go", "/sw.js", "/manifest.webmanifest",
+    "/book", "/quote", "/track", "/r", "/go", "/sw.js", "/manifest.webmanifest",
   ];
   if (NEVER.some((p) => path === p || path.startsWith(`${p}/`))) {
     const DATA = ["/api", "/go", "/sw.js", "/manifest.webmanifest"];

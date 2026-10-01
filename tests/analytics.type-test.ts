@@ -33,6 +33,9 @@ const approvedEvents = [
   "promo_view",
   "promo_click",
   "promo_dismiss",
+  "notify_prompt",
+  "notify_on",
+  "notify_denied",
 ] as const satisfies readonly AnalyticsEvent[];
 
 const taxonomyIsComplete: Exclude<AnalyticsEvent, (typeof approvedEvents)[number]> extends never

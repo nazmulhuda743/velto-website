@@ -138,6 +138,7 @@ const GROUPS: { label: string; items: Item[] }[] = [
       { href: "/admin/dispatch", label: "Pickup & delivery", icon: "dispatch" },
       { href: "/admin/capacity", label: "Capacity", icon: "capacity" },
       { href: "/admin/retention", label: "Bring customers back", icon: "retention" },
+      { href: "/admin/retention/reminders", label: "Reminders", icon: "retention" },
       { href: "/admin/feedback", label: "Customer feedback", icon: "feedback" },
       { href: "/admin/loyalty", label: "Loyalty", icon: "loyalty" },
       { href: "/admin/coupons", label: "Goal coupons", icon: "coupons" },

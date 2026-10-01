@@ -17,5 +17,5 @@ export const LEGAL = {
   /** Owner-confirmed WhatsApp number (also set in the admin dashboard). */
   whatsappDisplay: "+880 1605-162788",
   /** Date shown as "Last updated" on all three pages. */
-  updated: "25 September 2026",
+  updated: "1 October 2026",
 };

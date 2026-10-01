@@ -40,6 +40,13 @@ const ESSENTIAL: Row[] = [
     setBy: "Velto",
   },
   {
+    name: "velto_notify_snooze (browser storage)",
+    purpose:
+      "When you tap \u201cNot now\u201d on the offer to get order updates on your phone, remembers when, so it isn't shown again for 14 days. Holds no identifier and no personal information.",
+    duration: "14 days, or until you clear your browser data",
+    setBy: "Velto",
+  },
+  {
     name: "velto.booking.draft.v1 (browser storage)",
     purpose:
       "While you fill in the booking form, keeps what you have typed on this device so you can continue later if you leave before sending. It stays in your browser and is never sent to Velto unless you send the booking (or tap \u201cGet a call back\u201d). No photos or pickup window are kept. Removed when you send the booking or tap Start over.",
