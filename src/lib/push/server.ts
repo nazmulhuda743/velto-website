@@ -28,8 +28,8 @@ export async function vapidKeys(): Promise<VapidKeys> {
 export const vapidPublicKey = async () => (await vapidKeys()).publicKey;
 
 /** One notification to one browser. `gone` means the subscription no longer exists. */
-export async function sendPush(target: PushTarget, message: PushMessage): Promise<{ ok: boolean; gone: boolean }> {
-  if (!pushEndpointOk(target.endpoint)) return { ok: false, gone: true };
+export async function sendPush(target: PushTarget, message: PushMessage): Promise<{ ok: boolean; gone: boolean; status: number }> {
+  if (!pushEndpointOk(target.endpoint)) return { ok: false, gone: true, status: 0 };
   try {
     const keys = await vapidKeys();
     const body = encryptPayload(Buffer.from(JSON.stringify(message)), target.p256dh, target.auth);
@@ -51,10 +51,10 @@ export async function sendPush(target: PushTarget, message: PushMessage): Promis
     const ok = res.status >= 200 && res.status < 300;
     // The push service's answer, without the subscription token (Vercel logs).
     if (!ok) console.warn("push refused", new URL(target.endpoint).hostname, res.status, (await res.text().catch(() => "")).slice(0, 160));
-    return { ok, gone: res.status === 404 || res.status === 410 };
+    return { ok, gone: res.status === 404 || res.status === 410, status: res.status };
   } catch (e) {
     console.warn("push failed", new URL(target.endpoint).hostname, e instanceof Error ? e.name : "error");
-    return { ok: false, gone: false };
+    return { ok: false, gone: false, status: 0 };
   }
 }
 
@@ -63,4 +63,11 @@ export async function sendAndRecord(target: PushTarget, message: PushMessage) {
   const r = await sendPush(target, message);
   await supabaseRpc("website_push_result", { p_endpoint: target.endpoint, p_ok: r.ok, p_gone: r.gone }).catch(() => null);
   return r.ok;
+}
+
+/** Same, with the push service's answer (staff's "Send test notification"). */
+export async function sendAndReport(target: PushTarget, message: PushMessage) {
+  const r = await sendPush(target, message);
+  await supabaseRpc("website_push_result", { p_endpoint: target.endpoint, p_ok: r.ok, p_gone: r.gone }).catch(() => null);
+  return r;
 }

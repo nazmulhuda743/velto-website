@@ -64,3 +64,9 @@ export const welcomeMessage = (lang: PushLang): PushMessage =>
   lang === "bn"
     ? { title: "নোটিফিকেশন চালু হয়েছে", body: "অর্ডারের খবর এভাবেই Velto আপনাকে জানাবে।", url: "/bn/account", tag: "welcome" }
     : { title: "Notifications are on", body: "This is how Velto will tell you about your orders.", url: "/account", tag: "welcome" };
+
+/** Staff's "Send test notification" from Admin → Customer accounts. */
+export const staffTestMessage = (lang: PushLang): PushMessage =>
+  lang === "bn"
+    ? { title: "Velto থেকে পরীক্ষা", body: "নোটিফিকেশন ঠিকমতো আসছে। এভাবেই অর্ডারের খবর পাবেন।", url: "/bn/account", tag: "staff-test" }
+    : { title: "Test from Velto", body: "Notifications are working. This is how your order updates will look.", url: "/account", tag: "staff-test" };
