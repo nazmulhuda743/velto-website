@@ -30,6 +30,7 @@ execFileSync(
     "src/lib/promo.ts",
     "src/lib/footer-links.ts",
     "src/lib/rhythm.ts",
+    "src/lib/invoice.ts",
     "src/lib/push/encrypt.ts",
     "src/lib/push/messages.ts",
     "src/lib/i18n/copy-overrides.ts",

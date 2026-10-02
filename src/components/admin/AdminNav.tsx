@@ -123,6 +123,12 @@ const I = {
     </>
   ),
   promo: <path d="M4 10v4h3l7 4V6l-7 4H4ZM17 9.5c.7.7 1 1.5 1 2.5s-.3 1.8-1 2.5M7 14v5h2.5" />,
+  invoices: (
+    <>
+      <path d="M6.5 3.5h8l3 3v14h-11v-17Z" />
+      <path d="M14.5 3.5v3h3M9 11h6M9 14h6M9 17h3.5" />
+    </>
+  ),
   prices: (
     <>
       <path d="M11.5 4H5v6.5l8.5 8.5 6.5-6.5L11.5 4Z" />
