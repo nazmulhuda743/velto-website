@@ -64,38 +64,48 @@ test("only real push services", () => {
 
 const msg = require("../../.command-center-test-build/lib/push/messages.js");
 
-test("order update texts in both languages, with local links", () => {
+test("order updates come from the catalogue: truthful, one card per order, no buttons", () => {
   const bn = msg.orderMessage("Picked", { orderNumber: "VEL-01288", items: 12 }, "bn");
-  assert.equal(bn.title, "আপনার কাপড় আমরা নিয়েছি");
-  assert.match(bn.body, /১২টি আইটেম/);
-  assert.equal(bn.url, "/bn/account");
-  assert.equal(msg.orderMessage("Ready", { orderNumber: "VEL-1", items: null }, "en").title, "Your clothes are ready ✓");
-  assert.equal(msg.orderMessage("Picked", { orderNumber: "VEL-1", items: 1 }, "en").body, "VEL-1 · 1 item. We'll tell you when they're ready.");
-  // One picture per step, and the two buttons: the order, and the dialer.
-  const ready = msg.orderMessage("Ready", { orderNumber: "VEL-1", items: 2 }, "en");
+  assert.equal(bn.title, "কাপড় নিয়ে এসেছি");
+  // Collected never carries a count or a price: the rider's count is provisional.
+  assert.doesNotMatch(bn.body, /১২/);
+  assert.equal(bn.url, "/bn/account/orders/VEL-01288");
+  const en = msg.orderMessage("Picked", { orderNumber: "VEL-1", items: 1 }, "en");
+  assert.equal(en.title, "Laundry collected");
+  assert.equal(en.body, "Your bag is with Velto. We will confirm the garment count and price after verification.");
+  const ready = msg.orderMessage("Ready", { orderNumber: "VEL-1", items: 18 }, "en");
+  assert.equal(ready.title, "Your order is ready");
+  assert.equal(ready.body, "All 18 garments have passed final checks. We will confirm your delivery window shortly.");
   assert.equal(ready.icon, "/notify/ready.png");
-  assert.equal(msg.orderMessage("Picked", { orderNumber: "VEL-1", items: 2 }, "bn").icon, "/notify/picked.png");
-  assert.equal(msg.orderMessage("Delivered", { orderNumber: "VEL-1", items: 2 }, "en").icon, "/notify/delivered.png");
-  assert.deepEqual(ready.actions.map((a) => [a.action, a.url]), [["order", "/account"], ["call", "/go/call"]]);
-  assert.deepEqual(msg.orderMessage("Ready", { orderNumber: "VEL-1", items: 2 }, "bn").actions.map((a) => a.url), ["/bn/account", "/go/call"]);
-  assert.match(msg.orderMessage("Delivered", { orderNumber: "VEL-1", items: 3 }, "en").body, /Tap to rate/);
+  assert.equal(ready.actions, undefined);
+  assert.equal(ready.cls, 2);
+  // Same order, same lane: Ready replaces Collected in the shade.
+  assert.equal(ready.tag, en.tag);
+  assert.equal(ready.tag, "VEL-1:order");
+  const delivered = msg.orderMessage("Delivered", { orderNumber: "VEL-1", items: 3 }, "en");
+  assert.equal(delivered.title, "Delivered · 3 garments returned");
+  assert.doesNotMatch(delivered.body, /receipt|rate|book again/i);
   assert.equal(msg.orderMessage("Cancelled", { orderNumber: "VEL-1", items: 3 }, "en"), null);
-  assert.equal(msg.orderMessage("Ready", { orderNumber: "VEL-9", items: 2 }, "bn").tag, "order-VEL-9");
 });
 
-test("reminder push opens the one-tap page", () => {
+test("reminder push opens the one-tap page, silently", () => {
   const bn = msg.reminderMessage({ firstName: "Nazmul Huda", service: "Ironing", code: "Ab3xK9pQ" }, "bn");
-  assert.equal(bn.title, "Nazmul, আয়রনের কাপড় জমেছে?");
+  assert.equal(bn.title, "নিয়মিত পিকআপের সময় হয়েছে?");
+  assert.match(bn.body, /আয়রন/);
   assert.equal(bn.url, "/bn/r/Ab3xK9pQ");
-  const en = msg.reminderMessage({ firstName: null, service: null, code: "Ab3xK9pQ" }, "en");
-  assert.equal(en.title, "Time for your laundry pickup?");
+  assert.equal(bn.cls, 3);
+  const en = msg.reminderMessage({ firstName: null, service: "Ironing", code: "Ab3xK9pQ" }, "en");
+  assert.equal(en.title, "Time for your usual pickup?");
+  assert.equal(en.body, "Your usual Iron Only pickup is ready to book again.");
   assert.equal(en.url, "/r/Ab3xK9pQ");
   assert.equal(en.icon, "/notify/reminder.png");
-  assert.deepEqual(en.actions.map((a) => [a.title, a.url]), [["Book pickup", "/r/Ab3xK9pQ"], ["Call Velto", "/go/call"]]);
+  assert.equal(en.actions, undefined);
 });
 
 test("reminder push wording follows the playbook", () => {
-  assert.equal(msg.reminderMessage({ firstName: "Rafi", service: "Ironing", code: "Ab3xK9pQ", playbook: "onetimer" }, "en").title, "Rafi, how was your first order?");
+  // No pattern yet: ask, don't claim a memory.
+  assert.equal(msg.reminderMessage({ firstName: "Rafi", service: "Ironing", code: "Ab3xK9pQ", playbook: "onetimer" }, "en").title, "Ready for another pickup?");
+  assert.equal(msg.reminderMessage({ firstName: null, service: null, code: "Ab3xK9pQ" }, "en").title, "Ready for another pickup?");
   assert.equal(msg.reminderMessage({ firstName: null, service: null, code: "Ab3xK9pQ", playbook: "seasonal" }, "bn").title, "শীতের কাপড় পরিষ্কারের সময়");
   assert.equal(msg.reminderMessage({ firstName: null, service: null, code: "Ab3xK9pQ", playbook: "seasonal" }, "bn").url, "/bn/r/Ab3xK9pQ");
 });

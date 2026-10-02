@@ -128,25 +128,49 @@ self.addEventListener("fetch", (event) => {
   })());
 });
 
-// Notifications (docs/technical/RHYTHM.md): order updates and reminders the customer allowed.
+// Notifications (src/lib/push/catalog.ts): class 1 stays until acted on, class 2 alerts once and is
+// replaced by a newer state of the same order + lane (tag), class 3 is silent.
 self.addEventListener("push", (event) => {
   let d = {};
   try { d = event.data ? event.data.json() : {}; } catch (e) { d = {}; }
   const local = (u) => typeof u === "string" && u.startsWith("/") && !u.startsWith("//");
   const url = local(d.url) ? d.url : "/";
-  // Up to two buttons; each opens its own site path (the order, or /go/call for the dialer).
+  // Up to two buttons; each opens its own site path.
   const buttons = Array.isArray(d.actions) ? d.actions.filter((a) => a && typeof a.action === "string" && typeof a.title === "string" && local(a.url)).slice(0, 2) : [];
   const links = {};
   for (const a of buttons) links[a.action] = a.url;
-  event.waitUntil(self.registration.showNotification(typeof d.title === "string" ? d.title : "Velto", {
-    body: typeof d.body === "string" ? d.body : "",
-    icon: local(d.icon) ? d.icon : "/icons/icon-192.png",
-    actions: buttons.map((a) => ({ action: a.action, title: a.title })),
-    badge: "/icons/icon-monochrome-512.png",
-    tag: typeof d.tag === "string" ? d.tag : undefined,
-    renotify: typeof d.tag === "string",
-    data: { url, links },
-  }));
+  const tag = typeof d.tag === "string" ? d.tag : undefined;
+  const seq = typeof d.seq === "number" ? d.seq : 0;
+  const cls = d.cls === 1 || d.cls === 3 ? d.cls : 2;
+  const order = typeof d.order === "string" ? d.order : undefined;
+  const lane = typeof d.lane === "string" ? d.lane : undefined;
+  event.waitUntil((async () => {
+    const open = await self.registration.getNotifications();
+    const same = tag ? open.find((n) => n.tag === tag) : undefined;
+    // A late, older state never replaces a newer one. Chrome expects every push to show something,
+    // so the newer card is shown again, quietly.
+    if (same && same.data && typeof same.data.seq === "number" && same.data.seq > seq) {
+      return self.registration.showNotification(same.title, {
+        body: same.body, icon: same.icon, badge: same.badge, tag, data: same.data,
+        actions: same.actions, requireInteraction: same.requireInteraction, silent: true,
+      });
+    }
+    // Delivered closes that order's other cards, except an open payment.
+    if (order && (d.state === "P12" || d.state === "P12b")) {
+      for (const n of open) if (n.tag !== tag && n.data && n.data.order === order && n.data.lane !== "payment") n.close();
+    }
+    return self.registration.showNotification(typeof d.title === "string" ? d.title : "Velto", {
+      body: typeof d.body === "string" ? d.body : "",
+      icon: local(d.icon) ? d.icon : "/icons/icon-192.png",
+      badge: "/icons/icon-monochrome-512.png",
+      actions: buttons.map((a) => ({ action: a.action, title: a.title })),
+      tag,
+      renotify: Boolean(tag) && cls !== 3,
+      silent: cls === 3,
+      requireInteraction: cls === 1,
+      data: { url, links, seq, order, lane, cls },
+    });
+  })());
 });
 
 self.addEventListener("notificationclick", (event) => {
