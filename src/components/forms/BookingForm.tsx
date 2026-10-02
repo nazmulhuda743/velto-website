@@ -1536,7 +1536,7 @@ function BookingSuccess({
       {notify ? (
         <div className="mt-8" data-booking-notify>
           {signedIn ? (
-            <NotifyCard t={notify} lang={locale === "bn" ? "bn" : "en"} variant="after" />
+            <NotifyCard t={notify} lang={locale === "bn" ? "bn" : "en"} variant="after" orderRef={reference} />
           ) : (
             <div className="rounded-lg border border-line bg-white p-4">
               <p className="font-semibold text-navy">{notify.afterBookTitle}</p>

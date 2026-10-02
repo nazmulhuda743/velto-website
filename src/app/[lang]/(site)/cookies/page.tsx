@@ -47,6 +47,13 @@ const ESSENTIAL: Row[] = [
     setBy: "Velto",
   },
   {
+    name: "velto_notify_not_now (browser storage)",
+    purpose:
+      "When you tap “Not now” on the offer to turn on notifications after a booking, remembers that booking's reference so the offer isn't shown again for it. Your next booking offers it again. Holds no personal information.",
+    duration: "Until your next booking or until you clear your browser data",
+    setBy: "Velto",
+  },
+  {
     name: "velto.booking.draft.v1 (browser storage)",
     purpose:
       "While you fill in the booking form, keeps what you have typed on this device so you can continue later if you leave before sending. It stays in your browser and is never sent to Velto unless you send the booking (or tap \u201cGet a call back\u201d). No photos or pickup window are kept. Removed when you send the booking or tap Start over.",
