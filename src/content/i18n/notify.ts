@@ -10,7 +10,7 @@ const en = {
   notNow: "Not now",
   promise: "No ads. Only your orders and your usual pickup. Turn off any time.",
   afterBookTitle: "Want updates on this pickup?",
-  sheetTitle: "Stay updated without checking the app",
+  sheetTitle: "Stay updated without checking the website",
   sheetBody: "We will only send what changes your plans. You can turn any of it off later.",
   sheetPoints: ["When your pickup is confirmed", "When your garments are ready", "When your delivery is on the way", "When we need your approval to continue"],
   guestBody: "Sign in with your number (one SMS code) and turn on notifications. We'll tell you when we've picked up your clothes and when they're ready.",
