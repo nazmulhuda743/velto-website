@@ -13,8 +13,12 @@ import { FeedbackForm } from "@/components/account/FeedbackForm";
 import { getFeedbackList, getPortalOrder } from "@/lib/customer/portal";
 import { bookingServiceFor, repeatHref } from "@/lib/customer/rhythm";
 import { validOrderNumber } from "@/lib/customer/validation";
+import { CareDecision } from "@/components/account/CareDecision";
+import { careText } from "@/content/i18n/care";
+import { getCare, signedRiskPhotos } from "@/lib/customer/care";
 
 type Params = Promise<{ id: string }>;
+type Search = Promise<Record<string, string | string[] | undefined>>;
 
 function Fact({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -29,7 +33,7 @@ function Fact({ label, children }: { label: string; children: React.ReactNode })
  * One order. The order number in the URL is only a lookup key: the database returns the
  * order only if it belongs to the signed-in customer's verified Velto record.
  */
-export default async function OrderPage({ params }: { params: Params }) {
+export default async function OrderPage({ params, searchParams }: { params: Params; searchParams: Search }) {
   const number = validOrderNumber((await params).id);
   if (!number) notFound();
   const locale = await getLocale();
@@ -50,6 +54,20 @@ export default async function OrderPage({ params }: { params: Params }) {
   const outletLocation = LOCATIONS.find((l) => l.id === outletId) ?? LOCATIONS[0];
   const expected = order.promisedAt ?? order.deliveryDate;
   const whatsapp = `${WHATSAPP_URL}?text=${encodeURIComponent(format(t.whatsapp, { n: order.orderNumber }))}`;
+  // Care approval (wash-risk advisory): waiting comes first on the page; a decision shows below.
+  const care = await getCare(order.orderNumber);
+  const carePhotos = care ? await Promise.all(care.risks.map((r) => signedRiskPhotos(r.photos ?? []))) : [];
+  const careResult = (await searchParams).care;
+  const careSection = care ? (
+    <CareDecision
+      care={care}
+      photos={carePhotos}
+      t={careText(locale)}
+      whatsapp={whatsapp}
+      result={typeof careResult === "string" ? careResult : undefined}
+      when={care.decidedAt ? `${day(care.decidedAt)}, ${time(care.decidedAt)}` : undefined}
+    />
+  ) : null;
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -58,6 +76,8 @@ export default async function OrderPage({ params }: { params: Params }) {
           {t.back}
         </Link>
       </nav>
+
+      {care?.status === "pending" ? careSection : null}
 
       <section aria-labelledby="order-title" className="rounded-lg border border-line bg-white p-5 md:p-8">
         <div className="flex flex-wrap items-center gap-3">
@@ -90,6 +110,8 @@ export default async function OrderPage({ params }: { params: Params }) {
           {order.outlet ? <Fact label={t.outlet}>{order.outlet.name}</Fact> : null}
         </dl>
       </section>
+
+      {care && care.status !== "pending" ? careSection : null}
 
       <div className="grid gap-6 md:grid-cols-2">
         <section aria-labelledby="payment-title" className="rounded-lg border border-line bg-white p-5 md:p-6">

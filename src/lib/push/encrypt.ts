@@ -68,4 +68,20 @@ export function pushEndpointOk(endpoint: string) {
 
 /** A button under the notification (Android shows up to two); `url` is a site path. */
 export type PushAction = { action: string; title: string; url: string };
-export type PushMessage = { title: string; body: string; url: string; tag?: string; icon?: string; actions?: PushAction[] };
+export type PushMessage = {
+  title: string;
+  body: string;
+  url: string;
+  /** Collapse key (order + lane): a newer state replaces the older card. */
+  tag?: string;
+  icon?: string;
+  actions?: PushAction[];
+  /** 1 action required (stays until acted on), 2 update, 3 relationship (silent). */
+  cls?: 1 | 2 | 3;
+  lane?: string;
+  order?: string;
+  /** Newer beats older within a lane, whatever order they arrive in. */
+  seq?: number;
+  /** Catalogue state (P01…P20). */
+  state?: string;
+};
