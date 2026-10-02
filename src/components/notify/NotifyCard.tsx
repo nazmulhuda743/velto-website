@@ -10,6 +10,8 @@ type Prefs = { orderUpdates: boolean; reminders: boolean };
 
 const SNOOZE = "velto_notify_snooze";
 const SNOOZE_DAYS = 14;
+/** After a booking, "Not now" holds for that order only: the next order offers it again. */
+const NOT_NOW = "velto_notify_not_now";
 
 const snoozed = () => {
   try {
@@ -26,6 +28,25 @@ function Bell() {
       <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8" />
         <path d="M10 20a2 2 0 0 0 4 0" />
+      </svg>
+    </span>
+  );
+}
+
+const declinedFor = (key: string | undefined) => {
+  if (!key) return false;
+  try {
+    return localStorage.getItem(NOT_NOW) === key;
+  } catch {
+    return false;
+  }
+};
+
+function Tick() {
+  return (
+    <span aria-hidden="true" className="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-success-soft text-success">
+      <svg viewBox="0 0 20 20" className="size-3.5">
+        <path d="M4.5 10.5l3.5 3.5 7.5-8" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </span>
   );
@@ -55,7 +76,8 @@ function SwitchRow({ icon, tone, title, hint, checked, onChange }: { icon: React
  * "Get updates on your phone". The value comes first (what Velto will tell them); the phone's own
  * prompt only appears after "Turn on". Account variant: the offer only (nothing once on, so the
  * account home stays about orders). Settings variant (Profile): on/off and what to receive.
- * After-booking variant (the one-tap reminder page): one short question, tied to the reminder code.
+ * After-booking variant (booking success and the one-tap reminder page): the pre-permission sheet,
+ * what Velto will send and "Turn on" / "Not now"; "Not now" holds until the next order (`orderRef`).
  * `demo` fixes the state for design review (local QA pages only).
  */
 export function NotifyCard({
@@ -63,6 +85,7 @@ export function NotifyCard({
   lang,
   variant = "account",
   code,
+  orderRef,
   initialPrefs,
   demo,
 }: {
@@ -70,6 +93,8 @@ export function NotifyCard({
   lang: "bn" | "en";
   variant?: "account" | "after" | "settings";
   code?: string;
+  /** The booking this sheet follows (after variant): "Not now" is remembered for it only. */
+  orderRef?: string;
   initialPrefs?: Prefs;
   demo?: View;
 }) {
@@ -77,6 +102,7 @@ export function NotifyCard({
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [prefs, setPrefs] = useState<Prefs>(initialPrefs ?? { orderUpdates: true, reminders: true });
+  const declineKey = orderRef ?? code;
 
   useEffect(() => {
     if (demo) return;
@@ -92,13 +118,13 @@ export function NotifyCard({
               ? variant === "after" ? "hidden" : "denied"
               : (await currentSubscription()) && permission() === "granted"
                 ? variant === "after" ? "hidden" : "on"
-                : variant === "account" && snoozed() ? "hidden" : "offer";
+                : (variant === "account" && snoozed()) || (variant === "after" && declinedFor(declineKey)) ? "hidden" : "offer";
       if (live) setView(next);
     })();
     return () => {
       live = false;
     };
-  }, [demo, variant]);
+  }, [demo, variant, declineKey]);
 
   async function turnOn() {
     if (busy) return;
@@ -121,7 +147,8 @@ export function NotifyCard({
 
   function later() {
     try {
-      localStorage.setItem(SNOOZE, String(Date.now()));
+      if (variant === "after") localStorage.setItem(NOT_NOW, declineKey ?? "");
+      else localStorage.setItem(SNOOZE, String(Date.now()));
     } catch {
       /* storage unavailable: it may show again next visit */
     }
@@ -153,20 +180,31 @@ export function NotifyCard({
         </p>
       );
     }
+    // The pre-permission sheet (inline): what changes their plans, then the phone's own prompt
+    // only after "Turn on notifications". No offers here.
     return (
-      <div className="rounded-lg border border-line bg-white p-4" data-notify="offer">
-        <div className="flex gap-3">
-          <Bell />
-          <div className="min-w-0">
-            <p className="font-semibold text-navy">{t.afterBookTitle}</p>
-            <p className="mt-0.5 t-small text-body">{t.afterBookBody}</p>
-          </div>
-        </div>
-        <button type="button" onClick={turnOn} disabled={busy} className="mt-3 inline-flex min-h-12 w-full items-center justify-center rounded-md bg-action px-5 font-semibold text-white hover:bg-action-hover disabled:opacity-60">
-          {busy ? t.turning : t.afterBookButton}
+      <section aria-labelledby="notify-sheet-title" className="rounded-lg border border-[#b9dcf2] bg-white p-5" data-notify="offer">
+        <Bell />
+        <h2 id="notify-sheet-title" className="mt-3 text-[20px] font-semibold leading-tight text-navy">
+          {t.sheetTitle}
+        </h2>
+        <p className="mt-1.5 t-small text-body">{t.sheetBody}</p>
+        <ul className="mt-4 space-y-2.5">
+          {t.sheetPoints.map((p) => (
+            <li key={p} className="flex items-start gap-2.5 text-[15px] text-navy">
+              <Tick />
+              {p}
+            </li>
+          ))}
+        </ul>
+        <button type="button" onClick={turnOn} disabled={busy} data-analytics="notify_click" className="mt-5 inline-flex min-h-[52px] w-full items-center justify-center rounded-md bg-action px-6 font-semibold text-white hover:bg-action-hover disabled:opacity-60">
+          {busy ? t.turning : t.turnOn}
         </button>
-        {note ? <p role="alert" className="mt-2 t-small text-error">{note}</p> : null}
-      </div>
+        <button type="button" onClick={later} className="mt-1 inline-flex min-h-11 w-full items-center justify-center px-3 t-small font-semibold text-secondary hover:text-navy">
+          {t.notNow}
+        </button>
+        {note ? <p role="alert" className="mt-1 t-small text-error">{note}</p> : null}
+      </section>
     );
   }
 
