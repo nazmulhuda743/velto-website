@@ -29,6 +29,7 @@ import { usableCoupon } from "@/lib/customer/goal";
 import { areaLabel, displayBdPhone, greetingName } from "@/lib/customer/validation";
 import { NotifyCard } from "@/components/notify/NotifyCard";
 import { notifyText } from "@/content/i18n/notify";
+import { pushPrefsFromStatus, type PushPrefs } from "@/lib/push/prefs";
 import { supabaseRpc } from "@/lib/supabase-server";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -131,7 +132,7 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
   const t = a.home;
   const f = formText(locale);
   // Notifications on this login's phones (the card itself checks this browser).
-  const push = await supabaseRpc<{ devices: number; orderUpdates: boolean; reminders: boolean }>("website_push_status", { p_auth_user_id: session.user.id }).catch(() => null);
+  const push = await supabaseRpc<{ devices: number } & Partial<PushPrefs>>("website_push_status", { p_auth_user_id: session.user.id }).catch(() => null);
 
   return (
     <div className="space-y-5 md:space-y-6">
@@ -215,7 +216,7 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
       ) : null}
 
       {/* Order updates and reminders on the phone: the value first, then the phone's own prompt. */}
-      <NotifyCard t={notifyText(locale)} lang={locale === "bn" ? "bn" : "en"} initialPrefs={push ? { orderUpdates: push.orderUpdates, reminders: push.reminders } : undefined} />
+      <NotifyCard t={notifyText(locale)} lang={locale === "bn" ? "bn" : "en"} initialPrefs={pushPrefsFromStatus(push)} />
 
       {linked ? <RewardsStrip loyalty={loyalty} counts={counts} goal={goal} locale={locale} /> : null}
 
