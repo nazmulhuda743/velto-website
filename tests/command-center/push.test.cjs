@@ -109,3 +109,21 @@ test("reminder push wording follows the playbook", () => {
   assert.equal(msg.reminderMessage({ firstName: null, service: null, code: "Ab3xK9pQ", playbook: "seasonal" }, "bn").title, "শীতের কাপড় পরিষ্কারের সময়");
   assert.equal(msg.reminderMessage({ firstName: null, service: null, code: "Ab3xK9pQ", playbook: "seasonal" }, "bn").url, "/bn/r/Ab3xK9pQ");
 });
+
+test("care approval pushes: approval needed, reminders replace it, decision received", () => {
+  const first = msg.careMessage("pending", "VEL-01491", "en");
+  assert.equal(first.title, "Your approval is needed");
+  assert.equal(first.cls, 1);
+  assert.equal(first.url, "/account/orders/VEL-01491#care");
+  assert.equal(first.actions.length, 1);
+  // The garment and its fault never appear in the notification.
+  assert.doesNotMatch(first.body, /kurta|silk|bleed|stain/i);
+  const reminder = msg.careMessage("reminder1", "VEL-01491", "bn");
+  assert.equal(reminder.tag, first.tag);
+  assert.equal(reminder.url, "/bn/account/orders/VEL-01491#care");
+  const decided = msg.careMessage("decided", "VEL-01491", "en");
+  assert.equal(decided.title, "Decision received");
+  assert.equal(decided.tag, first.tag);
+  assert.equal(decided.cls, 2);
+  assert.equal(msg.careMessage("other", "VEL-01491", "en"), null);
+});

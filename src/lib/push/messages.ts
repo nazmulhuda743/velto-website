@@ -19,6 +19,17 @@ export function orderMessage(status: string, f: { orderNumber: string; items: nu
   return null;
 }
 
+/**
+ * Care approval (Ops wash-risk advisory): "approval needed" when an order starts waiting, the same
+ * card again as each reminder (it replaces itself), and "decision received" when Velto recorded the
+ * decision by phone or WhatsApp. The garment and its fault never appear: they are behind sign-in.
+ */
+export function careMessage(step: string, orderNumber: string, lang: PushLang): PushMessage | null {
+  if (step === "pending" || step === "reminder1" || step === "reminder2") return renderPush("P07", { orderNumber }, lang);
+  if (step === "decided") return renderPush("P08", { orderNumber }, lang);
+  return null;
+}
+
 const SERVICE: Record<string, Record<PushLang, string>> = {
   Ironing: { bn: "আয়রন", en: "Iron Only" },
   "Wash + Iron": { bn: "ওয়াশ ও আয়রন", en: "Wash & Iron" },

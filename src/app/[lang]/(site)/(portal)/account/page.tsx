@@ -31,6 +31,8 @@ import { NotifyCard } from "@/components/notify/NotifyCard";
 import { notifyText } from "@/content/i18n/notify";
 import { pushPrefsFromStatus, type PushPrefs } from "@/lib/push/prefs";
 import { supabaseRpc } from "@/lib/supabase-server";
+import { careText } from "@/content/i18n/care";
+import { getCarePending } from "@/lib/customer/care";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -132,6 +134,9 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
   const t = a.home;
   const f = formText(locale);
   // Notifications on this login's phones (the card itself checks this browser).
+  // Orders waiting for the customer's care decision: first thing on the page, until decided.
+  const carePending = await getCarePending();
+  const ct = careText(locale);
   const push = await supabaseRpc<{ devices: number } & Partial<PushPrefs>>("website_push_status", { p_auth_user_id: session.user.id }).catch(() => null);
 
   return (
@@ -152,6 +157,22 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
               : t.ready}
         </p>
       </header>
+
+      {carePending.length ? (
+        <section aria-labelledby="care-banner-title" className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-warning/50 bg-warning-soft p-5 md:p-6" data-care-banner>
+          <div className="min-w-0">
+            <h2 id="care-banner-title" className="font-semibold text-navy">
+              {ct.banner(carePending.length)}
+            </h2>
+            <p className="mt-0.5 t-small text-body">
+              {carePending.map((c) => c.orderNumber).join(" · ")} · {ct.bannerBody}
+            </p>
+          </div>
+          <Link href={`/account/orders/${carePending[0].orderNumber}#care`} className="inline-flex min-h-11 items-center justify-center rounded-md bg-action px-5 font-semibold text-white hover:bg-action-hover">
+            {ct.review}
+          </Link>
+        </section>
+      ) : null}
 
       {params.welcome ? <Alert tone="success">{t.welcome}</Alert> : null}
       {params.restored ? <Alert tone="success">{a.welcomeBack.restored}</Alert> : null}
