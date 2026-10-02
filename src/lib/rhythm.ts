@@ -15,6 +15,12 @@ export type SmsPlaybook = {
   lang: RhythmLang;
   textBn: string;
   textEn: string;
+  /**
+   * First-timer only: the text for customers whose first order was dry cleaning only. Dry cleaning
+   * is an occasion purchase, so they're invited to the everyday habit (docs/technical/SECOND-SERVICE.md).
+   */
+  dcTextBn?: string;
+  dcTextEn?: string;
 };
 
 /** The SMS playbooks, in the order the evening run works through them. */
@@ -49,7 +55,20 @@ export const DEFAULT_TEXTS: Record<SmsPlaybookKey, { bn: string; en: string; max
   },
 };
 
-const smsDefault = (k: SmsPlaybookKey): SmsPlaybook => ({ enabled: false, maxPerRun: DEFAULT_TEXTS[k].max, lang: "bn", textBn: DEFAULT_TEXTS[k].bn, textEn: DEFAULT_TEXTS[k].en });
+/** First-timers whose first order was dry cleaning only: invite them to the everyday habit. */
+export const DEFAULT_ONETIMER_DC = {
+  bn: "Velto: {hi}ড্রাই ক্লিনিং কেমন লাগল? প্রতিদিনের শার্ট-প্যান্টও আয়রন করি। পিকআপ এক ট্যাপে: {link}",
+  en: "Velto: {hi}how was your dry cleaning? We iron your everyday shirts and pants too. Book a pickup in one tap: {link}",
+};
+
+const smsDefault = (k: SmsPlaybookKey): SmsPlaybook => ({
+  enabled: false,
+  maxPerRun: DEFAULT_TEXTS[k].max,
+  lang: "bn",
+  textBn: DEFAULT_TEXTS[k].bn,
+  textEn: DEFAULT_TEXTS[k].en,
+  ...(k === "onetimer" ? { dcTextBn: DEFAULT_ONETIMER_DC.bn, dcTextEn: DEFAULT_ONETIMER_DC.en } : {}),
+});
 
 export const DEFAULT_RHYTHM: RhythmSettings = {
   regularDue: smsDefault("regularDue"),
@@ -88,6 +107,7 @@ export function parseRhythm(v: unknown): RhythmSettings {
       lang: d.lang === "en" ? "en" : "bn",
       textBn: text(d.textBn, DEFAULT_TEXTS[k].bn),
       textEn: text(d.textEn, DEFAULT_TEXTS[k].en),
+      ...(k === "onetimer" ? { dcTextBn: text(d.dcTextBn, DEFAULT_ONETIMER_DC.bn), dcTextEn: text(d.dcTextEn, DEFAULT_ONETIMER_DC.en) } : {}),
     };
   };
   return {
@@ -100,6 +120,16 @@ export function parseRhythm(v: unknown): RhythmSettings {
     },
     updatedAt: typeof r.updatedAt === "string" ? r.updatedAt.slice(0, 40) : "",
   };
+}
+
+/** The template for one customer: first-timers who only had dry cleaning get the everyday invite. */
+export function templateFor(key: SmsPlaybookKey, p: SmsPlaybook, usualService: string | null | undefined, lang: RhythmLang): string {
+  const dcOnly = key === "onetimer" && usualService?.trim() === "Dry Cleaning";
+  if (dcOnly) {
+    const dc = lang === "bn" ? p.dcTextBn : p.dcTextEn;
+    if (dc) return dc;
+  }
+  return lang === "bn" ? p.textBn : p.textEn;
 }
 
 const SERVICE_WORDS: Record<string, Record<RhythmLang, string>> = {

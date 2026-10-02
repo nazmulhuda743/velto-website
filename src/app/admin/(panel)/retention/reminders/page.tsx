@@ -1,6 +1,8 @@
 import { AdminHeader, Badge, DataNotice, Field, one, type SearchParams } from "@/components/admin/ui";
 import { getRhythmOverview } from "@/lib/admin/rhythm";
+import { getSecondServiceStats } from "@/lib/admin/second-service";
 import { requireSection } from "@/lib/admin/session";
+import type { SecondServiceStats } from "@/lib/invoice-server";
 import { PLAYBOOK_ID, renderMessage, rhythmLink, SAMPLE_LINK, smsParts, SMS_PLAYBOOKS, type RhythmLang, type SmsPlaybook, type SmsPlaybookKey } from "@/lib/rhythm";
 import type { Candidate, PlaybookStats } from "@/lib/rhythm-server";
 import { getSiteContent } from "@/lib/site-content";
@@ -164,6 +166,29 @@ function SmsPlaybookCard({
               <Example template={p.textEn} lang="en" name={sample?.first_name ?? "Nazmul"} service={sample?.usual_service ?? "Ironing"} />
             </div>
           </div>
+          {k === "onetimer" ? (
+            <div className="rounded-md border border-line p-4">
+              <p className="font-semibold text-navy">When the first order was dry cleaning only</p>
+              <p className="mt-1 t-small text-secondary">
+                Dry cleaning is an occasion purchase: only about 4 in 10 of these customers order again, and few ever try ironing. This text invites
+                them to the everyday habit instead.
+              </p>
+              <div className="mt-3 grid gap-4 md:grid-cols-2">
+                <Field label="Message in Bangla" hint="Same placeholders; {link} is required.">
+                  <textarea name="dcTextBn" lang="bn" rows={3} maxLength={400} defaultValue={p.dcTextBn} className="admin-input" />
+                </Field>
+                <Field label="Message in English">
+                  <textarea name="dcTextEn" rows={3} maxLength={400} defaultValue={p.dcTextEn} className="admin-input" />
+                </Field>
+              </div>
+              {p.dcTextBn ? (
+                <div className="mt-3">
+                  <p className="t-small font-semibold text-navy">How it reads (Bangla)</p>
+                  <Example template={p.dcTextBn} lang="bn" name={sample?.first_name ?? "Nazmul"} service="Dry Cleaning" />
+                </div>
+              ) : null}
+            </div>
+          ) : null}
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="Language sent" hint="Bangla by default.">
               <select name="lang" defaultValue={p.lang} className="admin-input">
@@ -202,13 +227,43 @@ function SmsPlaybookCard({
   );
 }
 
+
+/** The Second Service ladder (docs/technical/SECOND-SERVICE.md): one-service customers who added another. */
+function SecondService({ s }: { s: SecondServiceStats }) {
+  return (
+    <section aria-labelledby="second-title" className="admin-card mt-6 p-5 md:p-7">
+      <h2 id="second-title" className="t-h4 text-navy">
+        Second service · last {s.days} days
+      </h2>
+      <p className="mt-1 t-small text-secondary">
+        A customer on one service is worth ৳366–996; on two, ৳2,400–2,700. Of the customers who used one service before this period, how many added
+        another. Aim: 30%.
+      </p>
+      <dl className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[
+          { label: "Dry cleaning → everyday", value: pct(s.dcOnlyAdded, s.dcOnly), sub: `${s.dcOnlyAdded} of ${s.dcOnly} dry-cleaning-only customers` },
+          { label: "Everyday → dry cleaning", value: pct(s.everydayOnlyAdded, s.everydayOnly), sub: `${s.everydayOnlyAdded} of ${s.everydayOnly} ironing / wash customers` },
+          { label: "Asked from the invoice", value: String(s.routineAsks + s.addonAsks), sub: `${s.routineAsks} weekly day · ${s.addonAsks} add to next pickup` },
+          { label: "Ratings by link", value: String(s.linkRatings), sub: "1–3 stars go to the task board" },
+        ].map((t) => (
+          <div key={t.label} className="rounded-md border border-line p-3">
+            <dt className="t-caption uppercase tracking-[0.04em] text-secondary">{t.label}</dt>
+            <dd className="mt-1 text-[22px] font-semibold leading-tight tabular-nums text-navy">{t.value}</dd>
+            <dd className="t-caption text-secondary">{t.sub}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
+}
+
 export default async function RemindersPage({ searchParams }: { searchParams: SearchParams }) {
   const admin = await requireSection("retention");
   const params = await searchParams;
   const saved = one(params.saved);
   const error = one(params.error);
   const errorAt = one(params.playbook);
-  const [{ rhythm }, overview] = await Promise.all([getSiteContent(), getRhythmOverview()]);
+  const [{ rhythm }, overview, second] = await Promise.all([getSiteContent(), getRhythmOverview(), getSecondServiceStats(60)]);
   const canEdit = admin.role === "owner" || admin.role === "manager";
   const data = overview.state === "ok" ? overview.data : null;
   const inline = (id: string) =>
@@ -271,6 +326,8 @@ export default async function RemindersPage({ searchParams }: { searchParams: Se
           </p>
         </section>
       ) : null}
+
+      {second ? <SecondService s={second} /> : null}
 
       {data?.push ? (
         <p className="mt-6 rounded-md border border-line bg-white px-4 py-3 t-small text-body">

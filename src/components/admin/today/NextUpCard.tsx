@@ -8,13 +8,14 @@ import { Icon } from "./icons";
 import type { Badges, CallItem, ListItem, SheetData } from "./items";
 import { RiderSheet } from "./RiderSheet";
 
-/** Badges under the name: first website order · 10% off, Call-back, Weekly, Changed time. */
+/** Badges under the name: first website order · 10% off, Call-back, Weekly, Changed time, and the next service to ask about. */
 export function BadgeRow({ badges, t }: { badges: Badges; t: TodayText }) {
   const list = [
     badges.first ? { text: t.firstOrder, tone: "bg-success-soft text-success" } : null,
     badges.callback ? { text: t.callback, tone: "bg-soft text-navy" } : null,
     badges.weekly ? { text: t.weekly, tone: "bg-soft text-navy", icon: true } : null,
     badges.changed ? { text: t.changedTime, tone: "bg-soft text-navy" } : null,
+    badges.ask ? { text: t.ask[badges.ask], tone: "bg-[#e8f3fb] text-navy" } : null,
   ].filter((b) => b !== null);
   if (!list.length) return null;
   return (

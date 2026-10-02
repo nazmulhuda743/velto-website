@@ -40,6 +40,8 @@ export const todayEn = {
   callback: "Call-back",
   weekly: "Weekly",
   changedTime: "Changed time",
+  /** The next service to ask about (lib/second-service.ts): they have never used it. */
+  ask: { ironing: "Ask: weekly ironing? (dry cleaning only so far)", "dry-cleaning": "Ask: anything for dry cleaning? Blazer, sari… (never tried)", "wash-and-iron": "Ask: anything to wash? Bed sheets, shirts… (never tried)" } as Record<string, string>,
   pickedUp: "Picked up",
   delivered: "Delivered",
   cancelBooking: "Cancel booking",

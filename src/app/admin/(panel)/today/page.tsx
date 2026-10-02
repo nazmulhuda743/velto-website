@@ -18,6 +18,7 @@ import { addDays, dhakaToday, SLOTS, suggestedSlot, type DispatchJob, type SlotI
 import { isAdminPreview } from "@/lib/admin/preview";
 import { callTimer } from "@/lib/admin/request-flow";
 import { analyseRequest } from "@/lib/admin/request-intel";
+import { serviceAsks } from "@/lib/admin/second-service";
 import { requireSection } from "@/lib/admin/session";
 import { getRiders, getToday, isDay, TODAY_ERRORS, todayError, type TodayData, type TodayError } from "@/lib/admin/today";
 import { callQueue, changedTime, dayStrip, nowWindow, riderChoices, tabFor, TODAY_LATE_MINUTES, windowOver, type Rider, type TodayTab } from "@/lib/admin/today-logic";
@@ -214,6 +215,14 @@ export default async function TodayPage({ searchParams }: { searchParams: Search
       };
     }),
   ].sort((a, b) => b.minutes - a.minutes);
+  // The next service each caller has never used, for staff to ask about (Second Service ladder).
+  if (tab === "call") {
+    const asks = await serviceAsks(callItems.map((i) => i.phone));
+    for (const item of callItems) {
+      const ask = item.phone ? asks.get(phoneKey(item.phone) ?? "") : undefined;
+      if (ask) item.badges = { ...item.badges, ask };
+    }
+  }
 
   const assignItems: AssignItem[] = jobs
     .filter((j) => tabFor(j) === "assign")

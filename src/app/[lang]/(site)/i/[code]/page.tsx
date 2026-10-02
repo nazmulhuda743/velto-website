@@ -2,17 +2,20 @@ import type { Metadata } from "next";
 import Link from "@/components/i18n/Link";
 import { OrderProgress } from "@/components/account/OrderProgress";
 import { StatusPill } from "@/components/account/OrderRow";
+import { DeliveredMoment } from "@/components/invoice/DeliveredMoment";
 import { PrintButton } from "@/components/invoice/PrintButton";
 import { WhatsAppButton } from "@/components/ui/Button";
 import { serviceLabel } from "@/content/order-status";
 import { accountText, orderFormat } from "@/content/i18n/account";
 import { invoiceText } from "@/content/i18n/invoice";
-import { WHATSAPP_URL } from "@/content/site";
+import { LOCATIONS, WHATSAPP_URL } from "@/content/site";
 import { getCustomerSession, getPortalOrder } from "@/lib/customer/portal";
 import { fill, localDigits } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
 import { invoiceSums } from "@/lib/invoice";
 import { getInvoice, invoicesReady, type InvoiceView } from "@/lib/invoice-server";
+import { INVITE_ITEMS, inviteKind, nextService } from "@/lib/second-service";
+import { getServicePrices } from "@/lib/service-prices";
 
 /**
  * The invoice link staff send on WhatsApp (docs/technical/INVOICES.md). Opens without sign-in, so
@@ -51,6 +54,49 @@ const PREVIEW: InvoiceView = {
   payments: [{ amount: 200, method: "Bkash", on: "2026-09-29" }],
 };
 
+/** `/i/preview0?state=first-dc` and `?state=iron-regular`: the delivered moment with example data. */
+const PREVIEW_DELIVERED: Record<string, InvoiceView> = {
+  "first-dc": {
+    ...PREVIEW,
+    status: "Delivered",
+    deliveredAt: "2026-10-02T13:30:00+06:00",
+    services: ["Dry Cleaning"],
+    total: 800,
+    paid: 800,
+    due: 0,
+    paymentStatus: "Paid",
+    lines: [
+      { item: "Blazer", service: "Dry Cleaning", quantity: 1, price: 250 },
+      { item: "Sari (Silk)", service: "Dry Cleaning", quantity: 1, price: 300 },
+      { item: "Suit (2pc)", service: "Dry Cleaning", quantity: 1, price: 250 },
+    ],
+    payments: [{ amount: 800, method: "Bkash", on: "2026-10-02" }],
+    isFirst: true,
+    servicesEver: { orders: 1, ironing: false, wash: false, dryCleaning: true },
+    rating: null,
+    asked: [],
+  },
+  "iron-regular": {
+    ...PREVIEW,
+    status: "Delivered",
+    deliveredAt: "2026-10-02T13:30:00+06:00",
+    services: ["Ironing"],
+    total: 240,
+    paid: 240,
+    due: 0,
+    paymentStatus: "Paid",
+    lines: [
+      { item: "Shirt", service: "Ironing", quantity: 8, price: 20 },
+      { item: "Pant", service: "Ironing", quantity: 4, price: 20 },
+    ],
+    payments: [{ amount: 240, method: "Cash", on: "2026-10-02" }],
+    isFirst: false,
+    servicesEver: { orders: 9, ironing: true, wash: false, dryCleaning: false },
+    rating: null,
+    asked: [],
+  },
+};
+
 function Closed({ title, body, whatsapp, signIn }: { title: string; body: string; whatsapp: string; signIn: string }) {
   return (
     <div className="space-y-4" data-invoice-state="closed">
@@ -77,14 +123,15 @@ function Row({ label, value, strong, tone }: { label: string; value: string | nu
   );
 }
 
-export default async function InvoicePage({ params }: { params: Promise<{ code: string }> }) {
+export default async function InvoicePage({ params, searchParams }: { params: Promise<{ code: string }>; searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { code } = await params;
+  const state = (await searchParams).state;
   const locale = await getLocale();
   const t = invoiceText(locale);
   const o = accountText(locale).order;
   const { day, taka, statusTitle } = orderFormat(locale);
   const preview = code === "preview0";
-  const view: InvoiceView = preview ? PREVIEW : invoicesReady() ? await getInvoice(code).catch((): InvoiceView => ({ ok: false, reason: "unknown" })) : { ok: false, reason: "unknown" };
+  const view: InvoiceView = preview ? (typeof state === "string" && PREVIEW_DELIVERED[state]) || PREVIEW : invoicesReady() ? await getInvoice(code).catch((): InvoiceView => ({ ok: false, reason: "unknown" })) : { ok: false, reason: "unknown" };
 
   const shell = (content: React.ReactNode) => (
     <section aria-labelledby="page-title" className="bg-warm py-8 md:py-14 print:bg-white print:py-0">
@@ -112,9 +159,51 @@ export default async function InvoicePage({ params }: { params: Promise<{ code: 
   const whatsapp = `${WHATSAPP_URL}?text=${encodeURIComponent(fill(t.whatsapp, { n: view.orderNumber }, locale))}`;
   const expected = view.promisedAt ?? view.deliveryDate;
 
+  // The delivered moment (docs/technical/SECOND-SERVICE.md): thanks, a rating, and one next service.
+  // Only once website_second_service.sql is applied (it adds servicesEver); before that the taps have nowhere to go.
+  const delivered = view.status === "Delivered" && view.servicesEver !== undefined;
+  const next = delivered ? nextService(view.servicesEver) : null;
+  const m = t.moment;
+  let prices: { item: string; price: string }[] = [];
+  if (next) {
+    const invite = INVITE_ITEMS[next];
+    const list = await getServicePrices(invite.names);
+    prices =
+      list.state === "live"
+        ? list.items.flatMap((item) => {
+            const amount = item.services.find((s) => s.name === invite.priceService)?.amountMinor;
+            return typeof amount === "number" ? [{ item: item.name, price: taka(amount / 100) ?? "" }] : [];
+          })
+        : [];
+  }
+  const asked = next ? (view.asked ?? []).find((a) => a.kind === inviteKind(next) && a.service === next) ?? null : null;
+  // Reviews go to the Google profile of the outlet that served the order (Sector 11 otherwise).
+  const outletId = /18/.test(`${view.outlet?.code ?? ""} ${view.outlet?.name ?? ""}`) ? "sector-18" : "sector-11";
+  const googleUrl = (LOCATIONS.find((l) => l.id === outletId) ?? LOCATIONS[0]).reviewsUrl;
+  const itemNames = [...new Set(view.lines.map((l) => l.item))].slice(0, 3);
+  const fb = accountText(locale).feedback;
+
   return shell(
     <div className="space-y-7">
       {preview ? <p className="rounded-md bg-soft px-3 py-2 t-caption font-semibold text-secondary print:hidden">{t.preview}</p> : null}
+
+      {delivered ? (
+        <DeliveredMoment
+          code={code}
+          preview={preview}
+          title={view.firstName ? fill(m.title, { name: view.firstName }, locale) : m.titleNoName}
+          trusted={itemNames.length ? m.trusted.replace("{items}", itemNames.join(", ")) : null}
+          existingRating={view.rating ?? null}
+          next={next}
+          prices={prices}
+          asked={asked}
+          googleUrl={googleUrl}
+          t={m}
+          fb={fb}
+          digits={[1, 2, 3, 4, 5].map((n) => localDigits(n, locale))}
+        />
+      ) : null}
+      {delivered ? <hr className="border-line print:hidden" /> : null}
 
       <header className="flex flex-wrap items-start justify-between gap-4 border-b border-navy pb-5">
         <div>
@@ -122,7 +211,8 @@ export default async function InvoicePage({ params }: { params: Promise<{ code: 
             {t.label} · {view.orderNumber}
           </p>
           <h1 id="page-title" className="mt-2 font-serif text-[30px] leading-[1.1] text-navy md:text-[36px]">
-            {cancelled ? o.cancelledTitle : statusTitle(view.status)}
+            {/* Delivered: the thank-you above is the headline, so this one names the document. */}
+            {cancelled ? o.cancelledTitle : delivered ? t.label : statusTitle(view.status)}
           </h1>
           {view.firstName ? <p className="mt-2 t-small text-secondary">{fill(t.hi, { name: view.firstName }, locale)}</p> : null}
         </div>

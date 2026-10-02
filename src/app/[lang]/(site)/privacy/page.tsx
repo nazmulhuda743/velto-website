@@ -89,7 +89,8 @@ const SECTIONS: LegalSection[] = [
           <strong>Invoice links:</strong> after an order we may send you its invoice on WhatsApp as a private link. The
           page shows your first name, the order&apos;s items, prices and payments, never your phone number or address,
           and the link works for 120 days. We record when it was sent and opened. Signing in with the same number keeps
-          all your orders and invoices in your account.
+          all your orders and invoices in your account. If you rate the order there, or ask for a weekly pickup or a
+          service on your next pickup, we keep that with your order, and our team may call you about it.
         </p>
         <p>
           <strong>Notifications, only if you turn them on:</strong> when you allow notifications, your browser gives us

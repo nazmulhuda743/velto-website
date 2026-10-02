@@ -4,7 +4,8 @@
  */
 import type { SlotId } from "@/lib/admin/dispatch-logic";
 
-export type Badges = { first?: boolean; callback?: boolean; weekly?: boolean; changed?: boolean };
+/** `ask`: the next Velto service this customer has never used (lib/second-service.ts staffAsk). */
+export type Badges = { first?: boolean; callback?: boolean; weekly?: boolean; changed?: boolean; ask?: "ironing" | "dry-cleaning" | "wash-and-iron" };
 
 type Common = {
   id: string;
