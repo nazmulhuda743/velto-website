@@ -6,6 +6,8 @@ export const SAFE_ERROR_CODES = [
   "request_timeout",
   "duplicate_submission",
   "slot_unavailable",
+  // Website bookings are made from a customer account; the form reopens its code step.
+  "sign_in_required",
   "internal_error",
 ] as const;
 

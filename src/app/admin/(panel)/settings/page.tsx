@@ -76,6 +76,15 @@ export default async function SettingsPage({ searchParams }: { searchParams: Sea
               />
             </Field>
           </div>
+          <label className="mt-5 flex items-start gap-3 t-small text-body">
+            <input type="checkbox" name="bookingRequiresAccount" defaultChecked={settings.bookingRequiresAccount} className="mt-0.5 size-5 shrink-0 accent-[var(--color-action)]" />
+            <span>
+              <span className="font-semibold text-navy">Website bookings need a Velto account</span>
+              <br />
+              The booking form verifies the customer&apos;s mobile with an SMS code, so every website booking shows in their account and the first three get 10% off. Switch off
+              only to let guests book without a code (for example while SMS delivery is down).
+            </span>
+          </label>
         </section>
 
         <section className="admin-card p-5 md:p-7">

@@ -16,14 +16,14 @@ import { OrderRow } from "@/components/account/OrderRow";
 import { ButtonLink, WhatsAppButton } from "@/components/ui/Button";
 import { serviceLabel } from "@/content/order-status";
 import { WHATSAPP_URL } from "@/content/site";
-import { getCustomerSession, getDispatchPlans, getFeedbackList, getGoal, getLoyaltyCounts, getPickups, getPortalOrders, type DispatchPlan, type PortalOrder } from "@/lib/customer/portal";
+import { getCustomerSession, getDispatchPlans, getFeedbackList, getGoal, getLoyaltyCounts, getPickups, getPortalOrders, getWebsiteBookings, type DispatchPlan, type PortalOrder } from "@/lib/customer/portal";
 import { orderToRate } from "@/lib/customer/extras";
 import { getSiteContent } from "@/lib/site-content";
 import { laundryRhythm, repeatHref } from "@/lib/customer/rhythm";
 import { quickRepeatFor } from "@/lib/customer/quick-repeat";
 import { getRoutine } from "@/lib/customer/routine";
 import { formText } from "@/content/i18n/forms";
-import { ACCOUNT_OFFER } from "@/lib/account-offer";
+import { accountOfferFor } from "@/lib/account-offer";
 import { areaLabel, displayBdPhone, greetingName } from "@/lib/customer/validation";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -117,6 +117,8 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
   const routineRead = linked ? await getRoutine() : null;
   const routine = routineRead === "error" ? null : routineRead;
   // From the second order on (or once they have one): a fixed weekly day is what makes it a habit.
+  // 10% off the first three website bookings: the banner says how many are left, and goes once they are used.
+  const offer = accountOfferFor(await getWebsiteBookings());
   const showRoutine = linked && routineRead !== "error" && (Boolean(routine) || rhythm.count >= 2);
   const a = accountText(locale);
   const t = a.home;
@@ -176,13 +178,14 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
         />
       ) : null}
 
-      {/* 10% on every website booking made signed in (lib/account-offer.ts). */}
-      <section aria-labelledby="offer-title" className="rounded-lg border border-line bg-white p-5 md:p-6" data-account-offer-banner>
-        <h2 id="offer-title" className="font-semibold text-navy">
-          {fill(t.offerTitle, { percent: ACCOUNT_OFFER.percent }, locale)}
-        </h2>
-        <p className="mt-1 t-small text-body">{fill(t.offerBody, { amount: `৳${ACCOUNT_OFFER.minimumTaka}` }, locale)}</p>
-      </section>
+      {offer ? (
+        <section aria-labelledby="offer-title" className="rounded-lg border border-line bg-white p-5 md:p-6" data-account-offer-banner={offer.booking}>
+          <h2 id="offer-title" className="font-semibold text-navy">
+            {fill(t.offerTitle, { percent: offer.percent, total: offer.total }, locale)}
+          </h2>
+          <p className="mt-1 t-small text-body">{fill(t.offerBody, { left: offer.total - offer.booking + 1, amount: `৳${offer.minimumTaka}` }, locale)}</p>
+        </section>
+      ) : null}
 
       {toRate ? (
         <section aria-labelledby="rate-title" className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-line bg-white p-5 md:p-6" data-rate-ask>

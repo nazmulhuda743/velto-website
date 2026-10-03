@@ -234,7 +234,7 @@ export function offerParts(offer: string): { big: string; small: string } {
 export const popupPoints = (points: string) => barMessages(points).slice(0, 3);
 
 /**
- * Starting point for the "book signed in, 10% off" campaign (lib/account-offer.ts) (Promo & popup → Use the
+ * Starting point for the account-offer campaign (lib/account-offer.ts: 10% off the first three website bookings) (Promo & popup → Use the
  * template). Only facts already published on the site; the discount terms are Velto's own offer.
  * Loading it never switches the popup on.
  */
@@ -245,18 +245,18 @@ export const FIRST_ORDER_TEMPLATE = {
   imageAltBn: "Velto-তে কাঠের হ্যাঙ্গারে সদ্য ফিনিশ করা শার্ট",
   tag: "Welcome offer",
   tagBn: "স্বাগত অফার",
-  offer: "10% off when you book signed in",
-  offerBn: "সাইন ইন করে বুক করলে ১০% ছাড়",
+  offer: "10% off your first 3 website bookings",
+  offerBn: "ওয়েবসাইটে প্রথম ৩টি বুকিংয়ে ১০% ছাড়",
   title: "Book it on our website, we do the rest.",
   titleBn: "ওয়েবসাইটে বুক করুন, বাকিটা আমরা করব।",
-  body: "Sign in with your mobile, then book a pickup in a few taps. We collect from your door, and every order of ৳499 or more costs 10% less.",
-  bodyBn: "মোবাইল দিয়ে সাইন ইন করুন, তারপর কয়েক ট্যাপে পিকআপ বুক করুন। আমরা আপনার দরজা থেকে নিয়ে যাই, আর ৳৪৯৯ বা তার বেশি প্রতিটি অর্ডারে ১০% কম লাগে।",
+  body: "Verify your mobile once, then book a pickup in a few taps. We collect from your door, and your first three orders of ৳499 or more cost 10% less.",
+  bodyBn: "একবার মোবাইল যাচাই করুন, তারপর কয়েক ট্যাপে পিকআপ বুক করুন। আমরা আপনার দরজা থেকে নিয়ে যাই, আর ৳৪৯৯ বা তার বেশি প্রথম তিনটি অর্ডারে ১০% কম লাগে।",
   points: "Free pickup & delivery on ৳499+ | Every item tagged and checked | Pickup across Uttara Sectors 1–18",
   pointsBn: "৳৪৯৯+ অর্ডারে ফ্রি পিকআপ ও ডেলিভারি | প্রতিটি আইটেম ট্যাগ ও যাচাই করা হয় | উত্তরা সেক্টর ১–১৮ জুড়ে পিকআপ",
-  cta: "Sign in & book · 10% off",
-  ctaBn: "সাইন ইন করে বুক করুন · ১০% ছাড়",
-  fine: "For orders of ৳499 or more booked on the website while signed in. We apply the 10% when we confirm your order.",
-  fineBn: "সাইন ইন করে ওয়েবসাইটে বুক করা ৳৪৯৯ বা তার বেশি অর্ডারে প্রযোজ্য। অর্ডার কনফার্ম করার সময় আমরা ১০% ছাড় যোগ করি।",
+  cta: "Book my pickup · 10% off",
+  ctaBn: "পিকআপ বুক করুন · ১০% ছাড়",
+  fine: "For your first three bookings on the website, orders of ৳499 or more. We apply the 10% when we confirm your order.",
+  fineBn: "ওয়েবসাইটে আপনার প্রথম তিনটি বুকিংয়ে, ৳৪৯৯ বা তার বেশি অর্ডারে প্রযোজ্য। অর্ডার কনফার্ম করার সময় আমরা ১০% ছাড় যোগ করি।",
   href: "/book?source=promo_popup",
   proof: true,
 } satisfies Partial<PromoPopup>;

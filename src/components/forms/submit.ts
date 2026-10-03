@@ -43,7 +43,7 @@ export type QuoteFormData = {
 export type SubmitResult =
   /** `reference` is issued by Velto Ops; the UI never invents one. */
   | { ok: true; reference?: string }
-  | { ok: false; code: "not_connected" | "invalid_request" | "unavailable" | "duplicate_submission" | "slot_unavailable" };
+  | { ok: false; code: "not_connected" | "invalid_request" | "unavailable" | "duplicate_submission" | "slot_unavailable" | "sign_in_required" };
 
 /**
  * One idempotency key per distinct payload, reused across retries of the same
@@ -77,6 +77,7 @@ async function post(path: string, data: Record<string, unknown>): Promise<Submit
     if (body?.error?.code === "invalid_request") return { ok: false, code: "invalid_request" };
     if (body?.error?.code === "duplicate_submission") return { ok: false, code: "duplicate_submission" };
     if (body?.error?.code === "slot_unavailable") return { ok: false, code: "slot_unavailable" };
+    if (body?.error?.code === "sign_in_required") return { ok: false, code: "sign_in_required" };
     return { ok: false, code: "unavailable" };
   } catch {
     return { ok: false, code: "unavailable" };

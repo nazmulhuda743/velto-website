@@ -37,6 +37,11 @@ export const ANALYTICS_EVENTS = [
   "consent_preferences_saved",
   // Installed app (PWA): opened from the home screen, once per session.
   "app_launch",
+  // Booking form: the mobile verification step (shown, code sent, verified, or failed with a reason).
+  "booking_verify_shown",
+  "booking_code_sent",
+  "booking_code_verified",
+  "booking_verify_failed",
   // Campaign popup (Promo & popup): shown, its link followed, or closed.
   "promo_view",
   "promo_click",

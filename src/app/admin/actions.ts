@@ -84,6 +84,7 @@ export async function saveSettingsAction(form: FormData) {
     announcement: settings.announcement,
     outlets: { ...settings.outlets },
     pickupChargeTaka,
+    bookingRequiresAccount: form.get("bookingRequiresAccount") === "on",
   };
   for (const id of Object.keys(next.outlets) as (keyof SiteSettings["outlets"])[]) {
     const count = Number(text(form, `${id}.reviewCount`, 7));

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode, type Ref } from "react";
+import { useRouter } from "next/navigation";
 import { track } from "@/components/layout/Analytics";
 import { ButtonLink } from "@/components/ui/Button";
 import { WhatsAppIcon } from "@/components/ui/icons";
@@ -35,8 +36,9 @@ import { shrinkPhoto } from "./shrink-photo";
 import { PickupWindows, hoursText, type PickedWindow } from "./PickupWindows";
 import { submitBooking, uploadBookingPhoto, type BookingFormData, type SubmitResult } from "./submit";
 import { CallbackRequest } from "./CallbackRequest";
+import { BookingVerify } from "./BookingVerify";
 import { useNightDhaka } from "./useNight";
-import { ACCOUNT_OFFER } from "@/lib/account-offer";
+import { accountSavingMinor, type AccountOffer } from "@/lib/account-offer";
 import { DRAFT_KEY, makeDraft, readDraft, type BookingDraft } from "@/lib/booking-recovery";
 
 type Text = FormText["booking"];
@@ -429,8 +431,6 @@ function ServiceChips({
 
 /** The order summary right above Confirm: items and prices, pickup & delivery, and the estimated total. */
 type Coupon = { code: string; kind: "delivery" | "taka"; amount: number };
-/** The 10% account offer line: "yours" (signed in) or "guest" (asked to sign in first). */
-type AccountOffer = "guest" | "yours";
 
 /** A free-delivery reward makes the pickup & delivery line free whatever the subtotal; an amount off is applied by Velto at confirmation. */
 const withCoupon = (e: BookingEstimate, coupon?: Coupon): BookingEstimate =>
@@ -444,7 +444,6 @@ function OrderSummary({
   offer,
   coupon,
   accountOffer,
-  signInHref,
   popular = [],
   hints = NO_HINTS,
   onAdd,
@@ -455,8 +454,8 @@ function OrderSummary({
   chargeMinor: number | null;
   offer?: string;
   coupon?: Coupon;
-  accountOffer?: AccountOffer;
-  signInHref?: string;
+  /** 10% off the first three website bookings: this booking's number, or null once used up. */
+  accountOffer?: AccountOffer | null;
   popular?: PriceItem[];
   /** What this customer usually sends and what customers send together (smart add-ons). */
   hints?: UpsellHints;
@@ -581,15 +580,12 @@ function OrderSummary({
           </p>
         ) : null}
         {accountOffer && !coupon ? (
-          <p className="font-semibold text-navy" data-account-offer={accountOffer}>
-            {fill(accountOffer === "yours" ? t.accountOfferYours : t.accountOfferGuest, { percent: ACCOUNT_OFFER.percent, amount: `৳${localDigits(ACCOUNT_OFFER.minimumTaka, locale)}` }, locale)}
-            {accountOffer === "guest" && signInHref ? (
-              <>
-                {" "}
-                <a href={signInHref} className="underline decoration-blue/50 underline-offset-4 hover:decoration-blue">
-                  {t.accountOfferSignIn}
-                </a>
-              </>
+          <p className="font-semibold text-navy" data-account-offer={accountOffer.booking}>
+            {fill(t.accountOfferLine, { n: accountOffer.booking, total: accountOffer.total, percent: accountOffer.percent, amount: `৳${localDigits(accountOffer.minimumTaka, locale)}` }, locale)}
+            {accountSavingMinor(e.subtotalMinor, accountOffer) > 0 ? (
+              <span className="block font-semibold text-success" data-account-saving>
+                {format(t.accountOfferSaving, { saving: money(accountSavingMinor(e.subtotalMinor, accountOffer), locale) })}
+              </span>
             ) : null}
           </p>
         ) : null}
@@ -814,7 +810,8 @@ export function BookingForm({
   offer,
   coupon,
   accountOffer,
-  signInHref,
+  signedIn = false,
+  requireAccount = false,
   savedAddresses = [],
   upsellHints = NO_HINTS,
 }: {
@@ -840,10 +837,12 @@ export function BookingForm({
   offer?: string;
   /** The signed-in customer's monthly-goal reward for this month (the server adds it to the Ops notes). */
   coupon?: Coupon;
-  /** The 10% account offer (no goal coupon): "yours" when signed in, "guest" asks to sign in first. */
-  accountOffer?: AccountOffer;
-  /** Guests: the sign-in page that comes back to /book. */
-  signInHref?: string;
+  /** 10% off the first three website bookings (no goal coupon): this booking's number, or null once used up. */
+  accountOffer?: AccountOffer | null;
+  /** The customer is signed in: no code step, details prefilled. */
+  signedIn?: boolean;
+  /** The owner's switch (Settings): website bookings need an account, so "Your details" verifies the mobile by SMS code. */
+  requireAccount?: boolean;
   /** Signed-in customer's saved pickup addresses (Profile): one tap fills the area and address. */
   savedAddresses?: { label: string; address: string; area: string }[];
   /** Smart add-ons: this customer's regular items and what customers send together (server-read). */
@@ -879,6 +878,11 @@ export function BookingForm({
   const [itemsOpen, setItemsOpen] = useState(initialItems.length > 0);
   const [extrasOpen, setExtrasOpen] = useState(Boolean(presetNote));
   const [status, setStatus] = useState<Status>({ state: "idle" });
+  // The mobile verification (BookingVerify): done when signed in or when the switch is off.
+  const [verified, setVerified] = useState(signedIn || !requireAccount);
+  const [codePending, setCodePending] = useState(false);
+  const [verifyNotice, setVerifyNotice] = useState<string | undefined>(undefined);
+  const router = useRouter();
   const started = useRef(false);
   const phoneEntered = useRef(false);
   const statusRef = useRef<HTMLDivElement>(null);
@@ -980,6 +984,7 @@ export function BookingForm({
     );
   };
 
+  const phoneLocked = requireAccount && (verified || codePending);
   const checkPhoneOnBlur = () => {
     // Only nag once something has been typed.
     if (s.phone.trim() && !phoneOk(s.phone)) setErrors((prev) => ({ ...prev, phone: validate(s, t, c, locale).phone }));
@@ -989,6 +994,7 @@ export function BookingForm({
     e.preventDefault();
     if (status.state === "submitting") return;
     const found = validate(s, t, c, locale);
+    if (!verified && !found.phone) found.phone = t.verify.needed;
     setErrors(found);
     const first = FIELD_ORDER.find((k) => found[k]);
     if (first) {
@@ -1018,6 +1024,14 @@ export function BookingForm({
       setErrors({ slot: t.slotTaken });
       setRefreshWindows((n) => n + 1);
       document.getElementById("booking-pickup")?.scrollIntoView({ block: "start" });
+    } else if (result.code === "sign_in_required") {
+      // The sign-in ended (or the cookie was blocked) between the code and Book: ask for the code again.
+      setStatus({ state: "idle" });
+      setVerified(false);
+      setVerifyNotice(t.verify.expired);
+      const el = document.getElementById("booking-phone");
+      el?.scrollIntoView({ block: "center" });
+      el?.focus({ preventScroll: true });
     } else {
       setStatus({ state: "failed", code: result.code });
     }
@@ -1152,7 +1166,7 @@ export function BookingForm({
             <div>
               <FieldLabel htmlFor="booking-phone">{t.phoneLabel}</FieldLabel>
               <p id="booking-phone-help" className="mt-1 t-small text-secondary">
-                {s.pickup?.booked ? t.phoneHelpBooked : t.phoneHelp}
+                {!requireAccount ? (s.pickup?.booked ? t.phoneHelpBooked : t.phoneHelpGuest) : verified ? t.phoneHelpBooked : t.phoneHelp}
               </p>
               <input
                 id="booking-phone"
@@ -1165,12 +1179,48 @@ export function BookingForm({
                 value={s.phone}
                 onChange={(e) => update("phone", e.target.value)}
                 onBlur={checkPhoneOnBlur}
+                readOnly={phoneLocked}
                 aria-invalid={errors.phone ? true : undefined}
                 aria-describedby={errors.phone ? "booking-phone-help booking-phone-error" : "booking-phone-help"}
-                className={`${inputBase} ${inputHeight} mt-2`}
+                className={`${inputBase} ${inputHeight} mt-2 ${phoneLocked ? "bg-soft" : ""}`}
+                data-phone-verified={requireAccount && verified ? "" : undefined}
               />
+              {requireAccount && verified ? (
+                <p className="mt-2 t-small font-semibold text-success" data-verified-badge>
+                  ✓ {t.verify.done}
+                </p>
+              ) : null}
               <ErrorText id="booking-phone-error">{errors.phone}</ErrorText>
             </div>
+
+            {requireAccount && !verified ? (
+              <BookingVerify
+                t={t.verify}
+                name={s.name}
+                phone={s.phone}
+                notice={verifyNotice}
+                fallback={<WhatsAppFallback href={whatsappHref(s, t, c, locale, pickupChargeMinor)} placement="booking_verify" label={c.sendOnWhatsApp} opens={c.opensWhatsApp} className="w-full sm:w-auto" />}
+                onFieldErrors={(e) => {
+                  // The step's own checks mirror validate(); a server message (an odd number) wins when given.
+                  const found = validate(s, t, c, locale);
+                  setErrors((prev) => ({ ...prev, ...(e.name !== undefined ? { name: e.name || found.name || t.errors.name } : {}), ...(e.phone !== undefined ? { phone: e.phone || found.phone || c.phoneInvalid } : {}) }));
+                  document.getElementById(e.name !== undefined ? "booking-name" : "booking-phone")?.focus();
+                }}
+                onPending={(pending) => {
+                  setCodePending(pending);
+                  // The code is on its way: the "verify first" reminder from an early Book has done its job.
+                  if (pending) setErrors((prev) => ({ ...prev, phone: undefined }));
+                }}
+                onVerified={(phone) => {
+                  setVerified(true);
+                  setVerifyNotice(undefined);
+                  setErrors((prev) => ({ ...prev, phone: undefined }));
+                  update("phone", phone);
+                  // The page re-renders signed in (saved addresses, "Signed in as") while everything typed here stays.
+                  router.refresh();
+                }}
+              />
+            ) : null}
 
             {savedAddresses.length ? (
               <div data-saved-addresses>
@@ -1330,7 +1380,6 @@ export function BookingForm({
               offer={offer}
               coupon={coupon}
               accountOffer={accountOffer}
-              signInHref={signInHref}
               popular={popularItems}
               hints={upsellHints}
               onAdd={(item, service, reason) => {

@@ -219,6 +219,18 @@ export const getPickups = cache(async (): Promise<{ verified: boolean; pickups: 
   return { verified: Boolean(d.verified), pickups: d.pickups ?? [] };
 });
 
+/** How many website bookings the signed-in customer already has (the account offer counts the first three); null when it can't be told. */
+export const getWebsiteBookings = cache(async (): Promise<number | null> => {
+  const supabase = await customerSupabase();
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc("portal_website_bookings");
+  if (error) {
+    console.error("portal_website_bookings_failed", error.code);
+    return null;
+  }
+  return Number.isInteger(data) ? (data as number) : null;
+});
+
 /* ---------- welcome back: match preview (docs/technical/sql/website_identity_claim.sql) ---------- */
 
 export type MatchPreview =

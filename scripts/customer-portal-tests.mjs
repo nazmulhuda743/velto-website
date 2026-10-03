@@ -99,5 +99,15 @@ expect(!/grant execute on function public\.portal_link_\w+\([^)]*\) to authentic
 expect(!/grant [^;]* to anon/.test(sql), "portal SQL must not grant anything to anon");
 expect(/is_active_staff\(\) and \(%s\)/.test(sql), "Ops policies must be wrapped with is_active_staff()");
 
+// Website bookings are made from a customer account: the API decides who may book before anything is validated or sent.
+{
+  const route = read("src/app/api/bookings/route.ts");
+  const gate = route.indexOf("bookingCaller(");
+  const validate = route.indexOf("validateBookingSubmission(");
+  const create = route.indexOf("gateway.createBooking(");
+  expect(gate > 0 && validate > gate && create > validate, "api/bookings must run bookingCaller before validation and before createBooking");
+  expect(/sign_in_required/.test(route), "api/bookings must answer sign_in_required to guests");
+}
+
 assert.deepEqual(failures, [], `Customer portal checks failed:\n${failures.join("\n")}`);
 console.log(`Customer portal static checks passed across ${files.length} source files and the portal SQL.`);

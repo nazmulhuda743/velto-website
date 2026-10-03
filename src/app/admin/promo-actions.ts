@@ -161,7 +161,7 @@ export async function loadFirstOrderTemplateAction() {
   await logActivity(admin, {
     section: "promo",
     action: "promo_popup_template",
-    summary: "Popup filled with the signed-in 10% template (switched off until checked)",
+    summary: "Popup filled with the account-offer 10% template (switched off until checked)",
     detail: { href: next.href, version: next.version },
   });
   back({ saved: "template", tab: "popup" });

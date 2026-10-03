@@ -34,7 +34,9 @@ export type AuthFormState =
   /** An SMS code is on its way to `phone`; `message` reports a problem on this step (e.g. resend refused). */
   | { status: "code-sent"; phone: string; resent?: boolean; sentAt?: number; message?: string; errors?: FieldErrors }
   /** "Show my past orders": the phone is proven; `result` says what was found under it. */
-  | { status: "linked"; result: "linked" | "no_orders" | "pending" | "match" };
+  | { status: "linked"; result: "linked" | "no_orders" | "pending" | "match" }
+  /** The booking form's code step: signed in, stay on the page (`newUser`: the account was just created). */
+  | { status: "signed-in"; phone: string; newUser: boolean };
 
 const UNAVAILABLE: AuthFormState = { status: "unavailable" };
 
@@ -147,28 +149,43 @@ export async function sendPhoneCodeAction(_prev: AuthFormState, form: FormData):
 }
 
 /** Step 2: check the code. A correct code signs the customer in (and creates the account if new). */
-export async function verifyPhoneCodeAction(_prev: AuthFormState, form: FormData): Promise<AuthFormState> {
+/** Checks the code and signs the customer in. Shared by the login page (which then redirects) and the booking form (which stays put). */
+async function verifyPhoneCode(form: FormData): Promise<{ ok: true; phone: string; newUser: boolean } | { ok: false; state: AuthFormState }> {
   const m = await messages();
   const phone = normaliseBdPhone(str(form, "otpPhone", 30));
   const code = validOtp(str(form, "otpCode", 20));
-  const next = await localHref(safeNextPath(str(form, "next", 300)));
-  if (!phone) return { status: "invalid", errors: { phone: m.t.phone } };
-  if (!code) return { status: "code-sent", phone, errors: { code: m.t.code } };
+  if (!phone) return { ok: false, state: { status: "invalid", errors: { phone: m.t.phone } } };
+  if (!code) return { ok: false, state: { status: "code-sent", phone, errors: { code: m.t.code } } };
 
   const supabase = await customerSupabase();
-  if (!supabase) return m.disabled;
-  if (!(await otpAllowed("verify", phone))) return { status: "code-sent", phone, message: m.t.tooMany };
+  if (!supabase) return { ok: false, state: m.disabled };
+  if (!(await otpAllowed("verify", phone))) return { ok: false, state: { status: "code-sent", phone, message: m.t.tooMany } };
 
-  const { error } = await supabase.auth.verifyOtp({ phone: bdPhoneToE164(phone), token: code, type: "sms" });
+  const { data, error } = await supabase.auth.verifyOtp({ phone: bdPhoneToE164(phone), token: code, type: "sms" });
   if (error) {
     const mapped = authFailure(error, m.tooMany);
-    if (mapped?.status === "unavailable") return mapped;
-    if (mapped) return { status: "code-sent", phone, message: m.t.tooMany };
-    return { status: "code-sent", phone, errors: { code: m.t.codeWrong } };
+    if (mapped?.status === "unavailable") return { ok: false, state: mapped };
+    if (mapped) return { ok: false, state: { status: "code-sent", phone, message: m.t.tooMany } };
+    return { ok: false, state: { status: "code-sent", phone, errors: { code: m.t.codeWrong } } };
   }
   await supabase.rpc("portal_touch_login");
   await setAccountHint(true);
+  // Created in the last half hour: a first sign-in (a resend or a slow code still counts as new).
+  const created = Date.parse(data.user?.created_at ?? "");
+  return { ok: true, phone, newUser: Number.isFinite(created) && Date.now() - created < 30 * 60_000 };
+}
+
+export async function verifyPhoneCodeAction(_prev: AuthFormState, form: FormData): Promise<AuthFormState> {
+  const next = await localHref(safeNextPath(str(form, "next", 300)));
+  const result = await verifyPhoneCode(form);
+  if (!result.ok) return result.state;
   redirect(next);
+}
+
+/** The booking form's code step: same check, but the customer stays on /book with everything they typed. */
+export async function verifyBookingCodeAction(_prev: AuthFormState, form: FormData): Promise<AuthFormState> {
+  const result = await verifyPhoneCode(form);
+  return result.ok ? { status: "signed-in", phone: result.phone, newUser: result.newUser } : result.state;
 }
 
 /* ---------- Sign in with Google ---------- */

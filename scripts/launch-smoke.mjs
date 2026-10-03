@@ -123,6 +123,19 @@ const oversized = await request("/api/bookings", {
 });
 assert.equal(oversized.status, 413, `booking endpoint should reject oversized JSON with 413, got ${oversized.status}`);
 
+// Website bookings are made from a customer account: a well-formed guest booking is refused before validation.
+const guest = await request("/api/bookings", {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({
+    data: { name: "Smoke Guest", phone: "01712345678", area: "Uttara Sector 7", address: "House 1, Road 2", preferredPickup: "Tomorrow, Morning" },
+    idempotencyKey: "launch-smoke-guest-booking",
+  }),
+});
+assert.equal(guest.status, 401, `guest booking should be refused with 401, got ${guest.status}`);
+const guestBody = await guest.json().catch(() => null);
+assert.equal(guestBody?.error?.code, "sign_in_required", "guest booking should answer sign_in_required");
+
 const trackWrongType = await request("/api/track", {
   method: "POST",
   headers: { "content-type": "text/plain" },

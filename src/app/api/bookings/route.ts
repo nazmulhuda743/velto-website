@@ -3,8 +3,9 @@ import { logServerEvent } from "@/lib/analytics/store";
 import { bookingEstimateText } from "@/lib/booking-estimate";
 import { cleanBookingItems } from "@/lib/booking-items";
 import { couponNote, usableCoupon } from "@/lib/customer/goal";
-import { accountOfferNote } from "@/lib/account-offer";
-import { getCustomerSession, getGoal } from "@/lib/customer/portal";
+import { accountOfferFor, accountOfferNote } from "@/lib/account-offer";
+import { bookingCaller } from "@/lib/booking-caller";
+import { getCustomerSession, getGoal, getWebsiteBookings, type CustomerSession } from "@/lib/customer/portal";
 import { getSiteContent } from "@/lib/site-content";
 import { getCapacityConfig, zoneForArea } from "@/lib/capacity";
 import {
@@ -44,9 +45,11 @@ const fail = (
     { status, headers: { "Cache-Control": "no-store" } },
   );
 
-/** The signed-in customer's monthly-goal reward for today, worded for the Ops notes; undefined for everyone else. */
-async function offerForCaller(): Promise<string | undefined> {
-  const session = await getCustomerSession();
+/**
+ * What the Ops notes say about the caller's discount: a monthly-goal reward when they hold one,
+ * else the account offer for their first three website bookings. One discount per order.
+ */
+async function offerForCaller(session: CustomerSession): Promise<string | undefined> {
   if (session.kind !== "customer" || session.account.state !== "ready") return undefined;
   if (session.account.link.status === "linked") {
     const { loyalty } = await getSiteContent();
@@ -54,7 +57,8 @@ async function offerForCaller(): Promise<string | undefined> {
     const c = goal ? usableCoupon(goal.coupons, goal.today) : null;
     if (c) return couponNote(c);
   }
-  return accountOfferNote();
+  const offer = accountOfferFor(await getWebsiteBookings());
+  return offer ? accountOfferNote(offer) : undefined;
 }
 
 export async function POST(request: NextRequest) {
@@ -66,10 +70,17 @@ export async function POST(request: NextRequest) {
   const input = (body.value ?? {}) as Record<string, unknown>;
   // The estimate comes from the Ops price list on the server, never from the browser.
   const data = input.data && typeof input.data === "object" ? (input.data as Record<string, unknown>) : {};
+  // Website bookings are made from a customer account: the verified mobile is the one that reaches
+  // Ops (and the one the customer's account finds the pickup by), whatever the form sent. The
+  // owner's switch (Settings) lets guests through again, e.g. while SMS delivery is down.
+  const [session, { settings }] = await Promise.all([getCustomerSession(), getSiteContent()]);
+  const caller = bookingCaller(session);
+  if (caller.ok) data.phone = caller.phone;
+  else if (settings.bookingRequiresAccount) return fail("sign_in_required", requestId, false, 401);
   const items = cleanBookingItems(data.items);
   const estimate = items?.length ? await bookingEstimateText(items).catch(() => undefined) : undefined;
-  // A monthly-goal reward, else the account offer for any booking made signed in (one per order).
-  const coupon = await offerForCaller().catch(() => undefined);
+  // A monthly-goal reward, else the account offer for the first three website bookings (one per order).
+  const coupon = caller.ok ? await offerForCaller(session).catch(() => undefined) : undefined;
   const parsed = validateBookingSubmission(input.data, { estimate, siteUrl: SITE_URL, coupon });
   const context = validateSubmissionContext({ idempotencyKey: input.idempotencyKey, requestId });
   if (!parsed.ok || !context.ok) {

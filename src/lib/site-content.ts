@@ -41,6 +41,11 @@ export type SiteSettings = {
    * set in the admin). null until the owner sets it; the booking summary then says Velto confirms it.
    */
   pickupChargeTaka: number | null;
+  /**
+   * Website bookings are made from a customer account (the form verifies the mobile by SMS code).
+   * The owner's rollback switch: off lets guests book as before, e.g. during an SMS outage.
+   */
+  bookingRequiresAccount: boolean;
 };
 
 /** titleBn/descriptionBn override the built-in Bangla text on /bn pages. */
@@ -74,6 +79,7 @@ export const DEFAULT_SETTINGS: SiteSettings = {
     LOCATIONS.map((l) => [l.id, { rating: l.rating, reviewCount: l.reviewCount, hours: l.hours }]),
   ) as SiteSettings["outlets"],
   pickupChargeTaka: null,
+  bookingRequiresAccount: true,
 };
 
 export const DEFAULT_REVIEWS: ReviewEntry[] = REVIEWS.map((r, i) => ({
@@ -116,6 +122,7 @@ function parseSettings(v: unknown): SiteSettings {
       }),
     ) as SiteSettings["outlets"],
     pickupChargeTaka: readCharge(s.pickupChargeTaka),
+    bookingRequiresAccount: s.bookingRequiresAccount !== false,
   };
 }
 

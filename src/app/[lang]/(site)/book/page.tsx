@@ -1,6 +1,6 @@
-import Link from "@/components/i18n/Link";
 import { pageMetadata } from "@/lib/seo/page-metadata";
-import { getCustomerSession, getPreferences } from "@/lib/customer/portal";
+import { getCustomerSession, getPreferences, getWebsiteBookings } from "@/lib/customer/portal";
+import { accountOfferFor } from "@/lib/account-offer";
 import { careNote, joinNotes } from "@/lib/customer/extras";
 import { parseRoutine } from "@/lib/customer/rhythm";
 import { validOrderNumber } from "@/lib/customer/validation";
@@ -11,7 +11,7 @@ import { WHATSAPP_URL } from "@/content/site";
 import { dictionary } from "@/content/i18n";
 import { formText } from "@/content/i18n/forms";
 import { format, localDigits } from "@/lib/i18n/config";
-import { getLocale, loginRedirectPath } from "@/lib/i18n/server";
+import { getLocale } from "@/lib/i18n/server";
 import { getPickupChargeMinor } from "@/lib/booking-estimate";
 import { getServicePrices } from "@/lib/service-prices";
 import { getSiteContent } from "@/lib/site-content";
@@ -55,10 +55,8 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
     return loyalty.goal.enabled ? getGoal(loyalty.goal.doubleFirst) : null;
   })() : null;
   const coupon = goal ? usableCoupon(goal.coupons, goal.today) : null;
-  // 10% for any booking made signed in (the goal coupon takes its place); guests are asked to sign in.
-  const accountOffer = coupon ? undefined : account ? ("yours" as const) : ("guest" as const);
-  const signInHref = account ? undefined : await loginRedirectPath("/book");
-  const returnTo = `/book${service ? `?service=${encodeURIComponent(service)}` : ""}`;
+  // 10% off the first three website bookings (the goal coupon takes its place when the customer holds one).
+  const accountOffer = coupon || !account ? null : accountOfferFor(await getWebsiteBookings());
   const locale = await getLocale();
   const f = formText(locale);
   const t = f.bookPage;
@@ -110,14 +108,6 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
                       <span className="mt-3 block t-small text-secondary" data-prefilled>
                         {format(t.signedIn, { name: account.fullName })}
                       </span>
-                    ) : session.kind === "anonymous" ? (
-                      <span className="mt-3 block t-small text-secondary">
-                        {t.haveAccount}
-                        <Link href={`/login?next=${encodeURIComponent(returnTo)}`} className="font-semibold text-navy underline decoration-blue/50 underline-offset-4">
-                          {t.signInLink}
-                        </Link>
-                        {t.signInAfter}
-                      </span>
                     ) : null}
                   </>
                 }
@@ -129,7 +119,8 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
                 offer={offer || undefined}
                 coupon={coupon ? { code: coupon.code, kind: coupon.kind, amount: coupon.amount } : undefined}
                 accountOffer={accountOffer}
-                signInHref={signInHref}
+                signedIn={Boolean(account)}
+                requireAccount={settings.bookingRequiresAccount}
                 presetNote={joinNotes(routineNote ?? (repeat ? format(t.repeatNote, { n: repeat }) : t.presetNotes[service ?? ""]), prefs ? careNote(prefs.care, t.care) : "")}
                 savedAddresses={prefs?.addresses ?? []}
                 previewOutcome={previewOutcome}

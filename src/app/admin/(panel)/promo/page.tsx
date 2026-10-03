@@ -70,7 +70,7 @@ export default async function PromoPage({ searchParams }: { searchParams: Search
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="Message" hint="Several messages: separate them with | (each glides past in turn). Up to 400 characters.">
-              <textarea name="text" defaultValue={bar.text} rows={2} maxLength={400} className="admin-input" placeholder="Book your first order on the website and get 10% off | Free pickup & delivery on ৳499+" />
+              <textarea name="text" defaultValue={bar.text} rows={2} maxLength={400} className="admin-input" placeholder="10% off your first 3 bookings on the website | Free pickup & delivery on ৳499+" />
             </Field>
             <Field label="Message in Bangla" hint="Optional. Shown on Bangla pages; if empty, they show the English text.">
               <textarea name="textBn" lang="bn" defaultValue={bar.textBn} rows={2} maxLength={400} className="admin-input" />
@@ -110,7 +110,7 @@ export default async function PromoPage({ searchParams }: { searchParams: Search
         </p>
         <form action={loadFirstOrderTemplateAction} className="mt-4 flex flex-wrap items-center gap-3 rounded-md border border-line bg-soft px-4 py-3">
           <p className="min-w-0 flex-1 t-small text-body">
-            <span className="font-semibold text-navy">First-order offer template:</span> a voucher with a Velto photo, “10% off your first order”, ticks, small print and your Google rating, in English and Bangla. It replaces the popup below and stays off until you preview it and switch it on.
+            <span className="font-semibold text-navy">Account offer template:</span> a voucher with a Velto photo, “10% off your first 3 website bookings”, ticks, small print and your Google rating, in English and Bangla. It replaces the popup below and stays off until you preview it and switch it on.
           </p>
           <button type="submit" className="admin-btn-secondary">
             Use the template
@@ -140,7 +140,7 @@ export default async function PromoPage({ searchParams }: { searchParams: Search
                 <input name="tagBn" lang="bn" defaultValue={promo.tagBn} maxLength={40} className="admin-input" />
               </Field>
               <Field label="Headline" hint="Leave empty for a poster-only popup (the poster then needs alt text).">
-                <input name="title" defaultValue={promo.title} maxLength={120} className="admin-input" placeholder="10% off your first order" />
+                <input name="title" defaultValue={promo.title} maxLength={120} className="admin-input" placeholder="10% off your first 3 website bookings" />
               </Field>
               <Field label="Headline in Bangla">
                 <input name="titleBn" lang="bn" defaultValue={promo.titleBn} maxLength={120} className="admin-input" />
@@ -170,7 +170,7 @@ export default async function PromoPage({ searchParams }: { searchParams: Search
                 <textarea name="pointsBn" lang="bn" defaultValue={promo.pointsBn} rows={2} maxLength={240} className="admin-input" />
               </Field>
               <Field label="Small print" hint="Who qualifies and how the discount is applied. Up to 200 characters.">
-                <input name="fine" defaultValue={promo.fine} maxLength={200} className="admin-input" placeholder="For your first order booked on the website." />
+                <input name="fine" defaultValue={promo.fine} maxLength={200} className="admin-input" placeholder="For your first three bookings on the website, orders of ৳499 or more." />
               </Field>
               <Field label="Small print in Bangla">
                 <input name="fineBn" lang="bn" defaultValue={promo.fineBn} maxLength={200} className="admin-input" />
