@@ -9,10 +9,12 @@ import type {
   PriceSearch,
   PricingSource,
 } from "./types";
-import { parsePublicPricingRows } from "./validation";
+import { parsePublicPricingRows, rankPriceItems, searchWords } from "./validation";
 
 const DEFAULT_LIMIT = 5;
 const MAX_LIMIT = 10;
+/** Rows read for one search before ranking (the view has up to three service rows per item). */
+const SEARCH_ROWS = 300;
 const MAX_LOOKUP_NAMES = 40;
 /** Item names are quoted inside a PostgREST in.() list, so quotes and backslashes are never allowed. */
 const SAFE_ITEM_NAME = /^[A-Za-z0-9 ().,/&+'-]{1,64}$/;
@@ -110,12 +112,16 @@ export function createSupabasePricingSource(
 
       const resultLimit = Math.min(Math.max(Math.trunc(limit), 1), MAX_LIMIT);
       const url = viewUrl();
-      url.searchParams.set("item_name", `ilike.*${normalized}*`);
-      // The view has multiple service rows per item; leave enough room while
-      // still bounding the response returned by the operational source.
-      url.searchParams.set("limit", String(resultLimit * 8));
+      // Every word must appear ("suit 1pc" → "Suit (1pc)"). The route already removed the
+      // characters PostgREST filters treat specially (commas, brackets, dots, quotes, *).
+      const words = searchWords(normalized);
+      if (words.length > 1) url.searchParams.set("and", `(${words.map((w) => `item_name.ilike.*${w}*`).join(",")})`);
+      else url.searchParams.set("item_name", `ilike.*${words[0]}*`);
+      // All matches (bounded: about three service rows per item), then best match first, so a
+      // common word like "suit" shows "Suit (1pc)" rather than the first five names A–Z.
+      url.searchParams.set("limit", String(SEARCH_ROWS));
 
-      return (await fetchItems(url)).slice(0, resultLimit);
+      return rankPriceItems(await fetchItems(url), normalized).slice(0, resultLimit);
     },
 
     async getItems({ names, revalidateSeconds }: PriceLookup) {
