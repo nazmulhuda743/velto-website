@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AdminHeader, Badge, Notice, one, type SearchParams } from "@/components/admin/ui";
 import { getLinkRequests, type LinkRequest } from "@/lib/admin/data";
 import { getIdentityFlags, type IdentityFlag } from "@/lib/admin/customer-extras";
@@ -246,7 +247,10 @@ export default async function AccountsPage({ searchParams }: { searchParams: Sea
           Phone notifications {push.state === "ok" ? <span className="text-secondary">({activePhones} {activePhones === 1 ? "phone" : "phones"})</span> : null}
         </h2>
         <p className="mt-1 max-w-[70ch] t-small text-secondary">
-          Customers who turned on order updates on their phone. “Last delivered” is when the push service last accepted a notification for that phone. Use “Send test notification” to check one phone.
+          Customers who turned on order updates on their phone. “Last delivered” is when the push service last accepted a notification for that phone. Use “Send test notification” to check one phone.{" "}
+          <Link href="/admin/accounts/notifications" className="font-semibold text-action underline underline-offset-4">
+            See every notification design
+          </Link>
         </p>
         {pushResult && PUSH[pushResult] ? (
           <p role="status" className={`mt-4 rounded-md px-4 py-3 t-small font-medium ${pushResult === "sent" ? "border border-success/30 bg-success-soft text-success" : "border border-warning/40 bg-warning-soft text-navy"}`}>

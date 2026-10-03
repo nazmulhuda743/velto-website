@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { orderMessage } from "@/lib/push/messages";
+import { careMessage, orderMessage } from "@/lib/push/messages";
 import { sendAndRecord, type PushTarget } from "@/lib/push/server";
 import { rhythmReady, runKeyOk } from "@/lib/rhythm-server";
 import { supabaseRpc } from "@/lib/supabase-server";
@@ -11,6 +11,7 @@ import { supabaseRpc } from "@/lib/supabase-server";
  */
 export const maxDuration = 60;
 
+type CareEvent = { order_id: string; step: string; order_number: string; decision: string | null; targets: PushTarget[] };
 type Event = { order_id: string; status: string; order_number: string; items: number | null; first_name: string | null; targets: PushTarget[] };
 
 export async function POST(request: NextRequest) {
@@ -31,5 +32,17 @@ export async function POST(request: NextRequest) {
       }),
     );
   }
-  return NextResponse.json({ ok: true, orders: events.length, sent, failed }, { headers: { "Cache-Control": "no-store" } });
+  // Care approvals (website_care.sql). Until that SQL is applied the function is missing: skip.
+  const care = await supabaseRpc<CareEvent[]>("website_push_care_events", { p_limit: 100 }).catch(() => [] as CareEvent[]);
+  for (const e of care) {
+    await Promise.all(
+      e.targets.slice(0, 10).map(async (t) => {
+        const m = careMessage(e.step, e.order_number, t.lang === "en" ? "en" : "bn");
+        if (!m) return;
+        if (await sendAndRecord(t, m)) sent++;
+        else failed++;
+      }),
+    );
+  }
+  return NextResponse.json({ ok: true, orders: events.length, care: care.length, sent, failed }, { headers: { "Cache-Control": "no-store" } });
 }

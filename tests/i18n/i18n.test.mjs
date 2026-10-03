@@ -207,3 +207,29 @@ test("Today text: todayText picks the language and the cookie name is fixed", ()
   assert.equal(todayText("en"), todayEn);
   assert.equal(todayText("bn"), todayBn);
 });
+
+test("care approval copy: same keys in both languages, every Ops risk type in customer words", () => {
+  const { careText } = requireTs("src/content/i18n/care.ts");
+  const en = careText("en");
+  const bn = careText("bn");
+  assert.deepEqual(Object.keys(bn).sort(), Object.keys(en).sort());
+  // The list Velto Ops offers staff at intake (velto-ops-pwa RISK_TYPES).
+  const ops = [
+    "Colour may bleed / run",
+    "Dark or red / indigo — loose dye",
+    "Dust or dirt on collar / cuffs (sets if ironed)",
+    "Delicate — beads / sequins / zari work",
+    "Dry-clean only — no water wash",
+    "Shrinkage risk",
+    "Pre-existing damage may worsen",
+    "Colour-fastness uncertain — needs test",
+    "Embroidery / print may lift",
+    "Other — see note",
+  ];
+  for (const type of ops) {
+    assert.ok(en.types[type], `English for ${type}`);
+    assert.ok(bn.types[type], `Bangla for ${type}`);
+  }
+  assert.equal(bn.garments(3), "৩টি কাপড়");
+  assert.equal(en.banner(2), "2 orders need your approval");
+});

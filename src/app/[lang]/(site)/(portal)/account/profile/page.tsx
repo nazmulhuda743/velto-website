@@ -11,6 +11,7 @@ import { fill } from "@/lib/i18n/config";
 import { displayBdPhone } from "@/lib/customer/validation";
 import { NotifyCard } from "@/components/notify/NotifyCard";
 import { notifyText } from "@/content/i18n/notify";
+import { pushPrefsFromStatus, type PushPrefs } from "@/lib/push/prefs";
 import { supabaseRpc } from "@/lib/supabase-server";
 
 export default async function ProfilePage() {
@@ -28,7 +29,7 @@ export default async function ProfilePage() {
   ];
 
   // What this login receives (the card itself checks whether this browser is on).
-  const push = await supabaseRpc<{ devices: number; orderUpdates: boolean; reminders: boolean }>("website_push_status", { p_auth_user_id: session.user.id }).catch(() => null);
+  const push = await supabaseRpc<{ devices: number } & Partial<PushPrefs>>("website_push_status", { p_auth_user_id: session.user.id }).catch(() => null);
   const n = notifyText(locale);
 
   return (
@@ -58,7 +59,7 @@ export default async function ProfilePage() {
       </section>
 
       <section id="notifications" aria-labelledby="notify-settings-title" className="scroll-mt-24 rounded-lg border border-line bg-white p-5 md:p-8" data-notify-settings>
-        <NotifyCard t={n} lang={locale === "bn" ? "bn" : "en"} variant="settings" initialPrefs={push ? { orderUpdates: push.orderUpdates, reminders: push.reminders } : undefined} />
+        <NotifyCard t={n} lang={locale === "bn" ? "bn" : "en"} variant="settings" initialPrefs={pushPrefsFromStatus(push)} />
       </section>
 
       <section aria-labelledby="sign-in-title" className="rounded-lg border border-line bg-white p-5 md:p-8">
