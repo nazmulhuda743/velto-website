@@ -73,3 +73,32 @@ export function parsePublicPricingRows(payload: unknown): PublicPriceItem[] {
 
   return [...items.values()];
 }
+
+/** The words of a search, lower-case (at most 4, so the upstream filter stays small). */
+export function searchWords(query: string): string[] {
+  return query.toLowerCase().split(/\s+/).filter(Boolean).slice(0, 4);
+}
+
+/**
+ * Best match first: the exact name, then names that start with the search, then names with a
+ * word that starts with it, then the rest; shorter names before longer ones, then A–Z. So "suit"
+ * shows "Suit (1pc)" before "B. Kameez Suit (2pc)", and "suit 1pc" finds "Suit (1pc)".
+ */
+export function rankPriceItems(items: PublicPriceItem[], query: string): PublicPriceItem[] {
+  const words = searchWords(query);
+  const q = words.join(" ");
+  const plain = (name: string) => name.toLowerCase().replace(/[^a-z0-9&+\- ]+/g, " ").replace(/\s+/g, " ").trim();
+  const score = (name: string) => {
+    const n = plain(name);
+    if (n === q) return 0;
+    if (n.startsWith(q)) return 1;
+    if (words.length && n.startsWith(words[0])) return 2;
+    if (n.split(" ").some((w) => w.startsWith(words[0] ?? ""))) return 3;
+    return 4;
+  };
+  return items
+    .filter((item) => words.every((w) => plain(item.name).includes(w)))
+    .map((item) => ({ item, s: score(item.name) }))
+    .sort((a, b) => a.s - b.s || a.item.name.length - b.item.name.length || a.item.name.localeCompare(b.item.name))
+    .map((x) => x.item);
+}
