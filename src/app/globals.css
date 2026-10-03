@@ -739,3 +739,10 @@ html:has(dialog[data-today-sheet][open]) {
     animation: today-sheet-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 }
+
+/* Invoice "Save as PDF / print" (/i/<code>): the invoice alone, without the site header, footer or banners. */
+@media print {
+  body:has([data-invoice]) > :not(main) {
+    display: none !important;
+  }
+}

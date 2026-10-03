@@ -66,8 +66,11 @@ export function can(role: Role | null | undefined, section: Section): boolean {
   return Boolean(role && MATRIX[role]?.has(section));
 }
 
-/** Pages whose folder isn't their section: Today is the dispatch section's screen (spec 2026-10-01 §3). */
-const PATH_SECTION: Record<string, Section> = { today: "dispatch" };
+/**
+ * Pages whose folder isn't their section: Today is the dispatch section's screen (spec 2026-10-01 §3);
+ * Invoices on WhatsApp belongs to whoever handles pickups and deliveries.
+ */
+const PATH_SECTION: Record<string, Section> = { today: "dispatch", invoices: "dispatch" };
 
 /** Dashboard path → section. Unknown admin paths belong to no section (so nobody but owners). */
 export function sectionForPath(path: string): Section | null {

@@ -30,7 +30,10 @@ export async function saveRhythmAction(form: FormData) {
   if (key) {
     const textBn = text(form, "textBn", 400);
     const textEn = text(form, "textEn", 400);
-    const problem = templateProblem(textBn) ?? templateProblem(textEn);
+    // First-timer: also the text for customers whose first order was dry cleaning only.
+    const dcTextBn = key === "onetimer" ? text(form, "dcTextBn", 400) : "";
+    const dcTextEn = key === "onetimer" ? text(form, "dcTextEn", 400) : "";
+    const problem = templateProblem(textBn) ?? templateProblem(textEn) ?? (key === "onetimer" ? (templateProblem(dcTextBn) ?? templateProblem(dcTextEn)) : null);
     if (problem) back({ error: problem, playbook });
     next[key] = {
       enabled: form.get("enabled") === "on",
@@ -38,6 +41,7 @@ export async function saveRhythmAction(form: FormData) {
       lang: form.get("lang") === "en" ? "en" : "bn",
       textBn,
       textEn,
+      ...(key === "onetimer" ? { dcTextBn, dcTextEn } : {}),
     };
   } else if (playbook === "slipping") {
     next.slipping = { enabled: form.get("enabled") === "on", maxPerDay: Number(text(form, "max", 3)) || rhythm.slipping.maxPerDay };

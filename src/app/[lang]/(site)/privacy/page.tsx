@@ -86,6 +86,13 @@ const SECTIONS: LegalSection[] = [
           &ldquo;Stop these reminders&rdquo;, and you can also ask us to stop.
         </p>
         <p>
+          <strong>Invoice links:</strong> after an order we may send you its invoice on WhatsApp as a private link. The
+          page shows your first name, the order&apos;s items, prices and payments, never your phone number or address,
+          and the link works for 120 days. We record when it was sent and opened. Signing in with the same number keeps
+          all your orders and invoices in your account. If you rate the order there, or ask for a weekly pickup or a
+          service on your next pickup, we keep that with your order, and our team may call you about it.
+        </p>
+        <p>
           <strong>Notifications, only if you turn them on:</strong> when you allow notifications, your browser gives us
           an address to send them to (it is not your phone number). We keep it with your phone number to tell you when
           we&apos;ve picked up your clothes, when they&apos;re ready and when they&apos;re delivered, and, if you choose,

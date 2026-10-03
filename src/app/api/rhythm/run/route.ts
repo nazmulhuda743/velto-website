@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { PLAYBOOK_ID, renderMessage, rhythmLink, smsHourOk, SMS_PLAYBOOKS } from "@/lib/rhythm";
+import { PLAYBOOK_ID, renderMessage, rhythmLink, smsHourOk, SMS_PLAYBOOKS, templateFor } from "@/lib/rhythm";
 import { markTouch, recordTouch, refreshRhythm, rhythmCandidates, rhythmReady, runKeyOk, staffTask, type Candidate } from "@/lib/rhythm-server";
 import { getSiteContent } from "@/lib/site-content";
 import { SITE_URL } from "@/lib/site-url";
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
         if (!sms) return;
         const code = await recordTouch(c.customer_id, playbook, "sms", p.lang);
         if (!code) return;
-        const text = renderMessage(p.lang === "bn" ? p.textBn : p.textEn, { firstName: c.first_name, service: c.usual_service, link: rhythmLink(SITE_URL, code, p.lang) }, p.lang);
+        const text = renderMessage(templateFor(key, p, c.usual_service, p.lang), { firstName: c.first_name, service: c.usual_service, link: rhythmLink(SITE_URL, code, p.lang) }, p.lang);
         const r = await sendSms(c.phone, text);
         await markTouch(code, r.ok);
         if (r.ok) summary.sent++;

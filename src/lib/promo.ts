@@ -176,7 +176,7 @@ export function popupDue(p: Pick<PromoPopup, "version" | "frequency">, seen: See
  */
 export function popupExcluded(pathname: string): boolean {
   const path = pathname.replace(/^\/(?:en|bn)(?=\/|$)/, "") || "/";
-  return /^\/(?:book|quote|track|account|auth|login|signup|forgot-password|reset-password|offline|privacy|cookies|terms|admin|r)(?:\/|$)/.test(path);
+  return /^\/(?:book|quote|track|account|auth|login|signup|forgot-password|reset-password|offline|privacy|cookies|terms|admin|r|i)(?:\/|$)/.test(path);
 }
 
 /**

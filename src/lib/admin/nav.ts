@@ -16,6 +16,7 @@ export type NavIcon =
   | "requests"
   | "capacity"
   | "dispatch"
+  | "invoices"
   | "accounts"
   | "health"
   | "retention"
@@ -57,6 +58,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/admin/riders", label: "Riders & windows", icon: "riders" },
       { href: "/admin/requests", label: "Bookings & quotes", icon: "requests" },
       { href: "/admin/dispatch", label: "Pickup & delivery", icon: "dispatch" },
+      { href: "/admin/invoices", label: "Invoices on WhatsApp", icon: "invoices" },
       { href: "/admin/capacity", label: "Capacity", icon: "capacity" },
       { href: "/admin/feedback", label: "Customer feedback", icon: "feedback" },
       { href: "/admin/retention", label: "Bring customers back", icon: "retention" },
