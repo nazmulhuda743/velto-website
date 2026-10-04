@@ -507,6 +507,19 @@ html[lang="bn"] .t-h4 {
   line-height: 1.35;
 }
 
+/* Installed Velto app (html[data-app], set before paint by APP_MODE_SCRIPT): the customer's app, not
+   the website. Promo bar, website menu, footer, sticky website bars and the campaign popup never
+   show; the app's own tab bar does. In a browser it is the other way round. */
+html[data-app] :is([data-promo-bar], [data-site-chrome], footer[data-site-footer], [data-promo-popup]) {
+  display: none !important;
+}
+html:not([data-app]) [data-app-chrome] {
+  display: none !important;
+}
+html[data-app] body {
+  padding-bottom: calc(57px + env(safe-area-inset-bottom));
+}
+
 /* Signed-in account pages carry their own short footer; the marketing footer steps aside. */
 body:has([data-account-frame]) footer[data-site-footer] {
   display: none;

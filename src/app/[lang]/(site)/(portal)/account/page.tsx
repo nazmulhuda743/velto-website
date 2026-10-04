@@ -1,6 +1,6 @@
 import Link from "@/components/i18n/Link";
 import { redirect } from "next/navigation";
-import { getLocale, loginRedirectPath } from "@/lib/i18n/server";
+import { getLocale, localHref, loginRedirectPath } from "@/lib/i18n/server";
 import { accountText, orderFormat, type AccountText } from "@/content/i18n/account";
 import { fill, format, type Locale } from "@/lib/i18n/config";
 import { Alert } from "@/components/account/Alert";
@@ -28,7 +28,6 @@ import { firstWebsiteBooking } from "@/lib/first-order-lookup";
 import { usableCoupon } from "@/lib/customer/goal";
 import { areaLabel, displayBdPhone, greetingName } from "@/lib/customer/validation";
 import { NotifyCard } from "@/components/notify/NotifyCard";
-import { InstallSheet } from "@/components/pwa/InstallSheet";
 import { notifyText } from "@/content/i18n/notify";
 import { pushPrefsFromStatus, type PushPrefs } from "@/lib/push/prefs";
 import { supabaseRpc } from "@/lib/supabase-server";
@@ -104,6 +103,8 @@ function ActiveOrderCard({ order, more, t, locale, plan }: { order: PortalOrder;
 
 export default async function AccountHome({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
+  // Old WhatsApp links (velto.com.bd/app used to land here with ?install=1): the install screen now lives at /app.
+  if (params.install === "1") redirect(await localHref("/app"));
   const session = await getCustomerSession();
   if (session.kind !== "customer" || session.account.state !== "ready") redirect(await loginRedirectPath("/account"));
   const account = session.account;
@@ -239,9 +240,8 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
 
       {/* Order updates and reminders on the phone: the value first, then the phone's own prompt. */}
       <NotifyCard t={notifyText(locale)} lang={locale === "bn" ? "bn" : "en"} initialPrefs={pushPrefsFromStatus(push)} />
-      {/* "Install Velto": a popup on the account page (never inside the installed app; 14 days after "Not now").
-          velto.com.bd/app lands here with ?install=1, which opens it straight away. */}
-      <InstallSheet t={formText(locale).common.install} placement={params.install === "1" ? "app_link" : "account_home"} force={params.install === "1"} delayMs={params.install === "1" ? 300 : 1500} />
+      {/* No install popup here: it is offered once, after a website booking (InstallSheet). The account is
+          also the installed app's home, and a customer opening their orders shouldn't be interrupted. */}
 
       {linked ? <RewardsStrip loyalty={loyalty} counts={counts} goal={goal} locale={locale} /> : null}
 

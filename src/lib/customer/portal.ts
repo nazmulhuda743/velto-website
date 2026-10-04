@@ -237,3 +237,15 @@ export const getMatchPreview = cache(async (): Promise<MatchPreview | null> => {
   }
   return (data ?? null) as MatchPreview | null;
 });
+
+/**
+ * Has this customer opened the Velto app (home-screen launch) on any phone? False when unknown:
+ * signed out, the database function not installed yet (docs/technical/sql/website_app_install.sql)
+ * or any error, so the install popup falls back to what the browser itself can tell.
+ */
+export const getAppInstalled = cache(async (): Promise<boolean> => {
+  const supabase = await customerSupabase();
+  if (!supabase) return false;
+  const { data, error } = await supabase.rpc("portal_app_installed");
+  return !error && data === true;
+});
