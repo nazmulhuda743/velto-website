@@ -9,7 +9,7 @@
  * - campaign values that look like an email or phone number are discarded;
  * - click ids are recorded as presence ("fbclid" / "gclid"), never the value.
  */
-import { CONSENT_EVENTS, isAnalyticsEvent, type AnalyticsEvent } from "./events";
+import { CONSENT_EVENTS, allowedOnPrivatePath, isAnalyticsEvent, type AnalyticsEvent } from "./events";
 import { isDevice, type Device } from "./classify";
 import { isPrivatePath, redactPrivatePath } from "./private-paths";
 
@@ -132,8 +132,8 @@ export function validateCollectBody(input: unknown): CollectBody | null {
       const e = rec(raw);
       if (typeof e.event !== "string" || !isAnalyticsEvent(e.event) || CONSENT_EVENT_SET.has(e.event)) continue;
       const path = cleanPath(e.path);
-      // Customer-account pages are never part of behavioral analytics.
-      if (!path || isPrivatePath(path)) continue;
+      // Customer-account pages are never part of behavioral analytics (bar app launches and the install card).
+      if (!path || (isPrivatePath(path) && !allowedOnPrivatePath(e.event))) continue;
       events.push({ event: e.event, path, service: slug(e.service), placement: slug(e.placement), detail: slug(e.detail) });
     }
     if (!events.length) return null;

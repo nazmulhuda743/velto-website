@@ -27,6 +27,7 @@ execFileSync(
     "src/lib/admin/price-diff.ts",
     "src/lib/admin/board-logic.ts",
     "src/lib/pwa/sw-rules.ts",
+    "src/lib/pwa/install-card.ts",
     "src/lib/promo.ts",
     "src/lib/footer-links.ts",
     "src/lib/rhythm.ts",

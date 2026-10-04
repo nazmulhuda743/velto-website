@@ -13,9 +13,9 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Laundry, dry cleaning and ironing in Uttara with pickup from your door. Book a pickup, track an order and see your orders.",
     lang: "en",
     dir: "ltr",
-    // Plain "/": a source parameter here would overwrite campaign attribution on every launch;
-    // launches are measured with the app_launch event instead.
-    start_url: "/",
+    // The installed app opens on the customer's own page (signed out, that is the sign-in). No
+    // source parameter: it would overwrite campaign attribution; launches are measured with app_launch.
+    start_url: "/account",
     scope: "/",
     display: "standalone",
     display_override: ["standalone", "minimal-ui"],

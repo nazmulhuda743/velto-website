@@ -37,6 +37,11 @@ export const ANALYTICS_EVENTS = [
   "consent_preferences_saved",
   // Installed app (PWA): opened from the home screen, once per session.
   "app_launch",
+  // "Install Velto" popup: shown with the one-tap prompt (Android) or the iPhone steps, accepted or dismissed.
+  "install_prompt_shown",
+  "install_accepted",
+  "install_dismissed",
+  "install_ios_shown",
   // Campaign popup (Promo & popup): shown, its link followed, or closed.
   "promo_view",
   "promo_click",
@@ -78,4 +83,23 @@ export const CONSENT_EVENTS = [
 
 export function isAnalyticsEvent(value: string): value is AnalyticsEvent {
   return (ANALYTICS_EVENTS as readonly string[]).includes(value);
+}
+
+/**
+ * The few events that may be recorded on customer-account pages (src/lib/analytics/private-paths.ts):
+ * app launches and the install popup. They carry no order or customer data, and nothing else from
+ * those pages is measured. Checked in the browser (track) and again by /api/collect.
+ */
+export const PRIVATE_PATH_EVENTS = [
+  "app_launch",
+  "install_prompt_shown",
+  "install_accepted",
+  "install_dismissed",
+  "install_ios_shown",
+] as const satisfies readonly AnalyticsEvent[];
+
+const PRIVATE_PATH_EVENT_SET = new Set<string>(PRIVATE_PATH_EVENTS);
+
+export function allowedOnPrivatePath(event: string): boolean {
+  return PRIVATE_PATH_EVENT_SET.has(event);
 }

@@ -91,6 +91,7 @@ export default async function ReminderPage({ params }: { params: Promise<{ code:
           t={t}
           preview={preview}
           notify={notifyText(locale)}
+          install={f.common.install}
           whatsappHref={`${WHATSAPP_URL}?text=${encodeURIComponent(fill(t.whatsappText, { code }, locale))}`}
           slotLabels={f.booking.slots}
           words={{ today: f.booking.today, tomorrow: f.booking.tomorrow, weekdays: f.common.weekdays, months: f.common.months, dayMonth: f.common.dayMonth, locale }}

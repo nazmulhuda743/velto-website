@@ -28,6 +28,7 @@ import { firstWebsiteBooking } from "@/lib/first-order-lookup";
 import { usableCoupon } from "@/lib/customer/goal";
 import { areaLabel, displayBdPhone, greetingName } from "@/lib/customer/validation";
 import { NotifyCard } from "@/components/notify/NotifyCard";
+import { InstallSheet } from "@/components/pwa/InstallSheet";
 import { notifyText } from "@/content/i18n/notify";
 import { pushPrefsFromStatus, type PushPrefs } from "@/lib/push/prefs";
 import { supabaseRpc } from "@/lib/supabase-server";
@@ -238,6 +239,9 @@ export default async function AccountHome({ searchParams }: { searchParams: Sear
 
       {/* Order updates and reminders on the phone: the value first, then the phone's own prompt. */}
       <NotifyCard t={notifyText(locale)} lang={locale === "bn" ? "bn" : "en"} initialPrefs={pushPrefsFromStatus(push)} />
+      {/* "Install Velto": a popup on the account page (never inside the installed app; 14 days after "Not now").
+          velto.com.bd/app lands here with ?install=1, which opens it straight away. */}
+      <InstallSheet t={formText(locale).common.install} placement={params.install === "1" ? "app_link" : "account_home"} force={params.install === "1"} delayMs={params.install === "1" ? 300 : 1500} />
 
       {linked ? <RewardsStrip loyalty={loyalty} counts={counts} goal={goal} locale={locale} /> : null}
 
