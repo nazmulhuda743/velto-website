@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { track } from "@/components/layout/Analytics";
+import { NOTIFY_DONE_EVENT } from "@/components/pwa/InstallSheet";
 import type { NotifyText } from "@/content/i18n/notify";
 import { currentSubscription, permission, pushSupport, subscribe, unsubscribe } from "@/lib/push/client";
 import { DEFAULT_PUSH_PREFS, type PushPrefs } from "@/lib/push/prefs";
@@ -107,6 +108,14 @@ export function NotifyCard({
   const [note, setNote] = useState<string | null>(null);
   const [prefs, setPrefs] = useState<PushPrefs>(initialPrefs ?? DEFAULT_PUSH_PREFS);
   const declineKey = orderRef ?? code;
+
+  // After a booking, the "Install Velto" popup (InstallSheet) waits for this sheet: tell it once the
+  // sheet is answered or won't show (on iPhone it can't, before Velto is on the home screen).
+  useEffect(() => {
+    if (variant !== "after" || demo || view === "loading" || view === "offer") return;
+    window.__veltoNotifyDone = true;
+    window.dispatchEvent(new Event(NOTIFY_DONE_EVENT));
+  }, [variant, demo, view]);
 
   useEffect(() => {
     if (demo) return;

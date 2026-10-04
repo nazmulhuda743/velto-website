@@ -1,8 +1,29 @@
 # Installable app (PWA)
 
 The website can be installed from the browser ("Install app" / "Add to Home Screen"). It opens
-the same website: no screens, flows, consent or analytics were changed. There is no install
-banner; the browser's own install option is used.
+the same website, on the customer's account page (`start_url: /account`).
+
+## "Install Velto" popup
+
+`src/components/pwa/InstallSheet.tsx`: a native `<dialog>` (bottom sheet on phones), asked for only
+once the customer has booked or opened their account.
+- **After a booking** (booking success, and the one-tap rebook page `/r/[code]`): it waits for the
+  notification sheet (`NotifyCard` variant `after` sends `velto:notify-done` once it is answered or
+  can't show). iPhone, where notifications need the home-screen app first, sees Install straight
+  away; Android sees notifications first, then Install. Never both at once.
+- **Account page:** 1.5 s after it opens.
+- **`velto.com.bd/app`** (in the Bring-back WhatsApp messages) → `/account?install=1` (sign-in first
+  when signed out), which opens the popup at once, even after "Not now".
+- **Android / Chrome:** the browser's `beforeinstallprompt` is kept by an inline script at the top of
+  `<body>` (`INSTALL_PROMPT_SCRIPT`, `src/lib/pwa/install-card.ts`; it fires before React hydrates),
+  and "Install Velto" calls it: one tap.
+- **iPhone:** no prompt exists, so the popup shows the Share → "Add to Home Screen" steps.
+- **Never** inside the installed app or on desktops without a prompt; "Not now" (or closing it) holds
+  for 14 days (`velto.install.dismissed`). Rules in `install-card.ts`, tests in
+  `tests/command-center/install-card.test.cjs`.
+- **Events:** `install_prompt_shown`, `install_ios_shown`, `install_accepted`, `install_dismissed`
+  (detail: prompt, not_now, close), plus `app_launch`. They are the only events recorded on account
+  pages (`PRIVATE_PATH_EVENTS`, `src/lib/analytics/events.ts`); the path stays redacted.
 
 ## Pieces
 
@@ -35,8 +56,9 @@ its caches and unregisters, and the page unregisters any worker too.
 
 - `node scripts/command-center-tests.mjs`: routing rules (`tests/command-center/pwa.test.cjs`).
 - `npm run test:pwa` against `next start`: manifest, icons, worker headers, offline page.
-- Manual, on real devices: Android Chrome (install from menu), iPhone Safari (Share → Add to Home
-  Screen), desktop Chrome/Edge. With the server stopped: a visited page opens, an unvisited page and
+- Manual, on real devices: Android Chrome (book → notification sheet → "Install Velto" popup → one tap;
+  the app opens on the account page and the popup no longer shows), iPhone Safari (book → the popup's
+  steps; open Velto from the home screen → turn on notifications works), desktop Chrome/Edge. With the server stopped: a visited page opens, an unvisited page and
   `/book` show the offline page. Chrome DevTools → Application shows no manifest or installability errors.
 
 ## Differences inside the installed app

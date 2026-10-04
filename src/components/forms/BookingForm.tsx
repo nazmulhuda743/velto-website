@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode, type Ref } from "react";
 import { track } from "@/components/layout/Analytics";
 import { NotifyCard } from "@/components/notify/NotifyCard";
+import { InstallSheet } from "@/components/pwa/InstallSheet";
 import type { NotifyText } from "@/content/i18n/notify";
 import { ButtonLink } from "@/components/ui/Button";
 import { WhatsAppIcon } from "@/components/ui/icons";
@@ -1532,6 +1533,9 @@ function BookingSuccess({
           </li>
         ))}
       </ol>
+
+      {/* "Install Velto": after the notification sheet when signed in (it waits for it), straight away for guests. */}
+      <InstallSheet t={c.install} placement="booking_success" when={notify && signedIn ? "after-notify" : "now"} />
 
       {notify ? (
         <div className="mt-8" data-booking-notify>

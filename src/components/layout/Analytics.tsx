@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { sendAnalyticsEvent } from "@/lib/analytics/client";
-import { isAnalyticsEvent } from "@/lib/analytics/events";
+import { allowedOnPrivatePath, isAnalyticsEvent } from "@/lib/analytics/events";
 import { isPrivatePath } from "@/lib/analytics/private-paths";
 import { appendAttribution } from "@/lib/attribution";
 import { captureAttributionFromUrl, consentedAttribution, storedAttribution } from "@/lib/attribution-client";
@@ -11,7 +11,8 @@ import { captureAttributionFromUrl, consentedAttribution, storedAttribution } fr
 type Payload = Record<string, string | undefined>;
 
 /**
- * Customer-account pages emit nothing: no data-layer entry, no first-party event.
+ * Customer-account pages emit nothing: no data-layer entry, no first-party event, except the few
+ * PRIVATE_PATH_EVENTS (app launches, the install card), which go to first-party analytics only.
  *
  * Emits approved UI events into one browser-side data layer. GTM can consume
  * these events when configured, while the custom event remains available to
@@ -24,7 +25,10 @@ export function track(event: string, context: Payload = {}) {
     console.warn(`[analytics] "${event}" is not in the approved event taxonomy`);
   }
 
-  if (isPrivatePath(window.location.pathname)) return;
+  if (isPrivatePath(window.location.pathname)) {
+    if (allowedOnPrivatePath(event)) sendAnalyticsEvent(event, context);
+    return;
+  }
 
   const attribution = storedAttribution();
   const payload = {

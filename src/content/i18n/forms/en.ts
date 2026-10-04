@@ -23,6 +23,20 @@ export const formsEn = {
     dayMonthShort: "{day} {month}",
     weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
     months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+    /** "Install Velto" popup (the installed website), after a booking and on the account page. */
+    install: {
+      title: "Install Velto",
+      body: "Velto on your home screen, like an app. No app store needed.",
+      points: ["Book again in two taps", "See where your order is", "Updates from Velto on your phone"],
+      button: "Install Velto",
+      notNow: "Not now",
+      gotIt: "Got it",
+      close: "Close",
+      added: "Velto is on your home screen.",
+      iosSteps: ["Tap the Share button (the square with an arrow) at the bottom of Safari.", "Choose \"Add to Home Screen\", then tap Add."],
+      iosAfter: "Then open Velto from your home screen to turn on order updates.",
+      androidSteps: ["In Chrome, tap the ⋮ menu at the top right.", "Choose \"Install app\" (or \"Add to Home screen\")."],
+    },
   },
   booking: {
     title: "Book a pickup",

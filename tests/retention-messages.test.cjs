@@ -27,6 +27,14 @@ test("no offers, discounts or prices are ever promised", () => {
   }
 });
 
+test("second and due point to the app page; win-back stays a plain question", () => {
+  for (const lang of ["bn", "en"]) {
+    assert.match(m.retentionMessage("second", facts, lang), /velto\.com\.bd\/app$/);
+    assert.match(m.retentionMessage("due", facts, lang), /velto\.com\.bd\/app$/);
+    assert.doesNotMatch(m.retentionMessage("winback", facts, lang), /velto\.com\.bd\/app/);
+  }
+});
+
 test("a missing or odd name falls back to a plain greeting", () => {
   assert.match(m.retentionMessage("second", { ...facts, name: null }, "en"), /^Hi, this is Velto\./);
   assert.match(m.retentionMessage("winback", { ...facts, name: "01711000000" }, "bn"), /^হ্যালো, Velto থেকে বলছি।/);

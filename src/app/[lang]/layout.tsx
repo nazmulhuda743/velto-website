@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { LocaleProvider } from "@/components/i18n/LocaleProvider";
+import { INSTALL_PROMPT_SCRIPT } from "@/lib/pwa/install-card";
 import { ServiceWorker } from "@/components/pwa/ServiceWorker";
 import { dictionary } from "@/content/i18n";
 import { isLocale, LOCALES } from "@/lib/i18n/config";
@@ -67,6 +68,8 @@ export default async function LangRootLayout({ children, params }: Props) {
   return (
     <html lang={lang} className={fontVariables}>
       <body>
+        {/* Static and first: keeps Chrome's one-time install prompt for the install card (src/lib/pwa/install-card.ts). */}
+        <script dangerouslySetInnerHTML={{ __html: INSTALL_PROMPT_SCRIPT }} />
         <LocaleProvider locale={lang} copy={copy[lang]}>
           {children}
         </LocaleProvider>

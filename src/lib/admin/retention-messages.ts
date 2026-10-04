@@ -1,8 +1,9 @@
 /**
  * WhatsApp messages staff send from the Bring-back list. Pure, so it is unit-tested.
  *
- * Plain, personal, no offers or promises: a question about their last order and an easy
- * "just reply" next step. Staff can still edit the text in WhatsApp before sending.
+ * Plain, personal, no offers or promises: a question about their last order, an easy
+ * "just reply" next step and, for second and due, the app link (velto.com.bd/app). Staff can
+ * still edit the text in WhatsApp before sending.
  */
 import { greetingName, normaliseBdPhone } from "../customer/validation";
 
@@ -29,22 +30,22 @@ export function retentionMessage(bucket: RetentionBucket, f: MessageFacts, lang:
     const hi = first ? `Hi ${first}, this is Velto.` : "Hi, this is Velto.";
     if (bucket === "second") {
       const order = f.lastOrderNumber ? ` (${f.lastOrderNumber})` : "";
-      return `${hi} We'd love to hear how your first order${order} went. Whenever your next laundry is ready, just reply here and we'll arrange a pickup.`;
+      return `${hi} We'd love to hear how your first order${order} went. Whenever your next laundry is ready, just reply here and we'll arrange a pickup. Your orders and a two-tap rebook are in the Velto app: velto.com.bd/app`;
     }
     if (bucket === "due") {
       const what = svc ? ` (${svc})` : "";
-      return `${hi} It's been about ${f.daysSince} days since your last laundry${what}. Would you like a pickup this week? Just reply and we'll arrange a time.`;
+      return `${hi} It's been about ${f.daysSince} days since your last laundry${what}. Would you like a pickup this week? Just reply and we'll arrange a time, or book in two taps from the Velto app: velto.com.bd/app`;
     }
     return `${hi} We haven't collected your laundry in a while. If anything about your last order wasn't right, we'd like to hear it. Whenever you need a pickup, just reply here.`;
   }
   const hi = first ? `হ্যালো ${first}, Velto থেকে বলছি।` : "হ্যালো, Velto থেকে বলছি।";
   if (bucket === "second") {
     const order = f.lastOrderNumber ? ` (${f.lastOrderNumber})` : "";
-    return `${hi} আপনার প্রথম অর্ডারটি${order} কেমন লেগেছে জানালে খুব খুশি হব। পরের লন্ড্রির জন্য পিকআপ লাগলে শুধু এই মেসেজের উত্তর দিন, আমরা সময় ঠিক করে নেব।`;
+    return `${hi} আপনার প্রথম অর্ডারটি${order} কেমন লেগেছে জানালে খুব খুশি হব। পরের লন্ড্রির জন্য পিকআপ লাগলে শুধু এই মেসেজের উত্তর দিন, আমরা সময় ঠিক করে নেব। আপনার অর্ডার আর দুই ট্যাপে আবার বুকিং Velto অ্যাপে: velto.com.bd/app`;
   }
   if (bucket === "due") {
     const what = svc ? ` (${svc})` : "";
-    return `${hi} আপনার আগের লন্ড্রি${what} প্রায় ${bnNum(f.daysSince)} দিন আগে নেওয়া হয়েছিল। এই সপ্তাহে পিকআপ লাগবে? উত্তর দিলেই আমরা সময় ঠিক করে নেব।`;
+    return `${hi} আপনার আগের লন্ড্রি${what} প্রায় ${bnNum(f.daysSince)} দিন আগে নেওয়া হয়েছিল। এই সপ্তাহে পিকআপ লাগবে? উত্তর দিলেই আমরা সময় ঠিক করে নেব, অথবা Velto অ্যাপ থেকে দুই ট্যাপে বুক করুন: velto.com.bd/app`;
   }
   return `${hi} অনেকদিন আপনার লন্ড্রি নেওয়ার সুযোগ হয়নি। আগের অর্ডারে কোনো সমস্যা হয়ে থাকলে জানাবেন, আমরা শুনতে চাই। আবার পিকআপ লাগলে এই মেসেজের উত্তর দিন।`;
 }

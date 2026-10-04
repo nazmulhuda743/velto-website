@@ -195,6 +195,10 @@ test("customer-account pages stay out of analytics and order numbers are redacte
   assert.equal(validateCollectBody(body("/account/orders/VEL-00001")), null);
   assert.equal(validateCollectBody(body("/login")), null);
   assert.equal(validateCollectBody(body("/book")).events[0].path, "/book");
+  // App launches and the install card are the only events kept from account pages, with the path still redacted.
+  const launch = validateCollectBody({ ...body("/account/orders/VEL-00001"), events: [{ event: "app_launch", path: "/account/orders/VEL-00001" }, { event: "page_view", path: "/account" }] });
+  assert.deepEqual(launch.events.map((e) => [e.event, e.path]), [["app_launch", "/account/orders/[order]"]]);
+  assert.equal(validateCollectBody({ ...body("/account"), events: [{ event: "install_accepted", path: "/account", placement: "account_home" }] }).events[0].placement, "account_home");
   assert.equal(validateCollectBody({ type: "not_found", path: "/account/orders/VEL-99999" }).path, "/account/orders/[order]");
 });
 

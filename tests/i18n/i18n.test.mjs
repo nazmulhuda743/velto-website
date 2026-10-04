@@ -105,9 +105,12 @@ test("service pages: Bangla keeps every service's structure and data", () => {
   }
 });
 
-/** Words that stay in Latin script on Bangla pages (brands, platforms, addresses). */
+/**
+ * Words that stay in Latin script on Bangla pages (brands, platforms, addresses), the phone's own
+ * menu names for adding the app (Safari / Chrome show them in English) and the velto.com.bd/app link.
+ */
 const LATIN_OK =
-  /\b(?:Velto|Premium|Laundry|WhatsApp|Google|Facebook|Instagram|Meta|Pixel|Analytics|RUAP|House|Road|Poncoboti|Bazar|English)\b|\b01X+\b|\bX{3,}\b|\bVEL-\d+/g;
+  /\b(?:Velto|Premium|Laundry|WhatsApp|Google|Facebook|Instagram|Meta|Pixel|Analytics|RUAP|House|Road|Poncoboti|Bazar|English|Safari|Chrome|Share|Add to Home [Ss]creen|Install app|Add)\b|velto\.com\.bd\/app|\b01X+\b|\bX{3,}\b|\bVEL-\d+/g;
 /** Keys that hold data, not copy (price-list item names, search terms, slugs). */
 // booking.items.placeholder: example searches, in English because the price list is (they must match it).
 const DATA_KEYS =

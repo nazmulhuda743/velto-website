@@ -7,6 +7,8 @@ import { fallbackDays, hoursText } from "@/components/forms/PickupWindows";
 import type { RhythmText } from "@/content/i18n/rhythm";
 import type { NotifyText } from "@/content/i18n/notify";
 import { NotifyCard } from "@/components/notify/NotifyCard";
+import { InstallSheet } from "@/components/pwa/InstallSheet";
+import type { FormText } from "@/content/i18n/forms/en";
 import { bookable, type AvailabilityDay, type WindowId } from "@/lib/capacity-logic";
 import { fill } from "@/lib/i18n/config";
 import { addDays, dayLabel, dhakaToday, type DateWords } from "@/lib/pickup-when";
@@ -28,6 +30,7 @@ export function RepeatByLink({
   slotLabels,
   whatsappHref,
   notify,
+  install,
   preview = false,
 }: {
   code: string;
@@ -39,6 +42,8 @@ export function RepeatByLink({
   whatsappHref: string;
   /** "Want updates on this pickup?" after booking (the code ties it to this phone). */
   notify: NotifyText;
+  /** "Install Velto" popup, after the notification sheet. */
+  install: FormText["common"]["install"];
   preview?: boolean;
 }) {
   const [load, setLoad] = useState<Load>({ state: "loading" });
@@ -118,6 +123,7 @@ export function RepeatByLink({
           <p className="mt-1 text-body">{send.reference ? fill(t.doneBody, { ref: send.reference }, words.locale) : t.doneBodyNoRef}</p>
         </div>
         <NotifyCard t={notify} lang={words.locale === "bn" ? "bn" : "en"} variant="after" code={code} />
+        <InstallSheet t={install} placement="rebook" when="after-notify" />
       </div>
     );
   }
