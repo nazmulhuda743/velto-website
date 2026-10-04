@@ -2,7 +2,7 @@
 
 import { after } from "next/server";
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { revalidateCustomer } from "./revalidate";
 import { notifyNewRequest } from "@/lib/admin/dispatch";
 import { loginRedirectPath } from "@/lib/i18n/server";
 import { SITE_URL } from "@/lib/site-url";
@@ -41,6 +41,6 @@ export async function routineAction(_prev: RoutineState, form: FormData): Promis
     const name = session.kind === "customer" && session.account.state === "ready" ? session.account.fullName : "A customer";
     if (routine) after(() => notifyNewRequest(routinePush(routine, name, SITE_URL)));
   }
-  revalidatePath("/account", "layout");
+  revalidateCustomer();
   return { status: "done" };
 }

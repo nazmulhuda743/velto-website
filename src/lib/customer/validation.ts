@@ -66,8 +66,9 @@ export function safeNextPath(raw: string | null | undefined, fallback = "/accoun
     return fallback;
   }
   if (!raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) return fallback;
-  // An optional /bn prefix keeps the reader in Bangla after signing in.
-  return /^(?:\/bn)?\/(account(\/|$|\?)|book(\/|$|\?)|quote(\/|$|\?)|track(\/|$|\?))/.test(path) ? path : fallback;
+  // An optional /bn prefix keeps the reader in Bangla after signing in. The installed app's pages
+  // (/app/home, /app/orders, …) are allowed too, but not the install screen or the app's sign-in.
+  return /^(?:\/bn)?\/(account(\/|$|\?)|book(\/|$|\?)|quote(\/|$|\?)|track(\/|$|\?))|^\/app\/(?!login(?:[/?#]|$))[a-z]/.test(path) ? path : fallback;
 }
 
 /** Order references in account URLs: VEL-01940 / VELR-00185. */

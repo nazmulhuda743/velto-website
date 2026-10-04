@@ -14,6 +14,8 @@ export const formsEn = {
     requiredNote: "Fields marked * are required.",
     sending: "Sending…",
     backHome: "Back to the homepage",
+    /** Inside the installed app (/app). */
+    backAppHome: "Back to home",
     sendOnWhatsApp: "Send on WhatsApp",
     opensWhatsApp: " (opens WhatsApp)",
     phoneMissing: "Add a number we can call or WhatsApp.",
@@ -50,8 +52,27 @@ export const formsEn = {
       desktop: "Velto is made for your phone. Open velto.com.bd/app on your phone to add it.",
       continueWeb: "Continue in the browser",
     },
-    /** Bottom tab bar, shown only inside the installed app. */
-    appBar: { home: "Home", book: "Book", orders: "Orders", help: "Help", label: "Velto app" },
+    /** The installed app's own screens (/app/*): tab bar and the few words only the app needs. */
+    appBar: {
+      home: "Home",
+      book: "Book",
+      orders: "Orders",
+      profile: "Profile",
+      label: "Velto app",
+      prices: "Prices",
+      seePrices: "See prices",
+      pricesTitle: "Prices",
+      pricesIntro: "Search any item to see what it costs, then book it in a tap.",
+      bookTitle: "Book a pickup",
+      bookIntro: "Tell us what to collect and when. Your details are filled in.",
+      signInTitle: "Sign in to Velto",
+      signInIntro: "Your mobile number and a code by SMS. That's all.",
+      more: "More",
+      help: "Help on WhatsApp",
+      helpBody: "Questions about an order or a pickup? Message Velto.",
+      language: "Language",
+      legal: "Privacy, terms and cookies",
+    },
   },
   booking: {
     title: "Book a pickup",

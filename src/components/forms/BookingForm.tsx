@@ -41,6 +41,7 @@ import { CallbackRequest } from "./CallbackRequest";
 import { useNightDhaka } from "./useNight";
 import { FIRST_ORDER_OFFER } from "@/lib/first-order-offer";
 import { DRAFT_KEY, makeDraft, readDraft, type BookingDraft } from "@/lib/booking-recovery";
+import { customerRoutes, type AppBase } from "@/lib/app-routes";
 
 type Text = FormText["booking"];
 type Common = FormText["common"];
@@ -857,6 +858,7 @@ export function BookingForm({
   upsellHints = NO_HINTS,
   notify,
   appInstalled = false,
+  base = "/account",
 }: {
   /** Form text in the page language (formText(locale).booking), passed by the page. */
   t: Text;
@@ -892,6 +894,8 @@ export function BookingForm({
   notify?: NotifyText;
   /** The customer already opened the Velto app on some phone: never offer it after booking. */
   appInstalled?: boolean;
+  /** Where the success screen leads: the website (homepage, /account) or the installed app (/app/home). */
+  base?: AppBase;
 }) {
   const locale = useLocale();
   const [initialItems] = useState(() => repeatItems.map((r) => repeatLine(r.item, r.service, r.quantity, r.listed)));
@@ -1083,6 +1087,7 @@ export function BookingForm({
         notify={notify}
         signedIn={Boolean(initialContact)}
         appInstalled={appInstalled}
+        base={base}
       />
     );
   }
@@ -1475,6 +1480,7 @@ function BookingSuccess({
   notify,
   signedIn,
   appInstalled,
+  base,
 }: {
   headingRef: Ref<HTMLHeadingElement>;
   state: FormState;
@@ -1486,6 +1492,7 @@ function BookingSuccess({
   notify?: NotifyText;
   signedIn: boolean;
   appInstalled: boolean;
+  base: AppBase;
 }) {
   const words = pageWords(t, c, locale);
   const when = pickupLabel(state, words, t.slots);
@@ -1552,7 +1559,7 @@ function BookingSuccess({
             <div className="rounded-lg border border-line bg-white p-4">
               <p className="font-semibold text-navy">{notify.afterBookTitle}</p>
               <p className="mt-1 t-small text-body">{notify.guestBody}</p>
-              <ButtonLink href="/login?next=/account" variant="secondary" className="mt-3 !h-11 !px-5">
+              <ButtonLink href={base === "/app" ? `/app/login?next=${encodeURIComponent("/app/home")}` : "/login?next=/account"} variant="secondary" className="mt-3 !h-11 !px-5">
                 {notify.guestButton}
               </ButtonLink>
             </div>
@@ -1567,8 +1574,8 @@ function BookingSuccess({
           label={t.changeOnWhatsApp}
           opens={c.opensWhatsApp}
         />
-        <ButtonLink href="/" variant="secondary">
-          {c.backHome}
+        <ButtonLink href={base === "/app" ? customerRoutes(base).home : "/"} variant="secondary">
+          {base === "/app" ? c.backAppHome : c.backHome}
         </ButtonLink>
       </div>
     </div>

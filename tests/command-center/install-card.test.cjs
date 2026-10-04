@@ -2,7 +2,7 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
-const { installCardState, isIOSDevice, isInAppBrowser, parseDismissedAt, appRedirectFor, APP_MODE_SCRIPT, INSTALL_DISMISS_MS } = require("../../.command-center-test-build/lib/pwa/install-card.js");
+const { installCardState, isIOSDevice, isInAppBrowser, parseDismissedAt, APP_MODE_SCRIPT, INSTALL_DISMISS_MS, appSafetyTarget, APP_SAFETY_JS } = require("../../.command-center-test-build/lib/pwa/install-card.js");
 
 const now = 1_800_000_000_000;
 const base = { standalone: false, isIOS: false, hasPrompt: false, dismissedAt: null, now };
@@ -46,15 +46,27 @@ test("in-app browsers are recognised, normal browsers are not", () => {
   assert.equal(isInAppBrowser("Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Version/18.0 Mobile/15E148 Safari/604.1"), false);
 });
 
-test("inside the app, website pages go to the account; app pages stay", () => {
-  for (const p of ["/", "/services", "/services/dry-cleaning", "/how-it-works", "/about", "/locations", "/locations/sector-11", "/regular-laundry"]) {
-    assert.equal(appRedirectFor(p), "/account", p);
-  }
-  assert.equal(appRedirectFor("/bn"), "/bn/account");
-  assert.equal(appRedirectFor("/bn/about"), "/bn/account");
-  for (const p of ["/account", "/account/orders", "/book", "/pricing", "/track", "/login", "/quote", "/r/abc", "/privacy", "/app", "/bn/book"]) {
-    assert.equal(appRedirectFor(p), null, p);
-  }
+const SAFETY_CASES = [
+  // The app's own pages stay.
+  ["/app", null], ["/app/home", null], ["/app/orders/VEL-01940", null], ["/app/login", null],
+  // Account pages map to the app's own (old installs started at /account; push links point there).
+  ["/account", "/app/home"], ["/account/", "/app/home"], ["/account/orders", "/app/orders"],
+  ["/account/orders/VEL-01940", "/app/orders/VEL-01940"], ["/bn/account/orders/VEL-01940", "/app/orders/VEL-01940"],
+  ["/account/profile", "/app/profile"], ["/account/rewards", "/app/rewards"],
+  ["/book", "/app/book"], ["/pricing", "/app/prices"], ["/login", "/app/login"], ["/bn/signup", "/app/login"],
+  // Any other website page: the app's Home.
+  ["/", "/app/home"], ["/bn", "/app/home"], ["/services/dry-cleaning", "/app/home"], ["/about", "/app/home"], ["/track", "/app/home"],
+  // Legal text, email sign-in links, rebook and invoice links open as they are.
+  ["/terms", null], ["/privacy", null], ["/cookies", null], ["/bn/privacy", null], ["/auth/confirm", null], ["/r/abc", null], ["/i/xyz", null],
+];
+
+test("inside the app, website pages go to the app's own pages; app pages and legal links stay", () => {
+  for (const [path, want] of SAFETY_CASES) assert.equal(appSafetyTarget(path), want, path);
+});
+
+test("the inline script's copy of the safety net agrees with appSafetyTarget", () => {
+  const inline = new Function(`return (${APP_SAFETY_JS})`)();
+  for (const [path, want] of SAFETY_CASES) assert.equal(inline(path), want, path);
 });
 
 test("the inline app-mode script is valid JavaScript", () => {

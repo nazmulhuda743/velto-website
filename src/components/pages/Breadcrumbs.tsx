@@ -7,8 +7,7 @@ export type Crumb = { label: string; href?: string };
 export async function Breadcrumbs({ items }: { items: Crumb[] }) {
   const t = dictionary(await getLocale()).common;
   return (
-    // data-site-chrome: hidden inside the installed app, where "Home" means the account (globals.css).
-    <nav aria-label={t.breadcrumb} data-site-chrome>
+    <nav aria-label={t.breadcrumb}>
       <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 t-caption text-secondary">
         {items.map((item, i) => (
           <li key={item.label} className="flex items-center gap-2">

@@ -9,8 +9,6 @@ import { CampaignPopup } from "@/components/promo/CampaignPopup";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Logo } from "@/components/ui/Logo";
 import { AppMode } from "@/components/pwa/AppMode";
-import { AppTabBar } from "@/components/pwa/AppTabBar";
-import { formText } from "@/content/i18n/forms";
 import { customerAccountsEnabled } from "@/lib/customer/config";
 import { LOCATIONS } from "@/content/site";
 import { ORGANIZATION_SCHEMA, WEBSITE_SCHEMA, buildLaundryLocationSchema } from "@/lib/seo/schema";
@@ -41,7 +39,6 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       <ConsentManager />
       <CampaignPopup />
       {/* The installed app only: its own tab bar, and website pages sent to the account. */}
-      <AppTabBar t={formText(locale).common.appBar} />
       <AppMode />
     </>
   );

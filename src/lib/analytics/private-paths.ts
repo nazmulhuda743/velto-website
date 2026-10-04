@@ -5,7 +5,9 @@
  * page address. Runtime-neutral so the browser, /api/collect and the tests
  * share one definition.
  */
-const PRIVATE_PATH = /^\/(?:account|auth)(?:\/|$)|^\/(?:login|signup|forgot-password|reset-password)\/?$/;
+// The installed app's screens (/app/home, /app/orders, …) are as private as the account; /app itself
+// (the install screen) is not.
+const PRIVATE_PATH = /^\/(?:account|auth)(?:\/|$)|^\/app\/|^\/(?:login|signup|forgot-password|reset-password)\/?$/;
 
 /** Language prefix ("/bn/account" is as private as "/account"). Kept local: this module is runtime-neutral. */
 const LOCALE_PREFIX = /^\/(?:en|bn)(?=\/|$)/;
@@ -16,5 +18,5 @@ export function isPrivatePath(pathname: string): boolean {
 
 /** Order numbers in account URLs are not analytics data. */
 export function redactPrivatePath(pathname: string): string {
-  return pathname.replace(/^((?:\/(?:en|bn))?\/account\/orders\/)[^/]+/, "$1[order]");
+  return pathname.replace(/^((?:\/(?:en|bn))?\/(?:account|app)\/orders\/)[^/]+/, "$1[order]");
 }

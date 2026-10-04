@@ -1,7 +1,40 @@
 # Installable app (PWA)
 
 The website can be installed from the browser ("Install app" / "Add to Home Screen"). It opens
-the same website, on the customer's account page (`start_url: /account`).
+its own screens under `/app/` (see below), starting at `/app/home`.
+
+
+## The app's own shell (/app/*)
+
+The installed app is **everything under `/app/`** (manifest `scope: "/app/"`, `start_url: "/app/home"`),
+with its own layout: `src/app/[lang]/app/(shell)/layout.tsx` (logo header, the screen, tab bar
+Home · Book · Orders · Profile). No website component loads there, so nothing from the website can
+appear in the app. The website's routes and pages are unchanged.
+
+| App screen | Route | Shared view (also used by the website) |
+|---|---|---|
+| Home | `/app/home` | `AccountHomeView` (+ a link to Prices) |
+| Book | `/app/book` | `BookingSection` (same form as `/book`) |
+| Orders | `/app/orders`, `/app/orders/[id]` | `OrdersView`, `OrderDetailView` |
+| Profile | `/app/profile` | `ProfileView` + rewards, help, language, legal, sign out |
+| Prices | `/app/prices` | `PriceFinder` + `PopularPrices`, booking into `/app/book` |
+| Rewards | `/app/rewards` | `RewardsView` |
+| Sign-in | `/app/login` | the website's mobile sign-in, inside the app |
+| Install screen | `/app` | `AppInstallPage` (for browsers; inside the app it goes to `/app/home`) |
+
+- **Links** come from `customerRoutes(base)` (`src/lib/app-routes.ts`): every shared view takes `base`
+  (`"/account"` or `"/app"`), so the app never links out of `/app/` and the website never links in.
+- **Sessions:** `accountGate()` (`src/components/account/AccountGate.tsx`) gives the website account
+  and the app the same states (can't load, staff, welcome back, unfinished profile). Signed out, the
+  proxy sends `/app/*` to `/app/login?next=…`.
+- **Language:** app addresses are never prefixed (a `/bn/app/…` page would fall outside the scope).
+  The proxy serves `/app/*` from the Bangla tree when the `velto_lang` cookie says so; `/bn/app/…`
+  redirects to `/app/…` and sets the cookie.
+- **Safety net:** inside the installed app, a website page (an old install that started at
+  `/account`, a push or email link) goes to the app's own page: `appSafetyTarget` /
+  `APP_MODE_SCRIPT` (`src/lib/pwa/install-card.ts`) and `AppMode`. Legal pages, `/auth`, `/r`, `/i`
+  open as they are.
+- `/app/*` is private for analytics, never cached by the worker, and disallowed in robots.txt.
 
 ## "Install Velto" popup
 

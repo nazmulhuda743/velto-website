@@ -4,13 +4,14 @@ import { fill, localDigits, type Locale } from "@/lib/i18n/config";
 import { daysLeft, goalStatus, monthName, type GoalCoupon, type GoalSettings } from "@/lib/customer/goal";
 import { inLang } from "@/lib/customer/loyalty";
 import type { GoalRead } from "@/lib/customer/portal";
+import { customerRoutes, type AppBase } from "@/lib/app-routes";
 
 /**
  * The customer's monthly goal: what they've spent so far, the next rung and the reward it earns
  * (a progress bar, so the target is visible), and the rewards they already hold. Amounts come
  * from their own Velto orders and the admin's ladder; nothing here promises more than the owner wrote.
  */
-export function GoalCard({ settings, goal, locale }: { settings: GoalSettings; goal: GoalRead; locale: Locale }) {
+export function GoalCard({ settings, goal, locale, base = "/account" }: { settings: GoalSettings; goal: GoalRead; locale: Locale; base?: AppBase }) {
   const t = accountText(locale).goal;
   const f = orderFormat(locale);
   const s = goalStatus(settings, goal.spend);
@@ -84,7 +85,7 @@ export function GoalCard({ settings, goal, locale }: { settings: GoalSettings; g
           {held.some((c) => c.status === "open") ? (
             <>
               <p className="mt-3 t-small text-body">{t.couponHow}</p>
-              <ButtonLink href="/book?source=account_goal" event="book_pickup_click" placement="account_goal" className="mt-3 !h-11 !px-5">
+              <ButtonLink href={customerRoutes(base).book({ source: "account_goal" })} event="book_pickup_click" placement="account_goal" className="mt-3 !h-11 !px-5">
                 {t.bookWith}
               </ButtonLink>
             </>

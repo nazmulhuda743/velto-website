@@ -138,9 +138,9 @@ export function parseRoutine(every: unknown, day: unknown) {
 }
 
 /** The /book link for "the same again": preselects the service and notes which order it repeats. */
-export function repeatHref(r: Pick<Rhythm, "last" | "repeatService">, placement: string) {
+export function repeatHref(r: Pick<Rhythm, "last" | "repeatService">, placement: string, bookPath = "/book") {
   const q = new URLSearchParams({ source: placement });
   if (r.repeatService) q.set("service", r.repeatService);
   if (r.last) q.set("repeat", r.last.orderNumber);
-  return `/book?${q.toString()}`;
+  return `${bookPath}?${q.toString()}`;
 }

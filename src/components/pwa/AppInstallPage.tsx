@@ -20,14 +20,15 @@ function chromeIntent() {
  * one tap on Android Chrome, Share → Add to Home Screen on iPhone Safari, "open in Chrome" from an
  * in-app browser, and nothing to install when Velto is already on the phone.
  */
-export function AppInstallPage({ t, install, accountHref, logo }: { t: FormText["common"]["appPage"]; install: FormText["common"]["install"]; accountHref: string; logo?: ReactNode }) {
+export function AppInstallPage({ t, install, accountHref, logo }: { t: FormText["common"]["appPage"]; install: FormText["common"]["install"]; /** "Continue in the browser": the website's account. */ accountHref: string; logo?: ReactNode }) {
   const hasPrompt = useHasInstallPrompt();
   const [view, setView] = useState<View>("checking");
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (isStandalone()) {
-      location.replace(accountHref);
+      // Opened inside the installed app: its own home, not the website.
+      location.replace("/app/home");
       return;
     }
     let cancelled = false;
@@ -56,7 +57,7 @@ export function AppInstallPage({ t, install, accountHref, logo }: { t: FormText[
       cancelled = true;
       window.clearTimeout(waitTimer);
     };
-  }, [hasPrompt, accountHref]);
+  }, [hasPrompt]);
 
   const installNow = async () => {
     const prompt = takeInstallPrompt();

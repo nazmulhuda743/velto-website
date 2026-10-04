@@ -84,7 +84,6 @@ export function MobileConversionBar({
   return (
     <div
       data-mobile-bar
-      data-site-chrome
       className={`fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white pb-[env(safe-area-inset-bottom)] transition-[transform,visibility] duration-200 motion-reduce:transition-none md:hidden ${
         hidden ? "invisible translate-y-full" : "visible translate-y-0"
       }`}

@@ -6,7 +6,6 @@ import { APP_INSTALLED_KEY, isInAppBrowser, isIOSDevice } from "./install-card";
 export function isStandalone(): boolean {
   if (typeof window === "undefined") return false;
   return (
-    document.documentElement.hasAttribute("data-app") ||
     window.matchMedia("(display-mode: standalone)").matches ||
     window.matchMedia("(display-mode: minimal-ui)").matches ||
     (navigator as Navigator & { standalone?: boolean }).standalone === true

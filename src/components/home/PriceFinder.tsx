@@ -39,6 +39,12 @@ function mockParam() {
   return new URLSearchParams(window.location.search).get("mockPricing");
 }
 
+/** A booking link from a price: the website's /book (localized) or the app's /app/book (never prefixed). */
+function bookLink(from: { bookPath?: string }, query: Record<string, string>, locale: Locale) {
+  const q = new URLSearchParams(query).toString();
+  return from.bookPath ? `${from.bookPath}?${q}` : localizeHref(`/book?${q}`, locale);
+}
+
 export function PriceFinder({
   initialQuery = "",
   syncUrl = false,
@@ -55,7 +61,7 @@ export function PriceFinder({
   /** Keep ?q= in the address bar in step with the selected item. */
   syncUrl?: boolean;
   /** Show a per-service "Book" action in results. */
-  bookFromResult?: { source: string };
+  bookFromResult?: { source: string; /** Inside the installed app: "/app/book", and no links to the website's service pages. */ bookPath?: string };
 } = {}) {
   const uid = useId();
   const inputId = `${uid}-input`;
@@ -293,7 +299,7 @@ export function PriceFinder({
               <p className="mt-4 t-small text-secondary">
                 {t.errorBookBefore}
                 <a
-                  href={localizeHref(`/book?${new URLSearchParams({ source: `${bookFromResult.source}-error` }).toString()}`, locale)}
+                  href={bookLink(bookFromResult, { source: `${bookFromResult.source}-error` }, locale)}
                   data-analytics="book_pickup_click"
                   data-placement="pricing_error"
                   className="font-semibold text-navy underline decoration-blue/60 underline-offset-4 hover:decoration-blue"
@@ -319,7 +325,7 @@ function PriceResult({
 }: {
   item: PriceItem;
   source: Source;
-  bookFromResult?: { source: string };
+  bookFromResult?: { source: string; bookPath?: string };
   locale: Locale;
   d: Dictionary;
 }) {
@@ -338,7 +344,7 @@ function PriceResult({
             <div key={s.slug} className="flex items-start justify-between gap-4 border-t border-line px-5 py-4 md:px-6">
               <dt className="min-w-0">
                 {/* Internal link from a price to the service it belongs to. */}
-                {BOOKABLE.has(s.slug) ? (
+                {BOOKABLE.has(s.slug) && !bookFromResult?.bookPath ? (
                   <a href={localizeHref(`/services/${s.slug}`, locale)} className="block font-semibold text-navy hover:text-blue">
                     {serviceName(s)}
                   </a>
@@ -348,7 +354,7 @@ function PriceResult({
                 {summary ? <span className="mt-0.5 block t-small text-secondary">{summary}</span> : null}
                 {canBook ? (
                   <a
-                    href={localizeHref(`/book?${new URLSearchParams({ service: s.slug, source: bookFromResult.source }).toString()}`, locale)}
+                    href={bookLink(bookFromResult, { service: s.slug, source: bookFromResult.source }, locale)}
                     data-analytics="book_pickup_click"
                     data-placement="pricing_result"
                     data-service={s.slug}

@@ -5,6 +5,7 @@ import Link from "@/components/i18n/Link";
 import { claimMatchAction, rejectMatchAction, type ClaimState } from "@/lib/customer/actions";
 import type { AccountText } from "@/content/i18n/account";
 import { SubmitButton } from "./SubmitButton";
+import { customerRoutes, type AppBase } from "@/lib/app-routes";
 
 type Text = AccountText["welcomeBack"];
 const IDLE: ClaimState = { status: "idle" };
@@ -21,6 +22,7 @@ export function WelcomeBack({
   facts,
   showTerms,
   digits,
+  base = "/account",
 }: {
   kind: "recent" | "stepup";
   t: Text;
@@ -31,6 +33,7 @@ export function WelcomeBack({
   showTerms: boolean;
   /** "0".."9" in the page language, for "{n} tries left". */
   digits: string[];
+  base?: AppBase;
 }) {
   const [state, claim] = useActionState(claimMatchAction, IDLE);
 
@@ -41,7 +44,7 @@ export function WelcomeBack({
           {t.assistedTitle}
         </h1>
         <p className="mt-3 text-body">{t.assistedBody}</p>
-        <Link href="/account" className="mt-6 inline-flex h-12 items-center rounded-md bg-action px-6 font-semibold text-white hover:bg-action-hover">
+        <Link href={customerRoutes(base).home} className="mt-6 inline-flex h-12 items-center rounded-md bg-action px-6 font-semibold text-white hover:bg-action-hover">
           {t.continueAnyway}
         </Link>
       </section>
@@ -67,6 +70,7 @@ export function WelcomeBack({
       ) : null}
 
       <form action={claim} className="mt-6 space-y-4">
+        <input type="hidden" name="base" value={base} />
         {kind === "stepup" ? (
           <label className="block">
             <span className="block text-[15px] font-semibold text-navy">{t.nameLabel}</span>

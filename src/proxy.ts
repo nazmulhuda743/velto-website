@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { ACCOUNT_HINT_COOKIE, customerAuthConfig } from "@/lib/customer/config";
+import { PATH_HEADER } from "@/lib/app-routes";
 import { banglaEnabled, banglaIndexable, LANG_COOKIE, LOCALE_HEADER, localizeHref, splitLocale } from "@/lib/i18n/config";
 
 const AUTH_COOKIE_OPTIONS = {
@@ -11,7 +12,13 @@ const AUTH_COOKIE_OPTIONS = {
 };
 
 /** Customer-session upkeep only runs where it's needed (account, sign-in, booking prefill). */
-const AUTH_PATH = /^\/(?:account(?:\/|$)|login$|signup$|forgot-password$|reset-password$|book$)/;
+const AUTH_PATH = /^\/(?:account(?:\/|$)|app(?:\/|$)|login$|signup$|forgot-password$|reset-password$|book$)/;
+
+/** The installed app's own pages (manifest scope "/app/"). */
+const APP_PATH = /^\/app(?:\/|$)/;
+/** App pages anyone may open: the install screen and the app's sign-in. */
+const APP_PUBLIC = /^\/app(?:\/login)?\/?$/;
+
 
 /**
  * 1. Language: public pages live in app/[lang]. English keeps its URLs ("/pricing" is served
@@ -22,16 +29,33 @@ const AUTH_PATH = /^\/(?:account(?:\/|$)|login$|signup$|forgot-password$|reset-p
  * 2. Customer sessions (unchanged): refreshes the Supabase session cookies, sends signed-out
  *    visitors from /account to /login (and back afterwards), and keeps the header's
  *    "signed in" hint accurate.
+ * 3. The installed app (/app/*) keeps one address per page whatever the language: the manifest
+ *    scope is "/app/", and a "/bn/app/..." address would fall outside it. The language comes from
+ *    the velto_lang cookie and the page is served from the /bn or /en tree by rewrite;
+ *    "/bn/app/..." links redirect to "/app/..." and set the cookie. Signed-out customers go to the
+ *    app's own sign-in (/app/login), never the website's.
  */
 export async function proxy(request: NextRequest) {
   const url = request.nextUrl;
-  const { locale, path } = splitLocale(url.pathname);
+  const split = splitLocale(url.pathname);
+  const { path } = split;
   const explicitEnglish = /^\/en(?:\/|$)/.test(url.pathname);
+  const app = APP_PATH.test(path);
+
+  if (app && split.locale === "bn") {
+    // "/bn/app/..." → "/app/..." in Bangla (the app's pages are never language-prefixed).
+    const to = url.clone();
+    to.pathname = path;
+    const response = NextResponse.redirect(to, 307);
+    if (banglaEnabled()) response.cookies.set(LANG_COOKIE, "bn", { path: "/", sameSite: "lax", maxAge: 60 * 60 * 24 * 365 });
+    return response;
+  }
+  const locale = app ? (banglaEnabled() && request.cookies.get(LANG_COOKIE)?.value === "bn" ? "bn" : "en") : split.locale;
 
   if (explicitEnglish) return redirectTo(request, path, "en", 308);
   // Temporary: switching Bangla on later must not be blocked by cached redirects.
   if (locale === "bn" && !banglaEnabled()) return redirectTo(request, path, "en", 307);
-  if (locale === "en" && banglaEnabled() && request.cookies.get(LANG_COOKIE)?.value === "bn" && isDocument(request)) {
+  if (!app && locale === "en" && banglaEnabled() && request.cookies.get(LANG_COOKIE)?.value === "bn" && isDocument(request)) {
     return redirectTo(request, path, "bn", 307);
   }
 
@@ -40,6 +64,13 @@ export async function proxy(request: NextRequest) {
   const pass = () => {
     const headers = new Headers(request.headers);
     headers.set(LOCALE_HEADER, locale);
+    headers.set(PATH_HEADER, url.pathname + url.search);
+    if (app) {
+      // Same visible address in both languages; served from the language's tree.
+      const target = url.clone();
+      target.pathname = `/${locale}${path}`;
+      return NextResponse.rewrite(target, { request: { headers } });
+    }
     if (locale === "bn") {
       const response = NextResponse.next({ request: { headers } });
       // A Bangla page that isn't translated yet (English body in Bangla chrome) must never be
@@ -57,7 +88,7 @@ export async function proxy(request: NextRequest) {
   if (path === "/account" && url.searchParams.get("install") === "1") return redirectTo(request, "/app", locale, 307);
 
   const auth = customerAuthConfig();
-  const protectedRoute = path === "/account" || path.startsWith("/account/");
+  const protectedRoute = path === "/account" || path.startsWith("/account/") || (app && !APP_PUBLIC.test(path));
   // Accounts switched off: redirect here too. The account pages stream behind a loading
   // skeleton, so a redirect from their layout would arrive after a 200, not as a real one.
   if (!auth && protectedRoute) return toLogin(request, locale);
@@ -121,7 +152,8 @@ function redirectTo(request: NextRequest, path: string, locale: "en" | "bn", sta
 
 function toLogin(request: NextRequest, locale: "en" | "bn") {
   const url = request.nextUrl.clone();
-  url.pathname = localizeHref("/login", locale);
+  // Inside the app, its own sign-in (unprefixed, like every app page).
+  url.pathname = APP_PATH.test(splitLocale(request.nextUrl.pathname).path) ? "/app/login" : localizeHref("/login", locale);
   // next= keeps the visible URL (with /bn), so the reader returns to the same language.
   url.search = `?next=${encodeURIComponent(request.nextUrl.pathname + request.nextUrl.search)}`;
   return NextResponse.redirect(url);

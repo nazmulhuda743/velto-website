@@ -4,6 +4,7 @@ import { accountText, orderFormat } from "@/content/i18n/account";
 import { fill, format, type Locale } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
 import type { PortalOrder } from "@/lib/customer/portal";
+import { customerRoutes, type AppBase } from "@/lib/app-routes";
 
 const TONE: Record<string, string> = {
   Delivered: "bg-soft text-secondary",
@@ -21,7 +22,7 @@ export async function StatusPill({ status }: { status: string }) {
 }
 
 /** One order in a list: the whole row opens the order. Ops names (services, outlet) show as they are. */
-export async function OrderRow({ order }: { order: PortalOrder }) {
+export async function OrderRow({ order, base = "/account" }: { order: PortalOrder; base?: AppBase }) {
   const locale: Locale = await getLocale();
   const t = accountText(locale).row;
   const { day, taka } = orderFormat(locale);
@@ -29,7 +30,7 @@ export async function OrderRow({ order }: { order: PortalOrder }) {
   return (
     <li className="border-b border-line last:border-0">
       <Link
-        href={`/account/orders/${order.orderNumber}`}
+        href={customerRoutes(base).order(order.orderNumber)}
         className="group grid grid-cols-[1fr_auto] gap-x-4 gap-y-1.5 px-4 py-4 hover:bg-soft/60 md:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_auto_auto] md:items-center md:px-6"
       >
         <span className="min-w-0">

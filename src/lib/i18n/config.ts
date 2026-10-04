@@ -50,8 +50,11 @@ export const BANGLA_READY_PATHS: readonly string[] = [
 ];
 export const banglaIndexable = (path: string) => banglaEnabled() && BANGLA_READY_PATHS.includes(path);
 
-/** Paths that exist in one language only (APIs, admin, redirects, files). */
-const UNLOCALIZED = /^\/(?:api|admin|go|auth|_next)(?:\/|$)|^\/[^?#]*\.[a-z0-9]{2,5}(?:[?#]|$)/i;
+/**
+ * Paths that exist in one language only (APIs, admin, redirects, files), and the installed app's
+ * pages (/app/*), which keep one address and take the language from the cookie (see proxy.ts).
+ */
+const UNLOCALIZED = /^\/(?:api|admin|go|auth|_next|app)(?:\/|$|\?|#)|^\/[^?#]*\.[a-z0-9]{2,5}(?:[?#]|$)/i;
 
 /** Split "/bn/pricing?x=1" into its locale and the English-shaped path "/pricing?x=1". */
 export function splitLocale(path: string): { locale: Locale; path: string } {

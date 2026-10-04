@@ -14,7 +14,7 @@ const COLUMNS = ["wash-and-iron", "ironing", "dry-cleaning"];
  * Velto Ops price list; when it can't be read, nothing is shown and the search stands alone.
  * Each price books that service.
  */
-export async function PopularPrices({ source, placement }: { source: string; placement: string }) {
+export async function PopularPrices({ source, placement, bookPath }: { source: string; placement: string; /** "/app/book" inside the installed app. */ bookPath?: string }) {
   const prices = await getServicePrices(POPULAR_PRICE_ITEMS);
   if (prices.state !== "live") return null;
   const locale = await getLocale();
@@ -62,7 +62,7 @@ export async function PopularPrices({ source, placement }: { source: string; pla
                 return (
                   <td key={slug} className={`${cell} md:text-right`}>
                     <a
-                      href={localizeHref(`/book?${new URLSearchParams({ service: slug, source }).toString()}`, locale)}
+                      href={bookPath ? `${bookPath}?${new URLSearchParams({ service: slug, source }).toString()}` : localizeHref(`/book?${new URLSearchParams({ service: slug, source }).toString()}`, locale)}
                       data-analytics="book_pickup_click"
                       data-placement={placement}
                       data-service={slug}

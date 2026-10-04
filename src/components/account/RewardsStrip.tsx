@@ -4,12 +4,13 @@ import { fill, localDigits, type Locale } from "@/lib/i18n/config";
 import { goalStatus, monthName, type GoalSettings } from "@/lib/customer/goal";
 import { inLang, loyaltyStatus, type LoyaltyCounts, type LoyaltySettings } from "@/lib/customer/loyalty";
 import type { GoalRead } from "@/lib/customer/portal";
+import { customerRoutes, type AppBase } from "@/lib/app-routes";
 
 /**
  * Rewards in three lines on the account home (the full cards live on the Rewards tab): the goal,
  * the tier, and how many rewards are waiting. Nothing more than the owner switched on.
  */
-export function RewardsStrip({ loyalty, counts, goal, locale }: { loyalty: LoyaltySettings; counts: LoyaltyCounts | null; goal: GoalRead | null; locale: Locale }) {
+export function RewardsStrip({ loyalty, counts, goal, locale, base = "/account" }: { loyalty: LoyaltySettings; counts: LoyaltyCounts | null; goal: GoalRead | null; locale: Locale; base?: AppBase }) {
   const t = accountText(locale).rewards;
   const lines: { key: string; text: string; strong?: boolean }[] = [];
   const money = (n: number) => localDigits(n.toLocaleString("en-IN"), locale);
@@ -36,7 +37,7 @@ export function RewardsStrip({ loyalty, counts, goal, locale }: { loyalty: Loyal
         <h2 id="rewards-strip-title" className="font-semibold text-navy">
           {t.strip}
         </h2>
-        <Link href="/account/rewards" className="t-small font-semibold text-navy underline decoration-blue/50 underline-offset-4 hover:decoration-blue">
+        <Link href={customerRoutes(base).rewards} className="t-small font-semibold text-navy underline decoration-blue/50 underline-offset-4 hover:decoration-blue">
           {t.open}
         </Link>
       </div>
