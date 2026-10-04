@@ -83,6 +83,8 @@ export function PromoPopup({ popup, labels, logo }: { popup: PopupView; labels: 
       dialogRef.current?.close();
       return;
     }
+    // Never inside the installed Velto app: it is the customer's app, not an ad space.
+    if (document.documentElement.hasAttribute("data-app")) return;
     const preview = new URLSearchParams(window.location.search).get("promo") === "preview";
     const now = Date.now();
     const inWindow = (popup.startsAt === null || now >= popup.startsAt) && (popup.endsAt === null || now <= popup.endsAt);

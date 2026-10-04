@@ -23,6 +23,9 @@ export default function manifest(): MetadataRoute.Manifest {
     background_color: "#ffffff",
     theme_color: "#ffffff",
     categories: ["lifestyle", "shopping"],
+    // Lets Chrome tell the website that this app is already installed (navigator.getInstalledRelatedApps),
+    // so the install popup is never shown to someone who has it.
+    related_applications: [{ platform: "webapp", url: "https://www.velto.com.bd/manifest.webmanifest" }],
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },

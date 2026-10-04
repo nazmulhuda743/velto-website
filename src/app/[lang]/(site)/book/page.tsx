@@ -1,6 +1,6 @@
 import Link from "@/components/i18n/Link";
 import { pageMetadata } from "@/lib/seo/page-metadata";
-import { getCustomerSession, getPreferences } from "@/lib/customer/portal";
+import { getAppInstalled, getCustomerSession, getPreferences } from "@/lib/customer/portal";
 import { careNote, joinNotes } from "@/lib/customer/extras";
 import { parseRoutine } from "@/lib/customer/rhythm";
 import { validOrderNumber } from "@/lib/customer/validation";
@@ -101,6 +101,7 @@ export default async function BookPage({ searchParams }: { searchParams: SearchP
             <div className="max-w-[640px]">
               <BookingForm
                 notify={notifyText(locale)}
+                appInstalled={account ? await getAppInstalled() : false}
                 t={f.booking}
                 common={f.common}
                 intro={

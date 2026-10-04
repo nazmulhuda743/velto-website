@@ -123,8 +123,10 @@ export function NotifyCard({
     (async () => {
       const support = pushSupport();
       const next: View =
+        // iPhone in Safari: notifications need Velto on the home screen first. Only the settings page
+        // explains that; the account page and the booking page stay clear of step-by-step instructions.
         support === "ios_install"
-          ? variant === "after" ? "hidden" : "ios"
+          ? variant === "settings" ? "ios" : "hidden"
           : support === "unsupported"
             ? variant === "after" ? "hidden" : "unsupported"
             : permission() === "denied"

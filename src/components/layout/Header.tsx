@@ -54,7 +54,7 @@ export function Header({ logo, accounts = false }: { logo: ReactNode; accounts?:
           {logo}
         </Link>
 
-        <nav aria-label={t.nav.main} className="hidden lg:block">
+        <nav aria-label={t.nav.main} className="hidden lg:block" data-site-chrome>
           <ul className="flex items-center gap-1">
             {NAV.desktop.map((item) => (
               <li key={item.href}>
@@ -69,7 +69,7 @@ export function Header({ logo, accounts = false }: { logo: ReactNode; accounts?:
           </ul>
         </nav>
 
-        <div className="flex items-center gap-2 lg:gap-5">
+        <div className="flex items-center gap-2 lg:gap-5" data-site-chrome>
           {NAV.utility.map((item) => (
             <Link
               key={item.href}

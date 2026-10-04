@@ -856,6 +856,7 @@ export function BookingForm({
   savedAddresses = [],
   upsellHints = NO_HINTS,
   notify,
+  appInstalled = false,
 }: {
   /** Form text in the page language (formText(locale).booking), passed by the page. */
   t: Text;
@@ -889,6 +890,8 @@ export function BookingForm({
   upsellHints?: UpsellHints;
   /** After booking: "Want updates on this pickup?" (signed in: turn on; guests: sign in first). */
   notify?: NotifyText;
+  /** The customer already opened the Velto app on some phone: never offer it after booking. */
+  appInstalled?: boolean;
 }) {
   const locale = useLocale();
   const [initialItems] = useState(() => repeatItems.map((r) => repeatLine(r.item, r.service, r.quantity, r.listed)));
@@ -1079,6 +1082,7 @@ export function BookingForm({
         chargeMinor={pickupChargeMinor}
         notify={notify}
         signedIn={Boolean(initialContact)}
+        appInstalled={appInstalled}
       />
     );
   }
@@ -1470,6 +1474,7 @@ function BookingSuccess({
   chargeMinor,
   notify,
   signedIn,
+  appInstalled,
 }: {
   headingRef: Ref<HTMLHeadingElement>;
   state: FormState;
@@ -1480,6 +1485,7 @@ function BookingSuccess({
   chargeMinor: number | null;
   notify?: NotifyText;
   signedIn: boolean;
+  appInstalled: boolean;
 }) {
   const words = pageWords(t, c, locale);
   const when = pickupLabel(state, words, t.slots);
@@ -1534,8 +1540,9 @@ function BookingSuccess({
         ))}
       </ol>
 
-      {/* "Install Velto": after the notification sheet when signed in (it waits for it), straight away for guests. */}
-      <InstallSheet t={c.install} placement="booking_success" when={notify && signedIn ? "after-notify" : "now"} />
+      {/* "Install Velto", only for customers without the app: after the notification sheet when signed in
+          (it waits for it), straight away for guests. Inside the app it never shows. */}
+      <InstallSheet t={c.install} placement="booking_success" when={notify && signedIn ? "after-notify" : "now"} appInstalled={appInstalled} />
 
       {notify ? (
         <div className="mt-8" data-booking-notify>

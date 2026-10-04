@@ -23,20 +23,35 @@ export const formsEn = {
     dayMonthShort: "{day} {month}",
     weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
     months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-    /** "Install Velto" popup (the installed website), after a booking and on the account page. */
+    /** "Install Velto" popup: once, after a website booking, only for customers without the app. */
     install: {
-      title: "Install Velto",
-      body: "Velto on your home screen, like an app. No app store needed.",
-      points: ["Book again in two taps", "See where your order is", "Updates from Velto on your phone"],
+      title: "Get the Velto app",
+      body: "Your orders, pickups and rebooking on your home screen. Nothing to download from a store.",
+      points: ["Book your next pickup in two taps", "See where your order is, any time", "Updates from Velto on your phone"],
       button: "Install Velto",
       notNow: "Not now",
       gotIt: "Got it",
       close: "Close",
-      added: "Velto is on your home screen.",
-      iosSteps: ["Tap the Share button (the square with an arrow) at the bottom of Safari.", "Choose \"Add to Home Screen\", then tap Add."],
-      iosAfter: "Then open Velto from your home screen to turn on order updates.",
-      androidSteps: ["In Chrome, tap the ⋮ menu at the top right.", "Choose \"Install app\" (or \"Add to Home screen\")."],
+      added: "Done. Velto is on your home screen.",
+      /** iPhone only: Apple gives websites no install button. */
+      iosLine: "In Safari, tap Share, then Add to Home Screen",
     },
+    /** velto.com.bd/app: the link in WhatsApp messages. No sign-in first; that happens inside the app. */
+    appPage: {
+      title: "Velto on your phone",
+      body: "Book a pickup, see where your order is and rebook in two taps. It lives on your home screen like any app.",
+      installed: "Velto is already on your phone",
+      installedBody: "Open Velto from your home screen. Your orders and pickups are there.",
+      openChrome: "Open in Chrome to install",
+      inAppIos: "This link opened inside another app. Copy it and open it in Safari to add Velto.",
+      copy: "Copy link",
+      copied: "Link copied",
+      chromeMenu: "If the button doesn't appear, open the Chrome menu (⋮) and tap Install app.",
+      desktop: "Velto is made for your phone. Open velto.com.bd/app on your phone to add it.",
+      continueWeb: "Continue in the browser",
+    },
+    /** Bottom tab bar, shown only inside the installed app. */
+    appBar: { home: "Home", book: "Book", orders: "Orders", help: "Help", label: "Velto app" },
   },
   booking: {
     title: "Book a pickup",
