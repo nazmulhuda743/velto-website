@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import Link from "@/components/i18n/Link";
 import { track } from "@/components/layout/Analytics";
+import { CONSENT_CHANGE_EVENT, readConsent } from "@/lib/analytics/client";
 import { ArrowRight, CloseIcon } from "@/components/ui/icons";
 import { popupDue, popupExcluded, type PopupFrequency, type SeenRecord } from "@/lib/promo";
 
@@ -89,8 +90,19 @@ export function PromoPopup({ popup, labels, logo }: { popup: PopupView; labels: 
     const now = Date.now();
     const inWindow = (popup.startsAt === null || now >= popup.startsAt) && (popup.endsAt === null || now <= popup.endsAt);
     if (!preview && (!popup.active || !inWindow || !popupDue(popup, readSeen(popup.frequency), now))) return;
-    const timer = setTimeout(() => setOpen(true), preview ? 0 : popup.delaySeconds * 1000);
-    return () => clearTimeout(timer);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const start = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => setOpen(true), preview ? 0 : popup.delaySeconds * 1000);
+    };
+    // First visit on a phone: never stack on the cookie banner. The delay starts once it is answered.
+    const consentPending = !preview && readConsent() === null;
+    if (consentPending) window.addEventListener(CONSENT_CHANGE_EVENT, start, { once: true });
+    else start();
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener(CONSENT_CHANGE_EVENT, start);
+    };
   }, [pathname, popup]);
 
   useEffect(() => {

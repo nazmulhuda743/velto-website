@@ -52,6 +52,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.rewrite(target, { request: { headers } });
   };
 
+  // Old WhatsApp links (velto.com.bd/app used to land on /account?install=1): straight to the install
+  // screen, which needs no sign-in. Without this, signed-out customers met a sign-in page first.
+  if (path === "/account" && url.searchParams.get("install") === "1") return redirectTo(request, "/app", locale, 307);
+
   const auth = customerAuthConfig();
   const protectedRoute = path === "/account" || path.startsWith("/account/");
   // Accounts switched off: redirect here too. The account pages stream behind a loading
