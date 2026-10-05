@@ -1,6 +1,7 @@
 import "server-only";
 
 import { isSupabaseConfigured, supabaseFetch, supabaseRpc } from "../supabase-server";
+import { whatsappRefsEnabled } from "../whatsapp-ref";
 import type { Loaded } from "./analytics-data";
 import { isAdminPreview } from "./preview";
 import { previewRevenue } from "./revenue-fixtures";
@@ -107,7 +108,7 @@ export type ReviewItem = {
   link_id: string | null;
   lead_id: string;
   lead_reference: string;
-  lead_kind: "booking" | "quote";
+  lead_kind: "booking" | "quote" | "whatsapp";
   lead_created_at: string;
   link_method: string | null;
   link_status: string | null;
@@ -143,6 +144,11 @@ export async function runMatching(): Promise<{ ok: true; summary: { linked: numb
   if (isAdminPreview()) return { ok: false, error: "Preview mode does not run matching." };
   try {
     const r = await supabaseRpc<{ linked: number; updated: number; superseded: number }>("website_match_leads", { p_lookback_days: 120 });
+    // WhatsApp references written on Ops orders ("Ref W7K2PQ"); only once website_whatsapp_refs.sql is live.
+    if (whatsappRefsEnabled()) {
+      const w = await supabaseRpc<{ linked: number }>("website_match_whatsapp_refs", { p_lookback_days: 120 }).catch(() => null);
+      if (w) r.linked += w.linked;
+    }
     return { ok: true, summary: r };
   } catch {
     return { ok: false, error: "Matching could not run right now." };

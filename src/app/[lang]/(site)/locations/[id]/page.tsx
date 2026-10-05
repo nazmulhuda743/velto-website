@@ -102,6 +102,7 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
               variant="secondary"
               event="directions_click"
               placement="location_hero"
+              data-branch={loc.id}
               className="flex-1 max-md:px-4 md:flex-none"
             >
               {d.common.getDirections}

@@ -213,7 +213,7 @@ export function NotifyCard({
             </li>
           ))}
         </ul>
-        <button type="button" onClick={turnOn} disabled={busy} data-analytics="notify_click" className="mt-5 inline-flex min-h-[52px] w-full items-center justify-center rounded-md bg-action px-6 font-semibold text-white hover:bg-action-hover disabled:opacity-60">
+        <button type="button" onClick={turnOn} disabled={busy} className="mt-5 inline-flex min-h-[52px] w-full items-center justify-center rounded-md bg-action px-6 font-semibold text-white hover:bg-action-hover disabled:opacity-60">
           {busy ? t.turning : t.turnOn}
         </button>
         <button type="button" onClick={later} className="mt-1 inline-flex min-h-11 w-full items-center justify-center px-3 t-small font-semibold text-secondary hover:text-navy">
@@ -300,7 +300,7 @@ export function NotifyCard({
         ) : view === "offer" ? (
           <>
             <p className="mt-1 text-body">{t.settingsOff}</p>
-            <button type="button" onClick={turnOn} disabled={busy} data-analytics="notify_click" className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-md bg-action px-6 font-semibold text-white hover:bg-action-hover disabled:opacity-60">
+            <button type="button" onClick={turnOn} disabled={busy} className="mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-md bg-action px-6 font-semibold text-white hover:bg-action-hover disabled:opacity-60">
               {busy ? t.turning : t.turnOn}
             </button>
             <p className="mt-3 t-small text-secondary">{t.settingsPromise}</p>
@@ -365,7 +365,7 @@ export function NotifyCard({
             ))}
           </ul>
           <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center">
-            <button type="button" onClick={turnOn} disabled={busy} data-analytics="notify_click" className="inline-flex min-h-12 items-center justify-center rounded-md bg-action px-6 font-semibold text-white hover:bg-action-hover disabled:opacity-60">
+            <button type="button" onClick={turnOn} disabled={busy} className="inline-flex min-h-12 items-center justify-center rounded-md bg-action px-6 font-semibold text-white hover:bg-action-hover disabled:opacity-60">
               {busy ? t.turning : t.turnOn}
             </button>
             <button type="button" onClick={later} className="inline-flex min-h-11 items-center justify-center px-3 t-small font-semibold text-secondary hover:text-navy">

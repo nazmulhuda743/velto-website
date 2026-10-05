@@ -143,13 +143,13 @@
         "accountId": "0",
         "containerId": "0",
         "tagId": "30",
-        "name": "GA4 - service_view",
+        "name": "GA4 - view_service",
         "type": "gaawe",
         "parameter": [
           {
             "type": "TEMPLATE",
             "key": "eventName",
-            "value": "service_view"
+            "value": "view_service"
           },
           {
             "type": "TEMPLATE",
@@ -166,12 +166,12 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
-                    "value": "service"
+                    "value": "page_path"
                   },
                   {
                     "type": "TEMPLATE",
                     "key": "parameterValue",
-                    "value": "{{DLV - service}}"
+                    "value": "{{DLV - page}}"
                   }
                 ]
               },
@@ -181,7 +181,7 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
-                    "value": "placement"
+                    "value": "button_location"
                   },
                   {
                     "type": "TEMPLATE",
@@ -211,12 +211,27 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
+                    "value": "service"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{JS - service (GA4)}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
                     "value": "branch"
                   },
                   {
                     "type": "TEMPLATE",
                     "key": "parameterValue",
-                    "value": "{{DLV - branch}}"
+                    "value": "{{JS - branch (GA4)}}"
                   }
                 ]
               },
@@ -232,66 +247,6 @@
                     "type": "TEMPLATE",
                     "key": "parameterValue",
                     "value": "{{DLV - item}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "source"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - source}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "medium"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - medium}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "campaign"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - campaign}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "content"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - content}}"
                   }
                 ]
               }
@@ -319,13 +274,13 @@
         "accountId": "0",
         "containerId": "0",
         "tagId": "31",
-        "name": "GA4 - pricing_search",
+        "name": "GA4 - find_price",
         "type": "gaawe",
         "parameter": [
           {
             "type": "TEMPLATE",
             "key": "eventName",
-            "value": "pricing_search"
+            "value": "find_price"
           },
           {
             "type": "TEMPLATE",
@@ -342,12 +297,12 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
-                    "value": "service"
+                    "value": "page_path"
                   },
                   {
                     "type": "TEMPLATE",
                     "key": "parameterValue",
-                    "value": "{{DLV - service}}"
+                    "value": "{{DLV - page}}"
                   }
                 ]
               },
@@ -357,7 +312,7 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
-                    "value": "placement"
+                    "value": "button_location"
                   },
                   {
                     "type": "TEMPLATE",
@@ -387,12 +342,27 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
+                    "value": "service"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{JS - service (GA4)}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
                     "value": "branch"
                   },
                   {
                     "type": "TEMPLATE",
                     "key": "parameterValue",
-                    "value": "{{DLV - branch}}"
+                    "value": "{{JS - branch (GA4)}}"
                   }
                 ]
               },
@@ -408,66 +378,6 @@
                     "type": "TEMPLATE",
                     "key": "parameterValue",
                     "value": "{{DLV - item}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "source"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - source}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "medium"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - medium}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "campaign"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - campaign}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "content"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - content}}"
                   }
                 ]
               }
@@ -518,12 +428,12 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
-                    "value": "service"
+                    "value": "page_path"
                   },
                   {
                     "type": "TEMPLATE",
                     "key": "parameterValue",
-                    "value": "{{DLV - service}}"
+                    "value": "{{DLV - page}}"
                   }
                 ]
               },
@@ -533,7 +443,7 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
-                    "value": "placement"
+                    "value": "button_location"
                   },
                   {
                     "type": "TEMPLATE",
@@ -563,12 +473,27 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
+                    "value": "service"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{JS - service (GA4)}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
                     "value": "branch"
                   },
                   {
                     "type": "TEMPLATE",
                     "key": "parameterValue",
-                    "value": "{{DLV - branch}}"
+                    "value": "{{JS - branch (GA4)}}"
                   }
                 ]
               },
@@ -584,66 +509,6 @@
                     "type": "TEMPLATE",
                     "key": "parameterValue",
                     "value": "{{DLV - item}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "source"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - source}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "medium"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - medium}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "campaign"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - campaign}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "content"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - content}}"
                   }
                 ]
               }
@@ -694,12 +559,12 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
-                    "value": "service"
+                    "value": "page_path"
                   },
                   {
                     "type": "TEMPLATE",
                     "key": "parameterValue",
-                    "value": "{{DLV - service}}"
+                    "value": "{{DLV - page}}"
                   }
                 ]
               },
@@ -709,7 +574,7 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
-                    "value": "placement"
+                    "value": "button_location"
                   },
                   {
                     "type": "TEMPLATE",
@@ -739,12 +604,27 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
+                    "value": "service"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{JS - service (GA4)}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
                     "value": "branch"
                   },
                   {
                     "type": "TEMPLATE",
                     "key": "parameterValue",
-                    "value": "{{DLV - branch}}"
+                    "value": "{{JS - branch (GA4)}}"
                   }
                 ]
               },
@@ -760,66 +640,6 @@
                     "type": "TEMPLATE",
                     "key": "parameterValue",
                     "value": "{{DLV - item}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "source"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - source}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "medium"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - medium}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "campaign"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - campaign}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "content"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - content}}"
                   }
                 ]
               }
@@ -847,13 +667,13 @@
         "accountId": "0",
         "containerId": "0",
         "tagId": "34",
-        "name": "GA4 - booking_start",
+        "name": "GA4 - begin_checkout",
         "type": "gaawe",
         "parameter": [
           {
             "type": "TEMPLATE",
             "key": "eventName",
-            "value": "booking_start"
+            "value": "begin_checkout"
           },
           {
             "type": "TEMPLATE",
@@ -870,12 +690,12 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
-                    "value": "service"
+                    "value": "page_path"
                   },
                   {
                     "type": "TEMPLATE",
                     "key": "parameterValue",
-                    "value": "{{DLV - service}}"
+                    "value": "{{DLV - page}}"
                   }
                 ]
               },
@@ -885,7 +705,7 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
-                    "value": "placement"
+                    "value": "button_location"
                   },
                   {
                     "type": "TEMPLATE",
@@ -915,12 +735,27 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
+                    "value": "service"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{JS - service (GA4)}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
                     "value": "branch"
                   },
                   {
                     "type": "TEMPLATE",
                     "key": "parameterValue",
-                    "value": "{{DLV - branch}}"
+                    "value": "{{JS - branch (GA4)}}"
                   }
                 ]
               },
@@ -936,66 +771,6 @@
                     "type": "TEMPLATE",
                     "key": "parameterValue",
                     "value": "{{DLV - item}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "source"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - source}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "medium"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - medium}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "campaign"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - campaign}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "content"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - content}}"
                   }
                 ]
               }
@@ -1004,182 +779,6 @@
         ],
         "firingTriggerId": [
           "18"
-        ],
-        "tagFiringOption": "ONCE_PER_EVENT",
-        "consentSettings": {
-          "consentStatus": "NEEDED",
-          "consentType": {
-            "type": "LIST",
-            "list": [
-              {
-                "type": "TEMPLATE",
-                "value": "analytics_storage"
-              }
-            ]
-          }
-        }
-      },
-      {
-        "accountId": "0",
-        "containerId": "0",
-        "tagId": "35",
-        "name": "GA4 - booking_success",
-        "type": "gaawe",
-        "parameter": [
-          {
-            "type": "TEMPLATE",
-            "key": "eventName",
-            "value": "booking_success"
-          },
-          {
-            "type": "TEMPLATE",
-            "key": "measurementIdOverride",
-            "value": "{{GA4 Measurement ID}}"
-          },
-          {
-            "type": "LIST",
-            "key": "eventSettingsTable",
-            "list": [
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "service"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - service}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "placement"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - placement}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "section"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - section}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "branch"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - branch}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "item"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - item}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "source"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - source}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "medium"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - medium}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "campaign"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - campaign}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "content"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - content}}"
-                  }
-                ]
-              }
-            ]
-          }
-        ],
-        "firingTriggerId": [
-          "19"
         ],
         "tagFiringOption": "ONCE_PER_EVENT",
         "consentSettings": {
@@ -1222,12 +821,12 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
-                    "value": "service"
+                    "value": "page_path"
                   },
                   {
                     "type": "TEMPLATE",
                     "key": "parameterValue",
-                    "value": "{{DLV - service}}"
+                    "value": "{{DLV - page}}"
                   }
                 ]
               },
@@ -1237,7 +836,7 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
-                    "value": "placement"
+                    "value": "button_location"
                   },
                   {
                     "type": "TEMPLATE",
@@ -1267,12 +866,27 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
+                    "value": "service"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{JS - service (GA4)}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
                     "value": "branch"
                   },
                   {
                     "type": "TEMPLATE",
                     "key": "parameterValue",
-                    "value": "{{DLV - branch}}"
+                    "value": "{{JS - branch (GA4)}}"
                   }
                 ]
               },
@@ -1288,66 +902,6 @@
                     "type": "TEMPLATE",
                     "key": "parameterValue",
                     "value": "{{DLV - item}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "source"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - source}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "medium"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - medium}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "campaign"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - campaign}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "content"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - content}}"
                   }
                 ]
               }
@@ -1398,12 +952,12 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
-                    "value": "service"
+                    "value": "page_path"
                   },
                   {
                     "type": "TEMPLATE",
                     "key": "parameterValue",
-                    "value": "{{DLV - service}}"
+                    "value": "{{DLV - page}}"
                   }
                 ]
               },
@@ -1413,7 +967,7 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
-                    "value": "placement"
+                    "value": "button_location"
                   },
                   {
                     "type": "TEMPLATE",
@@ -1443,12 +997,27 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
+                    "value": "service"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{JS - service (GA4)}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
                     "value": "branch"
                   },
                   {
                     "type": "TEMPLATE",
                     "key": "parameterValue",
-                    "value": "{{DLV - branch}}"
+                    "value": "{{JS - branch (GA4)}}"
                   }
                 ]
               },
@@ -1464,66 +1033,6 @@
                     "type": "TEMPLATE",
                     "key": "parameterValue",
                     "value": "{{DLV - item}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "source"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - source}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "medium"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - medium}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "campaign"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - campaign}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "content"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - content}}"
                   }
                 ]
               }
@@ -1532,182 +1041,6 @@
         ],
         "firingTriggerId": [
           "21"
-        ],
-        "tagFiringOption": "ONCE_PER_EVENT",
-        "consentSettings": {
-          "consentStatus": "NEEDED",
-          "consentType": {
-            "type": "LIST",
-            "list": [
-              {
-                "type": "TEMPLATE",
-                "value": "analytics_storage"
-              }
-            ]
-          }
-        }
-      },
-      {
-        "accountId": "0",
-        "containerId": "0",
-        "tagId": "38",
-        "name": "GA4 - quote_success",
-        "type": "gaawe",
-        "parameter": [
-          {
-            "type": "TEMPLATE",
-            "key": "eventName",
-            "value": "quote_success"
-          },
-          {
-            "type": "TEMPLATE",
-            "key": "measurementIdOverride",
-            "value": "{{GA4 Measurement ID}}"
-          },
-          {
-            "type": "LIST",
-            "key": "eventSettingsTable",
-            "list": [
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "service"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - service}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "placement"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - placement}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "section"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - section}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "branch"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - branch}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "item"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - item}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "source"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - source}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "medium"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - medium}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "campaign"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - campaign}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "content"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - content}}"
-                  }
-                ]
-              }
-            ]
-          }
-        ],
-        "firingTriggerId": [
-          "22"
         ],
         "tagFiringOption": "ONCE_PER_EVENT",
         "consentSettings": {
@@ -1750,12 +1083,12 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
-                    "value": "service"
+                    "value": "page_path"
                   },
                   {
                     "type": "TEMPLATE",
                     "key": "parameterValue",
-                    "value": "{{DLV - service}}"
+                    "value": "{{DLV - page}}"
                   }
                 ]
               },
@@ -1765,7 +1098,7 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
-                    "value": "placement"
+                    "value": "button_location"
                   },
                   {
                     "type": "TEMPLATE",
@@ -1795,12 +1128,27 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
+                    "value": "service"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{JS - service (GA4)}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
                     "value": "branch"
                   },
                   {
                     "type": "TEMPLATE",
                     "key": "parameterValue",
-                    "value": "{{DLV - branch}}"
+                    "value": "{{JS - branch (GA4)}}"
                   }
                 ]
               },
@@ -1816,66 +1164,6 @@
                     "type": "TEMPLATE",
                     "key": "parameterValue",
                     "value": "{{DLV - item}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "source"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - source}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "medium"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - medium}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "campaign"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - campaign}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "content"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - content}}"
                   }
                 ]
               }
@@ -1903,13 +1191,13 @@
         "accountId": "0",
         "containerId": "0",
         "tagId": "40",
-        "name": "GA4 - google_reviews_click",
+        "name": "GA4 - review_click",
         "type": "gaawe",
         "parameter": [
           {
             "type": "TEMPLATE",
             "key": "eventName",
-            "value": "google_reviews_click"
+            "value": "review_click"
           },
           {
             "type": "TEMPLATE",
@@ -1926,12 +1214,12 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
-                    "value": "service"
+                    "value": "page_path"
                   },
                   {
                     "type": "TEMPLATE",
                     "key": "parameterValue",
-                    "value": "{{DLV - service}}"
+                    "value": "{{DLV - page}}"
                   }
                 ]
               },
@@ -1941,7 +1229,7 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
-                    "value": "placement"
+                    "value": "button_location"
                   },
                   {
                     "type": "TEMPLATE",
@@ -1971,12 +1259,27 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
+                    "value": "service"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{JS - service (GA4)}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
                     "value": "branch"
                   },
                   {
                     "type": "TEMPLATE",
                     "key": "parameterValue",
-                    "value": "{{DLV - branch}}"
+                    "value": "{{JS - branch (GA4)}}"
                   }
                 ]
               },
@@ -1992,66 +1295,6 @@
                     "type": "TEMPLATE",
                     "key": "parameterValue",
                     "value": "{{DLV - item}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "source"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - source}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "medium"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - medium}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "campaign"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - campaign}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "content"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - content}}"
                   }
                 ]
               }
@@ -2079,13 +1322,13 @@
         "accountId": "0",
         "containerId": "0",
         "tagId": "41",
-        "name": "GA4 - directions_click",
+        "name": "GA4 - get_directions",
         "type": "gaawe",
         "parameter": [
           {
             "type": "TEMPLATE",
             "key": "eventName",
-            "value": "directions_click"
+            "value": "get_directions"
           },
           {
             "type": "TEMPLATE",
@@ -2102,12 +1345,12 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
-                    "value": "service"
+                    "value": "page_path"
                   },
                   {
                     "type": "TEMPLATE",
                     "key": "parameterValue",
-                    "value": "{{DLV - service}}"
+                    "value": "{{DLV - page}}"
                   }
                 ]
               },
@@ -2117,7 +1360,7 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
-                    "value": "placement"
+                    "value": "button_location"
                   },
                   {
                     "type": "TEMPLATE",
@@ -2147,12 +1390,27 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
+                    "value": "service"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{JS - service (GA4)}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
                     "value": "branch"
                   },
                   {
                     "type": "TEMPLATE",
                     "key": "parameterValue",
-                    "value": "{{DLV - branch}}"
+                    "value": "{{JS - branch (GA4)}}"
                   }
                 ]
               },
@@ -2168,66 +1426,6 @@
                     "type": "TEMPLATE",
                     "key": "parameterValue",
                     "value": "{{DLV - item}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "source"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - source}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "medium"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - medium}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "campaign"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - campaign}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "content"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - content}}"
                   }
                 ]
               }
@@ -2278,12 +1476,12 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
-                    "value": "service"
+                    "value": "page_path"
                   },
                   {
                     "type": "TEMPLATE",
                     "key": "parameterValue",
-                    "value": "{{DLV - service}}"
+                    "value": "{{DLV - page}}"
                   }
                 ]
               },
@@ -2293,7 +1491,7 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
-                    "value": "placement"
+                    "value": "button_location"
                   },
                   {
                     "type": "TEMPLATE",
@@ -2323,12 +1521,27 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
+                    "value": "service"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{JS - service (GA4)}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
                     "value": "branch"
                   },
                   {
                     "type": "TEMPLATE",
                     "key": "parameterValue",
-                    "value": "{{DLV - branch}}"
+                    "value": "{{JS - branch (GA4)}}"
                   }
                 ]
               },
@@ -2344,66 +1557,6 @@
                     "type": "TEMPLATE",
                     "key": "parameterValue",
                     "value": "{{DLV - item}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "source"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - source}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "medium"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - medium}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "campaign"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - campaign}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "content"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - content}}"
                   }
                 ]
               }
@@ -2454,12 +1607,12 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
-                    "value": "service"
+                    "value": "page_path"
                   },
                   {
                     "type": "TEMPLATE",
                     "key": "parameterValue",
-                    "value": "{{DLV - service}}"
+                    "value": "{{DLV - page}}"
                   }
                 ]
               },
@@ -2469,7 +1622,7 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
-                    "value": "placement"
+                    "value": "button_location"
                   },
                   {
                     "type": "TEMPLATE",
@@ -2499,12 +1652,27 @@
                   {
                     "type": "TEMPLATE",
                     "key": "parameter",
+                    "value": "service"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{JS - service (GA4)}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
                     "value": "branch"
                   },
                   {
                     "type": "TEMPLATE",
                     "key": "parameterValue",
-                    "value": "{{DLV - branch}}"
+                    "value": "{{JS - branch (GA4)}}"
                   }
                 ]
               },
@@ -2520,66 +1688,6 @@
                     "type": "TEMPLATE",
                     "key": "parameterValue",
                     "value": "{{DLV - item}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "source"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - source}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "medium"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - medium}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "campaign"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - campaign}}"
-                  }
-                ]
-              },
-              {
-                "type": "MAP",
-                "map": [
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameter",
-                    "value": "content"
-                  },
-                  {
-                    "type": "TEMPLATE",
-                    "key": "parameterValue",
-                    "value": "{{DLV - content}}"
                   }
                 ]
               }
@@ -2805,6 +1913,283 @@
             "stopOnSetupFailure": true
           }
         ]
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "63",
+        "name": "GA4 - generate_lead",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "generate_lead"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{GA4 Measurement ID}}"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "page_path"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - page}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "button_location"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - placement}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "section"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - section}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "service"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{JS - service (GA4)}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "branch"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{JS - branch (GA4)}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "item"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - item}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "lead_source"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{JS - lead_source (GA4)}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "46"
+        ],
+        "tagFiringOption": "ONCE_PER_EVENT",
+        "consentSettings": {
+          "consentStatus": "NEEDED",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "analytics_storage"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "tagId": "65",
+        "name": "GA4 - repeat_booking",
+        "type": "gaawe",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "eventName",
+            "value": "repeat_booking"
+          },
+          {
+            "type": "TEMPLATE",
+            "key": "measurementIdOverride",
+            "value": "{{GA4 Measurement ID}}"
+          },
+          {
+            "type": "LIST",
+            "key": "eventSettingsTable",
+            "list": [
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "page_path"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - page}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "button_location"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - placement}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "section"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - section}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "service"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{JS - service (GA4)}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "branch"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{JS - branch (GA4)}}"
+                  }
+                ]
+              },
+              {
+                "type": "MAP",
+                "map": [
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameter",
+                    "value": "item"
+                  },
+                  {
+                    "type": "TEMPLATE",
+                    "key": "parameterValue",
+                    "value": "{{DLV - item}}"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "firingTriggerId": [
+          "64"
+        ],
+        "tagFiringOption": "ONCE_PER_EVENT",
+        "consentSettings": {
+          "consentStatus": "NEEDED",
+          "consentType": {
+            "type": "LIST",
+            "list": [
+              {
+                "type": "TEMPLATE",
+                "value": "analytics_storage"
+              }
+            ]
+          }
+        }
       }
     ],
     "trigger": [
@@ -3172,7 +2557,7 @@
         "accountId": "0",
         "containerId": "0",
         "triggerId": "46",
-        "name": "CE - booking or quote success",
+        "name": "CE - new lead (booking or quote success, not a reminder rebook)",
         "type": "CUSTOM_EVENT",
         "customEventFilter": [
           {
@@ -3190,6 +2575,69 @@
               }
             ]
           }
+        ],
+        "filter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{DLV - section}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "reminder"
+              },
+              {
+                "type": "BOOLEAN",
+                "key": "negate",
+                "value": "true"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "triggerId": "64",
+        "name": "CE - reminder rebook",
+        "type": "CUSTOM_EVENT",
+        "customEventFilter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{_event}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "booking_success"
+              }
+            ]
+          }
+        ],
+        "filter": [
+          {
+            "type": "EQUALS",
+            "parameter": [
+              {
+                "type": "TEMPLATE",
+                "key": "arg0",
+                "value": "{{DLV - section}}"
+              },
+              {
+                "type": "TEMPLATE",
+                "key": "arg1",
+                "value": "reminder"
+              }
+            ]
+          }
         ]
       }
     ],
@@ -3204,7 +2652,7 @@
           {
             "type": "TEMPLATE",
             "key": "value",
-            "value": "G-XXXXXXXXXX"
+            "value": "G-ZGZP27PHYW"
           }
         ]
       },
@@ -3218,7 +2666,7 @@
           {
             "type": "TEMPLATE",
             "key": "value",
-            "value": "000000000000000"
+            "value": "28841158055514208"
           }
         ]
       },
@@ -3459,6 +2907,48 @@
             "type": "TEMPLATE",
             "key": "name",
             "value": "content"
+          }
+        ]
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "60",
+        "name": "JS - service (GA4)",
+        "type": "jsm",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "javascript",
+            "value": "function(){var s={{DLV - service}};if(!s)return undefined;var m={'blanket-comforter-cleaning':'blanket_cleaning','express':'express_service'};s=String(s);return m[s]||s.replace(/-/g,'_');}"
+          }
+        ]
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "61",
+        "name": "JS - branch (GA4)",
+        "type": "jsm",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "javascript",
+            "value": "function(){var b={{DLV - branch}};return b?String(b).replace(/-/g,'_'):undefined;}"
+          }
+        ]
+      },
+      {
+        "accountId": "0",
+        "containerId": "0",
+        "variableId": "62",
+        "name": "JS - lead_source (GA4)",
+        "type": "jsm",
+        "parameter": [
+          {
+            "type": "TEMPLATE",
+            "key": "javascript",
+            "value": "function(){return {{Event}}==='quote_success'?'quote_form':'booking_form';}"
           }
         ]
       }

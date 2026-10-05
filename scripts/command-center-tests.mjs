@@ -21,6 +21,7 @@ execFileSync(
     "src/lib/admin/request-outcomes.ts",
     "src/lib/admin/revenue.ts",
     "src/lib/attribution.ts",
+    "src/lib/whatsapp-ref-core.ts",
     "src/lib/admin/permissions.ts",
     "src/lib/admin/nav.ts",
     "src/lib/admin/image-pages.ts",

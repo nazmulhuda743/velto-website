@@ -19,7 +19,7 @@ export type WindowKind = "explicit" | "primary" | "late";
 export type ConversionRow = {
   link_id: string;
   lead_id: string;
-  lead_kind: "booking" | "quote";
+  lead_kind: LeadKind;
   lead_created_at: string;
   service: string | null;
   device: string | null;
@@ -72,10 +72,13 @@ export type ConversionRow = {
   repeat_90: boolean | null;
 };
 
+/** "whatsapp" = a WhatsApp tap with a reference (website_whatsapp_refs.sql): a lead only once staff write the Ref on an order. */
+export type LeadKind = "booking" | "quote" | "whatsapp";
+
 export type LeadRow = {
   lead_id: string;
   created_at: string;
-  kind: "booking" | "quote";
+  kind: LeadKind;
   service: string | null;
   utm_source: string | null;
   utm_medium: string | null;
@@ -318,10 +321,14 @@ export type CampaignRow = Summary & {
   key: string;
   label: string;
   sources: string[];
+  /** Bookings and quotes. WhatsApp taps are counted separately: most taps never become a conversation. */
   leads: number;
   identifiedLeads: number;
-  /** Share of this row's leads matched to an Ops customer. */
+  /** Share of this row's bookings and quotes matched to an Ops customer. */
   coverage: number | null;
+  /** WhatsApp taps carrying a reference, and how many staff matched to an order. */
+  whatsappTaps: number;
+  whatsappMatched: number;
 };
 
 export function campaignTable(conversions: ConversionRow[], leads: LeadRow[], spend: SpendRow[]): CampaignRow[] {
@@ -353,15 +360,19 @@ export function campaignTable(conversions: ConversionRow[], leads: LeadRow[], sp
   }
   return [...groups.entries()]
     .map(([key, g]) => {
-      const identified = g.leads.filter((l) => l.link_status).length;
+      const forms = g.leads.filter((l) => l.kind !== "whatsapp");
+      const taps = g.leads.filter((l) => l.kind === "whatsapp");
+      const identified = forms.filter((l) => l.link_status).length;
       return {
         ...summarize(g.conv, g.spend),
         key,
         label: g.label,
         sources: [...g.sources].sort(),
-        leads: g.leads.length,
+        leads: forms.length,
         identifiedLeads: identified,
-        coverage: ratio(identified, g.leads.length),
+        coverage: ratio(identified, forms.length),
+        whatsappTaps: taps.length,
+        whatsappMatched: taps.filter((l) => l.link_status).length,
       };
     })
     .sort((a, b) => (b.spend ?? 0) - (a.spend ?? 0) || b.lifetimeBilled - a.lifetimeBilled || b.leads - a.leads);

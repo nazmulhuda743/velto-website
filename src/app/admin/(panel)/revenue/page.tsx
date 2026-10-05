@@ -268,7 +268,7 @@ export default async function RevenuePage({ searchParams }: { searchParams: Sear
           <DataTable
             leftCols={2}
             caption="Revenue by campaign"
-            head={["Campaign", "Source", "Spend", "Leads", "Acquired", "Reactivated", "Existing", "First-order", "30d", "60d", "90d", "Repeat", "Cost per new customer", "Return on ad spend", "Coverage"]}
+            head={["Campaign", "Source", "Spend", "Leads", "WhatsApp refs", "Acquired", "Reactivated", "Existing", "First-order", "30d", "60d", "90d", "Repeat", "Cost per new customer", "Return on ad spend", "Coverage"]}
           >
             {rows.map((r: CampaignRow) => (
               <tr key={r.key}>
@@ -278,6 +278,7 @@ export default async function RevenuePage({ searchParams }: { searchParams: Sear
                 <Td left>{r.sources.join(", ") || "—"}</Td>
                 <Td>{r.spend === null ? <span className="text-secondary">not recorded</span> : money(r.spend)}</Td>
                 <Td>{fmt(r.leads)}</Td>
+                <Td>{r.whatsappTaps ? `${fmt(r.whatsappMatched)} / ${fmt(r.whatsappTaps)}` : "—"}</Td>
                 <Td className="font-semibold">{fmt(r.acquired)}</Td>
                 <Td>{fmt(r.reactivated)}</Td>
                 <Td>{fmt(r.existing)}</Td>
@@ -296,7 +297,8 @@ export default async function RevenuePage({ searchParams }: { searchParams: Sear
         <p className="mt-4 t-caption text-secondary">
           Spend is matched to leads by campaign name (utm_campaign), case-insensitively. ROAS here is first-order billed revenue ÷ spend. Pending = at
           least one customer in the row hasn&apos;t reached that many days yet, so the value isn&apos;t shown as 0. Coverage = share of the
-          row&apos;s leads matched to a Velto Ops customer.
+          row&apos;s bookings and quotes matched to a Velto Ops customer. WhatsApp refs = taps whose &quot;Ref W…&quot; staff wrote on an
+          order / all taps with a reference; a tap is not a lead until it becomes a conversation.
         </p>
       </Panel>
 

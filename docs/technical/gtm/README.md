@@ -6,25 +6,44 @@ website changes.
 
 ## What it contains
 
-| Tag | Fires on | Consent needed |
-|---|---|---|
-| GA4 - Google tag (`send_page_view` off) | All Pages | `analytics_storage` |
-| GA4 - `page_view` and 14 events: `service_view`, `pricing_search`, `pricing_view`, `book_pickup_click`, `booking_start`, `booking_success`, `booking_error`, `quote_start`, `quote_success`, `whatsapp_click`, `google_reviews_click`, `directions_click`, `track_order_open`, `regular_laundry_interest` | the matching custom event | `analytics_storage` |
-| Meta - Pixel base (no automatic PageView) | All Pages, once per load | `ad_storage` |
-| Meta - PageView | `page_view` | `ad_storage` |
-| Meta - Lead | `booking_success`, `quote_success` | `ad_storage` |
-| Meta - Contact | `whatsapp_click` | `ad_storage` |
-| Meta - ViewContent | `service_view` | `ad_storage` |
+The website keeps one event vocabulary (its own `dataLayer` names, also used by first-party analytics).
+The container translates them into GA4's names. Updated 2026-10-06.
 
-- Page views come from the site's own `page_view` event, so client-side navigation is counted once per
-  page. The GA4 Google tag therefore has `send_page_view` off.
-- Every Meta event tag runs the Pixel base tag first (tag sequencing), so no event is lost if it arrives
-  before the base code.
-- Event parameters sent to GA4: `service`, `placement`, `section`, `branch`, `item`, and the campaign
-  fields `source`, `medium`, `campaign`, `content`. No name, phone, email or form text ever reaches
-  `dataLayer`.
-- The website loads GTM only after the visitor accepts Analytics or Marketing, and sets Consent Mode v2
-  (`default` all denied, then `update`). The per-tag consent checks above are a second safeguard.
+| Website event (`dataLayer`) | GA4 event | Notes |
+|---|---|---|
+| `page_view` | `page_view` | The only page view source: the Google tag has `send_page_view` off |
+| `service_view` | `view_service` | `service` normalised to `dry_cleaning`, `wash_and_iron`, `ironing`, `curtain_cleaning`, `carpet_cleaning`, `blanket_cleaning`, `express_service` |
+| `pricing_search` | `find_price` | Fires when a price is chosen in Find a Price, not when the section is seen; `item` |
+| `pricing_view` | `pricing_view` | |
+| `book_pickup_click` | `book_pickup_click` | Intent only, never a lead |
+| `booking_start` | `begin_checkout` | First interaction with the booking form |
+| `booking_success`, `quote_success` | `generate_lead` | `lead_source` = `booking_form` / `quote_form`. Reminder-link rebookings are excluded |
+| `booking_success` from a reminder link | `repeat_booking` | Existing customers rebooking; not a lead |
+| `booking_error`, `quote_start`, `track_order_open`, `regular_laundry_interest` | same name | |
+| `whatsapp_click` | `whatsapp_click` | A tap, not a lead |
+| `google_reviews_click` | `review_click` | `branch` = `sector_11` / `sector_18` |
+| `directions_click` | `get_directions` | `branch` = `sector_11` / `sector_18` |
+
+Every GA4 event carries, where known: `page_path`, `button_location` (the site's `placement`: `header`,
+`hero`, `mobile_sticky`, `footer`, `locations`, `location_hero`, …), `section`, `service`, `branch`, `item`.
+Campaign attribution is GA4's own (UTMs / gclid on the landing page). No name, phone, email or form text
+ever reaches `dataLayer`.
+
+Not sent, on purpose: `phone_click` (the public site has no call button), `schedule_pickup` (a website
+booking is a request Velto confirms later, not a confirmed schedule) and `purchase` (orders exist only in
+Velto Ops; see REVENUE-ATTRIBUTION-DESIGN.md §11a).
+
+| Meta tag | Fires on | Consent |
+|---|---|---|
+| Pixel base (no automatic PageView) | All Pages, once per load | `ad_storage` |
+| PageView | `page_view` | `ad_storage` |
+| Lead | new booking or quote (not reminder rebooks) | `ad_storage` |
+| Contact | `whatsapp_click` | `ad_storage` |
+| ViewContent | `service_view` | `ad_storage` |
+
+`GA4 Measurement ID` is `G-ZGZP27PHYW` (the ID in the live container on 2026-10-06). `Meta Pixel ID` is
+`28841158055514208`, the "Velto Website" dataset in the Velto business. **The live container (version 2)
+still had the placeholder `000000000000000` on 2026-10-06, so no Meta website event had reached a pixel.**
 
 ## Import
 
@@ -38,7 +57,10 @@ website changes.
      `booking_success` and `Meta - Lead` fire. Delete the test task in Ops afterwards.
 5. **Submit → Publish.**
 6. Vercel → Production env: `NEXT_PUBLIC_GTM_ID=GTM-XXXXXXX` (the container's public ID) → Redeploy.
-7. GA4 → Admin → Events: mark `booking_success` and `quote_success` as **key events**.
+7. GA4 → Admin → Events: mark `generate_lead` as a **key event** (and, until orders can be imported,
+   `whatsapp_click` as a secondary one). GA4 → Admin → Data streams → Enhanced measurement → Page views →
+   Advanced: turn **off** "Page changes based on browser history events", or every client-side page change
+   is counted twice.
    Meta Events Manager: check that `Lead` arrives and set it as the conversion for lead campaigns.
 
 ## Ads links

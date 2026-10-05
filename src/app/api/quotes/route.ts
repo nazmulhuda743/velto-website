@@ -1,3 +1,4 @@
+import { storeClickIds } from "@/lib/whatsapp-ref";
 import { after, NextResponse, type NextRequest } from "next/server";
 import { logServerEvent } from "@/lib/analytics/store";
 import {
@@ -53,6 +54,8 @@ export async function POST(request: NextRequest) {
 
   try {
     const result = await gateway.createQuote(parsed.value, context.value);
+    // Raw ad click ids for future Conversions API / offline imports (Marketing consent only, 90 days).
+    after(() => storeClickIds(result.reference, parsed.value.attribution, request.cookies));
     // Tell the managers now, after the response is sent (best effort).
     after(() => notifyNewRequest(newRequestPush("quote", { name: parsed.value.name, area: parsed.value.area, service: parsed.value.service }, SITE_URL)));
     return NextResponse.json(

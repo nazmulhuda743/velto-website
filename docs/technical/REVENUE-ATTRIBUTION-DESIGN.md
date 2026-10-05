@@ -182,18 +182,34 @@ totals and baselines, but nothing is inferred for them.
   link, without legal promises.
 - Customer login and account work (another session) is independent and untouched.
 
-## 11. WhatsApp: NOT READY
+## 11. WhatsApp references (V1.1, BUILT · TESTED on staging, 2026-10-06)
 
-WhatsApp clicks are measured as events only. **No WhatsApp revenue is attributed**, and none is inferred
-from timing.
+`docs/technical/sql/website_whatsapp_refs.sql`, behind `VELTO_WHATSAPP_REFS_ENABLED`.
 
-Next architecture, not built:
-- `/go/whatsapp` generates a short random reference (e.g. `W7K2PQ`) and puts "Ref W7K2PQ" in the
-  pre-filled message.
-- The reference is stored as a `website_leads` row of kind `whatsapp_ref` with the campaign snapshot,
-  and the session id only with Analytics consent.
-- When Ops can save that reference against an order or task (an Ops app change),
-  `website_match_leads` links it using the reserved `whatsapp_reference` method.
+- **Tap.** On public pages the click handler (`components/layout/Analytics.tsx`) adds the visitor's
+  campaign context and `wr=1` to the `/go/whatsapp` link. Customer-account pages are untouched.
+- **Lead.** `/go/whatsapp` (`lib/whatsapp-ref.ts`) calls `website_create_whatsapp_lead`, which writes a
+  `website_leads` row of kind `whatsapp` with a reference like `W7K2PQ` (W + 5 characters with no
+  0/O/1/I) and the same campaign snapshot as a booking. Consent is read from the consent cookie, never
+  from the link. Link-preview fetchers and crawlers never mint references. Any failure or a 1.5 s
+  timeout opens WhatsApp without a reference.
+- **Message.** "Ref: W7K2PQ" goes on its own last line of the prefilled text ("Hi Velto" / "হ্যালো
+  Velto" when the button had no text).
+- **Order link.** Staff write `Ref W7K2PQ` in the Ops order's CSR notes (or special instructions).
+  `website_match_whatsapp_refs()` (nightly, and "Run matching now") links the lead to the earliest
+  qualifying order carrying it: method `whatsapp_reference`, window `explicit`. A second reference on an
+  already-claimed order is a conflict and not counted. A dedicated Ops field can replace the note scan
+  later without changing the lead side.
+- **Dashboard.** `/admin/revenue` counts WhatsApp taps in their own column ("matched / taps"), not as
+  leads: most taps never become a conversation.
+
+## 11a. Click-id store for Conversions API / offline imports
+
+`website_lead_click_ids` keeps raw `fbclid`, `fbc`, `fbp`, `gclid` per lead, **only with Marketing
+consent, for 90 days** (`website_purge_click_ids()` nightly). WhatsApp leads fill it at creation;
+bookings and quotes fill it right after submission (`storeClickIds` in `lib/whatsapp-ref.ts`), with
+`_fbp`/`_fbc` read from Meta's first-party cookies, never from a URL. Nothing reads it yet: a Meta
+Purchase or Google offline conversion should only be sent once Ops has a real order value and status.
 
 ## 12. Tests
 
@@ -244,4 +260,6 @@ Next architecture, not built:
 - Visitors who decline Analytics are attributed by the campaign on the booking itself (last touch) only.
 - Spend is matched by campaign name. Inconsistent naming splits a campaign; use the link builder.
 - Revenue is billed order value, not margin. There is no refund model beyond cancellation.
-- The WhatsApp channel is unattributed until Ops stores a reference (§11).
+- WhatsApp taps are attributed only when staff copy the reference onto the order (§11). Customers who
+  delete the "Ref" line, or message Velto directly from an ad (click-to-WhatsApp/Messenger ads never touch
+  the website), are not covered by this mechanism.

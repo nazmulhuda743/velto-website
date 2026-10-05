@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cookies } from "next/headers";
 import { after, NextResponse } from "next/server";
 import { logServerEvent } from "@/lib/analytics/store";
 import { bookingEstimateText } from "@/lib/booking-estimate";
@@ -25,6 +26,7 @@ import {
 import { notifyNewRequest } from "@/lib/admin/dispatch";
 import { newRequestPush } from "@/lib/admin/request-flow";
 import { SITE_URL } from "@/lib/site-url";
+import { storeClickIds } from "@/lib/whatsapp-ref";
 
 /**
  * Website-owned booking (spec §8), used by /api/bookings and /api/rhythm/book. Wire format:
@@ -100,6 +102,9 @@ export async function handleBooking(input: Record<string, unknown>, requestId: s
 
   try {
     const result = await gateway.createBooking(parsed.value, context.value);
+    // Raw ad click ids for future Conversions API / offline imports (Marketing consent only, 90 days).
+    const jar = await cookies();
+    after(() => storeClickIds(result.reference, parsed.value.attribution, jar));
     // Tell the managers now, after the response is sent (best effort).
     after(() => notifyNewRequest(newRequestPush("booking", { name: parsed.value.name, area: parsed.value.area, when: parsed.value.preferredPickup, service: parsed.value.service }, SITE_URL)));
     return NextResponse.json(
