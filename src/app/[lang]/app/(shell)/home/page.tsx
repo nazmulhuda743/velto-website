@@ -1,4 +1,4 @@
-import { AccountHomeView } from "@/components/account/views/AccountHomeView";
+import { AppHomeView } from "@/components/app/home/AppHomeView";
 import { AppScreen } from "@/components/app/AppScreen";
 import { AppHeader, HeaderPill, HeaderWhatsApp } from "@/components/pwa/AppHeader";
 import { formText } from "@/content/i18n/forms";
@@ -7,7 +7,7 @@ import { getLocale } from "@/lib/i18n/server";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-/** The app's Home: Prices and WhatsApp in the header, then the account home. */
+/** The app's Home: Prices and WhatsApp in the header, then one state card and recent orders. */
 export default async function AppHome({ searchParams }: { searchParams: SearchParams }) {
   const t = formText(await getLocale()).common.appBar;
   return (
@@ -23,7 +23,7 @@ export default async function AppHome({ searchParams }: { searchParams: SearchPa
         />
       }
     >
-      <AccountHomeView params={await searchParams} base="/app" />
+      <AppHomeView params={await searchParams} />
     </AppScreen>
   );
 }

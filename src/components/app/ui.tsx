@@ -124,17 +124,20 @@ export function WhatsAppButton({
   placement,
   variant = "secondary",
   className,
+  icon = true,
   children,
 }: {
   text?: string;
   placement: string;
   variant?: "secondary" | "inverse" | "text";
   className?: string;
+  /** The hero card's buttons are text only. */
+  icon?: boolean;
   children: ReactNode;
 }) {
   return (
     <a href={whatsappHref(text)} target="_blank" rel="noopener noreferrer" className={buttonClass(variant, className)} data-analytics="whatsapp_click" data-placement={placement}>
-      <WhatsAppIcon className={cx("size-[18px]", variant !== "inverse" && "text-whatsapp")} />
+      {icon ? <WhatsAppIcon className={cx("size-[18px]", variant !== "inverse" && "text-whatsapp")} /> : null}
       {children}
     </a>
   );
