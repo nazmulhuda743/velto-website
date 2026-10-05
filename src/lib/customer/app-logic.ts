@@ -231,3 +231,38 @@ export const FEEDBACK_DAYS = 14;
 /** Ask "How did we do?": delivered within the last FEEDBACK_DAYS and not answered yet. */
 export const askFeedback = (deliveredAt: string | null, answered: boolean, now: Date = new Date()) =>
   !answered && !!deliveredAt && Number.isFinite(Date.parse(deliveredAt)) && Date.parse(deliveredAt) >= now.getTime() - FEEDBACK_DAYS * 86_400_000;
+
+// ---- Data guards (live check, 5 Oct) ----
+
+/** Status times later than this after the order are bulk Ops updates, not real events. */
+export const STATUS_DAYS_MAX = 30;
+
+/**
+ * A status time Ops recorded, or null when it can't be true for this order: more than 30 days
+ * after the order date (old orders bulk-marked Delivered months later) or before it.
+ */
+export function trustedAt(at: string | null | undefined, orderDate: string): string | null {
+  if (!at) return null;
+  const t = Date.parse(at);
+  const start = Date.parse(`${orderDate.slice(0, 10)}T00:00:00+06:00`);
+  if (!Number.isFinite(t) || !Number.isFinite(start)) return null;
+  return t >= start - 86_400_000 && t <= start + STATUS_DAYS_MAX * 86_400_000 ? at : null;
+}
+
+/** The timeline without the times that can't be true (see trustedAt). */
+export const trustedTimeline = <T extends TimelineEvent>(timeline: T[], orderDate: string): T[] => timeline.filter((e) => trustedAt(e.at, orderDate) !== null);
+
+/**
+ * "House 2, Road 14, Sector 11, Uttara" already names its sector: the area label is added only
+ * when the address doesn't, so it never reads "Sector 11, Uttara, Uttara Sector 11".
+ */
+export function addressWithArea(address: string, area: string | null | undefined, areaText: string | null): string {
+  const a = address.trim();
+  if (!areaText) return a;
+  const n = /^([1-9]|1[0-8])$/.test(area ?? "") ? Number(area) : null;
+  const named = n !== null && new RegExp(`\\bsec(?:tor)?\\s*[-#:.]?\\s*0?${n}\\b`, "i").test(a);
+  return named || a.toLowerCase().includes(areaText.toLowerCase()) ? a : `${a}, ${areaText}`;
+}
+
+/** Uttara sector 1–18 from the account's area value ("7"), else null. */
+export const sectorNumber = (area: string | null | undefined) => (/^([1-9]|1[0-8])$/.test(area ?? "") ? Number(area) : null);

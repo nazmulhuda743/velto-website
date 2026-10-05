@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { BottomSheet } from "@/components/app/BottomSheet";
 import { ChipGroup } from "@/components/app/controls";
 import { Card, Eyebrow, SummaryRow, buttonClass } from "@/components/app/ui";
-import { fallbackDays, hoursText } from "@/components/forms/PickupWindows";
+import { hoursText } from "@/components/forms/PickupWindows";
+import { usePickupDays } from "@/components/app/usePickupDays";
 import { submitBooking, type BookingFormData } from "@/components/forms/submit";
 import { track } from "@/components/layout/Analytics";
-import { defaultSlot, isTomorrow, pickupDays, type SlotDay } from "@/lib/customer/app-logic";
-import type { AvailabilityDay, WindowId } from "@/lib/capacity-logic";
+import { defaultSlot, isTomorrow, pickupDays } from "@/lib/customer/app-logic";
+import type { WindowId } from "@/lib/capacity-logic";
 import { fill, format, localDigits, type Locale } from "@/lib/i18n/config";
 import { opsPickupWhen } from "@/lib/pickup-when";
 
@@ -46,7 +47,6 @@ export type RebookText = {
   dayMonth: string;
 };
 
-type Load = { state: "loading" } | { state: "ready"; days: SlotDay[]; today: string; live: boolean } | { state: "unavailable" };
 
 const dhakaToday = () => new Date(Date.now() + 6 * 3_600_000).toISOString().slice(0, 10);
 
@@ -79,34 +79,13 @@ export function RebookCard({
   locale: Locale;
   placement: string;
 }) {
-  const [load, setLoad] = useState<Load>({ state: "loading" });
   const [reload, setReload] = useState(0);
   const [picked, setPicked] = useState<{ date: string; window: string } | null>(null);
   const [sheet, setSheet] = useState(false);
   const [state, setState] = useState<{ kind: "idle" | "sending" } | { kind: "done"; reference?: string; when: string } | { kind: "error"; message: string }>({ kind: "idle" });
 
   // Days depend on the clock and on live capacity, so they load in the browser.
-  useEffect(() => {
-    const controller = new AbortController();
-    // Capacity booking off: the usual preference windows (Velto confirms the time on a call).
-    const preference = () =>
-      setLoad({ state: "ready", today: dhakaToday(), live: false, days: fallbackDays().map((d) => ({ date: d.date, windows: d.windows.map((w) => ({ ...w, left: w.status === "open" ? 1 : 0 })) })) });
-    if (!sector) {
-      preference();
-      return () => controller.abort();
-    }
-    fetch(`/api/capacity?sector=${sector}`, { signal: controller.signal, cache: "no-store" })
-      .then(async (res) => {
-        const body = (await res.json().catch(() => null)) as { enabled?: boolean; zone?: string | null; today?: string; days?: AvailabilityDay[] } | null;
-        if (!body || body.enabled !== true || (res.ok && !body.zone)) return preference();
-        if (!res.ok || !Array.isArray(body.days)) return setLoad({ state: "unavailable" });
-        setLoad({ state: "ready", days: body.days, today: body.today ?? dhakaToday(), live: true });
-      })
-      .catch((e: unknown) => {
-        if (!(e instanceof DOMException && e.name === "AbortError")) preference();
-      });
-    return () => controller.abort();
-  }, [sector, reload]);
+  const load = usePickupDays(sector, reload);
 
   const days = useMemo(() => (load.state === "ready" ? pickupDays(load.days, load.today) : []), [load]);
   const today = load.state === "ready" ? load.today : dhakaToday();
@@ -174,7 +153,7 @@ export function RebookCard({
             </Link>
           </p>
         ) : (
-          <SummaryRow label={t.pickupWhen} value={load.state === "loading" ? "…" : slotText(true)} action={t.change} onClick={() => setSheet(true)} />
+          <SummaryRow label={t.pickupWhen} value={load.state === "loading" ? <span className="skeleton mt-1 block h-5 w-56 max-w-full" aria-hidden="true" /> : slotText(true)} action={t.change} onClick={() => setSheet(true)} />
         )}
       </div>
       <button type="button" onClick={book} className={buttonClass("primary")} aria-disabled={!slot || state.kind === "sending"} data-analytics="book_pickup_click" data-placement={placement}>

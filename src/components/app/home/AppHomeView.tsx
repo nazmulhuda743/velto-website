@@ -9,7 +9,7 @@ import { careText } from "@/content/i18n/care";
 import { formText } from "@/content/i18n/forms";
 import { customerRoutes } from "@/lib/app-routes";
 import { signInFor } from "@/lib/app-routes-server";
-import { completedCount, expectedReturn, homeState, lastOrder, reachedAt, serviceList, showFirstOrderLine, showWeeklyOnHome, stepIndex, STEPS } from "@/lib/customer/app-logic";
+import { addressWithArea, completedCount, sectorNumber, expectedReturn, homeState, lastOrder, reachedAt, serviceList, trustedAt, trustedTimeline, showFirstOrderLine, showWeeklyOnHome, stepIndex, STEPS } from "@/lib/customer/app-logic";
 import { getCarePending } from "@/lib/customer/care";
 import { getCustomerSession, getPickups, getPortalOrder, getPortalOrders, type PortalOrder, type PortalPickup } from "@/lib/customer/portal";
 import { quickRepeatFor } from "@/lib/customer/quick-repeat";
@@ -20,7 +20,7 @@ import { FIRST_ORDER_OFFER } from "@/lib/first-order-offer";
 import { firstWebsiteBooking } from "@/lib/first-order-lookup";
 import { fill, format, localDigits } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
-import { ROUTINE_SERVICES, ROUTINE_WINDOWS } from "@/lib/routine";
+import { ROUTINE_SERVICES } from "@/lib/routine";
 import { RebookCard } from "./RebookCard";
 
 const routes = customerRoutes("/app");
@@ -78,7 +78,7 @@ function RecentRow({ order, f, cancelled }: { order: PortalOrder; f: AppOrderFor
       <Link href={routes.order(order.orderNumber)} className="flex min-h-13 justify-between gap-3 px-4 py-3.5">
         <span className="flex min-w-0 flex-col gap-0.5">
           <span className="a-body font-semibold text-navy">{order.services.length ? f.services(order.services) : order.orderNumber}</span>
-          <span className="a-cap text-muted">{f.day(order.deliveredAt ?? order.orderDate)}</span>
+          <span className="a-cap text-muted">{f.day(trustedAt(order.deliveredAt, order.orderDate) ?? order.orderDate)}</span>
         </span>
         <span className="flex shrink-0 flex-col items-end gap-0.5">
           {order.total > 0 ? <span className="a-body font-semibold text-navy">{f.money(order.total)}</span> : null}
@@ -121,7 +121,7 @@ export async function AppHomeView({ params }: { params: Record<string, string | 
     const step = stepIndex(active.status);
     const key = STEPS[step].key;
     const services = d ? serviceList(d.lines, active.services) : active.services;
-    const back = expectedReturn(d ? reachedAt(d.timeline, "Picked") : null, services, active.status);
+    const back = expectedReturn(d ? reachedAt(trustedTimeline(d.timeline, active.orderDate), "Picked") : null, services, active.status);
     const headline = back ? fill(t.backBy, { date: f.day(back.date) ?? "" }, locale) : key === "booked" ? t.lineWaitingCall : key === "ready" ? t.subReady : t.titles[key];
     const facts = [active.items ? f.items(active.items) : null, services.length ? f.services(services) : null, active.total > 0 ? f.money(active.total) : null].filter((x): x is string => Boolean(x));
     card = <HeroCard eyebrow={format(t.inProgressEyebrow, { id: active.orderNumber })} step={step} headline={headline} facts={facts} href={routes.order(active.orderNumber)} f={f} />;
@@ -140,7 +140,7 @@ export async function AppHomeView({ params }: { params: Record<string, string | 
           data={quick.data}
           sector={quick.sector}
           lastWindow={lastWindow}
-          address={[account.address, areaLabel(account.area)].filter(Boolean).join(", ")}
+          address={addressWithArea(account.address ?? "", account.area, areaLabel(account.area))}
           changeHref={changeHref}
           otherHref={lapsed ? routes.book({ source: "app-home-lapsed" }) : undefined}
           phone={displayBdPhone(account.phone) ?? account.phone}
@@ -235,17 +235,20 @@ export async function AppHomeView({ params }: { params: Record<string, string | 
   let weekly: React.ReactNode = null;
   if (last && service && (ROUTINE_SERVICES as readonly string[]).includes(service) && showWeeklyOnHome(completedCount(list), hasRoutine)) {
     const weekday = new Date(`${(last.pickupDate ?? last.orderDate).slice(0, 10)}T12:00:00Z`).getUTCDay();
-    const win = lastWindow && (ROUTINE_WINDOWS as readonly string[]).includes(lastWindow) ? lastWindow : "evening";
-    const day = fm.bookPage.routineDays[weekday];
     weekly = (
       <WeeklyOffer
         weekday={weekday}
-        window={win}
+        window={lastWindow}
+        sector={sectorNumber(account.area)}
         service={service}
+        locale={locale}
         t={{
           title: t.weeklyTitle,
-          body: fill(t.weeklyBody, { day, window: t.weeklyWindows[win] }, locale),
-          requested: fill(a.routine.requestedBody, { day, time: fm.booking.slots[win] }, locale),
+          body: t.weeklyBody,
+          requested: a.routine.requestedBody,
+          day: fm.bookPage.routineDays[weekday],
+          windowWords: t.weeklyWindows,
+          slotNames: fm.booking.slots,
           failed: a.routine.failed,
           needAddress: a.routine.needAddress,
         }}
