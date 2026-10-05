@@ -7,6 +7,7 @@ import { allowedOnPrivatePath, isAnalyticsEvent } from "@/lib/analytics/events";
 import { isPrivatePath } from "@/lib/analytics/private-paths";
 import { appendAttribution } from "@/lib/attribution";
 import { captureAttributionFromUrl, consentedAttribution, storedAttribution } from "@/lib/attribution-client";
+import { sendMetaEvent } from "@/lib/meta-pixel/client";
 
 type Payload = Record<string, string | undefined>;
 
@@ -45,6 +46,9 @@ export function track(event: string, context: Payload = {}) {
   window.dataLayer.push(payload);
   window.dispatchEvent(new CustomEvent("velto:analytics", { detail: payload }));
   sendAnalyticsEvent(event, context);
+  // Meta Pixel: a no-op unless Marketing consent started it; maps this event (or not) in
+  // src/lib/meta-pixel/events.ts. This is the Pixel's only event source, so nothing double-fires.
+  sendMetaEvent(event, context);
 }
 
 /**
@@ -69,9 +73,16 @@ export function Analytics() {
       );
       if (!el) return;
 
+      // The service a /book or /quote link preselects (?service=…), when the button names none.
+      let linkService: string | undefined;
       if (el instanceof HTMLAnchorElement) {
         const href = el.getAttribute("href");
         if (href && /^(?:\/bn)?\/(book|quote)(?:\/|\?|#|$)/.test(href)) {
+          try {
+            linkService = new URL(href, window.location.origin).searchParams.get("service") || undefined;
+          } catch {
+            /* no service */
+          }
           try {
             el.setAttribute("href", appendAttribution(href, consentedAttribution(storedAttribution())));
           } catch {
@@ -85,7 +96,7 @@ export function Analytics() {
         track(event, {
           placement: el.dataset.placement,
           section: el.closest("section")?.id || undefined,
-          service: el.dataset.service,
+          service: el.dataset.service ?? linkService,
           branch: el.dataset.branch,
         });
       }

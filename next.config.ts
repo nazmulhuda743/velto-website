@@ -9,8 +9,8 @@ const isVercelPreview = Boolean(process.env.VERCEL_ENV) && process.env.VERCEL_EN
  * <base> hijack, no plugins. This already stops clickjacking of the customer portal and the
  * staff admin, which carry sessions with real authority.
  *
- * REPORT-ONLY — the full allowlist the site should converge on (GTM after consent, Supabase,
- * Google Maps embeds). Browsers log every violation without blocking anything, so it can be
+ * REPORT-ONLY — the full allowlist the site should converge on (GTM and the Meta Pixel after
+ * consent, Supabase, Google Maps embeds). Browsers log every violation without blocking anything, so it can be
  * checked in the browser console on each page type before it is promoted to enforced.
  * `'unsafe-inline'` remains for scripts because Next.js injects inline bootstrap scripts;
  * removing it needs nonce-based CSP (middleware + dynamic rendering), a separate change.
@@ -19,11 +19,11 @@ const enforcedCsp = ["frame-ancestors 'none'", "base-uri 'self'", "object-src 'n
 
 const reportOnlyCsp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://*.googletagmanager.com https://*.google-analytics.com",
+  "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://*.googletagmanager.com https://*.google-analytics.com https://connect.facebook.net",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  "connect-src 'self' https://*.supabase.co https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com",
+  "connect-src 'self' https://*.supabase.co https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://www.facebook.com https://connect.facebook.net",
   "frame-src https://maps.google.com https://www.google.com https://www.googletagmanager.com",
   "form-action 'self' https://accounts.google.com https://*.supabase.co",
   "worker-src 'self'",
