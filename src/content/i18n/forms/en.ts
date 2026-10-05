@@ -72,6 +72,7 @@ export const formsEn = {
       helpBody: "Questions about an order or a pickup? Message Velto.",
       language: "Language",
       legal: "Privacy, terms and cookies",
+      whatsapp: "WhatsApp Velto",
     },
   },
   booking: {

@@ -63,6 +63,7 @@ export const formsBn: FormText = {
       helpBody: "অর্ডার বা পিকআপ নিয়ে প্রশ্ন? Velto-কে মেসেজ করুন।",
       language: "ভাষা",
       legal: "গোপনীয়তা, শর্তাবলি ও কুকি",
+      whatsapp: "WhatsApp-এ Velto",
     },
   },
   booking: {

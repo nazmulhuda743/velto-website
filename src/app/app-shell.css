@@ -1,0 +1,121 @@
+/*
+ * The installed app's design tokens (docs/design/velto-app-screens.dc.html, "Handoff notes").
+ * Scoped to the app's own pages ([data-app-shell], [data-app-login], [data-app-entry]): the
+ * website's tokens and type are untouched. The shared utilities (text-navy, bg-warm, border-line,
+ * bg-action, …) pick up the app's values inside the scope because they read these variables.
+ */
+
+:is([data-app-shell], [data-app-login], [data-app-entry]) {
+  --color-navy: #0a2e55;
+  --color-ink: #0a2e55;
+  --color-blue: #0b72b9;
+  --color-action: #0b72b9;
+  --color-action-hover: #0a5f9b;
+  --color-action-active: #0a5f9b;
+  --color-warm: #f8f8f6;
+  --color-line: #e3e7ec;
+  --color-line-strong: #c9d0d9;
+  --color-body: #1f2a37;
+  --color-secondary: #4b5563;
+  --color-muted: #6b7280;
+
+  color: var(--color-body);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* ---------- Type scale (app only) ---------- */
+
+/* Screen title: 28/1.15 (30 on entry screens with a-entry). */
+@utility a-title {
+  font-size: 28px;
+  line-height: 1.15;
+  font-weight: 700;
+  color: var(--color-navy);
+  text-wrap: balance;
+}
+@utility a-entry {
+  font-size: 30px;
+}
+@utility a-card {
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+@utility a-section {
+  font-size: 17px;
+  line-height: 1.35;
+  font-weight: 700;
+  color: var(--color-navy);
+}
+@utility a-row {
+  font-size: 16px;
+  line-height: 1.4;
+}
+@utility a-body {
+  font-size: 15px;
+  line-height: 1.5;
+}
+@utility a-sec {
+  font-size: 14px;
+  line-height: 1.45;
+}
+@utility a-cap {
+  font-size: 13px;
+  line-height: 1.4;
+}
+@utility a-meta {
+  font-size: 12px;
+  line-height: 1.35;
+}
+@utility a-eyebrow {
+  font-size: 11px;
+  line-height: 1.3;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/*
+ * Bangla: the same sizes, line height 1.65 everywhere, no tracking on eyebrows. Unlayered, so it
+ * outranks the leading utilities inside the app; English is untouched.
+ */
+html[lang="bn"] :is([data-app-shell], [data-app-login], [data-app-entry]),
+html[lang="bn"] :is([data-app-shell], [data-app-login], [data-app-entry]) * {
+  line-height: 1.65;
+  letter-spacing: normal;
+}
+
+/* ---------- Bottom sheet (components/app/BottomSheet.tsx) ---------- */
+
+dialog[data-app-sheet] {
+  margin: auto auto 0;
+  width: 100%;
+  max-width: min(560px, 100%);
+  max-height: 90dvh;
+  padding: 0;
+  border: 0;
+  border-radius: 24px 24px 0 0;
+  background: var(--color-warm);
+  color: var(--color-body);
+  box-shadow: 0 -12px 40px rgb(10 46 85 / 0.18);
+}
+dialog[data-app-sheet]::backdrop {
+  background: rgb(91 107 127 / 0.6);
+}
+html:has(dialog[data-app-sheet][open]) {
+  overflow: hidden;
+}
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes app-sheet-in {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+  dialog[data-app-sheet][open] {
+    animation: app-sheet-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+}

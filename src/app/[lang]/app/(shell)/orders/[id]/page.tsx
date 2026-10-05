@@ -1,8 +1,23 @@
+import { AppScreen } from "@/components/app/AppScreen";
 import { OrderDetailView } from "@/components/account/views/OrderDetailView";
+import { AppHeader } from "@/components/pwa/AppHeader";
+import { formText } from "@/content/i18n/forms";
+import { getLocale } from "@/lib/i18n/server";
 
 type Params = Promise<{ id: string }>;
 type Search = Promise<Record<string, string | string[] | undefined>>;
 
+/** Order detail: "← Orders" and the order number on top instead of the logo. */
 export default async function AppOrder({ params, searchParams }: { params: Params; searchParams: Search }) {
-  return <OrderDetailView id={(await params).id} care={(await searchParams).care} base="/app" />;
+  const id = (await params).id;
+  const t = formText(await getLocale()).common.appBar;
+  let shown = id;
+  try {
+    shown = decodeURIComponent(id);
+  } catch {}
+  return (
+    <AppScreen header={<AppHeader back={{ href: "/app/orders", label: t.orders }} aside={/^VELR?-\d{5}$/.test(shown) ? shown : undefined} />}>
+      <OrderDetailView id={id} care={(await searchParams).care} base="/app" />
+    </AppScreen>
+  );
 }

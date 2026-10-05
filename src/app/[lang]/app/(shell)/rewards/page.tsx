@@ -1,5 +1,10 @@
+import { AppScreen } from "@/components/app/AppScreen";
 import { RewardsView } from "@/components/account/views/RewardsView";
 
 export default function AppRewards() {
-  return <RewardsView base="/app" />;
+  return (
+    <AppScreen>
+      <RewardsView base="/app" />
+    </AppScreen>
+  );
 }

@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><meta name="design_doc_mode" content="canvas"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&display=swap" rel="stylesheet"><style>body{margin:0;background:#EEEDE8;color:#1F2A37;font-family:'Schibsted Grotesk','Noto Sans Bengali',system-ui,sans-serif;-webkit-font-smoothing:antialiased}a{color:#0B72B9}a:hover{color:#0A2E55}[lang=bn]{line-height:1.65}@keyframes shimmer{0%{opacity:.55}50%{opacity:1}100%{opacity:.55}}</style></helmet>
+<div lang="{{ lang }}" style="padding:40px 44px 80px;display:flex;flex-direction:column;gap:56px">
+
+<header style="display:flex;flex-direction:column;gap:12px;max-width:760px">
+<img src="uploads/velto-logo.png" alt="Velto" style="width:120px;height:auto">
+<h1 style="margin:0;font-size:32px;line-height:1.1;font-weight:700;color:#0A2E55">Customer app, part 2: every screen and state</h1>
+<p style="margin:0;font-size:15px;line-height:1.5;color:#4B5563">390 px. Switch English and Bangla from the Tweaks panel. Screens are shown full length, the way a customer scrolls them. Structure as approved in <a href="Velto Review and Structure.dc.html">part 1</a>.</p>
+</header>
+
+<section style="display:flex;flex-direction:column;gap:18px">
+<h2 style="margin:0;font-size:20px;font-weight:700;color:#0A2E55">Entry, loading, offline, error</h2>
+<div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start">
+
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#6B7280">Install, Android</span>
+<div data-screen-label="Install" style="width:390px;min-height:760px;background:#F8F8F6;border-radius:28px;border:1px solid #D7DCE3;box-shadow:0 8px 30px rgba(10,46,85,.08);overflow:hidden;display:flex;flex-direction:column;font-size:15px;color:#1F2A37">
+<div style="display:flex;justify-content:space-between;padding:14px 24px 0;font-size:13px;font-weight:600;color:#0A2E55"><span>9:41</span><span style="width:22px;height:11px;border:1.5px solid #0A2E55;border-radius:3px;display:inline-block"></span></div>
+<div style="padding:20px 24px 0"><img src="uploads/velto-logo.png" alt="Velto" style="height:24px"></div>
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px;padding:40px 24px">
+<img src="uploads/icon-maskable-192.png" alt="" style="width:72px;height:72px;border-radius:18px">
+<h2 style="margin:0;font-size:30px;line-height:1.15;font-weight:700;color:#0A2E55">{{ t.installTitle }}</h2>
+<p style="margin:0;font-size:16px;line-height:1.5;color:#4B5563">{{ t.installBody }}</p>
+</div>
+<div style="padding:0 24px 32px;display:flex;flex-direction:column;gap:12px">
+<button style="height:52px;border:0;border-radius:12px;background:#0B72B9;color:#fff;font:600 16px inherit;font-family:inherit">{{ t.installBtn }}</button>
+<a href="#" style="text-align:center;font-size:15px;font-weight:600;color:#0B72B9;text-decoration:none;padding:10px">{{ t.installSkip }}</a>
+</div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#6B7280">Install, iPhone (Safari)</span>
+<div data-screen-label="Install iPhone" style="width:390px;min-height:760px;background:#F8F8F6;border-radius:28px;border:1px solid #D7DCE3;box-shadow:0 8px 30px rgba(10,46,85,.08);overflow:hidden;display:flex;flex-direction:column;font-size:15px;color:#1F2A37">
+<div style="display:flex;justify-content:space-between;padding:14px 24px 0;font-size:13px;font-weight:600;color:#0A2E55"><span>9:41</span><span style="width:22px;height:11px;border:1.5px solid #0A2E55;border-radius:3px;display:inline-block"></span></div>
+<div style="padding:20px 24px 0"><img src="uploads/velto-logo.png" alt="Velto" style="height:24px"></div>
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px;padding:40px 24px">
+<img src="uploads/icon-maskable-192.png" alt="" style="width:72px;height:72px;border-radius:18px">
+<h2 style="margin:0;font-size:30px;line-height:1.15;font-weight:700;color:#0A2E55">{{ t.installTitle }}</h2>
+<p style="margin:0;font-size:16px;line-height:1.5;color:#4B5563">{{ t.installBody }}</p>
+<div style="margin-top:8px;display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:12px;background:#fff;border:1px solid #E3E7EC;font-size:15px;color:#1F2A37"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0B72B9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 7l4-4 4 4M5 12v8h14v-8"></path></svg><span>{{ t.installIos }}</span></div>
+</div>
+<div style="padding:0 24px 32px;display:flex;flex-direction:column;gap:12px">
+<a href="#" style="text-align:center;font-size:15px;font-weight:600;color:#0B72B9;text-decoration:none;padding:10px">{{ t.installSkip }}</a>
+</div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#6B7280">Sign in, number</span>
+<div data-screen-label="Sign in" style="width:390px;min-height:760px;background:#F8F8F6;border-radius:28px;border:1px solid #D7DCE3;box-shadow:0 8px 30px rgba(10,46,85,.08);overflow:hidden;display:flex;flex-direction:column;font-size:15px;color:#1F2A37">
+<div style="display:flex;justify-content:space-between;padding:14px 24px 0;font-size:13px;font-weight:600;color:#0A2E55"><span>9:41</span><span style="width:22px;height:11px;border:1.5px solid #0A2E55;border-radius:3px;display:inline-block"></span></div>
+<div style="padding:20px 24px 0"><img src="uploads/velto-logo.png" alt="Velto" style="height:24px"></div>
+<div style="padding:48px 24px 0;display:flex;flex-direction:column;gap:10px">
+<h2 style="margin:0;font-size:30px;line-height:1.15;font-weight:700;color:#0A2E55">{{ t.signinTitle }}</h2>
+<p style="margin:0;font-size:16px;line-height:1.5;color:#4B5563">{{ t.signinSub }}</p>
+</div>
+<div style="padding:32px 24px 0;display:flex;flex-direction:column;gap:8px">
+<label style="font-size:14px;font-weight:600;color:#0A2E55">{{ t.mobile }}</label>
+<div style="display:flex;align-items:center;height:52px;border:1.5px solid #C9D0D9;border-radius:12px;background:#fff;padding:0 16px;font-size:18px;color:#9AA3AF;letter-spacing:.02em">01712 345678</div>
+<button style="margin-top:8px;height:52px;border:0;border-radius:12px;background:#0B72B9;color:#fff;font:600 16px inherit;font-family:inherit">{{ t.sendCode }}</button>
+<div style="display:flex;align-items:center;gap:12px;margin:12px 0;color:#9AA3AF;font-size:13px"><span style="flex:1;height:1px;background:#E3E7EC"></span>{{ t.or }}<span style="flex:1;height:1px;background:#E3E7EC"></span></div>
+<button style="height:52px;border:1.5px solid #C9D0D9;border-radius:12px;background:#fff;color:#0A2E55;font:600 16px inherit;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px"><span style="width:18px;height:18px;border-radius:9px;background:conic-gradient(#EA4335 0 25%,#FBBC05 0 50%,#34A853 0 75%,#4285F4 0)"></span>{{ t.google }}</button>
+</div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#6B7280">Sign in, code (with error)</span>
+<div data-screen-label="Sign in code" style="width:390px;min-height:760px;background:#F8F8F6;border-radius:28px;border:1px solid #D7DCE3;box-shadow:0 8px 30px rgba(10,46,85,.08);overflow:hidden;display:flex;flex-direction:column;font-size:15px;color:#1F2A37">
+<div style="display:flex;justify-content:space-between;padding:14px 24px 0;font-size:13px;font-weight:600;color:#0A2E55"><span>9:41</span><span style="width:22px;height:11px;border:1.5px solid #0A2E55;border-radius:3px;display:inline-block"></span></div>
+<div style="padding:20px 24px 0"><a href="#" style="font-size:15px;font-weight:600;color:#0B72B9;text-decoration:none">← {{ t.changeNumber }}</a></div>
+<div style="padding:40px 24px 0;display:flex;flex-direction:column;gap:10px">
+<h2 style="margin:0;font-size:30px;line-height:1.15;font-weight:700;color:#0A2E55">{{ t.codeTitle }}</h2>
+<p style="margin:0;font-size:16px;line-height:1.5;color:#4B5563">{{ t.codeSub }}</p>
+</div>
+<div style="padding:28px 24px 0;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;gap:8px"><span style="flex:1;height:56px;border:1.5px solid #B42318;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:600;color:#0A2E55">4</span><span style="flex:1;height:56px;border:1.5px solid #B42318;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:600;color:#0A2E55">8</span><span style="flex:1;height:56px;border:1.5px solid #B42318;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:600;color:#0A2E55">1</span><span style="flex:1;height:56px;border:1.5px solid #B42318;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:600;color:#0A2E55">0</span><span style="flex:1;height:56px;border:1.5px solid #B42318;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:600;color:#0A2E55">2</span><span style="flex:1;height:56px;border:1.5px solid #B42318;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:600;color:#0A2E55">9</span></div>
+<p style="margin:0;font-size:14px;line-height:1.5;color:#B42318">{{ t.codeError }}</p>
+<p style="margin:8px 0 0;font-size:14px;color:#6B7280">{{ t.resend }}</p>
+</div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#6B7280">Loading (Home skeleton)</span>
+<div data-screen-label="Loading" style="width:390px;min-height:760px;background:#F8F8F6;border-radius:28px;border:1px solid #D7DCE3;box-shadow:0 8px 30px rgba(10,46,85,.08);overflow:hidden;display:flex;flex-direction:column;font-size:15px;color:#1F2A37">
+<div style="display:flex;justify-content:space-between;padding:14px 24px 0;font-size:13px;font-weight:600;color:#0A2E55"><span>9:41</span><span style="width:22px;height:11px;border:1.5px solid #0A2E55;border-radius:3px;display:inline-block"></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px"><img src="uploads/velto-logo.png" alt="Velto" style="height:22px"></div>
+<div style="padding:16px 20px;display:flex;flex-direction:column;gap:14px;animation:shimmer 1.4s ease-in-out infinite">
+<div style="height:30px;width:220px;border-radius:8px;background:#E3E7EC"></div>
+<div style="height:16px;width:160px;border-radius:6px;background:#E3E7EC"></div>
+<div style="margin-top:8px;border-radius:16px;background:#fff;border:1px solid #E3E7EC;padding:20px;display:flex;flex-direction:column;gap:12px"><div style="height:12px;width:110px;border-radius:6px;background:#E3E7EC"></div><div style="height:24px;width:200px;border-radius:6px;background:#E3E7EC"></div><div style="height:16px;width:260px;border-radius:6px;background:#E3E7EC"></div><div style="height:16px;width:180px;border-radius:6px;background:#E3E7EC"></div><div style="height:52px;border-radius:12px;background:#E3E7EC;margin-top:8px"></div></div>
+<div style="height:18px;width:120px;border-radius:6px;background:#E3E7EC;margin-top:12px"></div>
+<div style="border-radius:16px;background:#fff;border:1px solid #E3E7EC;padding:16px;display:flex;flex-direction:column;gap:10px"><div style="height:16px;width:140px;border-radius:6px;background:#E3E7EC"></div><div style="height:14px;width:200px;border-radius:6px;background:#E3E7EC"></div></div>
+<div style="border-radius:16px;background:#fff;border:1px solid #E3E7EC;padding:16px;display:flex;flex-direction:column;gap:10px"><div style="height:16px;width:140px;border-radius:6px;background:#E3E7EC"></div><div style="height:14px;width:200px;border-radius:6px;background:#E3E7EC"></div></div>
+</div>
+<div style="margin-top:auto;display:flex;border-top:1px solid #E3E7EC;background:#fff;padding:8px 0 18px"><sc-for list="{{ tabsHome }}" as="tb" hint-placeholder-count="4"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;font-weight:600;color:{{ tb.color }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{ tb.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ tb.d }}"></path></svg><span>{{ tb.label }}</span></div></sc-for></div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#6B7280">Offline</span>
+<div data-screen-label="Offline" style="width:390px;min-height:760px;background:#F8F8F6;border-radius:28px;border:1px solid #D7DCE3;box-shadow:0 8px 30px rgba(10,46,85,.08);overflow:hidden;display:flex;flex-direction:column;font-size:15px;color:#1F2A37">
+<div style="display:flex;justify-content:space-between;padding:14px 24px 0;font-size:13px;font-weight:600;color:#0A2E55"><span>9:41</span><span style="width:22px;height:11px;border:1.5px solid #0A2E55;border-radius:3px;display:inline-block"></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px"><img src="uploads/velto-logo.png" alt="Velto" style="height:22px"></div>
+<div style="margin:8px 20px 0;padding:12px 16px;border-radius:12px;background:#0A2E55;color:#fff;display:flex;flex-direction:column;gap:4px"><strong style="font-size:15px">{{ t.offlineTitle }}</strong><span style="font-size:13.5px;line-height:1.45;opacity:.85">{{ t.offlineBody }}</span></div>
+<div style="margin:20px 20px 0;border-radius:16px;border:1px dashed #C9D0D9;padding:20px;display:flex;flex-direction:column;gap:6px"><strong style="font-size:15px;color:#0A2E55">{{ t.offlineCardTitle }}</strong><span style="font-size:14px;line-height:1.5;color:#6B7280">{{ t.offlineCardBody }}</span></div>
+<div style="padding:16px 20px 0"><button style="width:100%;height:52px;border:1.5px solid #C9D0D9;border-radius:12px;background:#fff;color:#0A2E55;font:600 16px inherit;font-family:inherit">{{ t.retry }}</button></div>
+<div style="margin-top:auto;display:flex;border-top:1px solid #E3E7EC;background:#fff;padding:8px 0 18px"><sc-for list="{{ tabsHome }}" as="tb" hint-placeholder-count="4"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;font-weight:600;color:{{ tb.color }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{ tb.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ tb.d }}"></path></svg><span>{{ tb.label }}</span></div></sc-for></div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#6B7280">Error</span>
+<div data-screen-label="Error" style="width:390px;min-height:760px;background:#F8F8F6;border-radius:28px;border:1px solid #D7DCE3;box-shadow:0 8px 30px rgba(10,46,85,.08);overflow:hidden;display:flex;flex-direction:column;font-size:15px;color:#1F2A37">
+<div style="display:flex;justify-content:space-between;padding:14px 24px 0;font-size:13px;font-weight:600;color:#0A2E55"><span>9:41</span><span style="width:22px;height:11px;border:1.5px solid #0A2E55;border-radius:3px;display:inline-block"></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px"><img src="uploads/velto-logo.png" alt="Velto" style="height:22px"></div>
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:14px;padding:40px 24px">
+<span style="width:48px;height:48px;border-radius:24px;background:#FEE2E2;color:#B42318;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700">!</span>
+<h2 style="margin:0;font-size:26px;line-height:1.2;font-weight:700;color:#0A2E55">{{ t.errorTitle }}</h2>
+<p style="margin:0;font-size:16px;line-height:1.5;color:#4B5563">{{ t.errorBody }}</p>
+<button style="margin-top:8px;height:52px;border:0;border-radius:12px;background:#0B72B9;color:#fff;font:600 16px inherit;font-family:inherit">{{ t.retry }}</button>
+<button style="height:52px;border:1.5px solid #C9D0D9;border-radius:12px;background:#fff;color:#0A2E55;font:600 16px inherit;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8.5 8.5 0 0 1-12.6 7.4L3 21l1.6-5.4A8.5 8.5 0 1 1 21 12z"></path></svg>{{ t.whatsapp }}</button>
+</div>
+<div style="margin-top:auto;display:flex;border-top:1px solid #E3E7EC;background:#fff;padding:8px 0 18px"><sc-for list="{{ tabsHome }}" as="tb" hint-placeholder-count="4"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;font-weight:600;color:{{ tb.color }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{ tb.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ tb.d }}"></path></svg><span>{{ tb.label }}</span></div></sc-for></div>
+</div></div>
+
+</div>
+</section>
+<section style="display:flex;flex-direction:column;gap:18px">
+<h2 style="margin:0;font-size:20px;font-weight:700;color:#0A2E55">Home, four states</h2>
+<p style="margin:0;font-size:14px;color:#4B5563;max-width:720px">One state card, then recent orders, then nothing. Prices and WhatsApp live in the header. The lapsed card keeps the one-tap rebook.</p>
+<div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start">
+
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#6B7280">First-time customer</span>
+<div data-screen-label="Home first" style="width:390px;min-height:760px;background:#F8F8F6;border-radius:28px;border:1px solid #D7DCE3;box-shadow:0 8px 30px rgba(10,46,85,.08);overflow:hidden;display:flex;flex-direction:column;font-size:15px;color:#1F2A37">
+<div style="display:flex;justify-content:space-between;padding:14px 24px 0;font-size:13px;font-weight:600;color:#0A2E55"><span>9:41</span><span style="width:22px;height:11px;border:1.5px solid #0A2E55;border-radius:3px;display:inline-block"></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px"><img src="uploads/velto-logo.png" alt="Velto" style="height:22px"><div style="display:flex;gap:8px"><a href="#" style="font-size:13px;font-weight:600;color:#0A2E55;text-decoration:none;padding:7px 12px;border:1px solid #D7DCE3;border-radius:999px;background:#fff">{{ t.prices }}</a><a href="#" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;border:1px solid #D7DCE3;border-radius:17px;background:#fff"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8.5 8.5 0 0 1-12.6 7.4L3 21l1.6-5.4A8.5 8.5 0 1 1 21 12z"></path></svg></a></div></div>
+<div style="padding:16px 20px 0;display:flex;flex-direction:column;gap:6px"><h2 style="margin:0;font-size:28px;line-height:1.15;font-weight:700;color:#0A2E55">{{ t.greeting }}</h2></div>
+<div style="margin:20px 20px 0;border-radius:16px;background:#fff;border:1px solid #E3E7EC;padding:20px;display:flex;flex-direction:column;gap:12px">
+<span style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#0B72B9">{{ t.firstEyebrow }}</span>
+<strong style="font-size:22px;line-height:1.2;color:#0A2E55">{{ t.firstTitle }}</strong>
+<p style="margin:0;font-size:15px;line-height:1.5;color:#4B5563">{{ t.firstBody }}</p>
+<button style="height:52px;border:0;border-radius:12px;background:#0B72B9;color:#fff;font:600 16px inherit;font-family:inherit;margin-top:4px">{{ t.bookPickup }}</button>
+<a href="#" style="text-align:center;font-size:15px;font-weight:600;color:#0B72B9;text-decoration:none;padding:6px">{{ t.seePricesFirst }}</a>
+</div>
+<div style="margin:16px 20px 0;border-radius:16px;border:1px dashed #C9D0D9;padding:16px;display:flex;flex-direction:column;gap:12px">
+<strong style="font-size:15px;color:#0A2E55">{{ t.howItWorks }}</strong>
+<ol style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.45;color:#374151">
+<li style="display:flex;gap:10px"><span style="flex:none;width:22px;height:22px;border-radius:11px;background:#EAF3FB;color:#0B72B9;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center">1</span>{{ t.how1 }}</li>
+<li style="display:flex;gap:10px"><span style="flex:none;width:22px;height:22px;border-radius:11px;background:#EAF3FB;color:#0B72B9;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center">2</span>{{ t.how2 }}</li>
+<li style="display:flex;gap:10px"><span style="flex:none;width:22px;height:22px;border-radius:11px;background:#EAF3FB;color:#0B72B9;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center">3</span>{{ t.how3 }}</li>
+</ol>
+</div>
+<div style="margin-top:auto;display:flex;border-top:1px solid #E3E7EC;background:#fff;padding:8px 0 18px"><sc-for list="{{ tabsHome }}" as="tb" hint-placeholder-count="4"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;font-weight:600;color:{{ tb.color }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{ tb.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ tb.d }}"></path></svg><span>{{ tb.label }}</span></div></sc-for></div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#6B7280">Regular customer, nothing in progress</span>
+<div data-screen-label="Home regular" style="width:390px;min-height:760px;background:#F8F8F6;border-radius:28px;border:1px solid #D7DCE3;box-shadow:0 8px 30px rgba(10,46,85,.08);overflow:hidden;display:flex;flex-direction:column;font-size:15px;color:#1F2A37">
+<div style="display:flex;justify-content:space-between;padding:14px 24px 0;font-size:13px;font-weight:600;color:#0A2E55"><span>9:41</span><span style="width:22px;height:11px;border:1.5px solid #0A2E55;border-radius:3px;display:inline-block"></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px"><img src="uploads/velto-logo.png" alt="Velto" style="height:22px"><div style="display:flex;gap:8px"><a href="#" style="font-size:13px;font-weight:600;color:#0A2E55;text-decoration:none;padding:7px 12px;border:1px solid #D7DCE3;border-radius:999px;background:#fff">{{ t.prices }}</a><a href="#" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;border:1px solid #D7DCE3;border-radius:17px;background:#fff"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8.5 8.5 0 0 1-12.6 7.4L3 21l1.6-5.4A8.5 8.5 0 1 1 21 12z"></path></svg></a></div></div>
+<div style="padding:16px 20px 0;display:flex;flex-direction:column;gap:6px"><h2 style="margin:0;font-size:28px;line-height:1.15;font-weight:700;color:#0A2E55">{{ t.greeting }}</h2><p style="margin:0;font-size:15px;color:#6B7280">{{ t.nothingInProgress }}</p></div>
+<div style="margin:20px 20px 0;border-radius:16px;background:#fff;border:1px solid #E3E7EC;padding:20px;display:flex;flex-direction:column;gap:14px">
+<span style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#0B72B9">{{ t.sameEyebrow }}</span>
+<strong style="font-size:22px;line-height:1.2;color:#0A2E55">{{ t.sameTitle }}</strong>
+<div style="display:flex;flex-direction:column;border-top:1px solid #EEF1F4">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #EEF1F4"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;color:#6B7280">{{ t.pickupFrom }}</span><span style="font-size:15px;color:#1F2A37">House 2, Road 14, Sector 11</span></div><a href="#" style="font-size:14px;font-weight:600;color:#0B72B9;text-decoration:none">{{ t.change }}</a></div>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #EEF1F4"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;color:#6B7280">{{ t.pickupWhen }}</span><span style="font-size:15px;color:#1F2A37">{{ t.slotTomorrow }}</span></div><a href="#" style="font-size:14px;font-weight:600;color:#0B72B9;text-decoration:none">{{ t.change }}</a></div>
+</div>
+<button style="height:52px;border:0;border-radius:12px;background:#0B72B9;color:#fff;font:600 16px inherit;font-family:inherit">{{ t.bookThis }}</button>
+<p style="margin:0;font-size:13px;line-height:1.45;color:#6B7280">{{ t.confirmNote }}</p>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;padding:28px 20px 10px"><strong style="font-size:17px;color:#0A2E55">{{ t.recentOrders }}</strong><a href="#" style="font-size:14px;font-weight:600;color:#0B72B9;text-decoration:none">{{ t.seeAll }}</a></div>
+<div style="margin:0 20px;border-radius:16px;background:#fff;border:1px solid #E3E7EC;overflow:hidden"><sc-for list="{{ recentOrders }}" as="o" hint-placeholder-count="3"><div style="display:flex;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid #EEF1F4"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:600;color:#0A2E55">{{ o.service }}</span><span style="font-size:13px;color:#6B7280">{{ o.date }}</span></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px"><span style="font-size:15px;font-weight:600;color:#0A2E55">{{ o.total }}</span><span style="font-size:12px;color:{{ o.statusColor }}">{{ o.status }}</span></div></div></sc-for></div>
+<div style="margin-top:auto;padding-top:24px;display:flex;border-top:1px solid #E3E7EC;background:#fff;padding:8px 0 18px"><sc-for list="{{ tabsHome }}" as="tb" hint-placeholder-count="4"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;font-weight:600;color:{{ tb.color }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{ tb.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ tb.d }}"></path></svg><span>{{ tb.label }}</span></div></sc-for></div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#6B7280">Order in progress</span>
+<div data-screen-label="Home in progress" style="width:390px;min-height:760px;background:#F8F8F6;border-radius:28px;border:1px solid #D7DCE3;box-shadow:0 8px 30px rgba(10,46,85,.08);overflow:hidden;display:flex;flex-direction:column;font-size:15px;color:#1F2A37">
+<div style="display:flex;justify-content:space-between;padding:14px 24px 0;font-size:13px;font-weight:600;color:#0A2E55"><span>9:41</span><span style="width:22px;height:11px;border:1.5px solid #0A2E55;border-radius:3px;display:inline-block"></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px"><img src="uploads/velto-logo.png" alt="Velto" style="height:22px"><div style="display:flex;gap:8px"><a href="#" style="font-size:13px;font-weight:600;color:#0A2E55;text-decoration:none;padding:7px 12px;border:1px solid #D7DCE3;border-radius:999px;background:#fff">{{ t.prices }}</a><a href="#" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;border:1px solid #D7DCE3;border-radius:17px;background:#fff"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8.5 8.5 0 0 1-12.6 7.4L3 21l1.6-5.4A8.5 8.5 0 1 1 21 12z"></path></svg></a></div></div>
+<div style="padding:16px 20px 0"><h2 style="margin:0;font-size:28px;line-height:1.15;font-weight:700;color:#0A2E55">{{ t.greeting }}</h2></div>
+<div style="margin:20px 20px 0;border-radius:16px;background:#0A2E55;color:#fff;padding:20px;display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#8FC3EC">{{ t.inProgEyebrow }}</span><span style="font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:rgba(255,255,255,.14)">{{ t.stepCleaning }}</span></div>
+<strong style="font-size:24px;line-height:1.2">{{ t.inProgBack }}</strong>
+<div style="display:flex;flex-direction:column;gap:8px;padding:4px 0"><div style="display:flex;gap:4px"><sc-for list="{{ homeSteps }}" as="s" hint-placeholder-count="5"><div style="flex:1;height:4px;border-radius:2px;background:{{ s.bar }}"></div></sc-for></div><span style="font-size:13px;font-weight:600;color:#fff">{{ t.stepCleaning }} · {{ t.stepOf }}</span></div>
+<span style="font-size:14px;color:#C9DCEE">{{ t.inProgItems }}</span>
+<div style="display:flex;gap:10px"><a href="#" style="flex:1;text-align:center;height:46px;line-height:46px;border-radius:12px;background:#fff;color:#0A2E55;font-size:15px;font-weight:600;text-decoration:none">{{ t.seeOrder }}</a><a href="#" style="flex:1;text-align:center;height:46px;line-height:46px;border-radius:12px;border:1.5px solid rgba(255,255,255,.35);color:#fff;font-size:15px;font-weight:600;text-decoration:none">{{ t.whatsapp }}</a></div>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;padding:28px 20px 10px"><strong style="font-size:17px;color:#0A2E55">{{ t.recentOrders }}</strong><a href="#" style="font-size:14px;font-weight:600;color:#0B72B9;text-decoration:none">{{ t.seeAll }}</a></div>
+<div style="margin:0 20px;border-radius:16px;background:#fff;border:1px solid #E3E7EC;overflow:hidden"><sc-for list="{{ recentOrders }}" as="o" hint-placeholder-count="3"><div style="display:flex;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid #EEF1F4"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:600;color:#0A2E55">{{ o.service }}</span><span style="font-size:13px;color:#6B7280">{{ o.date }}</span></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px"><span style="font-size:15px;font-weight:600;color:#0A2E55">{{ o.total }}</span><span style="font-size:12px;color:{{ o.statusColor }}">{{ o.status }}</span></div></div></sc-for></div>
+<div style="margin-top:auto;display:flex;border-top:1px solid #E3E7EC;background:#fff;padding:8px 0 18px"><sc-for list="{{ tabsHome }}" as="tb" hint-placeholder-count="4"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;font-weight:600;color:{{ tb.color }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{ tb.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ tb.d }}"></path></svg><span>{{ tb.label }}</span></div></sc-for></div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#6B7280">Lapsed customer (60+ days)</span>
+<div data-screen-label="Home lapsed" style="width:390px;min-height:760px;background:#F8F8F6;border-radius:28px;border:1px solid #D7DCE3;box-shadow:0 8px 30px rgba(10,46,85,.08);overflow:hidden;display:flex;flex-direction:column;font-size:15px;color:#1F2A37">
+<div style="display:flex;justify-content:space-between;padding:14px 24px 0;font-size:13px;font-weight:600;color:#0A2E55"><span>9:41</span><span style="width:22px;height:11px;border:1.5px solid #0A2E55;border-radius:3px;display:inline-block"></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px"><img src="uploads/velto-logo.png" alt="Velto" style="height:22px"><div style="display:flex;gap:8px"><a href="#" style="font-size:13px;font-weight:600;color:#0A2E55;text-decoration:none;padding:7px 12px;border:1px solid #D7DCE3;border-radius:999px;background:#fff">{{ t.prices }}</a><a href="#" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;border:1px solid #D7DCE3;border-radius:17px;background:#fff"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8.5 8.5 0 0 1-12.6 7.4L3 21l1.6-5.4A8.5 8.5 0 1 1 21 12z"></path></svg></a></div></div>
+<div style="padding:16px 20px 0"><h2 style="margin:0;font-size:28px;line-height:1.15;font-weight:700;color:#0A2E55">{{ t.greeting }}</h2></div>
+<div style="margin:20px 20px 0;border-radius:16px;background:#fff;border:1px solid #E3E7EC;padding:20px;display:flex;flex-direction:column;gap:14px">
+<span style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#0B72B9">{{ t.lapsedEyebrow }}</span>
+<strong style="font-size:22px;line-height:1.2;color:#0A2E55">{{ t.lapsedTitle }}</strong>
+<p style="margin:0;font-size:15px;line-height:1.5;color:#4B5563">{{ t.lapsedBody }}</p>
+<div style="display:flex;flex-direction:column;border-top:1px solid #EEF1F4">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #EEF1F4"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;color:#6B7280">{{ t.pickupFrom }}</span><span style="font-size:15px;color:#1F2A37">House 2, Road 14, Sector 11</span></div><a href="#" style="font-size:14px;font-weight:600;color:#0B72B9;text-decoration:none">{{ t.change }}</a></div>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #EEF1F4"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;color:#6B7280">{{ t.pickupWhen }}</span><span style="font-size:15px;color:#1F2A37">{{ t.slotTomorrow }}</span></div><a href="#" style="font-size:14px;font-weight:600;color:#0B72B9;text-decoration:none">{{ t.change }}</a></div>
+</div>
+<button style="height:52px;border:0;border-radius:12px;background:#0B72B9;color:#fff;font:600 16px inherit;font-family:inherit">{{ t.bookThis }}</button>
+<a href="#" style="text-align:center;font-size:15px;font-weight:600;color:#0B72B9;text-decoration:none;padding:4px">{{ t.somethingElse }}</a>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;padding:28px 20px 10px"><strong style="font-size:17px;color:#0A2E55">{{ t.recentOrders }}</strong><a href="#" style="font-size:14px;font-weight:600;color:#0B72B9;text-decoration:none">{{ t.seeAll }}</a></div>
+<div style="margin:0 20px;border-radius:16px;background:#fff;border:1px solid #E3E7EC;overflow:hidden"><sc-for list="{{ recentOrders }}" as="o" hint-placeholder-count="3"><div style="display:flex;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid #EEF1F4"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:600;color:#0A2E55">{{ o.service }}</span><span style="font-size:13px;color:#6B7280">{{ o.date }}</span></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px"><span style="font-size:15px;font-weight:600;color:#0A2E55">{{ o.total }}</span><span style="font-size:12px;color:{{ o.statusColor }}">{{ o.status }}</span></div></div></sc-for></div>
+<div style="margin-top:auto;display:flex;border-top:1px solid #E3E7EC;background:#fff;padding:8px 0 18px"><sc-for list="{{ tabsHome }}" as="tb" hint-placeholder-count="4"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;font-weight:600;color:{{ tb.color }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{ tb.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ tb.d }}"></path></svg><span>{{ tb.label }}</span></div></sc-for></div>
+</div></div>
+
+</div>
+</section>
+<section style="display:flex;flex-direction:column;gap:18px">
+<h2 style="margin:0;font-size:20px;font-weight:700;color:#0A2E55">Book</h2>
+<p style="margin:0;font-size:14px;color:#4B5563;max-width:720px">A summary of the last order with change links, not a form. Each row opens a sheet. Items are optional and give an estimate only. No first-order offer for anyone with an order.</p>
+<div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start">
+
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#6B7280">Default (same as last time)</span>
+<div data-screen-label="Book default" style="width:390px;min-height:760px;background:#F8F8F6;border-radius:28px;border:1px solid #D7DCE3;box-shadow:0 8px 30px rgba(10,46,85,.08);overflow:hidden;display:flex;flex-direction:column;font-size:15px;color:#1F2A37">
+<div style="display:flex;justify-content:space-between;padding:14px 24px 0;font-size:13px;font-weight:600;color:#0A2E55"><span>9:41</span><span style="width:22px;height:11px;border:1.5px solid #0A2E55;border-radius:3px;display:inline-block"></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px"><img src="uploads/velto-logo.png" alt="Velto" style="height:22px"><a href="#" style="font-size:13px;font-weight:600;color:#0A2E55;text-decoration:none;padding:7px 12px;border:1px solid #D7DCE3;border-radius:999px;background:#fff">{{ t.prices }}</a></div>
+<div style="padding:16px 20px 0;display:flex;flex-direction:column;gap:6px"><h2 style="margin:0;font-size:28px;line-height:1.15;font-weight:700;color:#0A2E55">{{ t.bookTitle }}</h2><p style="margin:0;font-size:15px;color:#6B7280">{{ t.bookSub }}</p></div>
+<div style="margin:20px 20px 0;border-radius:16px;background:#fff;border:1px solid #E3E7EC;overflow:hidden">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px;border-bottom:1px solid #EEF1F4"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;color:#6B7280">{{ t.service }}</span><span style="font-size:16px;font-weight:600;color:#0A2E55">{{ svc.mix }}</span></div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9AA3AF" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg></div>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px;border-bottom:1px solid #EEF1F4"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;color:#6B7280">{{ t.itemsLabel }}</span><span style="font-size:16px;color:#1F2A37">{{ t.countedAtPickup }}</span><span style="font-size:13px;font-weight:600;color:#0B72B9">{{ t.addForEstimate }}</span></div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9AA3AF" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg></div>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px;border-bottom:1px solid #EEF1F4"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;color:#6B7280">{{ t.address }}</span><span style="font-size:16px;color:#1F2A37">House 2, Road 14, Sector 11</span><span style="font-size:13px;color:#6B7280">01312 595204</span></div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9AA3AF" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg></div>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;color:#6B7280">{{ t.pickupTime }}</span><span style="font-size:16px;color:#1F2A37">{{ t.slotTomorrow }}</span></div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9AA3AF" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg></div>
+</div>
+<div style="padding:16px 20px 0;display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;font-weight:600;color:#0A2E55">{{ t.pickupDay }}</span><div style="display:flex;gap:8px"><sc-for list="{{ days }}" as="dy" hint-placeholder-count="4"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:10px 0;border-radius:12px;border:1.5px solid {{ dy.border }};background:{{ dy.bg }};color:{{ dy.color }}"><span style="font-size:13px;font-weight:600">{{ dy.name }}</span><span style="font-size:12px">{{ dy.date }}</span></div></sc-for></div>
+<span style="font-size:13px;font-weight:600;color:#0A2E55;margin-top:6px">{{ t.timeWindow }}</span><div style="display:flex;gap:8px"><sc-for list="{{ windows }}" as="w" hint-placeholder-count="3"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:10px 0;border-radius:12px;border:1.5px solid {{ w.border }};background:{{ w.bg }};color:{{ w.color }}"><span style="font-size:13px;font-weight:600">{{ w.name }}</span><span style="font-size:12px">{{ w.hours }}</span></div></sc-for></div></div>
+<div style="padding:24px 20px 0;display:flex;flex-direction:column;gap:10px"><button style="height:52px;border:0;border-radius:12px;background:#0B72B9;color:#fff;font:600 16px inherit;font-family:inherit">{{ t.bookPickup }}</button><p style="margin:0;font-size:13px;line-height:1.45;color:#6B7280;text-align:center">{{ t.nothingToPay }}</p></div>
+<div style="margin-top:auto;padding-top:20px;display:flex;border-top:1px solid #E3E7EC;background:#fff;padding:8px 0 18px"><sc-for list="{{ tabsBook }}" as="tb" hint-placeholder-count="4"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;font-weight:600;color:{{ tb.color }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{ tb.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ tb.d }}"></path></svg><span>{{ tb.label }}</span></div></sc-for></div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#6B7280">Filled (mixed service, items added, note, new address)</span>
+<div data-screen-label="Book filled" style="width:390px;min-height:760px;background:#F8F8F6;border-radius:28px;border:1px solid #D7DCE3;box-shadow:0 8px 30px rgba(10,46,85,.08);overflow:hidden;display:flex;flex-direction:column;font-size:15px;color:#1F2A37">
+<div style="display:flex;justify-content:space-between;padding:14px 24px 0;font-size:13px;font-weight:600;color:#0A2E55"><span>9:41</span><span style="width:22px;height:11px;border:1.5px solid #0A2E55;border-radius:3px;display:inline-block"></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px"><img src="uploads/velto-logo.png" alt="Velto" style="height:22px"><a href="#" style="font-size:13px;font-weight:600;color:#0A2E55;text-decoration:none;padding:7px 12px;border:1px solid #D7DCE3;border-radius:999px;background:#fff">{{ t.prices }}</a></div>
+<div style="padding:16px 20px 0;display:flex;flex-direction:column;gap:6px"><h2 style="margin:0;font-size:28px;line-height:1.15;font-weight:700;color:#0A2E55">{{ t.bookTitle }}</h2></div>
+<div style="margin:20px 20px 0;border-radius:16px;background:#fff;border:1px solid #E3E7EC;overflow:hidden">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px;border-bottom:1px solid #EEF1F4"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;color:#6B7280">{{ t.service }}</span><span style="font-size:16px;font-weight:600;color:#0A2E55">{{ svc.mix }}</span></div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9AA3AF" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg></div>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px;border-bottom:1px solid #EEF1F4"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;color:#6B7280">{{ t.itemsLabel }}</span><span style="font-size:16px;color:#1F2A37">{{ t.filledItems }}</span><span style="font-size:13px;color:#6B7280">{{ t.estimate }} <strong style="color:#0A2E55">{{ est }}</strong> · {{ t.finalAfterCount }}</span></div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9AA3AF" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg></div>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px;border-bottom:1px solid #EEF1F4"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;color:#6B7280">{{ t.address }} · {{ t.office }}</span><span style="font-size:16px;color:#1F2A37">Flat 4B, Road 7, Sector 18</span><span style="font-size:13px;color:#6B7280">01312 595204</span></div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9AA3AF" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg></div>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px;border-bottom:1px solid #EEF1F4"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;color:#6B7280">{{ t.pickupTime }}</span><span style="font-size:16px;color:#1F2A37">{{ t.slotThu }}</span></div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9AA3AF" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg></div>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;color:#6B7280">{{ t.noteForRider }}</span><span style="font-size:16px;color:#1F2A37">{{ t.noteValue }}</span></div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9AA3AF" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg></div>
+</div>
+<div style="margin:16px 20px 0;padding:14px 16px;border-radius:12px;background:#EAF3FB;display:flex;flex-direction:column;gap:4px"><span style="font-size:14px;font-weight:600;color:#0A2E55">{{ t.estimateTitle }} {{ est }}</span><span style="font-size:13px;line-height:1.45;color:#374151">{{ t.estimateBody }}</span></div>
+<div style="padding:20px 20px 0;display:flex;flex-direction:column;gap:10px"><button style="height:52px;border:0;border-radius:12px;background:#0B72B9;color:#fff;font:600 16px inherit;font-family:inherit">{{ t.bookPickup }}</button><p style="margin:0;font-size:13px;line-height:1.45;color:#6B7280;text-align:center">{{ t.nothingToPay }}</p></div>
+<div style="margin-top:auto;padding-top:20px;display:flex;border-top:1px solid #E3E7EC;background:#fff;padding:8px 0 18px"><sc-for list="{{ tabsBook }}" as="tb" hint-placeholder-count="4"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;font-weight:600;color:{{ tb.color }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{ tb.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ tb.d }}"></path></svg><span>{{ tb.label }}</span></div></sc-for></div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#6B7280">Item picker sheet (service shown under each added item)</span>
+<div data-screen-label="Item picker" style="width:390px;min-height:760px;background:#5B6B7F;border-radius:28px;border:1px solid #D7DCE3;box-shadow:0 8px 30px rgba(10,46,85,.08);overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;font-size:15px;color:#1F2A37">
+<div style="background:#F8F8F6;border-radius:24px 24px 0 0;display:flex;flex-direction:column;padding-bottom:16px">
+<div style="width:40px;height:4px;border-radius:2px;background:#C9D0D9;margin:10px auto 0"></div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px 0"><strong style="font-size:20px;color:#0A2E55">{{ t.addItems }}</strong><a href="#" style="font-size:15px;font-weight:600;color:#0B72B9;text-decoration:none">{{ t.close }}</a></div>
+<p style="margin:4px 20px 0;font-size:14px;color:#6B7280">{{ t.pickerSub }}</p>
+<div style="margin:14px 20px 0;display:flex;background:#E8EBEF;border-radius:12px;padding:3px"><span style="flex:1;text-align:center;padding:9px 0;border-radius:10px;background:#fff;font-size:13.5px;font-weight:600;color:#0A2E55;box-shadow:0 1px 2px rgba(0,0,0,.08)">{{ svc.dc }}</span><span style="flex:1;text-align:center;padding:9px 0;font-size:13.5px;font-weight:600;color:#5B6470">{{ svc.wi }}</span><span style="flex:1;text-align:center;padding:9px 0;font-size:13.5px;font-weight:600;color:#5B6470">{{ svc.ir }}</span></div>
+<div style="margin:12px 20px 0;display:flex;align-items:center;gap:10px;height:48px;border:1.5px solid #C9D0D9;border-radius:12px;background:#fff;padding:0 14px;color:#9AA3AF"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3"></path></svg><span style="font-size:15px">{{ t.searchPlaceholder }}</span></div>
+<span style="margin:18px 20px 8px;font-size:11px;font-weight:700;letter-spacing:.08em;color:#6B7280">{{ t.popular }}</span>
+<div style="margin:0 20px;border-radius:16px;background:#fff;border:1px solid #E3E7EC;overflow:hidden"><sc-for list="{{ pickerItems }}" as="p" hint-placeholder-count="6"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #EEF1F4"><div style="display:flex;flex-direction:column;gap:1px"><span style="font-size:15px;font-weight:600;color:#0A2E55">{{ p.name }}</span><span style="font-size:13px;color:#6B7280">{{ p.sub }}</span></div><sc-if value="{{ p.qty }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;border:1.5px solid #0B72B9;border-radius:10px;overflow:hidden"><span style="width:38px;height:36px;display:flex;align-items:center;justify-content:center;color:#0B72B9;font-size:18px;font-weight:600">−</span><span style="min-width:24px;text-align:center;font-size:15px;font-weight:600;color:#0A2E55">{{ p.qty }}</span><span style="width:38px;height:36px;display:flex;align-items:center;justify-content:center;color:#0B72B9;font-size:18px;font-weight:600">+</span></div></sc-if><sc-if value="{{ p.noQty }}" hint-placeholder-val="{{ true }}"><span style="width:36px;height:36px;border:1.5px solid #C9D0D9;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#0B72B9;font-size:20px;font-weight:600">+</span></sc-if></div></sc-for></div>
+<a href="#" style="margin:14px 20px 0;font-size:14px;font-weight:600;color:#0B72B9;text-decoration:none">{{ t.allItems }}</a>
+<div style="margin:16px 20px 0;display:flex;flex-direction:column;gap:10px"><button style="height:52px;border:0;border-radius:12px;background:#0B72B9;color:#fff;font:600 16px inherit;font-family:inherit">{{ t.pickerDone }}</button><a href="#" style="text-align:center;font-size:14px;font-weight:600;color:#0B72B9;text-decoration:none">{{ t.notSure }}</a></div>
+</div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#6B7280">Error (send failed)</span>
+<div data-screen-label="Book error" style="width:390px;min-height:760px;background:#F8F8F6;border-radius:28px;border:1px solid #D7DCE3;box-shadow:0 8px 30px rgba(10,46,85,.08);overflow:hidden;display:flex;flex-direction:column;font-size:15px;color:#1F2A37">
+<div style="display:flex;justify-content:space-between;padding:14px 24px 0;font-size:13px;font-weight:600;color:#0A2E55"><span>9:41</span><span style="width:22px;height:11px;border:1.5px solid #0A2E55;border-radius:3px;display:inline-block"></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px"><img src="uploads/velto-logo.png" alt="Velto" style="height:22px"></div>
+<div style="padding:16px 20px 0"><h2 style="margin:0;font-size:28px;line-height:1.15;font-weight:700;color:#0A2E55">{{ t.bookTitle }}</h2></div>
+<div style="margin:16px 20px 0;padding:14px 16px;border-radius:12px;background:#FEE2E2;border:1px solid #F5B5B5;display:flex;flex-direction:column;gap:4px"><strong style="font-size:15px;color:#991B1B">{{ t.sendFailTitle }}</strong><span style="font-size:14px;line-height:1.45;color:#7F1D1D">{{ t.sendFailBody }}</span></div>
+<div style="margin:16px 20px 0;border-radius:16px;background:#fff;border:1px solid #E3E7EC;overflow:hidden;opacity:.7">
+<div style="display:flex;justify-content:space-between;gap:12px;padding:16px;border-bottom:1px solid #EEF1F4"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;color:#6B7280">{{ t.service }}</span><span style="font-size:16px;font-weight:600;color:#0A2E55">{{ svc.mix }}</span></div></div>
+<div style="display:flex;justify-content:space-between;gap:12px;padding:16px;border-bottom:1px solid #EEF1F4"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;color:#6B7280">{{ t.address }}</span><span style="font-size:16px;color:#1F2A37">House 2, Road 14, Sector 11</span></div></div>
+<div style="display:flex;justify-content:space-between;gap:12px;padding:16px"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:12px;color:#6B7280">{{ t.pickupTime }}</span><span style="font-size:16px;color:#1F2A37">{{ t.slotTomorrow }}</span></div></div>
+</div>
+<div style="padding:20px 20px 0;display:flex;flex-direction:column;gap:10px"><button style="height:52px;border:0;border-radius:12px;background:#0B72B9;color:#fff;font:600 16px inherit;font-family:inherit">{{ t.retry }}</button><button style="height:52px;border:1.5px solid #C9D0D9;border-radius:12px;background:#fff;color:#0A2E55;font:600 16px inherit;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8.5 8.5 0 0 1-12.6 7.4L3 21l1.6-5.4A8.5 8.5 0 1 1 21 12z"></path></svg>{{ t.bookOnWhatsapp }}</button><p style="margin:0;font-size:13px;line-height:1.45;color:#6B7280;text-align:center">{{ t.whatsappPrefill }}</p></div>
+<div style="margin-top:auto;display:flex;border-top:1px solid #E3E7EC;background:#fff;padding:8px 0 18px"><sc-for list="{{ tabsBook }}" as="tb" hint-placeholder-count="4"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;font-weight:600;color:{{ tb.color }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{ tb.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ tb.d }}"></path></svg><span>{{ tb.label }}</span></div></sc-for></div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#6B7280">Success (booking reference + notification prompt; no weekly ask)</span>
+<div data-screen-label="Book success" style="width:390px;min-height:760px;background:#F8F8F6;border-radius:28px;border:1px solid #D7DCE3;box-shadow:0 8px 30px rgba(10,46,85,.08);overflow:hidden;display:flex;flex-direction:column;font-size:15px;color:#1F2A37">
+<div style="display:flex;justify-content:space-between;padding:14px 24px 0;font-size:13px;font-weight:600;color:#0A2E55"><span>9:41</span><span style="width:22px;height:11px;border:1.5px solid #0A2E55;border-radius:3px;display:inline-block"></span></div>
+<div style="padding:48px 24px 0;display:flex;flex-direction:column;gap:14px">
+<span style="width:56px;height:56px;border-radius:28px;background:#DCFCE7;display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1E7A46" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg></span>
+<h2 style="margin:0;font-size:30px;line-height:1.15;font-weight:700;color:#0A2E55">{{ t.successTitle }}</h2>
+<p style="margin:0;font-size:16px;line-height:1.5;color:#374151">{{ t.successBody }}</p>
+<p style="margin:0;font-size:14px;color:#6B7280">{{ t.successRef }}</p>
+</div>
+<div style="margin:28px 20px 0;border-radius:16px;background:#fff;border:1px solid #E3E7EC;padding:18px;display:flex;flex-direction:column;gap:10px">
+<strong style="font-size:16px;color:#0A2E55">{{ t.notifTitle }}</strong>
+<p style="margin:0;font-size:14px;line-height:1.5;color:#4B5563">{{ t.notifBody }}</p>
+<div style="display:flex;gap:10px"><button style="flex:1;height:46px;border:0;border-radius:12px;background:#0B72B9;color:#fff;font:600 15px inherit;font-family:inherit">{{ t.turnOn }}</button><button style="flex:1;height:46px;border:1.5px solid #C9D0D9;border-radius:12px;background:#fff;color:#0A2E55;font:600 15px inherit;font-family:inherit">{{ t.notNow }}</button></div>
+</div>
+<div style="margin-top:auto;padding:28px 20px 32px"><button style="width:100%;height:52px;border:1.5px solid #C9D0D9;border-radius:12px;background:#fff;color:#0A2E55;font:600 16px inherit;font-family:inherit">{{ t.backHome }}</button></div>
+</div></div>
+
+</div>
+</section>
+<section style="display:flex;flex-direction:column;gap:18px">
+<h2 style="margin:0;font-size:20px;font-weight:700;color:#0A2E55">Orders</h2>
+<div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start">
+<sc-for list="{{ orderScreens }}" as="sc" hint-placeholder-count="3">
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#6B7280">{{ sc.label }}</span>
+<div data-screen-label="Orders" style="width:390px;min-height:760px;background:#F8F8F6;border-radius:28px;border:1px solid #D7DCE3;box-shadow:0 8px 30px rgba(10,46,85,.08);overflow:hidden;display:flex;flex-direction:column;font-size:15px;color:#1F2A37">
+<div style="display:flex;justify-content:space-between;padding:14px 24px 0;font-size:13px;font-weight:600;color:#0A2E55"><span>9:41</span><span style="width:22px;height:11px;border:1.5px solid #0A2E55;border-radius:3px;display:inline-block"></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px"><img src="uploads/velto-logo.png" alt="Velto" style="height:22px"></div>
+<div style="padding:16px 20px 0"><h2 style="margin:0;font-size:28px;line-height:1.15;font-weight:700;color:#0A2E55">{{ t.ordersTitle }}</h2></div>
+<sc-if value="{{ sc.empty }}" hint-placeholder-val="{{ false }}">
+<div style="margin:24px 20px 0;border-radius:16px;background:#fff;border:1px solid #E3E7EC;padding:24px 20px;display:flex;flex-direction:column;gap:12px"><p style="margin:0;font-size:16px;line-height:1.5;color:#374151">{{ t.ordersEmpty }}</p><button style="height:48px;border:0;border-radius:12px;background:#0B72B9;color:#fff;font:600 15px inherit;font-family:inherit">{{ t.bookPickup }}</button></div>
+</sc-if>
+<sc-if value="{{ sc.active }}" hint-placeholder-val="{{ false }}">
+<span style="margin:24px 20px 8px;font-size:11px;font-weight:700;letter-spacing:.08em;color:#6B7280">{{ t.inProgressLabel }}</span>
+<div style="margin:0 20px;border-radius:16px;background:#fff;border:1.5px solid #0B72B9;padding:16px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:13px;color:#6B7280">VEL-00392 · {{ t.dateToday }}</span><span style="font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:#EAF3FB;color:#0B72B9">{{ t.stepCleaning }}</span></div>
+<strong style="font-size:17px;color:#0A2E55">{{ t.inProgBack }}</strong>
+<div style="display:flex;gap:4px"><sc-for list="{{ listSteps }}" as="s" hint-placeholder-count="5"><span style="flex:1;height:4px;border-radius:2px;background:{{ s.bar }}"></span></sc-for></div>
+<span style="font-size:14px;color:#4B5563">{{ t.inProgItems }}</span>
+</div>
+</sc-if>
+<sc-if value="{{ sc.showPast }}" hint-placeholder-val="{{ true }}">
+<sc-if value="{{ sc.nothingActive }}" hint-placeholder-val="{{ false }}"><p style="margin:20px 20px 0;font-size:14px;color:#6B7280">{{ t.nothingInProgress }}</p></sc-if>
+<span style="margin:24px 20px 8px;font-size:11px;font-weight:700;letter-spacing:.08em;color:#6B7280">{{ t.pastLabel }}</span>
+<div style="margin:0 20px;border-radius:16px;background:#fff;border:1px solid #E3E7EC;overflow:hidden"><sc-for list="{{ pastOrders }}" as="o" hint-placeholder-count="4"><div style="display:flex;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid #EEF1F4"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:600;color:#0A2E55">{{ o.service }}</span><span style="font-size:13px;color:#6B7280">{{ o.date }}</span><span style="font-size:12px;color:#9AA3AF">{{ o.id }}</span></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px"><span style="font-size:15px;font-weight:600;color:#0A2E55">{{ o.total }}</span><span style="font-size:12px;color:{{ o.statusColor }}">{{ o.status }} · {{ o.pay }}</span></div></div></sc-for></div>
+</sc-if>
+<div style="margin-top:auto;padding-top:20px;display:flex;border-top:1px solid #E3E7EC;background:#fff;padding:8px 0 18px"><sc-for list="{{ tabsOrders }}" as="tb" hint-placeholder-count="4"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;font-weight:600;color:{{ tb.color }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{ tb.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ tb.d }}"></path></svg><span>{{ tb.label }}</span></div></sc-for></div>
+</div></div>
+</sc-for>
+</div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:18px">
+<h2 style="margin:0;font-size:20px;font-weight:700;color:#0A2E55">Order detail, every status</h2>
+<p style="margin:0;font-size:14px;color:#4B5563;max-width:720px">One screen, three blocks: tracker with timestamps, what we collected and what you pay, help. Rebook and feedback appear only once delivered; a due amount comes before rebook. Expected return is computed from Collected (48 h ironing, 72 h others) and disappears once delivered.</p>
+<div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start">
+<sc-for list="{{ details }}" as="od" hint-placeholder-count="10">
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#6B7280">{{ od.label }}</span>
+<div data-screen-label="Order detail" style="width:390px;min-height:760px;background:#F8F8F6;border-radius:28px;border:1px solid #D7DCE3;box-shadow:0 8px 30px rgba(10,46,85,.08);overflow:hidden;display:flex;flex-direction:column;font-size:15px;color:#1F2A37">
+<div style="display:flex;justify-content:space-between;padding:14px 24px 0;font-size:13px;font-weight:600;color:#0A2E55"><span>9:41</span><span style="width:22px;height:11px;border:1.5px solid #0A2E55;border-radius:3px;display:inline-block"></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px"><a href="#" style="font-size:15px;font-weight:600;color:#0B72B9;text-decoration:none">← {{ t.ordersTitle }}</a><span style="font-size:13px;color:#6B7280">{{ od.id }}</span></div>
+<div style="padding:12px 20px 0;display:flex;flex-direction:column;gap:6px"><h2 style="margin:0;font-size:28px;line-height:1.15;font-weight:700;color:#0A2E55">{{ od.title }}</h2><p style="margin:0;font-size:15px;line-height:1.45;color:{{ od.subColor }}">{{ od.sub }}</p></div>
+<sc-if value="{{ od.showDue }}" hint-placeholder-val="{{ false }}"><div style="margin:16px 20px 0;border-radius:16px;background:#FEF3C7;border:1px solid #F5D78E;padding:16px;display:flex;flex-direction:column;gap:10px"><div style="display:flex;justify-content:space-between;align-items:baseline"><strong style="font-size:15px;color:#7A4A05">{{ t.dueTitle }}</strong><strong style="font-size:22px;color:#7A4A05">{{ od.dueAmt }}</strong></div><p style="margin:0;font-size:14px;line-height:1.5;color:#5C3A05">{{ t.payDueNote }}</p><a href="#" style="display:flex;align-items:center;justify-content:center;gap:8px;height:46px;border-radius:12px;background:#fff;border:1px solid #E8C97A;font-size:15px;font-weight:600;color:#0A2E55;text-decoration:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8.5 8.5 0 0 1-12.6 7.4L3 21l1.6-5.4A8.5 8.5 0 1 1 21 12z"></path></svg>{{ t.payOnWa }}</a><span style="font-size:12.5px;line-height:1.4;color:#7A4A05">{{ od.waPrefill }}</span></div></sc-if>
+<sc-if value="{{ od.showRebook }}" hint-placeholder-val="{{ false }}"><div style="margin:16px 20px 0;display:flex;gap:10px"><button style="flex:1;height:48px;border:0;border-radius:12px;background:#0B72B9;color:#fff;font:600 15px inherit;font-family:inherit">{{ t.bookAgain }}</button></div></sc-if>
+<div style="margin:20px 20px 0;border-radius:16px;background:#fff;border:1px solid #E3E7EC;padding:18px 16px;display:flex;flex-direction:column">
+<sc-for list="{{ od.steps }}" as="s" hint-placeholder-count="5">
+<div style="display:grid;grid-template-columns:28px 1fr auto;gap:0 12px;align-items:start">
+<div style="display:flex;flex-direction:column;align-items:center;align-self:stretch"><span style="flex:none;width:24px;height:24px;border-radius:12px;background:{{ s.dotBg }};border:2px solid {{ s.dotBorder }};display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{ s.check }}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg></span><span style="flex:1;width:2px;background:{{ s.line }};margin:2px 0"></span></div>
+<div style="display:flex;flex-direction:column;gap:2px;padding-bottom:{{ s.pad }}"><span style="font-size:15px;font-weight:600;color:{{ s.titleColor }}">{{ s.name }}</span><span style="font-size:13px;line-height:1.45;color:{{ s.descColor }}">{{ s.desc }}</span><sc-if value="{{ s.delivery }}" hint-placeholder-val="{{ false }}"><span style="margin-top:4px;font-size:13px;font-weight:600;color:#0B72B9;line-height:1.4">{{ s.delivery }}</span></sc-if></div>
+<span style="font-size:12px;color:#9AA3AF;padding-top:3px">{{ s.time }}</span>
+</div>
+</sc-for>
+</div>
+<div style="margin:12px 20px 0;border-radius:16px;background:#fff;border:1px solid #E3E7EC;padding:16px;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><strong style="font-size:15px;color:#0A2E55">{{ t.collectedTitle }}</strong><span style="font-size:13px;color:#6B7280">{{ od.service }}</span></div>
+<sc-if value="{{ od.hasItems }}" hint-placeholder-val="{{ true }}"><div style="display:flex;flex-direction:column;gap:6px"><sc-for list="{{ od.items }}" as="it" hint-placeholder-count="2"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:14px;color:#374151"><span style="display:flex;flex-direction:column;gap:1px"><span>{{ it.name }}</span><sc-if value="{{ it.svc }}" hint-placeholder-val="{{ false }}"><span style="font-size:12px;color:#6B7280">{{ it.svc }}</span></sc-if></span><span style="font-weight:600;color:#0A2E55">{{ it.qty }}</span></div></sc-for></div></sc-if>
+<sc-if value="{{ od.noItems }}" hint-placeholder-val="{{ false }}"><p style="margin:0;font-size:14px;line-height:1.45;color:#6B7280">{{ od.itemsNote }}</p></sc-if>
+<div style="border-top:1px solid #EEF1F4;padding-top:12px;display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;justify-content:space-between;font-size:14px;color:#374151"><span>{{ od.totalLabel }}</span><span style="font-weight:600;color:#0A2E55">{{ od.total }}</span></div>
+<div style="display:flex;justify-content:space-between;font-size:14px;color:#374151"><span>{{ t.paid }}</span><span style="font-weight:600;color:#0A2E55">{{ od.paidAmt }}</span></div>
+<sc-if value="{{ od.showDueRow }}" hint-placeholder-val="{{ true }}"><div style="display:flex;justify-content:space-between;font-size:15px;font-weight:600"><span style="color:#0A2E55">{{ t.due }}</span><span style="color:{{ od.dueColor }}">{{ od.dueAmt }}</span></div></sc-if>
+<sc-if value="{{ od.payNote }}" hint-placeholder-val="{{ false }}"><p style="margin:4px 0 0;font-size:13px;line-height:1.45;color:#6B7280">{{ od.payNote }}</p></sc-if>
+</div>
+</div>
+<sc-if value="{{ od.showFeedback }}" hint-placeholder-val="{{ false }}"><div style="margin:12px 20px 0;border-radius:16px;background:#fff;border:1px solid #E3E7EC;padding:16px;display:flex;flex-direction:column;gap:10px"><strong style="font-size:15px;color:#0A2E55">{{ t.feedbackTitle }}</strong><div style="display:flex;gap:10px"><button style="flex:1;height:44px;border:1.5px solid #C9D0D9;border-radius:12px;background:#fff;color:#0A2E55;font:600 14px inherit;font-family:inherit">{{ t.allGood }}</button><button style="flex:1;height:44px;border:1.5px solid #C9D0D9;border-radius:12px;background:#fff;color:#0A2E55;font:600 14px inherit;font-family:inherit">{{ t.somethingOff }}</button></div><span style="font-size:12.5px;color:#6B7280">{{ t.feedbackNote }}</span></div></sc-if>
+<sc-if value="{{ od.showThanks }}" hint-placeholder-val="{{ false }}"><div style="margin:12px 20px 0;border-radius:16px;background:#fff;border:1px solid #E3E7EC;padding:16px;display:flex;flex-direction:column;gap:8px"><div style="display:flex;align-items:center;gap:10px"><span style="width:24px;height:24px;border-radius:12px;background:#DCFCE7;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1E7A46" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg></span><strong style="font-size:15px;color:#0A2E55">{{ t.thanksTitle }}</strong></div><p style="margin:0;font-size:14px;line-height:1.5;color:#4B5563">{{ t.thanksBody }}</p><a href="#" style="font-size:14px;font-weight:600;color:#0B72B9;text-decoration:none;padding:6px 0">{{ t.googleReview }}</a></div></sc-if>
+<sc-if value="{{ od.showWeekly }}" hint-placeholder-val="{{ false }}"><div style="margin:12px 20px 0;border-radius:16px;background:#fff;border:1px solid #E3E7EC;padding:16px;display:flex;flex-direction:column;gap:10px"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><strong style="font-size:15px;color:#0A2E55">{{ t.weeklyTitle }}</strong><span style="width:46px;height:28px;border-radius:14px;background:#D7DCE3;position:relative;flex:none"><span style="position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:11px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2)"></span></span></div><p style="margin:0;font-size:14px;line-height:1.5;color:#4B5563">{{ t.weeklyBody }}</p></div></sc-if>
+<div style="margin:12px 20px 0;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 16px;border-radius:16px;background:#EAF3FB"><div style="display:flex;flex-direction:column;gap:2px"><strong style="font-size:14px;color:#0A2E55">{{ t.helpTitle }}</strong><span style="font-size:13px;color:#4B5563">{{ t.helpBody }}</span></div><a href="#" style="flex:none;display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;background:#fff;border:1px solid #D7DCE3;font-size:14px;font-weight:600;color:#0A2E55;text-decoration:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8.5 8.5 0 0 1-12.6 7.4L3 21l1.6-5.4A8.5 8.5 0 1 1 21 12z"></path></svg>WhatsApp</a></div>
+<div style="margin-top:auto;padding-top:20px;display:flex;border-top:1px solid #E3E7EC;background:#fff;padding:8px 0 18px"><sc-for list="{{ tabsOrders }}" as="tb" hint-placeholder-count="4"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;font-weight:600;color:{{ tb.color }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{ tb.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ tb.d }}"></path></svg><span>{{ tb.label }}</span></div></sc-for></div>
+</div></div>
+</sc-for>
+</div>
+</section>
+<section style="display:flex;flex-direction:column;gap:18px">
+<h2 style="margin:0;font-size:20px;font-weight:700;color:#0A2E55">Prices and Profile</h2>
+<div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start">
+
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#6B7280">Prices sheet (from Home header or Book)</span>
+<div data-screen-label="Prices" style="width:390px;min-height:760px;background:#5B6B7F;border-radius:28px;border:1px solid #D7DCE3;box-shadow:0 8px 30px rgba(10,46,85,.08);overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;font-size:15px;color:#1F2A37">
+<div style="background:#F8F8F6;border-radius:24px 24px 0 0;display:flex;flex-direction:column;padding-bottom:20px">
+<div style="width:40px;height:4px;border-radius:2px;background:#C9D0D9;margin:10px auto 0"></div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px 0"><strong style="font-size:20px;color:#0A2E55">{{ t.prices }}</strong><a href="#" style="font-size:15px;font-weight:600;color:#0B72B9;text-decoration:none">{{ t.close }}</a></div>
+<p style="margin:4px 20px 0;font-size:14px;color:#6B7280">{{ t.pricesSub }}</p>
+<div style="margin:14px 20px 0;display:flex;background:#E8EBEF;border-radius:12px;padding:3px"><span style="flex:1;text-align:center;padding:9px 0;border-radius:10px;background:#fff;font-size:13.5px;font-weight:600;color:#0A2E55;box-shadow:0 1px 2px rgba(0,0,0,.08)">{{ svc.dc }}</span><span style="flex:1;text-align:center;padding:9px 0;font-size:13.5px;font-weight:600;color:#5B6470">{{ svc.wi }}</span><span style="flex:1;text-align:center;padding:9px 0;font-size:13.5px;font-weight:600;color:#5B6470">{{ svc.ir }}</span></div>
+<div style="margin:12px 20px 0;display:flex;align-items:center;gap:10px;height:48px;border:1.5px solid #C9D0D9;border-radius:12px;background:#fff;padding:0 14px;color:#9AA3AF"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round"><path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3"></path></svg><span style="font-size:15px">{{ t.searchPlaceholder }}</span></div>
+<div style="margin:16px 20px 0;border-radius:16px;background:#fff;border:1px solid #E3E7EC;overflow:hidden"><sc-for list="{{ priceRows }}" as="p" hint-placeholder-count="6"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #EEF1F4"><span style="font-size:15px;color:#1F2A37">{{ p.name }}</span><span style="font-size:17px;font-weight:600;color:#0A2E55">{{ p.price }}</span></div></sc-for></div>
+<p style="margin:12px 20px 0;font-size:13px;line-height:1.45;color:#6B7280">{{ t.pricesFoot }}</p>
+<div style="margin:16px 20px 0"><button style="width:100%;height:52px;border:0;border-radius:12px;background:#0B72B9;color:#fff;font:600 16px inherit;font-family:inherit">{{ t.bookPickup }}</button></div>
+</div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#6B7280">Profile (settings list)</span>
+<div data-screen-label="Profile" style="width:390px;min-height:760px;background:#F8F8F6;border-radius:28px;border:1px solid #D7DCE3;box-shadow:0 8px 30px rgba(10,46,85,.08);overflow:hidden;display:flex;flex-direction:column;font-size:15px;color:#1F2A37">
+<div style="display:flex;justify-content:space-between;padding:14px 24px 0;font-size:13px;font-weight:600;color:#0A2E55"><span>9:41</span><span style="width:22px;height:11px;border:1.5px solid #0A2E55;border-radius:3px;display:inline-block"></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px"><img src="uploads/velto-logo.png" alt="Velto" style="height:22px"></div>
+<div style="padding:16px 20px 0;display:flex;flex-direction:column;gap:4px"><h2 style="margin:0;font-size:28px;line-height:1.15;font-weight:700;color:#0A2E55">Md Nazmul Huda Rimon</h2><p style="margin:0;font-size:15px;color:#6B7280">01312 595204 · <span style="color:#1E7A46;font-weight:600">{{ t.verified }}</span></p></div>
+<div style="margin:20px 20px 0;border-radius:16px;background:#fff;border:1px solid #E3E7EC;overflow:hidden"><sc-for list="{{ profileRows }}" as="r" hint-placeholder-count="6"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:15px 16px;border-bottom:1px solid #EEF1F4"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:600;color:#0A2E55">{{ r.name }}</span><span style="font-size:13px;color:#6B7280">{{ r.sub }}</span></div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9AA3AF" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg></div></sc-for></div>
+<div style="margin:16px 20px 0;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 16px;border-radius:16px;background:#EAF3FB"><div style="display:flex;flex-direction:column;gap:2px"><strong style="font-size:14px;color:#0A2E55">{{ t.helpWa }}</strong><span style="font-size:13px;color:#4B5563">{{ t.helpWaBody }}</span></div><a href="#" style="flex:none;display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:12px;background:#fff;border:1px solid #D7DCE3;font-size:14px;font-weight:600;color:#0A2E55;text-decoration:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8.5 8.5 0 0 1-12.6 7.4L3 21l1.6-5.4A8.5 8.5 0 1 1 21 12z"></path></svg>WhatsApp</a></div>
+<div style="margin:24px 20px 0;display:flex;gap:16px;font-size:13px;color:#6B7280"><a href="#" style="color:#6B7280">{{ t.privacy }}</a><a href="#" style="color:#6B7280">{{ t.terms }}</a></div>
+<a href="#" style="margin:14px 20px 0;font-size:15px;font-weight:600;color:#B42318;text-decoration:none">{{ t.signOut }}</a>
+<div style="margin-top:auto;padding-top:20px;display:flex;border-top:1px solid #E3E7EC;background:#fff;padding:8px 0 18px"><sc-for list="{{ tabsProfile }}" as="tb" hint-placeholder-count="4"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;font-weight:600;color:{{ tb.color }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{ tb.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ tb.d }}"></path></svg><span>{{ tb.label }}</span></div></sc-for></div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#6B7280">Profile › How you like it done (shirts only)</span>
+<div data-screen-label="Preferences" style="width:390px;min-height:760px;background:#F8F8F6;border-radius:28px;border:1px solid #D7DCE3;box-shadow:0 8px 30px rgba(10,46,85,.08);overflow:hidden;display:flex;flex-direction:column;font-size:15px;color:#1F2A37">
+<div style="display:flex;justify-content:space-between;padding:14px 24px 0;font-size:13px;font-weight:600;color:#0A2E55"><span>9:41</span><span style="width:22px;height:11px;border:1.5px solid #0A2E55;border-radius:3px;display:inline-block"></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px"><a href="#" style="font-size:15px;font-weight:600;color:#0B72B9;text-decoration:none">← {{ t.tabProfile }}</a><span style="font-size:13px;font-weight:600;color:#1E7A46">{{ t.saved }}</span></div>
+<div style="padding:12px 20px 0;display:flex;flex-direction:column;gap:6px"><h2 style="margin:0;font-size:26px;line-height:1.15;font-weight:700;color:#0A2E55">{{ t.prefTitle }}</h2><p style="margin:0;font-size:14px;line-height:1.45;color:#6B7280">{{ t.prefSub }}</p></div>
+<div style="margin:20px 20px 0;display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:13px;font-weight:600;color:#0A2E55">{{ t.prefShirts }}</span><div style="display:flex;gap:8px;flex-wrap:wrap"><span style="padding:9px 14px;border-radius:999px;border:1.5px solid #D7DCE3;background:#fff;color:#374151;font-size:14px">{{ t.noPref }}</span><span style="padding:9px 14px;border-radius:999px;border:1.5px solid #0B72B9;background:#EAF3FB;color:#0A2E55;font-size:14px;font-weight:600">{{ t.hanger }}</span><span style="padding:9px 14px;border-radius:999px;border:1.5px solid #D7DCE3;background:#fff;color:#374151;font-size:14px">{{ t.folded }}</span></div></div>
+</div>
+<p style="margin:16px 20px 0;font-size:13px;line-height:1.45;color:#6B7280">{{ t.prefFoot }} {{ t.prefDefault }}</p>
+<div style="margin-top:auto;padding-top:20px;display:flex;border-top:1px solid #E3E7EC;background:#fff;padding:8px 0 18px"><sc-for list="{{ tabsProfile }}" as="tb" hint-placeholder-count="4"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;font-weight:600;color:{{ tb.color }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{ tb.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ tb.d }}"></path></svg><span>{{ tb.label }}</span></div></sc-for></div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#6B7280">Profile › Notifications (defaults: reminders on, offers off)</span>
+<div data-screen-label="Notifications" style="width:390px;min-height:760px;background:#F8F8F6;border-radius:28px;border:1px solid #D7DCE3;box-shadow:0 8px 30px rgba(10,46,85,.08);overflow:hidden;display:flex;flex-direction:column;font-size:15px;color:#1F2A37">
+<div style="display:flex;justify-content:space-between;padding:14px 24px 0;font-size:13px;font-weight:600;color:#0A2E55"><span>9:41</span><span style="width:22px;height:11px;border:1.5px solid #0A2E55;border-radius:3px;display:inline-block"></span></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px"><a href="#" style="font-size:15px;font-weight:600;color:#0B72B9;text-decoration:none">← {{ t.tabProfile }}</a><span style="font-size:13px;font-weight:600;color:#1E7A46">{{ t.saved }}</span></div>
+<div style="padding:12px 20px 0;display:flex;flex-direction:column;gap:6px"><h2 style="margin:0;font-size:26px;line-height:1.15;font-weight:700;color:#0A2E55">{{ t.pNotif }}</h2><p style="margin:0;font-size:14px;line-height:1.45;color:#6B7280">{{ t.notifScreenSub }}</p></div>
+<div style="margin:20px 20px 0;border-radius:16px;background:#fff;border:1px solid #E3E7EC;overflow:hidden"><sc-for list="{{ notifRows }}" as="n" hint-placeholder-count="6"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #EEF1F4"><div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:15px;font-weight:600;color:#0A2E55">{{ n.name }}</span><span style="font-size:13px;color:#6B7280">{{ n.sub }}</span></div><span style="width:46px;height:28px;border-radius:14px;background:{{ n.bg }};position:relative;flex:none"><span style="position:absolute;top:3px;left:{{ n.left }};width:22px;height:22px;border-radius:11px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2)"></span></span></div></sc-for></div>
+<p style="margin:16px 20px 0;font-size:13px;line-height:1.45;color:#6B7280">{{ t.prefFoot }}</p>
+<div style="margin-top:auto;padding-top:20px;display:flex;border-top:1px solid #E3E7EC;background:#fff;padding:8px 0 18px"><sc-for list="{{ tabsProfile }}" as="tb" hint-placeholder-count="4"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;font-weight:600;color:{{ tb.color }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{ tb.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ tb.d }}"></path></svg><span>{{ tb.label }}</span></div></sc-for></div>
+</div></div>
+
+</div>
+</section>
+<section style="display:flex;flex-direction:column;gap:18px">
+<h2 style="margin:0;font-size:20px;font-weight:700;color:#0A2E55">Components and states</h2>
+<div style="display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start">
+
+<div style="width:390px;background:#fff;border:1px solid #E3E7EC;border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px">
+<strong style="font-size:14px;color:#0A2E55">Buttons · 52 px, radius 12</strong>
+<button style="height:52px;border:0;border-radius:12px;background:#0B72B9;color:#fff;font:600 16px inherit;font-family:inherit">Primary</button>
+<button style="height:52px;border:0;border-radius:12px;background:#0A5F9B;color:#fff;font:600 16px inherit;font-family:inherit">Primary, pressed</button>
+<button style="height:52px;border:0;border-radius:12px;background:#0B72B9;color:#fff;font:600 16px inherit;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px"><span style="width:18px;height:18px;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:9px;display:inline-block"></span>Sending</button>
+<button style="height:52px;border:0;border-radius:12px;background:#E3E7EC;color:#9AA3AF;font:600 16px inherit;font-family:inherit">Disabled (avoid; prefer defaults so it is never needed)</button>
+<button style="height:52px;border:1.5px solid #C9D0D9;border-radius:12px;background:#fff;color:#0A2E55;font:600 16px inherit;font-family:inherit">Secondary</button>
+<a href="#" style="text-align:center;font-size:15px;font-weight:600;color:#0B72B9;text-decoration:none;padding:8px">Text link, 44 px hit area</a>
+</div>
+
+<div style="width:390px;background:#fff;border:1px solid #E3E7EC;border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px">
+<strong style="font-size:14px;color:#0A2E55">Chips, segmented, toggle</strong>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><span style="padding:9px 14px;border-radius:999px;border:1.5px solid #D7DCE3;background:#fff;color:#374151;font-size:14px">Default</span><span style="padding:9px 14px;border-radius:999px;border:1.5px solid #0B72B9;background:#EAF3FB;color:#0A2E55;font-size:14px;font-weight:600">Selected</span><span style="padding:9px 14px;border-radius:999px;border:1.5px solid #E3E7EC;background:#F3F4F6;color:#9AA3AF;font-size:14px">Unavailable</span></div>
+<div style="display:flex;background:#E8EBEF;border-radius:12px;padding:3px"><span style="flex:1;text-align:center;padding:9px 0;border-radius:10px;background:#fff;font-size:13.5px;font-weight:600;color:#0A2E55;box-shadow:0 1px 2px rgba(0,0,0,.08)">On</span><span style="flex:1;text-align:center;padding:9px 0;font-size:13.5px;font-weight:600;color:#5B6470">Off</span><span style="flex:1;text-align:center;padding:9px 0;font-size:13.5px;font-weight:600;color:#5B6470">Off</span></div>
+<div style="display:flex;gap:8px"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:10px 0;border-radius:12px;border:1.5px solid #0B72B9;background:#EAF3FB;color:#0A2E55"><span style="font-size:13px;font-weight:600">Tomorrow</span><span style="font-size:12px">6 Oct</span></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:10px 0;border-radius:12px;border:1.5px solid #D7DCE3;background:#fff;color:#374151"><span style="font-size:13px;font-weight:600">Wed</span><span style="font-size:12px">7 Oct</span></div><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:10px 0;border-radius:12px;border:1.5px solid #E3E7EC;background:#F3F4F6;color:#9AA3AF"><span style="font-size:13px;font-weight:600">Fri</span><span style="font-size:12px">Full</span></div></div>
+<div style="display:flex;gap:16px;align-items:center"><span style="width:46px;height:28px;border-radius:14px;background:#0B72B9;position:relative"><span style="position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:11px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2)"></span></span><span style="width:46px;height:28px;border-radius:14px;background:#D7DCE3;position:relative"><span style="position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:11px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2)"></span></span><span style="font-size:13px;color:#6B7280">Toggle on / off</span></div>
+</div>
+
+<div style="width:390px;background:#fff;border:1px solid #E3E7EC;border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px">
+<strong style="font-size:14px;color:#0A2E55">Inputs · 52 px</strong>
+<div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:14px;font-weight:600;color:#0A2E55">Default</label><div style="height:52px;border:1.5px solid #C9D0D9;border-radius:12px;background:#fff;padding:0 16px;display:flex;align-items:center;font-size:16px;color:#9AA3AF">Placeholder</div></div>
+<div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:14px;font-weight:600;color:#0A2E55">Focus</label><div style="height:52px;border:2px solid #0B72B9;border-radius:12px;background:#fff;padding:0 16px;display:flex;align-items:center;font-size:16px;color:#1F2A37">House 2, Road 14</div></div>
+<div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:14px;font-weight:600;color:#0A2E55">Error</label><div style="height:52px;border:1.5px solid #B42318;border-radius:12px;background:#fff;padding:0 16px;display:flex;align-items:center;font-size:16px;color:#1F2A37">0131</div><span style="font-size:13px;color:#B42318">Enter an 11-digit number starting with 01.</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><label style="font-size:14px;font-weight:600;color:#6B7280">Read only</label><div style="height:52px;border:1.5px solid #E3E7EC;border-radius:12px;background:#F3F4F6;padding:0 16px;display:flex;align-items:center;font-size:16px;color:#4B5563">01312 595204</div></div>
+</div>
+
+<div style="width:390px;background:#fff;border:1px solid #E3E7EC;border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px">
+<strong style="font-size:14px;color:#0A2E55">Status pills and tracker</strong>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><span style="font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:#F3F4F6;color:#374151">Booked</span><span style="font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:#EAF3FB;color:#0B72B9">Collected</span><span style="font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:#EAF3FB;color:#0B72B9">Cleaning</span><span style="font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:#EAF3FB;color:#0B72B9">Ready</span><span style="font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:#DCFCE7;color:#1E7A46">Delivered</span><span style="font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:#FEF3C7;color:#B45309">৳200 due</span></div>
+<div style="display:grid;grid-template-columns:28px 1fr auto;gap:0 12px"><div style="display:flex;flex-direction:column;align-items:center"><span style="width:24px;height:24px;border-radius:12px;background:#0B72B9;border:2px solid #0B72B9;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg></span><span style="flex:1;width:2px;background:#0B72B9;margin:2px 0"></span></div><div style="padding-bottom:16px"><span style="font-size:15px;font-weight:600;color:#0A2E55">Done</span><br><span style="font-size:13px;color:#4B5563">Filled dot, blue line, timestamp.</span></div><span style="font-size:12px;color:#9AA3AF">10:12</span>
+<div style="display:flex;flex-direction:column;align-items:center"><span style="width:24px;height:24px;border-radius:12px;background:#0B72B9;border:2px solid #0B72B9;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0B72B9" stroke-width="3"><path d="M5 12l5 5L20 7"></path></svg></span><span style="flex:1;width:2px;background:#E3E7EC;margin:2px 0"></span></div><div style="padding-bottom:16px"><span style="font-size:15px;font-weight:600;color:#0A2E55">Current</span><br><span style="font-size:13px;color:#4B5563">Filled dot, no check, grey line below.</span></div><span style="font-size:12px;color:#9AA3AF">11:05</span>
+<div style="display:flex;flex-direction:column;align-items:center"><span style="width:24px;height:24px;border-radius:12px;background:#fff;border:2px solid #D7DCE3"></span></div><div><span style="font-size:15px;font-weight:600;color:#9AA3AF">Upcoming</span><br><span style="font-size:13px;color:#B6BDC6">Hollow dot, muted text, what will happen.</span></div><span></span></div>
+</div>
+
+<div style="width:390px;background:#fff;border:1px solid #E3E7EC;border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:14px">
+<strong style="font-size:14px;color:#0A2E55">Cards, banners, sheet, tab bar</strong>
+<div style="border-radius:16px;background:#fff;border:1px solid #E3E7EC;padding:16px;font-size:14px;color:#374151">Card · white, 1 px #E3E7EC, radius 16, padding 16 to 20</div>
+<div style="border-radius:16px;background:#0A2E55;color:#fff;padding:16px;font-size:14px">Hero card (in progress only) · navy, white text</div>
+<div style="border-radius:12px;background:#EAF3FB;padding:14px 16px;font-size:14px;color:#0A2E55">Info banner · blue tint</div>
+<div style="border-radius:12px;background:#FEE2E2;border:1px solid #F5B5B5;padding:14px 16px;font-size:14px;color:#991B1B">Error banner · inline, never a modal</div>
+<div style="border-radius:16px;border:1px dashed #C9D0D9;padding:14px 16px;font-size:14px;color:#6B7280">Empty or explainer · dashed</div>
+<div style="border-radius:16px 16px 0 0;background:#F8F8F6;border:1px solid #E3E7EC;border-bottom:0;padding:10px 16px 16px;display:flex;flex-direction:column;gap:10px;align-items:center"><span style="width:40px;height:4px;border-radius:2px;background:#C9D0D9"></span><span style="font-size:13px;color:#6B7280">Bottom sheet · drag handle, Close top right, scrim #5B6B7F at 60%</span></div>
+<div style="display:flex;border-top:1px solid #E3E7EC;background:#fff;padding:8px 0 10px;margin:0 -20px -20px"><sc-for list="{{ tabsHome }}" as="tb" hint-placeholder-count="4"><div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;font-weight:600;color:{{ tb.color }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{ tb.color }}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="{{ tb.d }}"></path></svg><span>{{ tb.label }}</span></div></sc-for></div>
+</div>
+
+</div>
+</section>
+
+<section style="display:flex;flex-direction:column;gap:18px">
+<h2 style="margin:0;font-size:20px;font-weight:700;color:#0A2E55">Handoff notes</h2>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;max-width:1240px">
+<div style="background:#fff;border:1px solid #E3E7EC;border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.55;color:#374151">
+<strong style="font-size:15px;color:#0A2E55">Colour</strong>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;align-items:center;gap:10px"><span style="width:28px;height:28px;border-radius:8px;background:#0A2E55"></span>navy #0A2E55 · headings, hero card, selected text</div>
+<div style="display:flex;align-items:center;gap:10px"><span style="width:28px;height:28px;border-radius:8px;background:#0B72B9"></span>blue #0B72B9 · primary action, links, active tab, tracker</div>
+<div style="display:flex;align-items:center;gap:10px"><span style="width:28px;height:28px;border-radius:8px;background:#EAF3FB;border:1px solid #E3E7EC"></span>blue tint #EAF3FB · selected chips, info banners</div>
+<div style="display:flex;align-items:center;gap:10px"><span style="width:28px;height:28px;border-radius:8px;background:#F8F8F6;border:1px solid #E3E7EC"></span>ground #F8F8F6 · page; cards #FFFFFF; border #E3E7EC; input border #C9D0D9</div>
+<div style="display:flex;align-items:center;gap:10px"><span style="width:28px;height:28px;border-radius:8px;background:#1F2A37"></span>text #1F2A37 · body; #4B5563 secondary; #6B7280 muted (min 4.5:1 on ground)</div>
+<div style="display:flex;align-items:center;gap:10px"><span style="width:28px;height:28px;border-radius:8px;background:#1E7A46"></span>green #1E7A46 paid, delivered · amber #B45309 due · red #B42318 error. Tints #DCFCE7, #FEF3C7, #FEE2E2.</div>
+</div>
+</div>
+<div style="background:#fff;border:1px solid #E3E7EC;border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.55;color:#374151">
+<strong style="font-size:15px;color:#0A2E55">Type</strong>
+<p style="margin:0">Latin: Schibsted Grotesk (closest open match to the current face; keep the current one if licensed). Bangla: Noto Sans Bengali. Load both in one font stack; the browser falls through per glyph.</p>
+<p style="margin:0">Home in-progress card: progress bar only, with "current step · step n of 5" under it; the five step names appear only on order detail.</p>
+<p style="margin:0">Scale: 28/1.15 screen title (30 on entry screens) · 22/1.2 card title · 17 section · 16 row value · 15 body · 14 secondary · 13 caption · 12 meta · 11 eyebrow, 700, tracking .08em.</p>
+<p style="margin:0">Bangla: same sizes, line height 1.65 everywhere, no letter-spacing on eyebrows, Bangla digits for dates, counts and prices; order ids, phone numbers and names stay Latin.</p>
+<p style="margin:0">Weights: 700 titles, 600 labels and buttons, 400 body. No italics.</p>
+</div>
+<div style="background:#fff;border:1px solid #E3E7EC;border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.55;color:#374151">
+<strong style="font-size:15px;color:#0A2E55">Spacing and shape</strong>
+<p style="margin:0">4 px grid. Screen gutter 20. Card padding 16 to 20. Card gap 12; section gap 24 to 28. Row height 52 min. Tab bar 64 plus safe area.</p>
+<p style="margin:0">Radius: 12 buttons, inputs, banners · 16 cards · 24 sheet top · 999 chips and pills.</p>
+<p style="margin:0">Hit targets 44 px minimum, including text links (padding, not margin). One primary button per screen.</p>
+<p style="margin:0">Tailwind: these map to rounded-xl, rounded-2xl, p-4/p-5, gap-3, h-13 (add 52 px to the scale).</p>
+</div>
+<div style="background:#fff;border:1px solid #E3E7EC;border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.55;color:#374151">
+<strong style="font-size:15px;color:#0A2E55">Behaviour</strong>
+<p style="margin:0"><strong>Home state card</strong>: order in progress wins; else last order exists and customer has ordered within 60 days → Same as last time; else over 60 days → Welcome back; else first-time. Default slot: tomorrow, same window as the last order, never today.</p>
+<p style="margin:0"><strong>Expected return</strong>: from the Collected timestamp, +48 h ironing, +72 h wash and dry cleaning, rounded to the next delivery window. Shown as "Usually back by". Hidden once Delivered. Ops override field later.</p>
+<p style="margin:0"><strong>Booked step</strong>: shows "Waiting for our call" until Ops marks the order confirmed; only then "Confirmed". Never claim a call happened.</p>
+<p style="margin:0"><strong>Payment</strong>: no payment numbers, no bKash or other methods in the app. The Payment due box says "Pay the rider at your next pickup or delivery, or message us on WhatsApp to settle it now." and holds one WhatsApp button, prefilled with the order number and the amount due.</p>
+<p style="margin:0"><strong>Support hours</strong>: "A person answers, 10 AM to 10 PM." (Bangla: "একজন মানুষ উত্তর দেয়, সকাল ১০টা থেকে রাত ১০টা।"). Keep it as one config string so Ops can change it. Location copy says "at Velto"; never name an outlet or plant.</p>
+<p style="margin:0"><strong>Day picker</strong>: GET /capacity returns the next 7 days with slotsLeft per window. Render only days with capacity, starting tomorrow; label the first "Tomorrow" when it is. Full windows are omitted.</p>
+<p style="margin:0"><strong>Feedback</strong>: "All good" stores a private flag, shows a thank-you and an optional Google review link. "Something was off" opens WhatsApp prefilled with the order number. Neither is a public rating.</p>
+<p style="margin:0"><strong>Install</strong>: detect platform. Android (beforeinstallprompt available): one Install button. iOS Safari: one line with the Share icon, no button. Both get "Not now".</p>
+<p style="margin:0"><strong>Preferences</strong>: one group, Shirts: No preference (default), On hangers, Folded. Only an explicit pick is sent. No starch, fragrance, "separate whites" or free-text care note; the footer points to WhatsApp for anything about a specific garment. The Profile row subtitle mirrors the pick ("Shirts on hangers") or reads "No preference".</p>
+<p style="margin:0"><strong>Counting</strong>: copy never says the rider counts at the door. Everywhere: "We count and check your items after pickup. The item list and final price then appear here." [Pending Ops: if door count is confirmed as the rule for every pickup, revert to door-count copy; curtains and bulk still go through outlet intake.]</p>
+<p style="margin:0"><strong>Weekly pickup</strong>: never offered on the booking success screen. The "Make this weekly?" card appears on order detail after the customer taps "All good" on a delivered order, or on Home once completedOrders ≥ 2. Also reachable from Profile.</p>
+<p style="margin:0"><strong>Ready substate</strong>: under the Ready step, a pill from dispatch data: "Delivery not planned yet" (no dispatch row), "Delivery today, 4 to 8 PM" (dispatch window set), "Rider is on the way" (dispatch started). Still five steps.</p>
+<p style="margin:0"><strong>Mixed service</strong>: an order can hold items with different services. Service label becomes "A + B"; each item row shows its own service under the name. "Same as last time" rebooks the whole set.</p>
+<p style="margin:0"><strong>OTP</strong>: one real &lt;input&gt; (inputmode="numeric", autocomplete="one-time-code", maxlength 6, paste and WebOTP supported) drawn as six boxes; never six separate inputs.</p>
+<p style="margin:0"><strong>Book</strong>: a summary with rows, each opening a bottom sheet. Unavailable windows are hidden, not shown as "Too late". The first-order offer appears only if orderCount is 0. Submit is never disabled; validation happens inline on tap.</p>
+<p style="margin:0"><strong>Notifications</strong>: a single prompt after the first successful booking, copy "Order, pickup, care and payment updates, and a reminder when your usual pickup is due. Offers only if you turn them on." Turn on enables order, pickup, care, payment and reminders; offers stay off. Profile › Notifications shows the same defaults (reminders on, offers off), one switch per category.</p>
+<p style="margin:0"><strong>Profile</strong>: list of sub-screens; each saves on back with a "Saved" label, no save buttons.</p>
+<p style="margin:0"><strong>Offline</strong>: cache only the app shell and icons; /app/* stays network-only. Screen shows the banner "You're offline. Connect to see your latest orders.", the card "Your orders aren't saved for offline viewing. Connect to load your latest orders, addresses and prices.", a retry, and the WhatsApp link.</p>
+<p style="margin:0"><strong>Order data</strong>: every timestamp, item count and tracker line comes from Ops data; nothing is inferred. A step with no timestamp shows no time. An order with no recorded count shows no count anywhere in its tracker, and the "What we collected" block explains it. Before items are counted, the Due row is hidden and the total reads "Set after counting".</p>
+<p style="margin:0"><strong>Booking success</strong>: shows "Booking reference" with the request reference the API returns. VEL order numbers appear in Orders only once Ops creates the order.</p>
+</div>
+<div style="background:#fff;border:1px solid #E3E7EC;border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.55;color:#374151">
+<strong style="font-size:15px;color:#0A2E55">What changes in the current build</strong>
+<ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px">
+<li>Home: remove pickup details, routine form, notifications card, "See prices" link. Add state logic and header pills.</li>
+<li>Book: replace the form with the summary rows plus sheets. Rebuild the item picker as single-service rows with steppers. Delete the summary box and "Signed in as".</li>
+<li>Prices: becomes a sheet; delete the route from the tab bar's Home highlight bug.</li>
+<li>Orders: collapse the empty in-progress box to one line; add the in-progress card; list rows show service, date and price only. Missing item counts are explained on order detail, nowhere else.</li>
+<li>Order detail: eight cards become three blocks; delete rating, history and duplicate title; add computed return date, feedback buttons, delivery pill under Ready, per-item service.</li>
+<li>Booking success: remove the weekly toggle and the VEL number; show the booking reference. Notification copy updated.</li>
+<li>Service worker: drop Home and Orders from the cache; shell and icons only.</li>
+<li>Profile: split into sub-screens with auto-save; remove both save buttons and the empty address form.</li>
+<li>Order detail, payment due: one WhatsApp button inside the amber box, prefilled with order number and amount due. No payment methods.</li>
+<li>Order detail, booked: hide the Due row until items are counted.</li>
+<li>Book: Service row and item picker support mixed service ("A + B", service under each item); rebook repeats the whole set.</li>
+<li>Notifications: prompt copy and defaults as above; reminders on, offers off.</li>
+<li>Preferences: shirts only (No preference, On hangers, Folded); remove starch and fragrance.</li>
+<li>Offline card and support-hours copy replaced as above.</li>
+<li>Data fixes to request from backend: order count mismatch (4 vs 8) between languages; translated service names; Collected timestamps on every order.</li>
+</ul>
+</div>
+<div style="background:#fff;border:1px solid #E3E7EC;border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:10px;font-size:14px;line-height:1.55;color:#374151">
+<strong style="font-size:15px;color:#0A2E55">Metrics that prove it works</strong>
+<ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px">
+<li><strong>Second order within 30 days</strong>, share of first-time customers. The one that matters.</li>
+<li><strong>Rebook share</strong>: bookings made from the Home state card or "Book this again" vs the Book tab.</li>
+<li><strong>Open to booked</strong>: median seconds from app open to the success screen. Target under 30 s for returning customers.</li>
+<li><strong>Lapsed reactivation</strong>: share of 60+ day customers who book within 14 days of opening the app.</li>
+<li><strong>Tracking views per order</strong> and <strong>"where is my order" WhatsApp messages per week</strong>; the first should rise, the second fall.</li>
+<li><strong>Weekly pickup adoption</strong> and its 8-week survival.</li>
+<li><strong>Notification opt-in</strong> after the first booking, and opt-out rate.</li>
+<li><strong>Bangla share</strong> of sessions and whether its booking completion matches English.</li>
+</ul>
+</div>
+</div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;lang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;en&quot;,&quot;options&quot;:[&quot;en&quot;,&quot;bn&quot;],&quot;tsType&quot;:&quot;'en'|'bn'&quot;,&quot;section&quot;:&quot;Language&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const lang = this.props.lang ?? 'en';
+    const bn = lang === 'bn';
+    const T = {
+      en: {
+        installTitle: 'Velto on your phone', installBody: 'Book a pickup and see where your order is, from your home screen.',
+        installIos: 'Tap Share, then Add to Home Screen.',
+        installBtn: 'Install', installSkip: 'Not now, continue in the browser',
+        signinTitle: 'Sign in', signinSub: 'Your mobile number. We text you a code.', mobile: 'Mobile number', sendCode: 'Send code', or: 'or', google: 'Continue with Google',
+        codeTitle: 'Enter the code', codeSub: 'Sent by SMS to 01312 595204.', codeError: 'That code did not match. Check the SMS and try again.', resend: 'Resend in 0:42', changeNumber: 'Change number',
+        offlineTitle: 'You\'re offline', offlineBody: 'Connect to see your latest orders.', offlineCardTitle: 'Your orders aren\'t saved for offline viewing', offlineCardBody: 'Connect to load your latest orders, addresses and prices.', retry: 'Try again',
+        errorTitle: 'Something went wrong on our side', errorBody: 'Your orders are safe. Try again in a moment, or message us on WhatsApp.', whatsapp: 'WhatsApp Velto',
+        greeting: 'Good afternoon, Nazmul.', nothingInProgress: 'Nothing in progress right now.',
+        inProgEyebrow: 'IN PROGRESS · VEL-00392', inProgStatus: 'Being cleaned', inProgBack: 'Usually back by Wed 7 Oct', inProgItems: '6 items · Wash & Iron · ৳480', seeOrder: 'See order',
+        tabHome: 'Home', tabBook: 'Book', tabOrders: 'Orders', tabProfile: 'Profile',
+        prices: 'Prices', firstEyebrow: 'YOUR FIRST PICKUP', firstTitle: 'Book your first pickup', firstBody: 'Pick a service and a time. One of us calls to confirm, the rider collects, and you see every step here.', bookPickup: 'Book a pickup', seePricesFirst: 'See prices first',
+        howItWorks: 'What happens after you book', how1: 'We call you to confirm the time.', how2: 'We count and check your items after pickup. The item list and final price then appear here.', how3: 'Ironing is usually back in 2 days, washing and dry cleaning in 3.',
+        sameEyebrow: 'SAME AS LAST TIME', sameTitle: 'Dry Cleaning + Wash & Iron, 3 items', pickupFrom: 'Pickup from', pickupWhen: 'Pickup', slotTomorrow: 'Tomorrow, Tue 6 Oct, 4 to 8 PM', change: 'Change', bookThis: 'Book this pickup', confirmNote: 'We call to confirm before the rider leaves.',
+        lapsedEyebrow: 'WELCOME BACK', lapsedTitle: 'Dry Cleaning and Wash & Iron, like in January?', lapsedBody: 'Same address, tomorrow evening. Change anything before you book.', somethingElse: 'Book something else',
+        recentOrders: 'Recent orders', seeAll: 'See all',
+        stepBooked: 'Booked', stepCollected: 'Collected', stepCleaning: 'Cleaning', stepReady: 'Ready', stepDelivered: 'Delivered',
+        delivered: 'Delivered', paid: 'Paid', due: 'Due', items1: '1 item', items3: '3 items', items4: '4 items',
+        bookTitle: 'Book a pickup', bookSub: 'Same as last time. Tap a row to change it.', service: 'Service', itemsLabel: 'Items', countedAtPickup: 'Counted after pickup', addForEstimate: 'Add items for an estimate', address: 'Pickup from', pickupTime: 'Pickup time', pickupDay: 'Day', timeWindow: 'Window', nothingToPay: 'Nothing to pay now. We call to confirm the time.',
+        filledItems: '2 × Shirt (Wash & Iron), 1 × Blazer (Dry Cleaning)', estimate: 'Estimate', finalAfterCount: 'final after counting', office: 'Office', slotThu: 'Thu 8 Oct, 9 AM to 12 PM', noteForRider: 'Note for the rider', noteValue: 'Ring the bell twice, lift is slow.', estimateTitle: 'Estimate', estimateBody: 'From the Velto price list. We count and check your items after pickup. The item list and final price then appear here.',
+        addItems: 'Add items', close: 'Close', pickerSub: 'Optional. Gives you an estimate; we count after pickup.', searchPlaceholder: 'Shirt, pant, saree, blanket', popular: 'POPULAR', allItems: 'All items and prices', pickerDone: 'Done · 3 items · ৳480', notSure: 'Not sure, count it for me',
+        sendFailTitle: 'We could not send this', sendFailBody: 'Check your connection and try again. Nothing was booked.', bookOnWhatsapp: 'Book on WhatsApp instead', whatsappPrefill: 'Your service, address and time are filled in the message.',
+        successTitle: 'Pickup booked', successBody: 'Tue 6 Oct, 4 to 8 PM. One of us calls 01312 595204 to confirm before the rider leaves.', successRef: 'Booking reference 2610-0417. Your order number appears in Orders once the team sets it up.', weeklyTitle: 'Make this weekly?', weeklyBody: 'Same service, same address, every Tuesday evening. We confirm each one with you first. Turn off any time.', notifTitle: 'Get updates on this phone', notifBody: 'Order, pickup, care and payment updates, and a reminder when your usual pickup is due. Offers only if you turn them on.', turnOn: 'Turn on', notNow: 'Not now', backHome: 'Back to home',
+        ordersTitle: 'Orders', ordersEmpty: 'No orders yet. Your first pickup will show here with every step, the item count and what you pay.', inProgressLabel: 'IN PROGRESS', pastLabel: 'PAST', dateToday: 'Collected Sun 5 Oct',
+        bookAgain: 'Book this again', collectedTitle: 'What we collected', feedbackTitle: 'How did we do?', allGood: 'All good', somethingOff: 'Something was off', feedbackNote: 'Private. "Something was off" opens WhatsApp with your order number.', thanksTitle: 'Thank you', thanksBody: 'Good to hear. If you have a minute, a Google review helps other people in Uttara find us.', googleReview: 'Leave a Google review', stepOf: 'step 3 of 5', helpTitle: 'Question about this order?', helpBody: 'We include the order number for you.',
+        dBookedT: 'Booked', dBookedS: 'Waiting for our call. We confirm the time on 01312 595204 before the rider leaves.', dCollectedT: 'Collected', dCollectedS: 'Usually back by Wed 7 Oct. Item list and final price appear once checked.', dCleaningT: 'Being cleaned', dCleaningS: 'Usually back by Wed 7 Oct.', dReadyT: 'Ready', dReadyS0: 'Packed and ready. We message you when delivery is planned.', dReadyS: 'Packed and ready. The rider delivers today, 4 to 8 PM.', dReadyS2: 'Packed and ready. The rider is on the way.', delivNotPlanned: 'Delivery not planned yet', delivToday: 'Delivery today, 4 to 8 PM', delivOnWay: 'Rider is on the way', dDeliveredT: 'Delivered', dDeliveredS: 'Returned Wed 7 Oct, 3:40 PM. Paid in full.', dDueT: 'Delivered', dDueS: 'Returned Tue 20 Jan. ৳200 is due.', dMissingT: 'Delivered', dMissingS: 'Returned Thu 15 Jan.',
+        sBooked: 'Your order is booked.', sWaitingCall: 'Waiting for our call to confirm the time.', sConfirmed: 'Confirmed.', sCollected: 'Collected from House 2, Road 14. {n} items checked.', sCollectedNoCount: 'Collected from House 2, Road 14.', sCollectedWait: 'We count and check your items after pickup. The item list and final price then appear here.', sCleaning: 'Tagged and being cleaned at Velto.', sCleaningWait: 'Cleaned and checked at Velto.', sReady: 'Cleaned, checked and packed.', sReadyWait: 'Packed and ready for the rider.', sDelivered: 'Returned to you.', sDeliveredWait: 'The rider brings it back.',
+        totalLabel: 'Total', estimateLabel: 'Estimate', toBeSet: 'Set after counting', payCash: 'Pay the rider on delivery.', payDueNote: 'Pay the rider at your next pickup or delivery, or message us on WhatsApp to settle it now.', payOnWa: 'Message us on WhatsApp', waPrefill: 'The message includes {id} and {amt}.', dueTitle: 'Payment due', missingItems: 'Item count was not recorded for this order. The total is what you paid on delivery.', missingNote: 'Some details of older orders were not recorded. Message us if anything looks wrong.',
+        pricesSub: 'Per item, from the Velto price list.', pricesFoot: 'Final price after we count and check your items. Free delivery on orders of ৳499 and above.', verified: 'Verified',
+        pDetails: 'Your details', pDetailsSub: 'Name, number, pickup address', pAddresses: 'Addresses', pAddressesSub: '2 saved · Home, Office', pPrefs: 'How you like it done', pPrefsSub: 'Shirts on hangers', pWeekly: 'Weekly pickup', pWeeklySub: 'Off', pNotif: 'Notifications', pNotifSub: 'Order, pickup and reminders on · offers off', pLang: 'Language', pLangSub: 'English',
+        helpWa: 'Help on WhatsApp', helpWaBody: 'A person answers, 10 AM to 10 PM.', privacy: 'Privacy', terms: 'Terms', signOut: 'Sign out',
+        saved: 'Saved', prefTitle: 'How you like it done', prefSub: 'Added to every order so the outlet sees it with your clothes.', prefShirts: 'Shirts', noPref: 'No preference', yes: 'Yes', no: 'No', hanger: 'On hangers', folded: 'Folded', prefStarch: 'Starch', none: 'None', light: 'Light', heavy: 'Heavy', prefFragrance: 'Fragrance', mild: 'Mild', separateWhites: 'Whites and colours washed separately', anythingElse: 'Anything else we should know', prefNoteValue: 'Silk kurta, hand wash only.', prefFoot: 'Saves when you leave this screen.', notifScreenSub: 'One switch per kind of message. Reminders start on, offers off.', nOrder: 'Order updates', nOrderSub: 'Collected, ready, delivered', nPickup: 'Pickup', nPickupSub: 'Time confirmed, rider on the way', nCare: 'Care notes', nCareSub: 'If we find a stain or a loose button', nPayment: 'Payment', nPaymentSub: 'Amount due, payment received', nReminder: 'Reminders', nReminderSub: 'Weekly pickup and lapsed nudges', nOffer: 'Offers', nOfferSub: 'Discounts and new services', prefDefault: 'Starts as "No preference"; the outlet does what it normally does. For anything about a specific garment, message us on WhatsApp.',
+      },
+      bn: {
+        installTitle: 'আপনার ফোনে Velto', installBody: 'হোম স্ক্রিন থেকেই পিকআপ বুক করুন আর অর্ডার কোথায় আছে দেখুন।',
+        installIos: 'Share চাপুন, তারপর Add to Home Screen।',
+        installBtn: 'ইনস্টল করুন', installSkip: 'এখন না, ব্রাউজারেই চালিয়ে যান',
+        signinTitle: 'সাইন ইন', signinSub: 'আপনার মোবাইল নম্বর দিন। আমরা একটি কোড পাঠাব।', mobile: 'মোবাইল নম্বর', sendCode: 'কোড পাঠান', or: 'অথবা', google: 'Google দিয়ে চালিয়ে যান',
+        codeTitle: 'কোডটি লিখুন', codeSub: '01312 595204 নম্বরে SMS পাঠানো হয়েছে।', codeError: 'কোডটি মেলেনি। SMS দেখে আবার চেষ্টা করুন।', resend: '০:৪২ পরে আবার পাঠান', changeNumber: 'নম্বর বদলান',
+        offlineTitle: 'আপনি অফলাইনে আছেন', offlineBody: 'সর্বশেষ অর্ডার দেখতে ইন্টারনেটে যুক্ত হোন।', offlineCardTitle: 'অফলাইনে দেখার জন্য অর্ডার সংরক্ষিত থাকে না', offlineCardBody: 'সর্বশেষ অর্ডার, ঠিকানা আর দাম আনতে ইন্টারনেটে যুক্ত হোন।', retry: 'আবার চেষ্টা করুন',
+        errorTitle: 'আমাদের দিকে একটি সমস্যা হয়েছে', errorBody: 'আপনার অর্ডার নিরাপদ আছে। একটু পরে আবার চেষ্টা করুন, অথবা WhatsApp-এ লিখুন।', whatsapp: 'WhatsApp-এ Velto',
+        greeting: 'শুভ বিকেল, Nazmul।', nothingInProgress: 'এখন কোনো অর্ডার চলছে না।',
+        inProgEyebrow: 'চলমান · VEL-00392', inProgStatus: 'পরিষ্কার হচ্ছে', inProgBack: 'সাধারণত বুধ ৭ অক্টোবরের মধ্যে ফেরত', inProgItems: '৬টি · ওয়াশ অ্যান্ড আয়রন · ৳৪৮০', seeOrder: 'অর্ডার দেখুন',
+        tabHome: 'হোম', tabBook: 'বুক', tabOrders: 'অর্ডার', tabProfile: 'প্রোফাইল',
+        prices: 'দাম', firstEyebrow: 'আপনার প্রথম পিকআপ', firstTitle: 'প্রথম পিকআপ বুক করুন', firstBody: 'সার্ভিস আর সময় বেছে নিন। আমাদের একজন ফোন করে নিশ্চিত করবে, রাইডার নিয়ে যাবে, আর প্রতিটি ধাপ এখানে দেখতে পাবেন।', bookPickup: 'পিকআপ বুক করুন', seePricesFirst: 'আগে দাম দেখুন',
+        howItWorks: 'বুক করার পর যা হয়', how1: 'সময় নিশ্চিত করতে আমরা ফোন করি।', how2: 'পিকআপের পর আমরা আপনার জিনিস গুনে যাচাই করি। তারপর তালিকা আর চূড়ান্ত দাম এখানে দেখা যায়।', how3: 'আয়রন সাধারণত ২ দিনে, ওয়াশ আর ড্রাই ক্লিনিং ৩ দিনে ফেরত আসে।',
+        sameEyebrow: 'আগের বারের মতোই', sameTitle: 'ড্রাই ক্লিনিং + ওয়াশ অ্যান্ড আয়রন, ৩টি', pickupFrom: 'পিকআপ ঠিকানা', pickupWhen: 'পিকআপ', slotTomorrow: 'আগামীকাল, মঙ্গল ৬ অক্টোবর, বিকেল ৪টা থেকে ৮টা', change: 'বদলান', bookThis: 'এই পিকআপ বুক করুন', confirmNote: 'রাইডার রওনা হওয়ার আগে আমরা ফোন করে নিশ্চিত করি।',
+        lapsedEyebrow: 'আবার স্বাগতম', lapsedTitle: 'জানুয়ারির মতো ড্রাই ক্লিনিং আর ওয়াশ অ্যান্ড আয়রন?', lapsedBody: 'একই ঠিকানা, আগামীকাল সন্ধ্যায়। বুক করার আগে যেকোনো কিছু বদলাতে পারেন।', somethingElse: 'অন্য কিছু বুক করুন',
+        recentOrders: 'সাম্প্রতিক অর্ডার', seeAll: 'সব দেখুন',
+        stepBooked: 'বুক হয়েছে', stepCollected: 'সংগ্রহ হয়েছে', stepCleaning: 'পরিষ্কার হচ্ছে', stepReady: 'প্রস্তুত', stepDelivered: 'ডেলিভারি হয়েছে',
+        delivered: 'ডেলিভারি হয়েছে', paid: 'পরিশোধিত', due: 'বাকি', items1: '১টি', items3: '৩টি', items4: '৪টি',
+        bookTitle: 'পিকআপ বুক করুন', bookSub: 'আগের বারের মতোই। বদলাতে কোনো সারিতে চাপুন।', service: 'সার্ভিস', itemsLabel: 'জিনিস', countedAtPickup: 'পিকআপের পর গোনা হবে', addForEstimate: 'আনুমানিক দামের জন্য জিনিস যোগ করুন', address: 'পিকআপ ঠিকানা', pickupTime: 'পিকআপের সময়', pickupDay: 'দিন', timeWindow: 'সময়', nothingToPay: 'এখন কিছু দিতে হবে না। সময় নিশ্চিত করতে আমরা ফোন করি।',
+        filledItems: '২ × শার্ট (ওয়াশ অ্যান্ড আয়রন), ১ × ব্লেজার (ড্রাই ক্লিনিং)', estimate: 'আনুমানিক', finalAfterCount: 'গোনার পর চূড়ান্ত', office: 'অফিস', slotThu: 'বৃহ ৮ অক্টোবর, সকাল ৯টা থেকে ১২টা', noteForRider: 'রাইডারের জন্য নোট', noteValue: 'দুইবার বেল দিন, লিফট ধীর।', estimateTitle: 'আনুমানিক', estimateBody: 'Velto-র মূল্য তালিকা থেকে। পিকআপের পর আমরা আপনার জিনিস গুনে যাচাই করি। তারপর তালিকা আর চূড়ান্ত দাম এখানে দেখা যায়।',
+        addItems: 'জিনিস যোগ করুন', close: 'বন্ধ', pickerSub: 'ঐচ্ছিক। আনুমানিক দাম দেখায়; পিকআপের পর আমরা গুনি।', searchPlaceholder: 'শার্ট, প্যান্ট, শাড়ি, কম্বল', popular: 'জনপ্রিয়', allItems: 'সব জিনিস ও দাম', pickerDone: 'হয়েছে · ৩টি · ৳৪৮০', notSure: 'নিশ্চিত নই, আপনারা গুনে নিন',
+        sendFailTitle: 'পাঠানো যায়নি', sendFailBody: 'ইন্টারনেট দেখে আবার চেষ্টা করুন। কিছু বুক হয়নি।', bookOnWhatsapp: 'WhatsApp-এ বুক করুন', whatsappPrefill: 'সার্ভিস, ঠিকানা আর সময় মেসেজে লেখা থাকবে।',
+        successTitle: 'পিকআপ বুক হয়েছে', successBody: 'মঙ্গল ৬ অক্টোবর, বিকেল ৪টা থেকে ৮টা। রাইডার রওনা হওয়ার আগে আমাদের একজন 01312 595204 নম্বরে ফোন করে নিশ্চিত করবে।', successRef: 'বুকিং রেফারেন্স 2610-0417। টিম অর্ডার তৈরি করলে অর্ডার নম্বর Orders-এ দেখা যাবে।', weeklyTitle: 'প্রতি সপ্তাহে করবেন?', weeklyBody: 'একই সার্ভিস, একই ঠিকানা, প্রতি মঙ্গলবার সন্ধ্যায়। প্রতিবার আগে আপনার সঙ্গে নিশ্চিত করি। যেকোনো সময় বন্ধ করা যায়।', notifTitle: 'এই ফোনে আপডেট পান', notifBody: 'অর্ডার, পিকআপ, যত্ন আর পেমেন্টের আপডেট, আর আপনার নিয়মিত পিকআপের সময় হলে একটি রিমাইন্ডার। অফার শুধু আপনি চালু করলে।', turnOn: 'চালু করুন', notNow: 'এখন না', backHome: 'হোমে ফিরুন',
+        ordersTitle: 'অর্ডার', ordersEmpty: 'এখনো কোনো অর্ডার নেই। প্রথম পিকআপের প্রতিটি ধাপ, জিনিসের সংখ্যা আর দাম এখানে দেখা যাবে।', inProgressLabel: 'চলমান', pastLabel: 'আগের', dateToday: 'সংগ্রহ রবি ৫ অক্টো',
+        bookAgain: 'আবার বুক করুন', collectedTitle: 'যা সংগ্রহ করেছি', feedbackTitle: 'আমরা কেমন করলাম?', allGood: 'সব ঠিক ছিল', somethingOff: 'কিছু ঠিক ছিল না', feedbackNote: 'ব্যক্তিগত। "কিছু ঠিক ছিল না" চাপলে অর্ডার নম্বরসহ WhatsApp খোলে।', thanksTitle: 'ধন্যবাদ', thanksBody: 'শুনে ভালো লাগল। এক মিনিট সময় থাকলে একটি Google রিভিউ উত্তরার অন্যদের আমাদের খুঁজে পেতে সাহায্য করে।', googleReview: 'Google-এ রিভিউ দিন', stepOf: '৫টির মধ্যে ৩ নম্বর ধাপ', helpTitle: 'এই অর্ডার নিয়ে প্রশ্ন?', helpBody: 'অর্ডার নম্বর আমরা লিখে দিই।',
+        dBookedT: 'বুক হয়েছে', dBookedS: 'আমাদের ফোনের অপেক্ষায়। রাইডার রওনা হওয়ার আগে 01312 595204 নম্বরে সময় নিশ্চিত করি।', dCollectedT: 'সংগ্রহ হয়েছে', dCollectedS: 'সাধারণত বুধ ৭ অক্টোবরের মধ্যে ফেরত। যাচাইয়ের পর তালিকা আর চূড়ান্ত দাম দেখা যাবে।', dCleaningT: 'পরিষ্কার হচ্ছে', dCleaningS: 'সাধারণত বুধ ৭ অক্টোবরের মধ্যে ফেরত।', dReadyT: 'প্রস্তুত', dReadyS0: 'প্যাক করা, প্রস্তুত। ডেলিভারি ঠিক হলে আমরা জানাব।', dReadyS: 'প্যাক করা, প্রস্তুত। রাইডার আজ বিকেল ৪টা থেকে ৮টায় পৌঁছে দেবে।', dReadyS2: 'প্যাক করা, প্রস্তুত। রাইডার রওনা হয়েছে।', delivNotPlanned: 'ডেলিভারি এখনো ঠিক হয়নি', delivToday: 'ডেলিভারি আজ, বিকেল ৪টা থেকে ৮টা', delivOnWay: 'রাইডার রওনা হয়েছে', dDeliveredT: 'ডেলিভারি হয়েছে', dDeliveredS: 'ফেরত বুধ ৭ অক্টোবর, বিকেল ৩:৪০। পুরো পরিশোধিত।', dDueT: 'ডেলিভারি হয়েছে', dDueS: 'ফেরত মঙ্গল ২০ জানুয়ারি। ৳২০০ বাকি।', dMissingT: 'ডেলিভারি হয়েছে', dMissingS: 'ফেরত বৃহ ১৫ জানুয়ারি।',
+        sBooked: 'আপনার অর্ডার বুক হয়েছে।', sWaitingCall: 'সময় নিশ্চিত করতে আমাদের ফোনের অপেক্ষায়।', sConfirmed: 'নিশ্চিত হয়েছে।', sCollected: 'House 2, Road 14 থেকে সংগ্রহ। {n}টি গোনা হয়েছে।', sCollectedNoCount: 'House 2, Road 14 থেকে সংগ্রহ।', sCollectedWait: 'পিকআপের পর আমরা আপনার জিনিস গুনে যাচাই করি। তারপর তালিকা আর চূড়ান্ত দাম এখানে দেখা যায়।', sCleaning: 'ট্যাগ করে Velto-তে পরিষ্কার হচ্ছে।', sCleaningWait: 'Velto-তে পরিষ্কার ও যাচাই।', sReady: 'পরিষ্কার, যাচাই ও প্যাক করা।', sReadyWait: 'প্যাক করে রাইডারের জন্য প্রস্তুত।', sDelivered: 'আপনার কাছে ফেরত।', sDeliveredWait: 'রাইডার ফেরত নিয়ে আসে।',
+        totalLabel: 'মোট', estimateLabel: 'আনুমানিক', toBeSet: 'গোনার পর ঠিক হবে', payCash: 'ডেলিভারির সময় রাইডারকে দিন।', payDueNote: 'পরের পিকআপ বা ডেলিভারিতে রাইডারকে দিন, অথবা এখনই মেটাতে WhatsApp-এ লিখুন।', payOnWa: 'WhatsApp-এ লিখুন', waPrefill: 'মেসেজে {id} আর {amt} লেখা থাকবে।', dueTitle: 'বাকি আছে', missingItems: 'এই অর্ডারের জিনিসের সংখ্যা লেখা হয়নি। মোট হলো ডেলিভারিতে যা দিয়েছিলেন।', missingNote: 'পুরোনো কিছু অর্ডারের তথ্য লেখা হয়নি। কিছু ভুল মনে হলে আমাদের লিখুন।',
+        pricesSub: 'প্রতি পিস, Velto-র মূল্য তালিকা থেকে।', pricesFoot: 'জিনিস গুনে যাচাইয়ের পর চূড়ান্ত দাম। ৳৪৯৯ বা তার বেশি অর্ডারে ডেলিভারি ফ্রি।', verified: 'যাচাইকৃত',
+        pDetails: 'আপনার তথ্য', pDetailsSub: 'নাম, নম্বর, পিকআপ ঠিকানা', pAddresses: 'ঠিকানা', pAddressesSub: '২টি সংরক্ষিত · বাসা, অফিস', pPrefs: 'কীভাবে চান', pPrefsSub: 'শার্ট হ্যাঙ্গারে', pWeekly: 'সাপ্তাহিক পিকআপ', pWeeklySub: 'বন্ধ', pNotif: 'নোটিফিকেশন', pNotifSub: 'অর্ডার, পিকআপ আর রিমাইন্ডার চালু · অফার বন্ধ', pLang: 'ভাষা', pLangSub: 'বাংলা',
+        helpWa: 'WhatsApp-এ সাহায্য', helpWaBody: 'একজন মানুষ উত্তর দেয়, সকাল ১০টা থেকে রাত ১০টা।', privacy: 'গোপনীয়তা', terms: 'শর্তাবলি', signOut: 'সাইন আউট',
+        saved: 'সংরক্ষিত', prefTitle: 'কীভাবে চান', prefSub: 'প্রতিটি অর্ডারে যোগ হয়, যাতে আউটলেট আপনার কাপড়ের সঙ্গে দেখে।', prefShirts: 'শার্ট', noPref: 'পছন্দ নেই', yes: 'হ্যাঁ', no: 'না', hanger: 'হ্যাঙ্গারে', folded: 'ভাঁজ করা', prefStarch: 'মাড়', none: 'না', light: 'হালকা', heavy: 'বেশি', prefFragrance: 'সুগন্ধি', mild: 'হালকা', separateWhites: 'সাদা আর রঙিন আলাদা ধোয়া', anythingElse: 'আর কিছু জানানোর থাকলে', prefNoteValue: 'সিল্কের কুর্তা, শুধু হাতে ধোয়া।', prefFoot: 'এই স্ক্রিন ছাড়লেই সংরক্ষণ হয়।', notifScreenSub: 'প্রতি ধরনের মেসেজের জন্য একটি সুইচ। রিমাইন্ডার চালু, অফার বন্ধ দিয়ে শুরু।', nOrder: 'অর্ডার আপডেট', nOrderSub: 'সংগ্রহ, প্রস্তুত, ডেলিভারি', nPickup: 'পিকআপ', nPickupSub: 'সময় নিশ্চিত, রাইডার রওনা', nCare: 'যত্নের নোট', nCareSub: 'দাগ বা ঢিলা বোতাম পেলে', nPayment: 'পেমেন্ট', nPaymentSub: 'বাকি টাকা, পেমেন্ট পাওয়া', nReminder: 'রিমাইন্ডার', nReminderSub: 'সাপ্তাহিক পিকআপ আর ফিরে আসার মনে করানো', nOffer: 'অফার', nOfferSub: 'ছাড় আর নতুন সার্ভিস', prefDefault: '"পছন্দ নেই" দিয়ে শুরু; আউটলেট যেমন করে তেমনই করে। কোনো নির্দিষ্ট কাপড় নিয়ে কিছু বলার থাকলে WhatsApp-এ লিখুন।',
+      }
+    };
+    const t = Object.assign({}, T.en, T[lang]);
+    const icons = { home: 'M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z', book: 'M12 5v14M5 12h14', orders: 'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6', profile: 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0' };
+    const tabs = (active) => ['home','book','orders','profile'].map(k => ({ d: icons[k], label: t['tab' + k[0].toUpperCase() + k.slice(1)], color: k === active ? '#0B72B9' : '#5B6470' }));
+    const svc = bn ? { dc: 'ড্রাই ক্লিনিং', wi: 'ওয়াশ অ্যান্ড আয়রন', ir: 'আয়রন' } : { dc: 'Dry Cleaning', wi: 'Wash & Iron', ir: 'Ironing' };
+    svc.mix = svc.dc + ' + ' + svc.wi;
+    const d = (s) => bn ? s.replace(/\d/g, c => '০১২৩৪৫৬৭৮৯'[c]) : s;
+    const dates = bn ? { d1: 'মঙ্গল ২০ জানু', d2: 'বৃহ ১৫ জানু', d3: 'বুধ ১৪ জানু', d4: 'রবি ২৩ নভে' } : { d1: 'Tue 20 Jan', d2: 'Thu 15 Jan', d3: 'Wed 14 Jan', d4: 'Sun 23 Nov' };
+    const recentOrders = [
+      { id: 'VEL-00381', service: svc.mix, date: dates.d1, items: t.items3, total: d('৳480'), status: t.delivered, statusColor: '#1E7A46' },
+      { id: 'VEL-00356', service: svc.ir, date: dates.d2, items: '', total: d('৳10'), status: t.delivered, statusColor: '#1E7A46' },
+      { id: 'VEL-00348', service: svc.ir, date: dates.d3, items: '', total: d('৳100'), status: t.delivered, statusColor: '#1E7A46' },
+    ];
+    const stepKeys = ['stepBooked','stepCollected','stepCleaning','stepReady','stepDelivered'];
+    const homeSteps = stepKeys.map((k, i) => ({ label: t[k], bar: i < 2 ? '#8FC3EC' : i === 2 ? '#fff' : 'rgba(255,255,255,.18)', text: i <= 2 ? '#fff' : 'rgba(255,255,255,.5)' }));
+    const sel = { border: '#0B72B9', bg: '#EAF3FB', color: '#0A2E55' }, un = { border: '#D7DCE3', bg: '#fff', color: '#374151' };
+    // Day picker is driven by capacity data from the API: [{date, weekday, slotsLeft}]; days with slotsLeft 0 are omitted, today is never included.
+    const capacity = [
+      { iso: '2026-10-06', wd: bn ? 'মঙ্গল' : 'Tue', day: 6, slotsLeft: 14 },
+      { iso: '2026-10-07', wd: bn ? 'বুধ' : 'Wed', day: 7, slotsLeft: 9 },
+      { iso: '2026-10-08', wd: bn ? 'বৃহ' : 'Thu', day: 8, slotsLeft: 3 },
+      { iso: '2026-10-10', wd: bn ? 'শনি' : 'Sat', day: 10, slotsLeft: 11 },
+    ];
+    const tomorrowLbl = bn ? 'আগামীকাল' : 'Tomorrow';
+    const days = capacity.filter(c => c.slotsLeft > 0).map((c, i) => Object.assign({ name: i === 0 && c.iso === '2026-10-06' ? tomorrowLbl : c.wd, date: d(c.day + (bn ? ' অক্টো' : ' Oct')) }, i === 0 ? sel : un));
+    const windows = [
+      Object.assign({ name: bn ? 'সকাল' : 'Morning', hours: bn ? '৯টা–১২টা' : '9 AM–12 PM' }, un),
+      Object.assign({ name: bn ? 'দুপুর' : 'Afternoon', hours: bn ? '১২টা–৪টা' : '12–4 PM' }, un),
+      Object.assign({ name: bn ? 'সন্ধ্যা' : 'Evening', hours: bn ? '৪টা–৮টা' : '4–8 PM' }, sel),
+    ];
+    const names = bn ? ['শার্ট','প্যান্ট','পাঞ্জাবি','ব্লেজার','শাড়ি (সুতি)','বেডশিট (মাঝারি)'] : ['Shirt','Pant','Panjabi','Blazer','Sari (Cotton)','Bed Sheet (Medium)'];
+    const prices = [100,100,100,280,250,140], qtys = [2,0,0,1,0,0];
+    const itemSvc = [svc.wi, '', '', svc.dc, '', ''];
+    const pickerItems = names.map((name, i) => ({ name, price: d('৳' + prices[i]), sub: qtys[i] ? itemSvc[i] + ' · ' + d('৳' + prices[i]) : d('৳' + prices[i]), qty: qtys[i], noQty: !qtys[i] }));
+    const est = d('৳480');
+    const pastOrders = [
+      Object.assign({}, recentOrders[0], { pay: t.paid }),
+      Object.assign({}, recentOrders[1], { pay: t.paid }),
+      Object.assign({}, recentOrders[2], { pay: t.paid }),
+      { id: 'VEL-00070', service: svc.wi, date: dates.d4, items: t.items4, total: d('৳350'), status: t.delivered, statusColor: '#1E7A46', pay: t.paid },
+    ];
+    const listSteps = stepKeys.map((k, i) => ({ bar: i <= 2 ? '#0B72B9' : '#E3E7EC' }));
+    const orderScreens = [
+      { label: 'Empty', empty: true, active: false, showPast: false, nothingActive: false },
+      { label: 'In progress', empty: false, active: true, showPast: true, nothingActive: false },
+      { label: 'Past only', empty: false, active: false, showPast: true, nothingActive: true },
+    ];
+    // Order detail screens
+    const times = bn
+      ? ['রবি ৫ অক্টো ১০:১২','','রবি ৫ অক্টো বিকেল ৫:৩০','মঙ্গল ৬ অক্টো ৯:০০','বুধ ৭ অক্টো দুপুর ২:১৫','বুধ ৭ অক্টো বিকেল ৩:৪০']
+      : ['Sun 5 Oct 10:12 AM','','Sun 5 Oct 5:30 PM','Tue 6 Oct 9:00 AM','Wed 7 Oct 2:15 PM','Wed 7 Oct 3:40 PM'];
+    // Per-order timelines: index = step. Empty string = Ops has no timestamp for that step, so no time is shown.
+    const timesJan20 = bn ? ['শনি ১৭ জানু ১১:২০','শনি ১৭ জানু বিকেল ৫:১০','রবি ১৮ জানু ৯:৩০','সোম ১৯ জানু বিকেল ৪:০৫','মঙ্গল ২০ জানু বিকেল ৩:৪০'] : ['Sat 17 Jan 11:20 AM','Sat 17 Jan 5:10 PM','Sun 18 Jan 9:30 AM','Mon 19 Jan 4:05 PM','Tue 20 Jan 3:40 PM'];
+    const timesJan15 = bn ? ['সোম ১২ জানু দুপুর ২:১০','','','','বৃহ ১৫ জানু সন্ধ্যা ৬:২০'] : ['Mon 12 Jan 2:10 PM','','','','Thu 15 Jan 6:20 PM'];
+    const descsFor = (n) => [t.sBooked, n ? t.sCollected.replace('{n}', d(String(n))) : t.sCollectedNoCount, t.sCleaning, t.sReady, t.sDelivered];
+    const descDone = descsFor(6);
+    const descWait = [t.sBooked, t.sCollectedWait, t.sCleaningWait, t.sReadyWait, t.sDeliveredWait];
+    const mkSteps = (current, opts = {}) => stepKeys.map((k, i) => {
+      const done = i < current, cur = i === current, last = i === 4;
+      return {
+        name: t[k], desc: done ? (opts.descs || descDone)[i] : cur ? (opts.curDesc || (opts.descs || descDone)[i]) : descWait[i],
+        time: done || cur ? (opts.times ? opts.times[i] : times[i === 0 ? 0 : i + 1]) : '',
+        dotBg: done || cur ? '#0B72B9' : '#fff', dotBorder: done || cur ? '#0B72B9' : '#D7DCE3', check: done ? '#fff' : cur ? '#0B72B9' : 'transparent',
+        line: last ? 'transparent' : done ? '#0B72B9' : '#E3E7EC', pad: last ? '0' : '18px',
+        titleColor: done || cur ? '#0A2E55' : '#9AA3AF', descColor: done || cur ? '#4B5563' : '#B6BDC6',
+        delivery: cur && i === 3 ? (opts.delivery || t.delivNotPlanned) : '',
+      };
+    });
+    const sixItems = bn ? [{ name: 'শার্ট', qty: '× ৩' }, { name: 'প্যান্ট', qty: '× ২' }, { name: 'পাঞ্জাবি', qty: '× ১' }] : [{ name: 'Shirt', qty: '× 3' }, { name: 'Pant', qty: '× 2' }, { name: 'Panjabi', qty: '× 1' }];
+    const base = { id: 'VEL-00392', service: svc.wi, outlet: '', subColor: '#4B5563', items: sixItems, hasItems: true, noItems: false, totalLabel: t.totalLabel, total: d('৳480'), paidAmt: d('৳0'), dueAmt: d('৳480'), dueColor: '#0A2E55', payNote: t.payCash, showRebook: false, showFeedback: false, showThanks: false, showDue: false, showWeekly: false, showDueRow: true, waPrefill: '' };
+    const bookedSteps = mkSteps(0, { curDesc: t.sWaitingCall });
+    const confirmedSteps = mkSteps(1); confirmedSteps[0].desc = t.sConfirmed; confirmedSteps[1] = Object.assign({}, confirmedSteps[1], { desc: t.sCollectedWait, time: '' });
+    const details = [
+      Object.assign({}, base, { label: 'Booked, waiting for our call', title: t.dBookedT, sub: t.dBookedS, steps: bookedSteps, hasItems: false, noItems: true, itemsNote: t.sCollectedWait, totalLabel: t.estimateLabel, total: t.toBeSet, dueAmt: '', payNote: '', showDueRow: false }),
+      Object.assign({}, base, { label: 'Collected', title: t.dCollectedT, sub: t.dCollectedS, steps: mkSteps(1) }),
+      Object.assign({}, base, { label: 'Being cleaned', title: t.dCleaningT, sub: t.dCleaningS, steps: mkSteps(2) }),
+      Object.assign({}, base, { label: 'Ready, delivery not planned', title: t.dReadyT, sub: t.dReadyS0, steps: mkSteps(3) }),
+      Object.assign({}, base, { label: 'Ready, delivery planned', title: t.dReadyT, sub: t.dReadyS, steps: mkSteps(3, { delivery: t.delivToday }) }),
+      Object.assign({}, base, { label: 'Ready, rider on the way', title: t.dReadyT, sub: t.dReadyS2, steps: mkSteps(3, { delivery: t.delivOnWay }) }),
+      Object.assign({}, base, { label: 'Delivered, paid', title: t.dDeliveredT, sub: t.dDeliveredS, steps: mkSteps(5), paidAmt: d('৳480'), dueAmt: d('৳0'), dueColor: '#1E7A46', payNote: '', showRebook: true, showFeedback: true }),
+      Object.assign({}, base, { id: 'VEL-00381', label: 'Delivered, payment due (mixed service)', service: svc.mix, title: t.dDueT, sub: t.dDueS, subColor: '#B45309', steps: mkSteps(5, { times: timesJan20, descs: descsFor(3) }), waPrefill: t.waPrefill.replace('{id}', 'VEL-00381').replace('{amt}', d('৳200')), items: bn ? [{ name: 'ব্লেজার', svc: svc.dc, qty: '× ১' }, { name: 'শার্ট', svc: svc.wi, qty: '× ২' }] : [{ name: 'Blazer', svc: svc.dc, qty: '× 1' }, { name: 'Shirt', svc: svc.wi, qty: '× 2' }], total: d('৳480'), paidAmt: d('৳280'), dueAmt: d('৳200'), dueColor: '#B45309', payNote: '', showRebook: true, showFeedback: true, showDue: true }),
+      Object.assign({}, base, { label: 'Delivered, after "All good"', title: t.dDeliveredT, sub: t.dDeliveredS, steps: mkSteps(5), paidAmt: d('৳480'), dueAmt: d('৳0'), dueColor: '#1E7A46', payNote: '', showRebook: true, showFeedback: false, showThanks: true, showWeekly: true }),
+      Object.assign({}, base, { id: 'VEL-00356', label: 'Delivered, missing data', service: svc.ir, title: t.dMissingT, sub: t.dMissingS, steps: mkSteps(5, { times: timesJan15, descs: descsFor(0) }), hasItems: false, noItems: true, itemsNote: t.missingItems, total: d('৳10'), paidAmt: d('৳10'), dueAmt: d('৳0'), dueColor: '#1E7A46', payNote: t.missingNote, showRebook: true, showFeedback: false }),
+    ];
+    const priceRows = names.map((name, i) => ({ name, price: d('৳' + prices[i]) }));
+    const notifRows = [['nOrder','nOrderSub',true],['nPickup','nPickupSub',true],['nCare','nCareSub',true],['nPayment','nPaymentSub',true],['nReminder','nReminderSub',true],['nOffer','nOfferSub',false]].map(([a, b, on]) => ({ name: t[a], sub: t[b], bg: on ? '#0B72B9' : '#D7DCE3', left: on ? '21px' : '3px' }));
+    const profileRows = [['pDetails','pDetailsSub'],['pAddresses','pAddressesSub'],['pPrefs','pPrefsSub'],['pWeekly','pWeeklySub'],['pNotif','pNotifSub'],['pLang','pLangSub']].map(([a, b]) => ({ name: t[a], sub: t[b] }));
+    return { lang, t, svc, d, notifRows, recentOrders, homeSteps, days, windows, pickerItems, est, pastOrders, listSteps, orderScreens, details, priceRows, profileRows, tabsHome: tabs('home'), tabsBook: tabs('book'), tabsOrders: tabs('orders'), tabsProfile: tabs('profile') };
+  }
+}
+</script>
+</body>
+</html>
