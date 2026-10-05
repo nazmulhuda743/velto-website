@@ -236,3 +236,15 @@ test("care approval copy: same keys in both languages, every Ops risk type in cu
   assert.equal(bn.garments(3), "৩টি কাপড়");
   assert.equal(en.banner(2), "2 orders need your approval");
 });
+
+/** Every string in a dictionary section. */
+const strings = (value) => (typeof value === "string" ? [value] : value && typeof value === "object" ? Object.values(value).flatMap(strings) : []);
+
+test("app copy follows the design's rules: no em dashes, exclamation marks or emojis", () => {
+  for (const [lang, forms] of [["en", formsEn], ["bn", formsBn]]) {
+    for (const s of strings(forms.common.appBar)) {
+      assert.ok(!/[—!]/.test(s), `${lang} app copy has an em dash or "!": ${s}`);
+      assert.ok(!/\p{Extended_Pictographic}/u.test(s), `${lang} app copy has an emoji: ${s}`);
+    }
+  }
+});

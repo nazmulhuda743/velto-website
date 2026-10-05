@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./app-shell.css";
 
 /*
  * Velto production tokens — spec §12 (LOCKED ROLES).
@@ -130,6 +131,22 @@
   --color-warning: #8a5300;
   --color-warning-soft: #fff4e5;
   --color-whatsapp: #25d366;
+
+  /* The installed app's own colours (used only by app components; src/app/app-shell.css). */
+  --color-app-tint: #eaf3fb;
+  --color-app-card: #ffffff;
+  --color-app-field: #c9d0d9;
+  --color-app-chip: #d7dce3;
+  --color-app-off: #f3f4f6;
+  --color-app-off-text: #9aa3af;
+  --color-app-green: #1e7a46;
+  --color-app-green-tint: #dcfce7;
+  --color-app-amber: #b45309;
+  --color-app-amber-tint: #fef3c7;
+  --color-app-red: #b42318;
+  --color-app-red-tint: #fee2e2;
+  --color-app-red-line: #f5b5b5;
+  --color-app-scrim: rgb(91 107 127 / 0.6);
 
   /* Layout breakpoints — spec §14 */
   --breakpoint-xs: 360px;

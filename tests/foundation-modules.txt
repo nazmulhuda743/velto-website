@@ -7,6 +7,7 @@ src/lib/integrations/ops/supabase-rpc.ts
 src/lib/integrations/pricing/validation.ts
 src/lib/customer/validation.ts
 src/lib/customer/rhythm.ts
+src/lib/customer/app-logic.ts
 src/lib/customer/loyalty.ts
 src/lib/customer/goal.ts
 src/lib/customer/extras.ts

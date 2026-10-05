@@ -71,11 +71,14 @@ export async function OrderDetailView({ id, care: careParam, base = "/account" }
 
   return (
     <div className="space-y-6 md:space-y-8">
-      <nav aria-label={t.breadcrumb} className="t-small">
-        <Link href={routes.orders} className="font-semibold text-navy underline decoration-blue/50 underline-offset-4">
-          {t.back}
-        </Link>
-      </nav>
+      {/* In the app the screen header carries "← Orders". */}
+      {base === "/app" ? null : (
+        <nav aria-label={t.breadcrumb} className="t-small">
+          <Link href={routes.orders} className="font-semibold text-navy underline decoration-blue/50 underline-offset-4">
+            {t.back}
+          </Link>
+        </nav>
+      )}
 
       {care?.status === "pending" ? careSection : null}
 
