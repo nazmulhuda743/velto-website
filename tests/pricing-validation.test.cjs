@@ -45,7 +45,9 @@ test("search: best match first, every word must match", () => {
   const items = ["B. Kameez Suit (2pc)", "Kabuli Suit", "Suit (2pc)", "Suit (1pc)", "Safari Suit", "Track Suit (2pc)", "Suit (3pc)"].map(item);
   assert.deepEqual(rankPriceItems(items, "suit").slice(0, 3).map((i) => i.name), ["Suit (1pc)", "Suit (2pc)", "Suit (3pc)"]);
   assert.deepEqual(rankPriceItems(items, "suit 1pc").map((i) => i.name), ["Suit (1pc)"]);
-  assert.deepEqual(rankPriceItems(items, "Suit 2pc").map((i) => i.name), ["Suit (2pc)", "Track Suit (2pc)", "B. Kameez Suit (2pc)"]);
+  assert.deepEqual(rankPriceItems(items, "Suit 2pc").map((i) => i.name), ["Suit (2pc)", "B. Kameez Suit (2pc)", "Track Suit (2pc)"]);
+  const saris = ["Sari (Silk)", "Sari (Katan)", "Sari (Cotton)", "Sari (Muslin)", "Banarashi (Heavy)"].map(item);
+  assert.equal(rankPriceItems(saris, "sari")[0].name, "Sari (Cotton)");
   assert.deepEqual(rankPriceItems([item("Blazer")], "blaz").map((i) => i.name), ["Blazer"]);
   assert.deepEqual(searchWords("  Suit   1PC "), ["suit", "1pc"]);
 });

@@ -81,8 +81,8 @@ export function searchWords(query: string): string[] {
 
 /**
  * Best match first: the exact name, then names that start with the search, then names with a
- * word that starts with it, then the rest; shorter names before longer ones, then A–Z. So "suit"
- * shows "Suit (1pc)" before "B. Kameez Suit (2pc)", and "suit 1pc" finds "Suit (1pc)".
+ * word that starts with it, then the rest; A–Z within each. So "suit" shows "Suit (1pc)" before
+ * "B. Kameez Suit (2pc)", "sari" starts with "Sari (Cotton)", and "suit 1pc" finds "Suit (1pc)".
  */
 export function rankPriceItems(items: PublicPriceItem[], query: string): PublicPriceItem[] {
   const words = searchWords(query);
@@ -99,6 +99,6 @@ export function rankPriceItems(items: PublicPriceItem[], query: string): PublicP
   return items
     .filter((item) => words.every((w) => plain(item.name).includes(w)))
     .map((item) => ({ item, s: score(item.name) }))
-    .sort((a, b) => a.s - b.s || a.item.name.length - b.item.name.length || a.item.name.localeCompare(b.item.name))
+    .sort((a, b) => a.s - b.s || a.item.name.localeCompare(b.item.name))
     .map((x) => x.item);
 }
