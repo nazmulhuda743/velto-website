@@ -215,3 +215,19 @@ export function serviceList(lines: { service: string }[], services: string[]): s
 
 /** More than one service on the order: each item row shows its own service. */
 export const isMixed = (lines: { service: string }[], services: string[]) => serviceList(lines, services).length > 1;
+
+/** Dhaka clock for a timestamp: 12-hour parts plus the 24-hour hour (Bangla names the part of day from it). */
+export function dhakaClock(value: string): { hour12: number; minute: string; pm: boolean; hour: number } | null {
+  const t = Date.parse(value);
+  if (!Number.isFinite(t)) return null;
+  const local = new Date(t + DHAKA_OFFSET_MS);
+  const hour = local.getUTCHours();
+  return { hour12: hour % 12 === 0 ? 12 : hour % 12, minute: String(local.getUTCMinutes()).padStart(2, "0"), pm: hour >= 12, hour };
+}
+
+/** Days after delivery during which "How did we do?" is asked (the record can still be edited for 14 days). */
+export const FEEDBACK_DAYS = 14;
+
+/** Ask "How did we do?": delivered within the last FEEDBACK_DAYS and not answered yet. */
+export const askFeedback = (deliveredAt: string | null, answered: boolean, now: Date = new Date()) =>
+  !answered && !!deliveredAt && Number.isFinite(Date.parse(deliveredAt)) && Date.parse(deliveredAt) >= now.getTime() - FEEDBACK_DAYS * 86_400_000;

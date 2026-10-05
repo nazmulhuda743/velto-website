@@ -1,5 +1,5 @@
 import { AppScreen } from "@/components/app/AppScreen";
-import { OrderDetailView } from "@/components/account/views/OrderDetailView";
+import { AppOrderView } from "@/components/app/orders/AppOrderView";
 import { AppHeader } from "@/components/pwa/AppHeader";
 import { formText } from "@/content/i18n/forms";
 import { getLocale } from "@/lib/i18n/server";
@@ -17,7 +17,7 @@ export default async function AppOrder({ params, searchParams }: { params: Param
   } catch {}
   return (
     <AppScreen header={<AppHeader back={{ href: "/app/orders", label: t.orders }} aside={/^VELR?-\d{5}$/.test(shown) ? shown : undefined} />}>
-      <OrderDetailView id={id} care={(await searchParams).care} base="/app" />
+      <AppOrderView id={id} care={(await searchParams).care} />
     </AppScreen>
   );
 }

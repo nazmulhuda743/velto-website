@@ -138,3 +138,18 @@ test("dhaka date crosses midnight at 18:00 UTC", () => {
   assert.equal(a.dhakaDate("2026-10-05T17:59:00Z"), "2026-10-05");
   assert.equal(a.dhakaDate("2026-10-05T18:00:00Z"), "2026-10-06");
 });
+
+test("dhaka clock: 12-hour parts in Dhaka time", () => {
+  assert.deepEqual(a.dhakaClock("2026-10-05T04:12:00Z"), { hour12: 10, minute: "12", pm: false, hour: 10 });
+  assert.deepEqual(a.dhakaClock("2026-10-05T11:30:00Z"), { hour12: 5, minute: "30", pm: true, hour: 17 });
+  assert.deepEqual(a.dhakaClock("2026-10-05T06:05:00Z"), { hour12: 12, minute: "05", pm: true, hour: 12 });
+  assert.equal(a.dhakaClock("nope"), null);
+});
+
+test("feedback is asked within 14 days of delivery, once", () => {
+  const now = new Date("2026-10-20T12:00:00Z");
+  assert.equal(a.askFeedback("2026-10-07T12:00:00Z", false, now), true);
+  assert.equal(a.askFeedback("2026-10-05T11:00:00Z", false, now), false);
+  assert.equal(a.askFeedback("2026-10-19T12:00:00Z", true, now), false);
+  assert.equal(a.askFeedback(null, false, now), false);
+});
