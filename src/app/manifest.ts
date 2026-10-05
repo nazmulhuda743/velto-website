@@ -13,10 +13,11 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Laundry, dry cleaning and ironing in Uttara with pickup from your door. Book a pickup, track an order and see your orders.",
     lang: "en",
     dir: "ltr",
-    // The installed app opens on the customer's own page (signed out, that is the sign-in). No
-    // source parameter: it would overwrite campaign attribution; launches are measured with app_launch.
-    start_url: "/account",
-    scope: "/",
+    // The installed app is everything under /app/ (its own pages and layout; the website never loads
+    // there). It opens on the app's Home (signed out: the app's sign-in). No source parameter: it would
+    // overwrite campaign attribution; launches are measured with app_launch.
+    start_url: "/app/home",
+    scope: "/app/",
     display: "standalone",
     display_override: ["standalone", "minimal-ui"],
     orientation: "portrait",
@@ -34,9 +35,8 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/icons/icon-monochrome-512.png", sizes: "512x512", type: "image/png", purpose: "monochrome" },
     ],
     shortcuts: [
-      { name: "Book a Pickup", short_name: "Book", url: "/book?source=pwa_shortcut", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
-      { name: "Track an Order", short_name: "Track", url: "/track?source=pwa_shortcut", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
-      { name: "My Account", short_name: "Account", url: "/account", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
+      { name: "Book a Pickup", short_name: "Book", url: "/app/book", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
+      { name: "My Orders", short_name: "Orders", url: "/app/orders", icons: [{ src: "/icons/icon-192.png", sizes: "192x192" }] },
     ],
   };
 }

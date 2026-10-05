@@ -6,13 +6,15 @@ import { accountText, orderFormat } from "@/content/i18n/account";
 import { WHATSAPP_URL } from "@/content/site";
 import { fill, format, localDigits, type Locale } from "@/lib/i18n/config";
 import { repeatHref, type Rhythm } from "@/lib/customer/rhythm";
+import { customerRoutes, type AppBase } from "@/lib/app-routes";
 
 /**
  * The account's main next step when nothing is in progress: first pickup, then "the same
  * again" with the customer's own pace. One primary action; WhatsApp stays one tap away for
  * customers who would rather message. Everything shown comes from their own orders.
  */
-export function NextPickupCard({ rhythm, locale, firstTime, quick }: { rhythm: Rhythm; locale: Locale; firstTime: boolean; quick?: ReactNode }) {
+export function NextPickupCard({ rhythm, locale, firstTime, quick, base = "/account" }: { rhythm: Rhythm; locale: Locale; firstTime: boolean; quick?: ReactNode; base?: AppBase }) {
+  const r = customerRoutes(base);
   const a = accountText(locale);
   const t = a.next;
   const { day } = orderFormat(locale);
@@ -28,7 +30,7 @@ export function NextPickupCard({ rhythm, locale, firstTime, quick }: { rhythm: R
         </h2>
         <p className="mt-2 max-w-[52ch] text-body">{t.firstBody}</p>
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-          <ButtonLink href="/book?source=account_first" event="book_pickup_click" placement="account_first" className="sm:!px-8">
+          <ButtonLink href={r.book({ source: "account_first" })} event="book_pickup_click" placement="account_first" className="sm:!px-8">
             {firstTime ? t.firstButton : a.home.book}
           </ButtonLink>
           <WhatsAppButton href={`${WHATSAPP_URL}?text=${encodeURIComponent(firstTime ? t.whatsappFirst : a.next.whatsappAny)}`} placement="account_first">
@@ -78,7 +80,7 @@ export function NextPickupCard({ rhythm, locale, firstTime, quick }: { rhythm: R
           <div>
             <dt className="t-caption uppercase tracking-[0.04em] text-secondary">{t.lastOrder}</dt>
             <dd className="mt-0.5">
-              <Link href={`/account/orders/${last.orderNumber}`} className="font-semibold text-navy underline decoration-blue/40 underline-offset-4 hover:decoration-blue">
+              <Link href={r.order(last.orderNumber)} className="font-semibold text-navy underline decoration-blue/40 underline-offset-4 hover:decoration-blue">
                 {last.orderNumber}
               </Link>
               <span className="block t-small text-secondary">
@@ -98,7 +100,7 @@ export function NextPickupCard({ rhythm, locale, firstTime, quick }: { rhythm: R
         <div className="mt-6">{quick}</div>
       ) : (
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <ButtonLink href={repeatHref(rhythm, `account_${rhythm.stage}`)} event="book_pickup_click" placement={`account_repeat_${rhythm.stage}`} className="sm:!px-8">
+          <ButtonLink href={repeatHref(rhythm, `account_${rhythm.stage}`, r.book())} event="book_pickup_click" placement={`account_repeat_${rhythm.stage}`} className="sm:!px-8">
             {t.same}
           </ButtonLink>
           <WhatsAppButton href={whatsapp} placement={`account_repeat_${rhythm.stage}`}>
@@ -108,7 +110,7 @@ export function NextPickupCard({ rhythm, locale, firstTime, quick }: { rhythm: R
       )}
       <p className="mt-3 t-small text-secondary">
         {services ? format(t.sameWith, { services }) : null}{" "}
-        <Link href="/book?source=account" className="font-semibold text-navy underline decoration-blue/40 underline-offset-4 hover:decoration-blue">
+        <Link href={r.book({ source: "account" })} className="font-semibold text-navy underline decoration-blue/40 underline-offset-4 hover:decoration-blue">
           {t.fresh}
         </Link>
       </p>

@@ -2,7 +2,7 @@
 
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { revalidateCustomer } from "./revalidate";
 import { getLocale, localHref, loginRedirectPath } from "@/lib/i18n/server";
 import { accountText } from "@/content/i18n/account";
 import { SITE_URL } from "@/lib/site-url";
@@ -14,6 +14,7 @@ import { LINK_CODE_COOKIE, LINK_CODE_TTL_SECONDS, checkLinkCode, issueLinkCode }
 import { ACCOUNT_HINT_COOKIE } from "./config";
 import { AREA, cleanIssues, happy, parsePreferences } from "./extras";
 import { AUTH_COOKIE_OPTIONS, customerSupabase } from "./supabase";
+import { customerRoutes, parseBase } from "@/lib/app-routes";
 import {
   TERMS_VERSION,
   normaliseBdPhone,
@@ -197,11 +198,12 @@ export async function googleSignInAction(form: FormData): Promise<void> {
   redirect(data.url);
 }
 
-export async function signOutAction() {
+export async function signOutAction(form?: FormData) {
   const supabase = await customerSupabase();
   await supabase?.auth.signOut({ scope: "local" });
   await setAccountHint(false);
-  redirect(await localHref("/"));
+  // Inside the installed app, back to the app's own sign-in (never the website).
+  redirect(parseBase(form?.get("base")) === "/app" ? "/app/login" : await localHref("/"));
 }
 
 /* ---------- Profile & history link ---------- */
@@ -238,7 +240,7 @@ export async function saveProfileAction(_prev: AuthFormState, form: FormData): P
     console.error("portal_profile_save_failed", error.code);
     return { status: "error", message: m.t.saveFailed, values };
   }
-  revalidatePath("/account", "layout");
+  revalidateCustomer();
   return { status: "saved" };
 }
 
@@ -247,7 +249,7 @@ export async function requestLinkAction(): Promise<void> {
   if (!supabase) return;
   const { error } = await supabase.rpc("portal_request_link");
   if (error) console.error("portal_request_link_failed", error.code);
-  revalidatePath("/account", "layout");
+  revalidateCustomer();
 }
 
 /* ---------- order feedback ---------- */
@@ -279,7 +281,7 @@ export async function saveFeedbackAction(_prev: FeedbackState, form: FormData): 
     console.error("portal_feedback_save_failed", error.code);
     return { status: "error", message: m.t.feedbackFailed };
   }
-  revalidatePath("/account", "layout");
+  revalidateCustomer();
   return { status: "saved", rating };
 }
 
@@ -310,7 +312,7 @@ export async function savePreferencesAction(_prev: PreferencesState, form: FormD
     console.error("portal_prefs_save_failed", error.code);
     return { status: "error", message: m.t.saveFailed };
   }
-  revalidatePath("/account", "layout");
+  revalidateCustomer();
   return { status: "saved" };
 }
 
@@ -345,7 +347,7 @@ export async function changePickupAction(_prev: PickupState, form: FormData): Pr
   if (!supabase) return m.disabled as PickupState;
   const { error } = await supabase.rpc("portal_pickup_change", { p_task: id, p_date: date, p_slot: slot });
   if (error) return pickupError(error, m.t);
-  revalidatePath("/account", "layout");
+  revalidateCustomer();
   return { status: "changed" };
 }
 
@@ -358,7 +360,7 @@ export async function cancelPickupAction(_prev: PickupState, form: FormData): Pr
   if (!supabase) return m.disabled as PickupState;
   const { error } = await supabase.rpc("portal_pickup_cancel", { p_task: id, p_reason: reason || null });
   if (error) return pickupError(error, m.t);
-  revalidatePath("/account", "layout");
+  revalidateCustomer();
   return { status: "cancelled" };
 }
 /* ---------- Show my past orders: prove the account's phone with an SMS code ---------- */
@@ -426,7 +428,7 @@ export async function confirmLinkCodeAction(_prev: AuthFormState, form: FormData
     });
     if (!r.ok || !r.result) return { status: "error", message: m.t.saveFailed };
     store.delete(LINK_CODE_COOKIE);
-    revalidatePath("/account", "layout");
+    revalidateCustomer();
     // "match": the proof is recorded; the account now asks "Welcome back — is this you?".
     return { status: "linked", result: r.result === "linked" ? "linked" : r.result === "pending" ? "pending" : r.result === "match" ? "match" : "no_orders" };
   } catch (error) {
@@ -456,22 +458,22 @@ export async function claimMatchAction(_prev: ClaimState, form: FormData): Promi
     p_terms_version: TERMS_VERSION,
   });
   if (error) {
-    if (error.code === "PGRST301" || error.message?.includes("authentication required")) redirect(await loginRedirectPath("/account"));
+    if (error.code === "PGRST301" || error.message?.includes("authentication required")) redirect(await loginRedirectPath(customerRoutes(parseBase(form.get("base"))).home));
     console.error("portal_claim_match_failed", error.code);
     return { status: "error", message: m.t.saveFailed };
   }
   const r = (data ?? {}) as { ok?: boolean; state?: string; error?: string; attemptsLeft?: number };
   if (r.ok) {
-    revalidatePath("/account", "layout");
-    redirect(await localHref("/account?restored=1"));
+    revalidateCustomer();
+    redirect(`${await localHref(customerRoutes(parseBase(form.get("base"))).home)}?restored=1`);
   }
   if (r.state === "assisted") {
-    revalidatePath("/account", "layout");
+    revalidateCustomer();
     return { status: "assisted" };
   }
   if (r.error === "name_required") return { status: "error", message: m.t.claimName };
   if (r.error === "name_mismatch") return { status: "mismatch", attemptsLeft: r.attemptsLeft ?? 0 };
-  revalidatePath("/account", "layout");
+  revalidateCustomer();
   return { status: "error", message: m.t.saveFailed };
 }
 
@@ -481,5 +483,5 @@ export async function rejectMatchAction(): Promise<void> {
   if (!supabase) return;
   const { error } = await supabase.rpc("portal_reject_match");
   if (error) console.error("portal_reject_match_failed", error.code);
-  revalidatePath("/account", "layout");
+  revalidateCustomer();
 }

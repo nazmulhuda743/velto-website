@@ -25,7 +25,7 @@ const base = process.env.SEO_BASE_URL || process.env.LAUNCH_BASE_URL || "http://
 const origin = process.env.SEO_EXPECTED_ORIGIN || "https://www.velto.com.bd";
 
 /** Must never be indexable, whether or not they are linked. */
-const PRIVATE = ["/login", "/signup", "/forgot-password", "/reset-password", "/account", "/book", "/quote", "/track", "/privacy", "/terms", "/cookies"];
+const PRIVATE = ["/login", "/signup", "/forgot-password", "/reset-password", "/account", "/app/home", "/book", "/quote", "/track", "/privacy", "/terms", "/cookies"];
 
 const failures = [];
 const fail = (msg) => failures.push(msg);

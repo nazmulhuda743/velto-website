@@ -12,7 +12,7 @@ const req = (path, extra = {}) => {
 
 test("personal and live pages are network-only (offline page on failure), data is never touched", () => {
   for (const path of [
-    "/account", "/account/orders/VEL-01234", "/bn/account", "/login", "/signup", "/forgot-password", "/reset-password",
+    "/account", "/account/orders/VEL-01234", "/bn/account", "/app", "/app/home", "/app/orders/VEL-01234", "/login", "/signup", "/forgot-password", "/reset-password",
     "/book", "/book?service=ironing", "/bn/book", "/quote", "/track", "/admin", "/admin/prices", "/auth/confirm",
   ]) {
     assert.equal(swStrategy(req(path), O), "live", path);

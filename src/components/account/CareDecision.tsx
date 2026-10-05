@@ -14,6 +14,7 @@ export function CareDecision({
   whatsapp,
   result,
   when,
+  base = "/account",
 }: {
   care: CareState;
   /** Signed photo links, per garment, in the same order as care.risks. */
@@ -24,6 +25,8 @@ export function CareDecision({
   result?: string;
   /** The decision time, formatted for the reader. */
   when?: string;
+  /** Which surface the decision returns to (the website account or the installed app). */
+  base?: "/account" | "/app";
 }) {
   const pending = care.status === "pending";
   return (
@@ -93,6 +96,7 @@ export function CareDecision({
       {pending ? (
         <form action={careDecisionAction} className="mt-5 grid gap-3 sm:grid-cols-2">
           <input type="hidden" name="order" value={care.orderNumber} />
+          <input type="hidden" name="base" value={base} />
           <button type="submit" name="decision" value="approved" className="flex min-h-14 flex-col items-start justify-center rounded-md bg-action px-5 py-3 text-left text-white hover:bg-action-hover">
             <span className="font-semibold">{t.approve}</span>
             <span className="mt-0.5 t-small text-white/85">{t.approveHint}</span>

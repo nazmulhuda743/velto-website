@@ -44,7 +44,7 @@ export function swStrategy(req: SwRequest, origin: string): SwStrategy {
   const path = url.pathname.replace(/^\/bn(?=\/|$)/, "") || "/";
   // Personal, live or state-changing areas: never cached, never answered from a cache.
   const NEVER = [
-    "/api", "/admin", "/account", "/auth", "/login", "/signup", "/forgot-password", "/reset-password",
+    "/api", "/admin", "/account", "/app", "/auth", "/login", "/signup", "/forgot-password", "/reset-password",
     "/book", "/quote", "/track", "/r", "/i", "/go", "/sw.js", "/manifest.webmanifest",
   ];
   if (NEVER.some((p) => path === p || path.startsWith(`${p}/`))) {

@@ -1,10 +1,11 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidateCustomer } from "./revalidate";
 import { redirect } from "next/navigation";
 import { localHref } from "@/lib/i18n/server";
 import { customerSupabase } from "./supabase";
 import { validOrderNumber } from "./validation";
+import { customerRoutes, parseBase } from "@/lib/app-routes";
 
 /**
  * The customer's care decision on their own order. The database checks the order is theirs and
@@ -13,8 +14,9 @@ import { validOrderNumber } from "./validation";
 export async function careDecisionAction(form: FormData) {
   const number = validOrderNumber(String(form.get("order") ?? ""));
   const decision = String(form.get("decision") ?? "");
-  if (!number) redirect(await localHref("/account/orders"));
-  const back = async (care: string) => redirect(`${await localHref(`/account/orders/${number}`)}?care=${care}#care`);
+  const r = customerRoutes(parseBase(form.get("base")));
+  if (!number) redirect(await localHref(r.orders));
+  const back = async (care: string) => redirect(`${await localHref(r.order(number))}?care=${care}#care`);
   if (decision !== "approved" && decision !== "declined") return back("failed");
   const supabase = await customerSupabase();
   if (!supabase) return back("failed");
@@ -23,6 +25,6 @@ export async function careDecisionAction(form: FormData) {
     console.error("portal_care_decide_failed", error.code);
     return back("failed");
   }
-  revalidatePath("/account", "layout");
+  revalidateCustomer();
   return back(decision);
 }

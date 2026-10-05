@@ -182,13 +182,14 @@ test("request intelligence: the first-website-order badge comes from the server'
 
 test("customer-account pages stay out of analytics and order numbers are redacted", () => {
   const { isPrivatePath, redactPrivatePath } = require(`${build}/lib/analytics/private-paths.js`);
-  for (const p of ["/account", "/account/", "/account/orders", "/account/orders/VEL-00001", "/account/profile", "/auth/confirm", "/login", "/signup", "/forgot-password", "/reset-password"]) {
+  for (const p of ["/account", "/account/", "/account/orders", "/account/orders/VEL-00001", "/account/profile", "/app/home", "/app/orders/VEL-00001", "/auth/confirm", "/login", "/signup", "/forgot-password", "/reset-password"]) {
     assert.equal(isPrivatePath(p), true, p);
   }
-  for (const p of ["/", "/book", "/track", "/accounts", "/services/wash-fold", "/loginx", "/authors"]) {
+  for (const p of ["/", "/book", "/track", "/accounts", "/services/wash-fold", "/loginx", "/authors", "/app", "/application"]) {
     assert.equal(isPrivatePath(p), false, p);
   }
   assert.equal(redactPrivatePath("/account/orders/VEL-00001"), "/account/orders/[order]");
+  assert.equal(redactPrivatePath("/app/orders/VEL-00001"), "/app/orders/[order]");
   assert.equal(cleanPath("/account/orders/VEL-00001?x=1"), "/account/orders/[order]");
 
   const body = (path) => ({ type: "events", visitorId: V, sessionId: S, device: "mobile", isNew: false, attribution: {}, events: [{ event: "page_view", path }] });

@@ -37,6 +37,12 @@ test("email, name and area validation", () => {
 test("post-login redirects stay inside the customer areas of this site", () => {
   assert.equal(v.safeNextPath("/account/orders"), "/account/orders");
   assert.equal(v.safeNextPath("/book?service=ironing"), "/book?service=ironing");
+  // The installed app's pages come back after sign-in; its install screen and its own sign-in don't.
+  assert.equal(v.safeNextPath("/app/home"), "/app/home");
+  assert.equal(v.safeNextPath("/app/orders/VEL-01940"), "/app/orders/VEL-01940");
+  assert.equal(v.safeNextPath("/app"), "/account");
+  assert.equal(v.safeNextPath("/app/login?next=/app/home"), "/account");
+  assert.equal(v.safeNextPath("/application"), "/account");
   assert.equal(v.safeNextPath("https://evil.example/account"), "/account");
   assert.equal(v.safeNextPath("//evil.example/account"), "/account");
   assert.equal(v.safeNextPath("/\\evil.example"), "/account");

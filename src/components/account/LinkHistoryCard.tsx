@@ -6,6 +6,7 @@ import { accountText, orderFormat } from "@/content/i18n/account";
 import { format } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
 import { LinkBySms } from "./forms";
+import { customerRoutes, type AppBase } from "@/lib/app-routes";
 
 type Ready = Extract<PortalAccount, { state: "ready" }>;
 
@@ -15,7 +16,7 @@ type Ready = Extract<PortalAccount, { state: "ready" }>;
  * with their mobile number already proved it, so they only see this when nothing was found.
  * Staff can still check by phone when the SMS can't reach the customer.
  */
-export async function LinkHistoryCard({ account, emphasis = "quiet" }: { account: Ready; emphasis?: "quiet" | "page" }) {
+export async function LinkHistoryCard({ account, emphasis = "quiet", base = "/account" }: { account: Ready; emphasis?: "quiet" | "page"; base?: AppBase }) {
   const locale = await getLocale();
   const t = accountText(locale).link;
   const { day } = orderFormat(locale);
@@ -70,7 +71,7 @@ export async function LinkHistoryCard({ account, emphasis = "quiet" }: { account
               {t.smsBodyBefore}
               {phone}
               {t.smsBodyAfter} {t.wrongNumberBefore}
-              <Link href="/account/profile" className="font-semibold text-navy underline underline-offset-4">
+              <Link href={customerRoutes(base).profile} className="font-semibold text-navy underline underline-offset-4">
                 {t.updateLink}
               </Link>
               {t.wrongNumberAfter}

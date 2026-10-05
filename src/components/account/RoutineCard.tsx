@@ -8,6 +8,7 @@ import { WHATSAPP_URL } from "@/content/site";
 import { format } from "@/lib/i18n/config";
 import { routineAction, type RoutineState } from "@/lib/customer/routine-actions";
 import { ROUTINE_SERVICES, ROUTINE_WINDOWS, type Routine, type RoutineWindow } from "@/lib/routine";
+import { customerRoutes, type AppBase } from "@/lib/app-routes";
 
 type Text = AccountText["routine"];
 
@@ -26,6 +27,7 @@ export function RoutineCard({
   nextOnLabel,
   suggestedDay,
   suggestedService,
+  base = "/account",
 }: {
   routine: Routine | null;
   hasAddress: boolean;
@@ -40,6 +42,7 @@ export function RoutineCard({
   suggestedDay: number | null;
   /** The service of their last order, when it is one a routine can carry. */
   suggestedService: string | null;
+  base?: AppBase;
 }) {
   const [state, action, pending] = useActionState<RoutineState, FormData>(routineAction, { status: "idle" });
   const [editing, setEditing] = useState(false);
@@ -92,7 +95,7 @@ export function RoutineCard({
       {!hasAddress && !open ? (
         <p className="mt-4 t-small text-body">
           {t.needAddress}{" "}
-          <Link href="/account/profile" className="font-semibold text-navy underline decoration-blue/50 underline-offset-4">
+          <Link href={customerRoutes(base).profile} className="font-semibold text-navy underline decoration-blue/50 underline-offset-4">
             {t.addAddress}
           </Link>
         </p>

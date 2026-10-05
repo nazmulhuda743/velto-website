@@ -67,15 +67,16 @@ for (const file of ["src/lib/customer/supabase.ts", "src/proxy.ts"]) {
 // 5. The proxy protects the whole account area.
 const proxy = read("src/proxy.ts");
 // The proxy runs on every page (English and /bn), strips the language prefix, then protects /account.
-expect(/const \{ locale, path \} = splitLocale\(url\.pathname\)/.test(proxy), "src/proxy.ts: account protection must apply to the /bn account pages too");
-expect(proxy.includes('const protectedRoute = path === "/account" || path.startsWith("/account/");'), "src/proxy.ts: must protect /account and /account/*");
+expect(/const split = splitLocale\(url\.pathname\);\s*const \{ path \} = split;/.test(proxy), "src/proxy.ts: account protection must apply to the /bn account pages too");
+expect(proxy.includes('const protectedRoute = path === "/account" || path.startsWith("/account/") || (app && !APP_PUBLIC.test(path));'), "src/proxy.ts: must protect /account, /account/* and the app's screens (/app/*)");
+expect(/const APP_PUBLIC = \/\^\\\/app\(\?:\\\/login\)\?\\\/\?\$\/;/.test(proxy), "src/proxy.ts: only /app (install screen) and /app/login are open without a session");
 expect(proxy.includes('matcher: ["/((?!api/|admin|go/|auth/|_next/|'), "src/proxy.ts: matcher must cover every page, including /account and /bn/account");
 expect(/auth\.getUser\(\)/.test(proxy), "src/proxy.ts: sessions must be verified with getUser()");
 
 // 6. Redirect targets and order URLs are validated.
 expect(read("src/app/auth/confirm/route.ts").includes("safeNextPath("), "auth/confirm must validate next= with safeNextPath");
 expect(read("src/lib/customer/actions.ts").includes("safeNextPath("), "sign-in must validate next= with safeNextPath");
-expect(read("src/app/[lang]/(site)/(portal)/account/orders/[id]/page.tsx").includes("validOrderNumber("), "order detail must accept order numbers only");
+expect(read("src/components/account/views/OrderDetailView.tsx").includes("validOrderNumber("), "order detail (website and app) must accept order numbers only");
 
 // 7. Consent-first GTM (PR #19's canonical implementation) with the portal privacy guards.
 const tracking = read("src/components/layout/TrackingScripts.tsx").replace(/\/\*[\s\S]*?\*\//g, "");
