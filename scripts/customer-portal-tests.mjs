@@ -83,7 +83,14 @@ const tracking = read("src/components/layout/TrackingScripts.tsx").replace(/\/\*
 expect(!/<noscript|<iframe/.test(tracking), "TrackingScripts: a noscript GTM iframe would load before consent");
 expect(tracking.includes("ConsentGatedTagManager"), "TrackingScripts: GTM must go through the consent gate");
 const gate = read("src/components/consent/ConsentGatedTagManager.tsx");
-expect(/isPrivatePath\(pathname\)/.test(gate) && /location\.reload\(\)/.test(gate), "ConsentGatedTagManager: GTM must stay off account pages");
+// blocksThirdPartyTags = account pages (isPrivatePath) plus the invoice / reminder link-token pages.
+const privatePaths = read("src/lib/analytics/private-paths.ts");
+expect(
+  (/isPrivatePath\(pathname\)/.test(gate) ||
+    (/blocksThirdPartyTags\(pathname\)/.test(gate) && /return isPrivatePath\(pathname\) \|\|/.test(privatePaths))) &&
+    /location\.reload\(\)/.test(gate),
+  "ConsentGatedTagManager: GTM must stay off account pages",
+);
 expect(/isPrivatePath\(/.test(read("src/components/layout/Analytics.tsx")), "track() must emit nothing on account pages");
 expect(/isPrivatePath\(/.test(read("src/lib/analytics/client.ts")), "first-party analytics must skip account pages");
 expect(/isPrivatePath\(path\)/.test(read("src/lib/analytics/collect-validation.ts")), "/api/collect must drop account-page events");

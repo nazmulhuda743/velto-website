@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { CONSENT_CHANGE_EVENT, readConsent } from "@/lib/analytics/client";
-import { isPrivatePath } from "@/lib/analytics/private-paths";
+import { blocksThirdPartyTags } from "@/lib/analytics/private-paths";
 
 let loaded = false;
 
@@ -24,7 +24,8 @@ function loadGtm(gtmId: string) {
  * state is the first data-layer entry, so tags inside the container see the
  * real per-category state.
  *
- * Customer-account and sign-in pages never start GTM. A loaded container can't
+ * Customer-account and sign-in pages, and the invoice / reminder link pages (whose address is a
+ * sign-in-free code), never start GTM. A loaded container can't
  * be unloaded, so moving onto one of those pages client-side from a public page
  * where GTM is running reloads the document: order pages opened from the
  * account area then never share a page with GTM.
@@ -33,13 +34,13 @@ export function ConsentGatedTagManager({ gtmId }: { gtmId: string }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (isPrivatePath(pathname)) {
+    if (blocksThirdPartyTags(pathname)) {
       if (loaded) window.location.reload();
       return;
     }
     const maybeLoad = () => {
       const consent = readConsent();
-      if (consent && (consent.analytics || consent.marketing) && !isPrivatePath(window.location.pathname)) loadGtm(gtmId);
+      if (consent && (consent.analytics || consent.marketing) && !blocksThirdPartyTags(window.location.pathname)) loadGtm(gtmId);
     };
     maybeLoad();
     window.addEventListener(CONSENT_CHANGE_EVENT, maybeLoad);

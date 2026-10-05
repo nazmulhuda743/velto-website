@@ -31,3 +31,6 @@ src/lib/admin/today-logic.ts
 src/lib/admin/dispatch.ts
 src/lib/admin/today.ts
 src/lib/popular-prices.ts
+src/lib/analytics/destinations.ts
+src/lib/whatsapp-ref.ts
+src/lib/conversions/meta-capi.ts

@@ -20,3 +20,15 @@ export function isPrivatePath(pathname: string): boolean {
 export function redactPrivatePath(pathname: string): string {
   return pathname.replace(/^((?:\/(?:en|bn))?\/(?:account|app)\/orders\/)[^/]+/, "$1[order]");
 }
+
+/**
+ * Link-token pages: the invoice (/i/<code>) and one-tap reminder (/r/<code>) links staff send by
+ * WhatsApp and SMS. The code in the address works without sign-in, so it must never reach Google
+ * or Meta (both record the page address). First-party analytics still runs there.
+ */
+const TOKEN_PATH = /^\/(?:i|r)\/[^/]+/;
+
+/** Pages where GTM (GA4, Meta) never runs and no GA4/Meta event is pushed. */
+export function blocksThirdPartyTags(pathname: string): boolean {
+  return isPrivatePath(pathname) || TOKEN_PATH.test(pathname.replace(LOCALE_PREFIX, "") || "/");
+}

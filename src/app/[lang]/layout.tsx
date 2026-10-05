@@ -28,7 +28,13 @@ export async function generateMetadata({ params }: Omit<Props, "children">): Pro
   // root layout, so Next.js doesn't attach them here: name them explicitly for every page that
   // doesn't set its own (pageMetadata() does).
   const card = { width: 1200, height: 630, type: "image/png", alt: t.shareImageAlt };
+  // Search Console HTML-tag verification, only if a token is configured. The Domain property
+  // (DNS TXT record) is the preferred route and needs nothing here (docs/technical/TRACKING.md).
+  const googleVerification = process.env.GOOGLE_SITE_VERIFICATION?.trim();
   return {
+    ...(googleVerification && /^[A-Za-z0-9_-]{20,100}$/.test(googleVerification)
+      ? { verification: { google: googleVerification } }
+      : {}),
     metadataBase: new URL(SITE_URL),
     applicationName: t.siteName,
     // Installable app (app/manifest.ts). Named explicitly: root metadata files aren't attached here.

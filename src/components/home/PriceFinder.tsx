@@ -83,6 +83,8 @@ export function PriceFinder({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const select = useCallback((item: PriceItem) => {
+    // A search still in flight would auto-select its exact match and count the same choice twice.
+    abortRef.current?.abort();
     setSelected(item);
     setQuery(item.name);
     setOpen(false);

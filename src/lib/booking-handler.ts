@@ -25,6 +25,7 @@ import {
 import { notifyNewRequest } from "@/lib/admin/dispatch";
 import { newRequestPush } from "@/lib/admin/request-flow";
 import { SITE_URL } from "@/lib/site-url";
+import { leadClickIdsForRequest, storeLeadClickIds } from "@/lib/whatsapp-ref-server";
 
 /**
  * Website-owned booking (spec §8), used by /api/bookings and /api/rhythm/book. Wire format:
@@ -102,8 +103,13 @@ export async function handleBooking(input: Record<string, unknown>, requestId: s
     const result = await gateway.createBooking(parsed.value, context.value);
     // Tell the managers now, after the response is sent (best effort).
     after(() => notifyNewRequest(newRequestPush("booking", { name: parsed.value.name, area: parsed.value.area, when: parsed.value.preferredPickup, service: parsed.value.service }, SITE_URL)));
+    // Consented ad click ids, kept against the reference for a later server-side Lead / Purchase.
+    const clickIds = await leadClickIdsForRequest(data.attribution).catch(() => ({}));
+    after(() => storeLeadClickIds(result.reference, clickIds));
     return NextResponse.json(
-      { ok: true as const, reference: result.reference, requestId },
+      // `scheduled`: a live pickup window was reserved with the booking (capacity on), so the
+      // pickup is booked, not just requested. Without capacity Velto confirms the time by phone.
+      { ok: true as const, reference: result.reference, requestId, scheduled: Boolean(parsed.value.slot) },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {

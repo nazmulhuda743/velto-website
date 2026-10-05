@@ -16,6 +16,7 @@ import { readBoundedJson } from "@/lib/security/json-request";
 import { SITE_URL } from "@/lib/site-url";
 import { notifyNewRequest } from "@/lib/admin/dispatch";
 import { newRequestPush } from "@/lib/admin/request-flow";
+import { leadClickIdsForRequest, storeLeadClickIds } from "@/lib/whatsapp-ref-server";
 
 /**
  * Website-owned household quote endpoint (spec §7/§8). Same wire format and
@@ -55,6 +56,10 @@ export async function POST(request: NextRequest) {
     const result = await gateway.createQuote(parsed.value, context.value);
     // Tell the managers now, after the response is sent (best effort).
     after(() => notifyNewRequest(newRequestPush("quote", { name: parsed.value.name, area: parsed.value.area, service: parsed.value.service }, SITE_URL)));
+    // Consented ad click ids, kept against the reference for a later server-side Lead / Purchase.
+    const data = input.data && typeof input.data === "object" ? (input.data as Record<string, unknown>) : {};
+    const clickIds = await leadClickIdsForRequest(data.attribution).catch(() => ({}));
+    after(() => storeLeadClickIds(result.reference, clickIds));
     return NextResponse.json(
       { ok: true as const, reference: result.reference, requestId },
       { headers: { "Cache-Control": "no-store" } },

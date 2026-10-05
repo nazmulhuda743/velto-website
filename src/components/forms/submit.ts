@@ -42,7 +42,7 @@ export type QuoteFormData = {
 
 export type SubmitResult =
   /** `reference` is issued by Velto Ops; the UI never invents one. */
-  | { ok: true; reference?: string }
+  | { ok: true; reference?: string; scheduled?: boolean }
   | { ok: false; code: "not_connected" | "invalid_request" | "unavailable" | "duplicate_submission" | "slot_unavailable" };
 
 /**
@@ -69,10 +69,14 @@ async function post(path: string, data: Record<string, unknown>): Promise<Submit
     });
     if (res.status === 501) return { ok: false, code: "not_connected" };
     const body = (await res.json().catch(() => null)) as
-      | { ok?: boolean; reference?: unknown; error?: { code?: string } }
+      | { ok?: boolean; reference?: unknown; scheduled?: unknown; error?: { code?: string } }
       | null;
     if (res.ok && body?.ok) {
-      return { ok: true, reference: typeof body.reference === "string" ? body.reference : undefined };
+      return {
+        ok: true,
+        reference: typeof body.reference === "string" ? body.reference : undefined,
+        scheduled: body.scheduled === true,
+      };
     }
     if (body?.error?.code === "invalid_request") return { ok: false, code: "invalid_request" };
     if (body?.error?.code === "duplicate_submission") return { ok: false, code: "duplicate_submission" };

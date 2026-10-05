@@ -10,6 +10,7 @@ const approvedEvents = [
   "callback_open",
   "callback_request",
   "booking_success",
+  "pickup_scheduled",
   "booking_error",
   "whatsapp_click",
   "phone_click",

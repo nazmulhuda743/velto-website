@@ -6,6 +6,7 @@
 import { analyticsSessionId, currentDevice, readConsent } from "@/lib/analytics/client";
 import { referrerHost } from "@/lib/analytics/classify";
 import { ATTRIBUTION_KEYS, MARKETING_ATTRIBUTION_KEYS as MARKETING_KEYS, readAttribution, type Attribution } from "@/lib/attribution";
+import { fbcFromClick } from "@/lib/whatsapp-ref";
 
 /** Drop advertising identifiers unless the visitor granted Marketing consent. */
 export function consentedAttribution(attribution: Attribution): Attribution {
@@ -25,6 +26,10 @@ export function captureAttributionFromUrl() {
     if (!ATTRIBUTION_KEYS.some((key) => params.get(key)) && !referrer) return;
     if (sessionStorage.getItem(STORAGE_KEY)) return;
     if (referrer) params.set("referrer", referrer);
+    // Meta's click cookie format, timed at landing (as the Pixel would set it): kept in case the
+    // Pixel loads later, after the fbclid has left the address bar. Sent onward only with Marketing consent.
+    const fbc = !params.get("fbc") ? fbcFromClick(params.get("fbclid") ?? undefined, Date.now()) : undefined;
+    if (fbc) params.set("fbc", fbc);
     sessionStorage.setItem(
       STORAGE_KEY,
       JSON.stringify(readAttribution(params, window.location.pathname)),

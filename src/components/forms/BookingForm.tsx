@@ -8,6 +8,7 @@ import type { NotifyText } from "@/content/i18n/notify";
 import { ButtonLink } from "@/components/ui/Button";
 import { WhatsAppIcon } from "@/components/ui/icons";
 import { FREE_DELIVERY_THRESHOLD, WHATSAPP_URL } from "@/content/site";
+import { eventIds } from "@/lib/analytics/destinations";
 import {
   composeBookingNotes,
   estimateBooking,
@@ -1059,7 +1060,14 @@ export function BookingForm({
     }
 
     if (result.ok) {
-      if (!previewOutcome) track("booking_success", { service: bookingService(s) });
+      if (!previewOutcome) {
+        const service = bookingService(s);
+        // The Ops reference makes the Meta event id, so a later server-side event can deduplicate.
+        track("booking_success", { service, event_id: result.reference ? eventIds.lead(result.reference) : undefined });
+        if (result.scheduled) {
+          track("pickup_scheduled", { service, event_id: result.reference ? eventIds.schedule(result.reference) : undefined });
+        }
+      }
       writeStoredDraft(null);
       setStatus({ state: "success", reference: result.reference });
     } else if (result.code === "slot_unavailable") {

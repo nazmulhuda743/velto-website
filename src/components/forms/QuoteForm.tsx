@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "r
 import { track } from "@/components/layout/Analytics";
 import { ButtonLink, WhatsAppButton } from "@/components/ui/Button";
 import { WHATSAPP_URL } from "@/content/site";
+import { eventIds } from "@/lib/analytics/destinations";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import type { FormText } from "@/content/i18n/forms/en";
 import { fill, format, type Locale } from "@/lib/i18n/config";
@@ -148,7 +149,7 @@ export function QuoteForm({
     }
     setStatus({ state: "submitting" });
     const result = await submitQuote({ ...data, phone: normalisePhone(data.phone), service: data.service as QuoteService });
-    if (result.ok) track("quote_success", { service: data.service });
+    if (result.ok) track("quote_success", { service: data.service, event_id: result.reference ? eventIds.lead(result.reference) : undefined });
     setStatus({ state: "done", result });
   };
 

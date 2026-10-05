@@ -11,6 +11,8 @@ export const ANALYTICS_EVENTS = [
   "callback_open",
   "callback_request",
   "booking_success",
+  // A booking that reserved a live pickup window (capacity on); a booking without one is only a request.
+  "pickup_scheduled",
   "booking_error",
   "whatsapp_click",
   "phone_click",
