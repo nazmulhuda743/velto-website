@@ -1059,7 +1059,8 @@ export function BookingForm({
     }
 
     if (result.ok) {
-      if (!previewOutcome) track("booking_success", { service: bookingService(s) });
+      // `pickup`: "booked" when a live pickup window was reserved (Meta Schedule), else a preferred time.
+      if (!previewOutcome) track("booking_success", { service: bookingService(s), pickup: s.pickup?.booked ? "booked" : "requested" });
       writeStoredDraft(null);
       setStatus({ state: "success", reference: result.reference });
     } else if (result.code === "slot_unavailable") {

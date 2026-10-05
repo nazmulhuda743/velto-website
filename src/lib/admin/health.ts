@@ -8,6 +8,7 @@ import { isAnalyticsWritesEnabled } from "../analytics/store";
 import { getOpsGateway } from "../integrations/ops/server";
 import { isPricingConfigured } from "../integrations/pricing/server";
 import { configuredGtmId } from "../gtm";
+import { configuredMetaPixelId } from "../meta-pixel/config";
 import { getSiteContent } from "../site-content";
 import { SITE_URL as METADATA_ORIGIN } from "../site-url";
 import { SITE_URL as SEO_ORIGIN } from "../seo/site";
@@ -184,7 +185,16 @@ export async function runHealthChecks(): Promise<HealthCheck[]> {
     group: "Measurement",
     label: "Google Tag Manager",
     status: configuredGtmId() ? "healthy" : "warning",
-    detail: configuredGtmId() ? "Container configured; it loads only after Analytics or Marketing consent." : "NEXT_PUBLIC_GTM_ID is missing, so GA4 and Meta Pixel cannot run.",
+    detail: configuredGtmId() ? "Container configured; it loads only after Analytics or Marketing consent." : "NEXT_PUBLIC_GTM_ID is missing, so GA4 cannot run.",
+  });
+  add({
+    id: "meta-pixel",
+    group: "Measurement",
+    label: "Meta Pixel",
+    status: configuredMetaPixelId() ? "healthy" : "warning",
+    detail: configuredMetaPixelId()
+      ? "Pixel configured; it loads only after Marketing consent. Check Events Manager for live events."
+      : "NEXT_PUBLIC_META_PIXEL_ID is missing (or not a numeric ID), so Meta ads cannot measure website actions.",
   });
   const lastEvent = analytics.state === "ok" ? hoursSince(analytics.data.last_event_at) : null;
   add({

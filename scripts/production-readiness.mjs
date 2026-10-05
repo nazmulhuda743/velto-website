@@ -175,6 +175,15 @@ async function main() {
     fail("NEXT_PUBLIC_GTM_ID is set but does not look like a GTM container ID");
   }
 
+  const pixel = process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim();
+  if (!pixel) {
+    console.log("INFO NEXT_PUBLIC_META_PIXEL_ID is optional and not configured in this process");
+  } else if (/^\d{10,20}$/.test(pixel)) {
+    pass("Meta Pixel ID syntax");
+  } else {
+    fail("NEXT_PUBLIC_META_PIXEL_ID is set but is not a numeric Meta Pixel (dataset) ID");
+  }
+
   if (!supabaseUrl || !secretKey || failures.length) {
     throw new Error("configuration checks failed before any network verification");
   }

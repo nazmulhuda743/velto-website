@@ -235,8 +235,8 @@ const SECTIONS: LegalSection[] = [
     body: (
       <>
         <p>
-          Velto uses Google Tag Manager to manage Google Analytics and Meta Pixel. Tag Manager itself is loaded only after
-          you allow Analytics or Marketing.
+          Velto uses Google Tag Manager to manage Google Analytics. Tag Manager itself is loaded only after you allow
+          Analytics or Marketing. Meta Pixel is loaded only after you allow Marketing.
         </p>
         <p>
           The website also sends Google Consent Mode signals: before you choose, analytics and advertising storage are set
