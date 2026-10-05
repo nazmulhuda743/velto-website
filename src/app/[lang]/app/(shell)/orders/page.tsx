@@ -1,10 +1,10 @@
 import { AppScreen } from "@/components/app/AppScreen";
-import { OrdersView } from "@/components/account/views/OrdersView";
+import { AppOrdersView } from "@/components/app/orders/AppOrdersView";
 
 export default function AppOrders() {
   return (
     <AppScreen>
-      <OrdersView base="/app" />
+      <AppOrdersView />
     </AppScreen>
   );
 }

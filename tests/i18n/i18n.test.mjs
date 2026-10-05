@@ -242,7 +242,7 @@ const strings = (value) => (typeof value === "string" ? [value] : value && typeo
 
 test("app copy follows the design's rules: no em dashes, exclamation marks or emojis", () => {
   for (const [lang, forms] of [["en", formsEn], ["bn", formsBn]]) {
-    for (const s of strings(forms.common.appBar)) {
+    for (const s of strings([forms.common.appBar, forms.common.app])) {
       assert.ok(!/[—!]/.test(s), `${lang} app copy has an em dash or "!": ${s}`);
       assert.ok(!/\p{Extended_Pictographic}/u.test(s), `${lang} app copy has an emoji: ${s}`);
     }
