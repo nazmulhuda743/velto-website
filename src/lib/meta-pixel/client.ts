@@ -35,6 +35,7 @@ const SCRIPT_SRC = "https://connect.facebook.net/en_US/fbevents.js";
 let pixelId: string | null = null;
 let state: "off" | "on" | "revoked" = "off";
 let lastPagePath: string | undefined;
+let blockedWarned = false;
 
 /** Random id per event: lets a future Conversions API send the same event_id for deduplication. */
 const eventId = (name: string) =>
@@ -56,7 +57,19 @@ function installBase() {
     return;
   }
   // Official Meta base code, unminified. Like Meta's snippet, it queues the arguments object itself.
+  // One addition: it drops calls this module never makes (broadcast track/trackCustom, and init of
+  // any other Pixel). Those can only come from other code on the page, such as an old Meta tag in
+  // GTM, and would count events twice in Velto's Pixel.
   const fbq: Fbq = function () {
+    // eslint-disable-next-line prefer-rest-params
+    const [method, id] = arguments as unknown as unknown[];
+    if (method === "track" || method === "trackCustom" || (method === "init" && id !== pixelId)) {
+      if (!blockedWarned) {
+        blockedWarned = true;
+        console.warn(`[meta-pixel] Ignored fbq('${String(method)}') from outside src/lib/meta-pixel. Remove any other Meta Pixel code (for example in GTM).`);
+      }
+      return;
+    }
     // eslint-disable-next-line prefer-rest-params
     if (fbq.callMethod) fbq.callMethod(...Array.from(arguments));
     // eslint-disable-next-line prefer-rest-params

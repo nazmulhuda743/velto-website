@@ -23,6 +23,10 @@ Dataset settings, as of 6 Oct 2026:
   was created by mistake on 6 Oct 2026. It is unused; the site does not send to it.
 
 Do not add a Meta Pixel tag in GTM: the site loads the Pixel itself and a second copy double-counts.
+The live container GTM-NZGDZXTM had the five `Meta - …` tags from the old export (placeholder Pixel
+`000000000000000`, broadcast `fbq('track')`). They were **paused** in GTM Version 3 ("Pause Meta Pixel tags",
+6 Oct 2026); GA4 tags were not touched. Unpause them only if the site's own Pixel is removed. As a second
+safeguard, the site's `fbq` ignores broadcast `track`/`trackCustom` calls and `init` of any other Pixel.
 
 ## How it works
 
