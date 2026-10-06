@@ -63,6 +63,13 @@ There is no Purchase: the website never sees a completed order. Services are nor
 
 The public site has no call button today, so CallClick is mapped but has nothing to fire it.
 
+## Staff browsers
+
+A browser with the `velto_staff=1` cookie loads no GTM/GA4, no Meta Pixel and sends no first-party events, so
+staff use never counts as customer traffic. It is set on admin sign-in, or by opening any page with
+`?velto_staff=1` once (`?velto_staff=0` removes it). Use `?velto_staff=0` before testing tracking.
+An IP filter was not used: Bangladeshi ISPs share IPs, so it could filter real customers.
+
 ## Verify
 
 1. Events Manager → Velto → **Test events** → open the site from there.

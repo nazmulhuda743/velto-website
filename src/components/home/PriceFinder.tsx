@@ -82,12 +82,16 @@ export function PriceFinder({
   const abortRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const select = useCallback((item: PriceItem) => {
+  // True once the visitor has typed or picked an example. A /pricing?q= link selects its item on
+  // load by itself; that is not a search the visitor made, so it is not tracked as one.
+  const userSearched = useRef(false);
+
+  const select = useCallback((item: PriceItem, byVisitor = true) => {
     setSelected(item);
     setQuery(item.name);
     setOpen(false);
     setActiveIndex(-1);
-    track("pricing_search", { section: "find-a-price", item: item.slug });
+    if (byVisitor || userSearched.current) track("pricing_search", { section: "find-a-price", item: item.slug });
   }, []);
 
   const search = useCallback(
@@ -120,7 +124,7 @@ export function PriceFinder({
         setStatus("ready");
         const exact = data.items.find((i) => i.name.toLowerCase() === q.trim().toLowerCase());
         if (exact && data.items.length === 1) {
-          select(exact);
+          select(exact, false);
         } else {
           setOpen(true);
           setActiveIndex(-1);
@@ -174,6 +178,7 @@ export function PriceFinder({
   };
 
   const tryExample = (name: string) => {
+    userSearched.current = true;
     setSelected(null);
     setQuery(name);
     inputRef.current?.focus();
@@ -205,6 +210,7 @@ export function PriceFinder({
             aria-describedby={helpId}
             value={query}
             onChange={(e) => {
+              userSearched.current = true;
               setSelected(null);
               setQuery(e.target.value);
             }}
