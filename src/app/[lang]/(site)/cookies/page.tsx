@@ -68,9 +68,9 @@ const ESSENTIAL: Row[] = [
     setBy: "Velto",
   },
   {
-    name: "velto_admin, velto_admin_seen, velto_admin_requests_seen",
-    purpose: "Sign Velto staff into the website dashboard and remember which dashboard notifications and new bookings they have seen. Never set for customers.",
-    duration: "12 hours / 90 days",
+    name: "velto_admin, velto_admin_seen, velto_admin_requests_seen, velto_staff",
+    purpose: "Sign Velto staff into the website dashboard, remember which dashboard notifications and new bookings they have seen, and keep staff browsers out of website measurement. Never set for customers.",
+    duration: "12 hours / 90 days / 13 months",
     setBy: "Velto",
   },
 ];

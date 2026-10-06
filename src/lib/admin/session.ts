@@ -95,6 +95,15 @@ export async function signIn(
     path: "/admin",
     maxAge: MAX_AGE_SECONDS,
   });
+  // Staff browser marker read by the public site's analytics (src/lib/analytics/client.ts): this
+  // browser is no longer measured. Not a credential; it only switches measurement off.
+  (await cookies()).set("velto_staff", "1", {
+    httpOnly: false,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 395 * 24 * 60 * 60,
+  });
   return { ok: true, admin };
 }
 

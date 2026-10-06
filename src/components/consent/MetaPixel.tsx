@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { CONSENT_CHANGE_EVENT, readConsent } from "@/lib/analytics/client";
+import { CONSENT_CHANGE_EVENT, isStaffBrowser, readConsent } from "@/lib/analytics/client";
 import { isPrivatePath } from "@/lib/analytics/private-paths";
 import { isMetaPixelLoaded, startMetaPixel, stopMetaPixel } from "@/lib/meta-pixel/client";
 import { isMetaExcludedPath } from "@/lib/meta-pixel/events";
@@ -24,7 +24,7 @@ export function MetaPixel({ pixelId }: { pixelId: string }) {
     }
     const apply = () => {
       // Per-customer link pages (/r/, /i/, /track) don't start it either; it starts on the next page.
-      if (!readConsent()?.marketing) stopMetaPixel();
+      if (!readConsent()?.marketing || isStaffBrowser()) stopMetaPixel();
       else if (!isMetaExcludedPath(window.location.pathname)) startMetaPixel(pixelId);
     };
     apply();

@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { CONSENT_CHANGE_EVENT, readConsent } from "@/lib/analytics/client";
+import { CONSENT_CHANGE_EVENT, isStaffBrowser, readConsent } from "@/lib/analytics/client";
 import { isPrivatePath } from "@/lib/analytics/private-paths";
 
 let loaded = false;
@@ -39,7 +39,7 @@ export function ConsentGatedTagManager({ gtmId }: { gtmId: string }) {
     }
     const maybeLoad = () => {
       const consent = readConsent();
-      if (consent && (consent.analytics || consent.marketing) && !isPrivatePath(window.location.pathname)) loadGtm(gtmId);
+      if (consent && (consent.analytics || consent.marketing) && !isPrivatePath(window.location.pathname) && !isStaffBrowser()) loadGtm(gtmId);
     };
     maybeLoad();
     window.addEventListener(CONSENT_CHANGE_EVENT, maybeLoad);

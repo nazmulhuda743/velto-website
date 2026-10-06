@@ -27,6 +27,9 @@ export const CONSENT_CHANGE_EVENT = "velto:consent";
 export const CONSENT_OPEN_EVENT = "velto:consent-open";
 
 const VISITOR_COOKIE = "velto_vid";
+/** Set on Velto staff browsers (admin sign-in, or ?velto_staff=1). Those browsers are never measured. */
+export const STAFF_COOKIE = "velto_staff";
+const STAFF_MAX_AGE_SECONDS = 395 * 24 * 60 * 60; // 13 months
 const VISITOR_MAX_AGE_SECONDS = 395 * 24 * 60 * 60; // 13 months
 const SESSION_KEY = "velto_session";
 const SESSION_IDLE_MS = 30 * 60 * 1000;
@@ -71,6 +74,11 @@ function clearCookies(pattern: RegExp) {
     const name = part.split("=", 1)[0];
     if (name && pattern.test(name)) expireCookie(name);
   }
+}
+
+/** A Velto staff browser: no GTM/GA4, no Meta Pixel and no first-party events, so staff use never skews the numbers. */
+export function isStaffBrowser(): boolean {
+  return readCookie(STAFF_COOKIE) === "1";
 }
 
 /* ---------------------------------------------------------------- consent */
@@ -141,6 +149,7 @@ function post(body: unknown) {
 
 /** Anonymous consent outcome (no visitor or session id), used for consent rates. */
 export function sendConsentEvent(action: ConsentAction | "banner_view", choice?: ConsentChoice) {
+  if (isStaffBrowser()) return;
   post({
     type: "consent",
     action,
@@ -244,7 +253,7 @@ function flush() {
 
 /** Queue a first-party event. Dropped silently without analytics consent and on account pages (bar the PRIVATE_PATH_EVENTS). */
 export function sendAnalyticsEvent(event: string, context: Record<string, string | undefined> = {}) {
-  if (CONSENT_EVENT_SET.has(event) || !readConsent()?.analytics) return;
+  if (CONSENT_EVENT_SET.has(event) || !readConsent()?.analytics || isStaffBrowser()) return;
   if (isPrivatePath(window.location.pathname) && !allowedOnPrivatePath(event)) return;
   queue.push({
     event,
@@ -258,6 +267,14 @@ export function sendAnalyticsEvent(event: string, context: Record<string, string
 }
 
 if (typeof window !== "undefined") {
+  // ?velto_staff=1 marks this browser as staff (no measurement); ?velto_staff=0 removes the mark.
+  try {
+    const staff = new URLSearchParams(window.location.search).get("velto_staff");
+    if (staff === "1") writeCookie(STAFF_COOKIE, "1", STAFF_MAX_AGE_SECONDS);
+    else if (staff === "0") expireCookie(STAFF_COOKIE);
+  } catch {
+    /* ignore */
+  }
   // Consent Mode default must be the first data-layer entry, ahead of any event.
   pushConsentToTagManager(readConsent() ?? ESSENTIAL_ONLY, "default");
   window.addEventListener("pagehide", () => {
