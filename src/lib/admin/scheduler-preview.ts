@@ -8,7 +8,7 @@ import {
   type SchedulerBoard,
   type SchedulerResult,
   type SearchResult,
-} from "./scheduler-logic";
+} from "../scheduler/logic";
 const people = [
   { id: "rider-1", name: "Monir", role: "manager", can_ride: true, off: false },
   { id: "rider-2", name: "Rakib", role: "manager", can_ride: true, off: false },

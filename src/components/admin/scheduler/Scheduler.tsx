@@ -19,7 +19,7 @@ import {
   type Appointment,
   type AppointmentKind,
   type SchedulerBoard,
-} from "@/lib/admin/scheduler-logic";
+} from "@/lib/scheduler/logic";
 import { AppointmentEditor } from "./AppointmentEditor";
 import "./scheduler.css";
 export function Scheduler(props: {

@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { saveSchedulerSettings } from "@/app/admin/scheduler-actions";
-import { schedulerError } from "@/lib/admin/scheduler-logic";
+import { schedulerError } from "@/lib/scheduler/logic";
 export function SchedulerSettings({
   config,
 }: {

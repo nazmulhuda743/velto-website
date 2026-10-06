@@ -5,7 +5,7 @@ import type {
   SchedulerBoard,
   SchedulerResult,
   SearchResult,
-} from "./scheduler-logic";
+} from "../scheduler/logic";
 import { isAdminPreview } from "./preview";
 import {
   previewBoard,

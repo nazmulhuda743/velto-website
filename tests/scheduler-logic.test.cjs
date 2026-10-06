@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const s = require("../.foundation-test-build/admin/scheduler-logic.js");
+const s = require("../.foundation-test-build/scheduler/logic.js");
 test("Dhaka midnight day boundaries", () => {
   assert.equal(s.dhakaDate(new Date("2026-10-05T18:00:00Z")), "2026-10-06");
   assert.equal(s.dhakaDate(new Date("2026-10-05T17:59:59Z")), "2026-10-05");

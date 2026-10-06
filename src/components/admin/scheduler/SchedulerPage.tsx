@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { TODAY_LANG_COOKIE } from "@/content/i18n/admin-today";
 import { schedulerBoard } from "@/lib/admin/scheduler";
 import { requireSection } from "@/lib/admin/session";
-import { dhakaDate, validDay } from "@/lib/admin/scheduler-logic";
+import { dhakaDate, validDay } from "@/lib/scheduler/logic";
 import { isAdminPreview } from "@/lib/admin/preview";
 import { Scheduler } from "./Scheduler";
 export async function SchedulerPage({ date }: { date?: string }) {

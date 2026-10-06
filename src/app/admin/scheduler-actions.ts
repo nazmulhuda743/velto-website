@@ -6,7 +6,7 @@ import {
   schedulerSearch,
   schedulerTransition,
 } from "@/lib/admin/scheduler";
-import { validDay, type SchedulerResult } from "@/lib/admin/scheduler-logic";
+import { validDay, type SchedulerResult } from "@/lib/scheduler/logic";
 export async function loadScheduler(day: string) {
   const admin = await requireSection("dispatch");
   if (!validDay(day)) return { ok: false as const, error: "invalid" };

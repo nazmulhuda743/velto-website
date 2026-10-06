@@ -19,7 +19,7 @@ import {
   type SearchCustomer,
   type SearchOrder,
   type SearchResult,
-} from "@/lib/admin/scheduler-logic";
+} from "@/lib/scheduler/logic";
 import { normaliseBdPhone } from "@/lib/customer/validation";
 export function AppointmentEditor({
   board,

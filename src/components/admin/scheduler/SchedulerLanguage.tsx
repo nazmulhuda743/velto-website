@@ -1,6 +1,6 @@
 "use client";
 import { createContext, useContext } from "react";
-import { schedulerCopy } from "@/lib/admin/scheduler-copy";
+import { schedulerCopy } from "@/lib/scheduler/copy";
 const Language = createContext<"en" | "bn">("en");
 export function SchedulerLanguage({
   lang,

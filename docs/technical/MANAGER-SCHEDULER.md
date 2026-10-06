@@ -43,7 +43,7 @@ Results and deployment identifiers are recorded below as verification completes.
 ### Completed (6 October 2026)
 
 - Final production build, TypeScript and ESLint pass. Foundation suite: 182/182. Security and customer portal static
-  checks pass; existing i18n suite: 14/14.
+  checks pass; Command Center: 114/114; existing i18n suite: 14/14.
 - Staging migration applied through Supabase migration tooling. Scheduler rollback assertions
   pass for nullable new customer, normalized existing customer link, no duplicate customer,
   rider conflict, different rider, duration overlap, adjacent work, cross-lane conflict,
@@ -96,3 +96,10 @@ Rollback deployment first, then use `docs/technical/sql/manager_scheduler_disabl
 It detaches the two canonical projection triggers and revokes scheduler RPC execution while preserving
 all appointment history, canonical records, audit and memberships. Reapplying the additive migration
 restores execution/projection.
+
+### CI compatibility
+
+Pure time/type/copy modules live under `src/lib/scheduler`, keeping the existing blanket
+client prohibition on `src/lib/admin` intact. GitHub CI uses the supported Next.js Webpack
+build flag to avoid the observed Turbopack Google-font import-map failure on its runner;
+Vercel still verifies the normal Turbopack build. No guard or check was removed.
