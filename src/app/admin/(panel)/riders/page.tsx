@@ -1,3 +1,5 @@
+import { SchedulerSettings } from "@/components/admin/scheduler/SchedulerSettings";
+import { schedulerBoard } from "@/lib/admin/scheduler";
 import { AdminHeader, Badge, DataNotice, one, type SearchParams } from "@/components/admin/ui";
 import { addDays, dayName, dhakaToday } from "@/lib/admin/dispatch-logic";
 import { requireSection } from "@/lib/admin/session";
@@ -76,7 +78,7 @@ function PersonRow({ person, today, tomorrow }: { person: RiderSetting; today: s
 }
 
 export default async function RidersPage({ searchParams }: { searchParams: SearchParams }) {
-  await requireSection("riders");
+  const admin = await requireSection("riders");
   const params = await searchParams;
   const done = one(params.done);
   const errorCode = one(params.error);
@@ -84,6 +86,7 @@ export default async function RidersPage({ searchParams }: { searchParams: Searc
   const loaded = await getRiderSettings();
   const today = dhakaToday();
   const tomorrow = addDays(today, 1);
+  const schedule = await schedulerBoard(admin.id, today);
 
   return (
     <>
@@ -91,6 +94,7 @@ export default async function RidersPage({ searchParams }: { searchParams: Searc
         title="Riders & windows"
         intro="Who can take pickups and deliveries, and how many stops each person takes in one time window. Until you tick anyone, everyone on the staff list is offered at 8 stops."
       />
+      {schedule.ok ? <SchedulerSettings config={schedule.config} /> : null}
       {error ? (
         <p role="alert" className="mt-6 rounded-md border border-error/30 bg-error-soft px-4 py-3 t-small font-medium text-error">
           {error}

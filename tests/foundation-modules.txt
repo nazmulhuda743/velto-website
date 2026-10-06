@@ -32,3 +32,5 @@ src/lib/admin/dispatch.ts
 src/lib/admin/today.ts
 src/lib/popular-prices.ts
 src/lib/meta-pixel/events.ts
+
+src/lib/admin/scheduler-logic.ts
