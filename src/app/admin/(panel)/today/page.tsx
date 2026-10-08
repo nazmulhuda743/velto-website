@@ -1,3 +1,4 @@
+import { SchedulerPage } from "@/components/admin/scheduler/SchedulerPage";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import { NotificationRefresher } from "@/components/admin/NotificationRefresher";
@@ -82,6 +83,7 @@ function matches(q: string, fields: (string | null | undefined)[]) {
 export default async function TodayPage({ searchParams }: { searchParams: SearchParams }) {
   await requireSection("dispatch");
   const params = await searchParams;
+  if (!one(params.tab)) return <SchedulerPage date={one(params.date)} />;
   const jar = await cookies();
   const lang: TodayLang = jar.get(TODAY_LANG_COOKIE)?.value === "bn" ? "bn" : "en";
   const t = todayText(lang);

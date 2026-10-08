@@ -55,8 +55,10 @@ jobs:
       - name: Bangla / English content tests
         run: npm run test:i18n
 
+      # Webpack avoids the CI-only Turbopack Google-font import-map failure.
+      # Vercel still verifies the normal Turbopack deployment build.
       - name: Production build
-        run: npm run build
+        run: npm run build -- --webpack
 
       - name: Launch smoke audit
         shell: bash
@@ -106,7 +108,7 @@ jobs:
         run: npm ci
 
       - name: Production build (Bangla on)
-        run: npm run build
+        run: npm run build -- --webpack
 
       - name: Launch, portal and SEO audits (Bangla on)
         shell: bash
