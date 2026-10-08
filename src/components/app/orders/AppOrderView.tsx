@@ -9,7 +9,7 @@ import { formText } from "@/content/i18n/forms";
 import { LOCATIONS } from "@/content/site";
 import { customerRoutes } from "@/lib/app-routes";
 import { signInFor } from "@/lib/app-routes-server";
-import { askFeedback, dhakaDate, expectedReturn, isMixed, readyLine, reachedAt, serviceList, stepIndex, STEPS, trackerSteps } from "@/lib/customer/app-logic";
+import { askFeedback, dhakaDate, expectedReturn, sectorNumber, trustedAt, trustedTimeline, isMixed, readyLine, reachedAt, serviceList, stepIndex, STEPS, trackerSteps } from "@/lib/customer/app-logic";
 import { getCare, signedRiskPhotos } from "@/lib/customer/care";
 import { happy } from "@/lib/customer/extras";
 import { getCustomerSession, getDispatchPlans, getFeedbackList, getPickups, getPortalOrder } from "@/lib/customer/portal";
@@ -59,8 +59,10 @@ export async function AppOrderView({ id, care: careParam }: { id: string; care?:
   const key = STEPS[stepIndex(status)].key;
   const today = dhakaDate(new Date());
   const lineServices = serviceList(order.lines, order.services);
-  const collectedAt = reachedAt(order.timeline, "Picked");
-  const deliveredAt = order.deliveredAt ?? reachedAt(order.timeline, "Delivered");
+  // Times Ops recorded months after the order (bulk updates) are not shown as if they happened then.
+  const timeline = trustedTimeline(order.timeline, order.orderDate);
+  const collectedAt = reachedAt(timeline, "Picked");
+  const deliveredAt = trustedAt(order.deliveredAt, order.orderDate) ?? reachedAt(timeline, "Delivered");
   const back = expectedReturn(collectedAt, lineServices, status);
   const backDate = back ? f.day(back.date) : null;
   const counted = order.items !== null && order.items !== undefined;
@@ -91,16 +93,16 @@ export async function AppOrderView({ id, care: careParam }: { id: string; care?:
     // An older order Ops didn't count: say only when it came back (the money block explains the rest).
     const recorded = counted || hasLines;
     const pay = order.due > 0 ? format(t.subDue, { amt: f.money(order.due) }) : recorded && order.total > 0 && order.paid >= order.total ? t.subPaidInFull : null;
-    sub = [when ? format(t.subReturned, { when }) : null, pay].filter(Boolean).join(" ") || null;
+    sub = [when ? format(t.subReturned, { when }) : t.subReturnedNoDate, pay].filter(Boolean).join(" ");
     if (order.due > 0) subTone = "amber";
   }
   if (cancelled) title = a.order.cancelledTitle;
 
   // ---- Tracker ----
-  const steps = trackerSteps(status, order.timeline);
+  const steps = trackerSteps(status, timeline);
   const doneLine: Record<string, string> = {
     booked: t.lineBooked,
-    collected: counted ? fill(t.lineCollected, { n: order.items ?? 0 }, locale) : t.lineCollectedNoCount,
+    collected: counted ? (order.items === 1 ? t.lineCollectedOne : fill(t.lineCollected, { n: order.items ?? 0 }, locale)) : t.lineCollectedNoCount,
     cleaning: t.lineCleaning,
     ready: t.lineReady,
     delivered: t.lineDelivered,
@@ -135,7 +137,7 @@ export async function AppOrderView({ id, care: careParam }: { id: string; care?:
   const dueText = f.money(order.due);
   const dueMessage = format(t.waDue, { n: order.orderNumber, amt: dueText });
   const feedback = delivered ? (feedbackList.find((x) => x.orderNumber === order.orderNumber) ?? null) : null;
-  const askable = delivered && askFeedback(deliveredAt ?? order.orderDate, Boolean(feedback));
+  const askable = delivered && askFeedback(deliveredAt, Boolean(feedback));
   // Reviews go to the Google profile of the outlet that served the order (never named here).
   const outletId = /18/.test(`${order.outlet?.code ?? ""} ${order.outlet?.name ?? ""}`) ? "sector-18" : "sector-11";
   const reviewsUrl = (LOCATIONS.find((l) => l.id === outletId) ?? LOCATIONS[0]).reviewsUrl;
@@ -147,18 +149,22 @@ export async function AppOrderView({ id, care: careParam }: { id: string; care?:
   if (delivered && canWeekly && routineService) {
     const weekday = new Date(`${(order.pickupDate ?? order.orderDate).slice(0, 10)}T12:00:00Z`).getUTCDay();
     const pickups = await getPickups();
-    const lastSlot = pickups?.pickups.find((p) => p.plannedSlot && (ROUTINE_WINDOWS as readonly string[]).includes(p.plannedSlot))?.plannedSlot ?? "evening";
+    const lastSlot = pickups?.pickups.find((p) => p.plannedSlot && (ROUTINE_WINDOWS as readonly string[]).includes(p.plannedSlot))?.plannedSlot ?? null;
     const fb = formText(locale);
-    const day = fb.bookPage.routineDays[weekday];
     weekly = (
       <WeeklyOffer
         weekday={weekday}
         window={lastSlot}
+        sector={sectorNumber(session.account.area)}
         service={routineService}
+        locale={locale}
         t={{
           title: t.weeklyTitle,
-          body: fill(t.weeklyBody, { day, window: t.weeklyWindows[lastSlot] }, locale),
-          requested: fill(a.routine.requestedBody, { day, time: fb.booking.slots[lastSlot] }, locale),
+          body: t.weeklyBody,
+          requested: a.routine.requestedBody,
+          day: fb.bookPage.routineDays[weekday],
+          windowWords: t.weeklyWindows,
+          slotNames: fb.booking.slots,
           failed: a.routine.failed,
           needAddress: a.routine.needAddress,
         }}

@@ -153,3 +153,20 @@ test("feedback is asked within 14 days of delivery, once", () => {
   assert.equal(a.askFeedback("2026-10-19T12:00:00Z", true, now), false);
   assert.equal(a.askFeedback(null, false, now), false);
 });
+
+test("status times more than 30 days after the order are not trusted", () => {
+  assert.equal(a.trustedAt("2026-06-08T22:17:00Z", "2026-01-20"), null);
+  assert.equal(a.trustedAt("2026-01-22T10:00:00Z", "2026-01-20"), "2026-01-22T10:00:00Z");
+  assert.equal(a.trustedAt("2026-02-18T10:00:00Z", "2026-01-20"), "2026-02-18T10:00:00Z");
+  assert.equal(a.trustedAt(null, "2026-01-20"), null);
+  const tl = a.trustedTimeline([{ status: "New", at: "2026-01-20T05:00:00Z" }, { status: "Delivered", at: "2026-06-08T22:17:00Z" }], "2026-01-20");
+  assert.deepEqual(tl.map((e) => e.status), ["New"]);
+});
+
+test("the area is added to an address only when it doesn't already name the sector", () => {
+  assert.equal(a.addressWithArea("House 2, Road 14, Sector 11, Uttara", "11", "Uttara Sector 11"), "House 2, Road 14, Sector 11, Uttara");
+  assert.equal(a.addressWithArea("House 2, Road 14, sec-11", "11", "Uttara Sector 11"), "House 2, Road 14, sec-11");
+  assert.equal(a.addressWithArea("House 12, Road 7", "7", "Uttara Sector 7"), "House 12, Road 7, Uttara Sector 7");
+  assert.equal(a.addressWithArea("House 12, Road 7, Sector 17", "7", "Uttara Sector 7"), "House 12, Road 7, Sector 17, Uttara Sector 7");
+  assert.equal(a.addressWithArea("House 12", "outside", null), "House 12");
+});

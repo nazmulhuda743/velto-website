@@ -5,7 +5,7 @@ import { Banner, ButtonLink, Card, Eyebrow, Pill } from "@/components/app/ui";
 import { accountText } from "@/content/i18n/account";
 import { customerRoutes } from "@/lib/app-routes";
 import { signInFor } from "@/lib/app-routes-server";
-import { expectedReturn, reachedAt, serviceList, stepIndex, STEPS } from "@/lib/customer/app-logic";
+import { expectedReturn, reachedAt, serviceList, stepIndex, STEPS, trustedAt, trustedTimeline } from "@/lib/customer/app-logic";
 import { getCustomerSession, getPortalOrder, getPortalOrders, type PortalOrder, type PortalOrderDetail } from "@/lib/customer/portal";
 import { fill, format } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
@@ -21,7 +21,7 @@ export function InProgressCard({ order, detail, f }: { order: PortalOrder; detai
   const { t } = f;
   const step = stepIndex(order.status);
   const key = STEPS[step].key;
-  const collectedAt = detail ? reachedAt(detail.timeline, "Picked") : null;
+  const collectedAt = detail ? reachedAt(trustedTimeline(detail.timeline, order.orderDate), "Picked") : null;
   const back = expectedReturn(collectedAt, detail ? serviceList(detail.lines, order.services) : order.services, order.status);
   const headline = back ? fill(t.backBy, { date: f.day(back.date) ?? "" }, f.locale) : key === "booked" ? t.lineWaitingCall : key === "ready" ? t.subReady : t.titles[key];
   const since = collectedAt ? format(t.listCollected, { date: f.day(collectedAt) ?? "" }) : format(t.listBooked, { date: f.day(order.orderDate) ?? "" });
@@ -60,7 +60,7 @@ function PastRow({ order, f, cancelled }: { order: PortalOrder; f: AppOrderForma
       <Link href={routes.order(order.orderNumber)} className="flex min-h-13 justify-between gap-3 px-4 py-3.5">
         <span className="flex min-w-0 flex-col gap-0.5">
           <span className="a-body font-semibold text-navy">{order.services.length ? f.services(order.services) : t.steps.delivered}</span>
-          <span className="a-cap text-muted">{f.day(order.deliveredAt ?? order.orderDate)}</span>
+          <span className="a-cap text-muted">{f.day(trustedAt(order.deliveredAt, order.orderDate) ?? order.orderDate)}</span>
           <span className="a-meta text-app-off-text">{order.orderNumber}</span>
         </span>
         <span className="flex shrink-0 flex-col items-end gap-0.5">

@@ -5,13 +5,14 @@ import Link from "next/link";
 import { BottomSheet } from "@/components/app/BottomSheet";
 import { ChipGroup, Segmented, Stepper } from "@/components/app/controls";
 import { Banner, buttonClass, whatsappHref, WhatsAppIcon } from "@/components/app/ui";
-import { fallbackDays, hoursText } from "@/components/forms/PickupWindows";
+import { hoursText } from "@/components/forms/PickupWindows";
+import { usePickupDays } from "@/components/app/usePickupDays";
 import { submitBooking, type BookingFormData } from "@/components/forms/submit";
 import { track } from "@/components/layout/Analytics";
 import type { FormText } from "@/content/i18n/forms/en";
 import { GARMENT_SERVICES, sharedItemService, type GarmentService } from "@/lib/booking-items";
-import type { AvailabilityDay, WindowId } from "@/lib/capacity-logic";
-import { defaultSlot, isTomorrow, pickupDays, type SlotDay } from "@/lib/customer/app-logic";
+import type { WindowId } from "@/lib/capacity-logic";
+import { addressWithArea, defaultSlot, isTomorrow, pickupDays, sectorNumber } from "@/lib/customer/app-logic";
 import { joinNotes } from "@/lib/customer/extras";
 import { areaLabel } from "@/lib/customer/validation";
 import { fill, format, localDigits, type Locale } from "@/lib/i18n/config";
@@ -45,12 +46,10 @@ type Text = FormText["common"]["app"] & {
   dayMonth: string;
 };
 
-type Load = { state: "loading" } | { state: "ready"; days: SlotDay[]; today: string; live: boolean } | { state: "unavailable" };
 type Sheet = null | "service" | "items" | "address" | "note";
 type Errors = Partial<Record<"service" | "address" | "slot", string>>;
 
 const dhakaToday = () => new Date(Date.now() + 6 * 3_600_000).toISOString().slice(0, 10);
-const sectorOf = (area: string) => (/^([1-9]|1[0-8])$/.test(area) ? Number(area) : null);
 const MAX_QTY = 99;
 
 /**
@@ -103,7 +102,6 @@ export function AppBookingFlow({
   const [tab, setTab] = useState<GarmentService>(initialServices[0] ?? "wash-and-iron");
   const [query, setQuery] = useState("");
   const [found, setFound] = useState<PriceRow[]>([]);
-  const [load, setLoad] = useState<Load>({ state: "loading" });
   const [reload, setReload] = useState(0);
   const [picked, setPicked] = useState<{ date: string; window: string } | null>(null);
   const [errors, setErrors] = useState<Errors>({});
@@ -111,29 +109,10 @@ export function AppBookingFlow({
   const timeRef = useRef<HTMLDivElement>(null);
 
   const where = addressIndex >= 0 ? addresses[addressIndex] : { label: null, ...other };
-  const sector = sectorOf(where?.area ?? "");
+  const sector = sectorNumber(where?.area);
 
-  // Pickup days for the address's sector: live capacity, or the usual preference windows when off.
-  useEffect(() => {
-    const controller = new AbortController();
-    const preference = () =>
-      setLoad({ state: "ready", today: dhakaToday(), live: false, days: fallbackDays().map((d) => ({ date: d.date, windows: d.windows.map((w) => ({ ...w, left: w.status === "open" ? 1 : 0 })) })) });
-    if (!sector) {
-      preference();
-      return () => controller.abort();
-    }
-    fetch(`/api/capacity?sector=${sector}`, { signal: controller.signal, cache: "no-store" })
-      .then(async (res) => {
-        const body = (await res.json().catch(() => null)) as { enabled?: boolean; zone?: string | null; today?: string; days?: AvailabilityDay[] } | null;
-        if (!body || body.enabled !== true || (res.ok && !body.zone)) return preference();
-        if (!res.ok || !Array.isArray(body.days)) return setLoad({ state: "unavailable" });
-        setLoad({ state: "ready", days: body.days, today: body.today ?? dhakaToday(), live: true });
-      })
-      .catch((e: unknown) => {
-        if (!(e instanceof DOMException && e.name === "AbortError")) preference();
-      });
-    return () => controller.abort();
-  }, [sector, reload]);
+  // Pickup days for the address's sector (live capacity, or the usual windows when it's off).
+  const load = usePickupDays(sector, reload);
 
   // Item search beyond the popular list: the same public price search as the Prices screen.
   useEffect(() => {
@@ -182,7 +161,7 @@ export function AppBookingFlow({
   const windowText = (w: { id: string; starts: string; ends: string }) => t.windows[w.id] ?? hoursText(w.starts, w.ends, locale);
   const slotText = (withTomorrow: boolean) => (slot && win ? `${withTomorrow && isTomorrow(slot.date, today) ? `${t.tomorrow}, ` : ""}${dateText(slot.date)}, ${windowText(win)}` : "");
   const areaText = (area: string) => (area === "outside" ? t.outsideOption : fill(t.sectorOption, { n: area }, locale));
-  const addressText = where && where.address ? `${where.address}, ${areaText(where.area)}` : "";
+  const addressText = where && where.address ? addressWithArea(where.address, where.area, where.area ? areaText(where.area) : null) : "";
 
   const qty = (item: string, service: GarmentService) => items.find((i) => i.item === item && i.service === service)?.quantity ?? 0;
   const setQty = (item: string, service: GarmentService, n: number) =>
@@ -357,7 +336,7 @@ export function AppBookingFlow({
         <button type="button" className={row} onClick={() => timeRef.current?.scrollIntoView({ block: "center", behavior: "smooth" })} data-row="time">
           <span className="flex min-w-0 flex-col gap-0.5">
             <span className="a-meta text-muted">{t.pickupTime}</span>
-            <span className="a-row text-body">{load.state === "loading" ? "…" : slotText(true) || t.noWindowsShort}</span>
+            {load.state === "loading" ? <span className="skeleton mt-1 block h-5 w-56 max-w-full" aria-hidden="true" /> : <span className="a-row text-body">{slotText(true) || t.noWindowsShort}</span>}
           </span>
           {chevron}
         </button>
@@ -556,9 +535,7 @@ export function AppBookingFlow({
               <input type="radio" name="app-address" className="mt-1 size-4 accent-[#0b72b9]" checked={addressIndex === i} onChange={() => (setAddressIndex(i), setErrors((e) => ({ ...e, address: undefined })))} />
               <span className="flex flex-col">
                 {a.label ? <span className="a-meta font-semibold text-navy">{a.label}</span> : null}
-                <span className="a-body text-body">
-                  {a.address}, {areaText(a.area)}
-                </span>
+                <span className="a-body text-body">{addressWithArea(a.address, a.area, areaText(a.area))}</span>
               </span>
             </label>
           ))}
