@@ -142,7 +142,7 @@ test("every dashboard page and every admin action checks its section on the serv
     const rel = path.relative(pagesDir, file);
     // Pages that belong to another section: Today is the dispatch section's screen (spec 2026-10-01 §3),
     // and so is Invoices on WhatsApp (the same people send them).
-    const alias = { today: "dispatch", invoices: "dispatch" };
+    const alias = { today: "dispatch", invoices: "dispatch", b999: "dispatch" };
     const folder = rel.split(path.sep)[0];
     const section = rel === "page.tsx" ? "overview" : (alias[folder] ?? folder);
     assert.match(fs.readFileSync(file, "utf8"), new RegExp(`requireSection\\("${section}"\\)`), `${rel} must call requireSection("${section}")`);

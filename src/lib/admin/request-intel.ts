@@ -9,6 +9,9 @@ import type { WebsiteRequest } from "./data";
 import { requestDetails } from "./request-details";
 import { hasFirstOrderMark } from "../first-order-offer";
 
+/** The fixed line website_b999_book writes on every B999 pickup task. */
+const B999_MARK = /(?:^|\s)Offer: B999-WEB\b/;
+
 export type RequestInsight = {
   request: WebsiteRequest;
   details: Record<string, string>;
@@ -26,6 +29,8 @@ export type RequestInsight = {
   ageHours: number;
   /** A booking marked as the number's first website order: staff apply 10% in Ops (lib/first-order-offer). */
   firstOrder: boolean;
+  /** The B999 blanket package (৳999 fixed): no 10% or coupon (docs/technical/B999.md). */
+  b999: boolean;
 };
 
 /** "utm_source=facebook, utm_medium=paid_social, landing_page=/x" → record. */
@@ -68,7 +73,8 @@ export function analyseRequest(r: WebsiteRequest, now = Date.now()): RequestInsi
     device: campaign.device ?? null,
     open: r.status !== "done",
     ageHours: Math.max(0, (now - new Date(r.created_at).getTime()) / 3_600_000),
-    firstOrder: r.source === "website_booking" && hasFirstOrderMark(details.Notes),
+    firstOrder: r.source === "website_booking" && hasFirstOrderMark(details.Notes) && !B999_MARK.test(details.Notes ?? ""),
+    b999: r.source === "website_booking" && B999_MARK.test(details.Notes ?? ""),
   };
 }
 

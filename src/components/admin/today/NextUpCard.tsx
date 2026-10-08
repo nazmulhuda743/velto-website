@@ -11,6 +11,7 @@ import { RiderSheet } from "./RiderSheet";
 /** Badges under the name: first website order · 10% off, Call-back, Weekly, Changed time, and the next service to ask about. */
 export function BadgeRow({ badges, t }: { badges: Badges; t: TodayText }) {
   const list = [
+    badges.b999 ? { text: t.b999, tone: "bg-[#e8f3fb] text-navy" } : null,
     badges.first ? { text: t.firstOrder, tone: "bg-success-soft text-success" } : null,
     badges.callback ? { text: t.callback, tone: "bg-soft text-navy" } : null,
     badges.weekly ? { text: t.weekly, tone: "bg-soft text-navy", icon: true } : null,

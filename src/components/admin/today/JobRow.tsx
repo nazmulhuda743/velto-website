@@ -21,6 +21,7 @@ export function JobRow({ item, href, today, t }: { item: ListItem; href: string;
           <span className="flex min-w-0 items-center gap-1.5">
             <span className="truncate text-[16px] font-semibold text-navy">{item.name}</span>
             {item.badges.first ? <span className="shrink-0 rounded-[6px] bg-success-soft px-1.5 text-[12px] font-semibold text-success">{t.num(10)}%</span> : null}
+            {item.badges.b999 ? <span className="shrink-0 rounded-[6px] bg-[#e8f3fb] px-1.5 text-[12px] font-semibold text-navy">B999</span> : null}
             {item.badges.weekly ? <Icon name="repeat" className="size-3.5 text-secondary" /> : null}
           </span>
           <span className="block truncate text-[14px] text-secondary">{subline(item, today, t)}</span>

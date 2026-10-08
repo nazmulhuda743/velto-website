@@ -474,6 +474,7 @@ function RequestCard({ card, staff, today, ret, open, canPlan }: { card: Card; s
         <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-5 py-4">
           <Badge tone={job.source === "website_quote" ? "amber" : "blue"}>{job.source === "website_quote" ? "Quote" : job.source === "weekly" ? "Weekly" : "Booking"}</Badge>
           {insight?.firstOrder ? <Badge tone="green">First website order · 10% off</Badge> : null}
+          {insight?.b999 ? <Badge tone="blue">B999 · ৳999 fixed · no 10% or coupon</Badge> : null}
           <span className="font-semibold text-navy">{job.customer_name ?? "Customer"}</span>
           <span className="t-small text-secondary">{job.phone}</span>
           <span className="t-small text-secondary">{insight?.service ?? ""}</span>

@@ -33,6 +33,8 @@ execFileSync(
     "src/lib/rhythm.ts",
     "src/lib/invoice.ts",
     "src/lib/second-service.ts",
+    "src/lib/campaigns/b999.ts",
+    "src/content/i18n/b999.ts",
     "src/lib/push/encrypt.ts",
     "src/lib/push/catalog.ts",
     "src/lib/push/messages.ts",
