@@ -69,7 +69,8 @@ const proxy = read("src/proxy.ts");
 // The proxy runs on every page (English and /bn), strips the language prefix, then protects /account.
 expect(/const split = splitLocale\(url\.pathname\);\s*const \{ path \} = split;/.test(proxy), "src/proxy.ts: account protection must apply to the /bn account pages too");
 expect(proxy.includes('const protectedRoute = path === "/account" || path.startsWith("/account/") || (app && !APP_PUBLIC.test(path));'), "src/proxy.ts: must protect /account, /account/* and the app's screens (/app/*)");
-expect(/const APP_PUBLIC = \/\^\\\/app\(\?:\\\/login\)\?\\\/\?\$\/;/.test(proxy), "src/proxy.ts: only /app (install screen) and /app/login are open without a session");
+// /app/offline holds no customer data (the service worker stores it signed out).
+expect(/const APP_PUBLIC = \/\^\\\/app\(\?:\\\/login\|\\\/offline\)\?\\\/\?\$\/;/.test(proxy), "src/proxy.ts: only /app (install screen), /app/login and /app/offline are open without a session");
 expect(proxy.includes('matcher: ["/((?!api/|admin|go/|auth/|_next/|'), "src/proxy.ts: matcher must cover every page, including /account and /bn/account");
 expect(/auth\.getUser\(\)/.test(proxy), "src/proxy.ts: sessions must be verified with getUser()");
 

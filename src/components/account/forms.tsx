@@ -153,7 +153,7 @@ function TermsCheckbox({ t, name, error }: { t: Text; name: string; error?: stri
  * Mobile number → SMS code → signed in. New numbers get an account on the spot; the sign-up
  * variant also asks for the name and the terms, so the account is ready straight away.
  */
-export function PhoneSignIn({ t, next, mode }: { t: Text; next: string; mode: "signin" | "signup" }) {
+export function PhoneSignIn({ t, next, mode, codeBoxes = false }: { t: Text; next: string; mode: "signin" | "signup"; codeBoxes?: boolean }) {
   const [sendState, sendAction] = useActionState(sendPhoneCodeAction, IDLE);
   // "Change number" returns to step 1 without a server round trip.
   const [dismissed, setDismissed] = useState<AuthFormState | null>(null);
@@ -171,6 +171,7 @@ export function PhoneSignIn({ t, next, mode }: { t: Text; next: string; mode: "s
         sent={sendState}
         sendAction={sendAction}
         onChangeNumber={() => setDismissed(sendState)}
+        boxes={codeBoxes}
       />
     );
   }
@@ -212,25 +213,111 @@ function ResendButton({ t }: { t: Text }) {
   );
 }
 
+/**
+ * The app's code entry: six boxes drawn over one real input, so SMS autofill (one-time-code),
+ * paste, WebOTP and screen readers all see a single field. Six digits submit on their own.
+ */
+function CodeBoxes({
+  id,
+  label,
+  error,
+  value,
+  onChange,
+  inputRef,
+}: {
+  id: string;
+  label: string;
+  error?: string;
+  value: string;
+  onChange: (digits: string) => void;
+  inputRef: React.RefObject<HTMLInputElement | null>;
+}) {
+  const [focused, setFocused] = useState(false);
+  const active = Math.min(value.length, 5);
+  return (
+    <div>
+      <label htmlFor={id} className="sr-only">
+        {label}
+      </label>
+      <div className="relative">
+        <div aria-hidden="true" className="flex gap-2">
+          {Array.from({ length: 6 }, (_, i) => (
+            <span
+              key={i}
+              className={`flex h-14 min-w-0 flex-1 items-center justify-center rounded-xl border-[1.5px] bg-white text-[24px] font-semibold text-navy ${
+                focused && i === active ? "border-action" : error ? "border-error" : "border-line-strong"
+              }`}
+            >
+              {value[i] ?? ""}
+            </span>
+          ))}
+        </div>
+        <input
+          ref={inputRef}
+          id={id}
+          name={id}
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          pattern="[0-9]*"
+          required
+          maxLength={6}
+          value={value}
+          onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 6))}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${id}-error` : undefined}
+          className="absolute inset-0 size-full bg-transparent text-transparent caret-transparent outline-none selection:bg-transparent"
+          data-code-input
+        />
+      </div>
+      {error ? (
+        <p id={`${id}-error`} className="mt-3 t-small font-medium text-error">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+/** "Verifying…" while six digits go to the server (the boxes have no button). */
+function CodeChecking({ t }: { t: Text }) {
+  const { pending } = useFormStatus();
+  return (
+    <p role="status" className="t-small text-secondary">
+      {pending ? t.verifyingCode : ""}
+    </p>
+  );
+}
+
 function PhoneCodeStep({
   t,
   next,
   sent,
   sendAction,
   onChangeNumber,
+  boxes = false,
 }: {
   t: Text;
   next: string;
   sent: CodeSent;
   sendAction: (form: FormData) => void;
   onChangeNumber: () => void;
+  /** The app draws the code as six boxes (CodeBoxes). */
+  boxes?: boolean;
 }) {
   const locale = useLocale();
   const [state, action] = useActionState(verifyPhoneCodeAction, IDLE);
   const [left, setLeft] = useState(RESEND_AFTER_SECONDS);
   const formRef = useRef<HTMLFormElement>(null);
   const codeRef = useRef<HTMLInputElement>(null);
+  const [digits, setDigits] = useState("");
   useFocusFirstError(state, formRef);
+
+  // Boxes: the sixth digit (typed, pasted or read from the SMS) sends the code.
+  useEffect(() => {
+    if (boxes && digits.length === 6) formRef.current?.requestSubmit();
+  }, [boxes, digits]);
 
   useEffect(() => {
     const timer = setInterval(() => setLeft((s) => (s > 0 ? s - 1 : 0)), 1000);
@@ -244,14 +331,16 @@ function PhoneCodeStep({
     const abort = new AbortController();
     (navigator.credentials.get({ otp: { transport: ["sms"] }, signal: abort.signal } as CredentialRequestOptions) as Promise<{ code?: string } | null>)
       .then((otp) => {
-        if (otp?.code && codeRef.current) {
+        if (!otp?.code) return;
+        if (boxes) setDigits(otp.code.replace(/\D/g, "").slice(0, 6));
+        else if (codeRef.current) {
           codeRef.current.value = otp.code;
           formRef.current?.requestSubmit();
         }
       })
       .catch(() => {});
     return () => abort.abort();
-  }, []);
+  }, [boxes]);
 
   const verifyErrors = state.status === "code-sent" ? (state.errors ?? {}) : {};
   const message =
@@ -269,18 +358,27 @@ function PhoneCodeStep({
       <form ref={formRef} action={action} noValidate className="space-y-5">
         <input type="hidden" name="otpPhone" value={sent.phone} />
         <input type="hidden" name="next" value={next} />
-        <TextField
-          ref={codeRef}
-          id="otpCode"
-          label={t.codeLabel}
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          pattern="[0-9]*"
-          required
-          maxLength={6}
-          error={verifyErrors.code}
-        />
-        <SubmitButton pending={t.verifyingCode}>{t.verifyCode}</SubmitButton>
+        {boxes ? (
+          <>
+            <CodeBoxes id="otpCode" label={t.codeLabel} error={verifyErrors.code} value={digits} onChange={setDigits} inputRef={codeRef} />
+            <CodeChecking t={t} />
+          </>
+        ) : (
+          <>
+            <TextField
+              ref={codeRef}
+              id="otpCode"
+              label={t.codeLabel}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]*"
+              required
+              maxLength={6}
+              error={verifyErrors.code}
+            />
+            <SubmitButton pending={t.verifyingCode}>{t.verifyCode}</SubmitButton>
+          </>
+        )}
       </form>
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 t-small">
         <button type="button" onClick={onChangeNumber} className="font-semibold text-navy underline decoration-blue/50 underline-offset-4 hover:decoration-blue">
@@ -301,11 +399,11 @@ function PhoneCodeStep({
 }
 
 /** Mobile number first, then Google. Customers don't use passwords. */
-function Methods({ t, next, mode, google, phone }: { t: Text; next: string; mode: "signin" | "signup"; google: boolean; phone: boolean }) {
+function Methods({ t, next, mode, google, phone, codeBoxes }: { t: Text; next: string; mode: "signin" | "signup"; google: boolean; phone: boolean; codeBoxes?: boolean }) {
   if (!phone && !google) return <Unavailable t={t} />;
   return (
     <>
-      {phone ? <PhoneSignIn t={t} next={next} mode={mode} /> : null}
+      {phone ? <PhoneSignIn t={t} next={next} mode={mode} codeBoxes={codeBoxes} /> : null}
       {phone && google ? <Divider label={t.orDivider} /> : null}
       {google ? <GoogleButton t={t} next={next} /> : null}
     </>
@@ -320,17 +418,20 @@ export function SignInForm({
   notice,
   google = false,
   phone = false,
+  codeBoxes = false,
 }: {
   t: Text;
   next: string;
   notice?: React.ReactNode;
   google?: boolean;
   phone?: boolean;
+  /** The app's sign-in: the SMS code as six boxes. */
+  codeBoxes?: boolean;
 }) {
   return (
     <>
       {notice ? <div className="mb-5">{notice}</div> : null}
-      <Methods t={t} next={next} mode="signin" google={google} phone={phone} />
+      <Methods t={t} next={next} mode="signin" google={google} phone={phone} codeBoxes={codeBoxes} />
     </>
   );
 }

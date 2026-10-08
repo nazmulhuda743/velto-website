@@ -15,5 +15,5 @@ export const metadata: Metadata = { title: "Velto app", robots: { index: false, 
 export default async function AppLinkPage() {
   const locale = await getLocale();
   const c = formText(locale).common;
-  return <AppInstallPage t={c.appPage} install={c.install} accountHref={locale === "bn" ? "/bn/account" : "/account"} logo={<Logo className="h-8" />} />;
+  return <AppInstallPage t={c.appPage} install={c.install} accountHref={locale === "bn" ? "/bn/account" : "/account"} logo={<Logo className="h-6 w-auto self-start" />} />;
 }

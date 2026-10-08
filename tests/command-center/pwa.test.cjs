@@ -2,7 +2,7 @@
 const assert = require("node:assert/strict");
 const test = require("node:test");
 
-const { swStrategy, swCanStore } = require("../../.command-center-test-build/lib/pwa/sw-rules.js");
+const { swStrategy, swCanStore, swOfflinePage } = require("../../.command-center-test-build/lib/pwa/sw-rules.js");
 
 const O = "https://www.velto.com.bd";
 const req = (path, extra = {}) => {
@@ -58,6 +58,14 @@ test("only complete, public responses are ever stored", () => {
   assert.equal(swCanStore(404, "basic", null), false);
   assert.equal(swCanStore(200, "opaque", null), false, "cross-site opaque");
   assert.equal(swCanStore(200, "opaqueredirect", null), false);
+});
+
+test("the app's pages fall back to the app's offline screen, everything else to the website's", () => {
+  for (const p of ["/app", "/app/home", "/app/orders/VEL-01234", "/bn/app/home"]) assert.equal(swOfflinePage(O + p), "/app/offline", p);
+  for (const p of ["/account", "/book", "/apple", "/bn/account", "/login"]) assert.equal(swOfflinePage(O + p), "/offline", p);
+  assert.equal(swOfflinePage("not a url"), "/offline");
+  const inlined = new Function(`const f = ${swOfflinePage.toString()}; return f;`)();
+  assert.equal(inlined(O + "/app/orders"), "/app/offline");
 });
 
 test("the rules can be inlined into the worker script (self-contained source)", () => {

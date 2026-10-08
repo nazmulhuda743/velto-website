@@ -16,8 +16,8 @@ const AUTH_PATH = /^\/(?:account(?:\/|$)|app(?:\/|$)|login$|signup$|forgot-passw
 
 /** The installed app's own pages (manifest scope "/app/"). */
 const APP_PATH = /^\/app(?:\/|$)/;
-/** App pages anyone may open: the install screen and the app's sign-in. */
-const APP_PUBLIC = /^\/app(?:\/login)?\/?$/;
+/** App pages anyone may open: the install screen, the app's sign-in and its offline screen (stored by the service worker). */
+const APP_PUBLIC = /^\/app(?:\/login|\/offline)?\/?$/;
 
 
 /**
