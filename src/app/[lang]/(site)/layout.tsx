@@ -1,3 +1,5 @@
+import { headers } from "next/headers";
+import { B999Footer, B999Header } from "@/components/b999/B999Chrome";
 import { ConsentManager } from "@/components/consent/ConsentManager";
 import { Analytics } from "@/components/layout/Analytics";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
@@ -14,11 +16,15 @@ import { LOCATIONS } from "@/content/site";
 import { ORGANIZATION_SCHEMA, WEBSITE_SCHEMA, buildLaundryLocationSchema } from "@/lib/seo/schema";
 import { dictionary } from "@/content/i18n";
 import { getLocale } from "@/lib/i18n/server";
+import { PATH_HEADER } from "@/lib/app-routes";
+import { campaignPage } from "@/lib/promo";
 
 /** Public website chrome. The admin panel has its own layout. */
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
   const t = dictionary(locale).common;
+  // A campaign landing page keeps the visitor on its one offer: slim header and footer, no menu.
+  const campaign = campaignPage((await headers()).get(PATH_HEADER) ?? "");
   return (
     <>
       <TrackingScripts />
@@ -29,12 +35,16 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       >
         {t.skipToContent}
       </a>
-      <StickyTop>
-        <AnnouncementBar />
-        <Header logo={<Logo className="h-9 lg:h-11" priority />} accounts={customerAccountsEnabled()} />
-      </StickyTop>
+      {campaign ? (
+        <B999Header />
+      ) : (
+        <StickyTop>
+          <AnnouncementBar />
+          <Header logo={<Logo className="h-9 lg:h-11" priority />} accounts={customerAccountsEnabled()} />
+        </StickyTop>
+      )}
       <main id="main">{children}</main>
-      <Footer />
+      {campaign ? <B999Footer /> : <Footer />}
       <Analytics />
       <ConsentManager />
       <CampaignPopup />

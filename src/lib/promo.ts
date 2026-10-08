@@ -180,13 +180,16 @@ export function popupExcluded(pathname: string): boolean {
 }
 
 /**
- * Pages where the top offer bar is hidden: a campaign page with its own locked price (the bar's
- * site-wide offer, such as the first-order 10%, does not apply there and must not appear).
+ * Campaign landing pages (a locked price, one action): they get their own slim header and footer
+ * instead of the site menu, and the top offer bar is hidden (its site-wide offer, such as the
+ * first-order 10%, does not apply there and must not appear).
  */
-export function promoBarHidden(pathname: string): boolean {
+export function campaignPage(pathname: string): boolean {
   const path = pathname.split(/[?#]/, 1)[0].replace(/^\/(?:en|bn)(?=\/|$)/, "") || "/";
   return /^\/blanket-cleaning-uttara(?:\/|$)/.test(path);
 }
+
+export const promoBarHidden = campaignPage;
 
 /**
  * Where the top bar goes: the link set in the admin; failing that, the booking page whenever the
