@@ -43,6 +43,19 @@ Upload through the admin dashboard, under Images, using the slot id shown. Alter
 | 13 | A sari or sherwani on a hanger in a Velto cover | `dryCleaning` or `delicate` | Dry Cleaning, homepage |
 | 14 | Staff at work inside the outlet (hands or over-the-shoulder is fine) | `about` | About hero |
 
+## Priority 3b: Blanket ৳999 landing page (`/blanket-cleaning-uttara`)
+
+The page sells one package, so its photos carry the decision. Slots start with the licensed bedding photo (hero)
+and line drawings (the two category cards) until these arrive.
+
+| # | Shot | Slot id | Where it shows | Notes |
+|---|---|---|---|---|
+| 15 | Three regular blankets washed, folded and stacked, a Velto tag visible, on the outlet counter or at a door | `b999.hero` | Page hero | 4:5 crop on desktop, 4:3 on phones: keep the stack centred. |
+| 16 | One regular single or double-bed blanket, folded, normal thickness | `b999.regular` | "Regular / Medium" card | 16:10. Plain background. |
+| 17 | A heavy or oversized blanket (thick mink or Korean style) folded next to a regular one, so the size difference is obvious | `b999.heavy` | "Heavy / Large" card | 16:10. The comparison is the point. |
+
+The real Sector 11 outlet photo (`locations.sector-11`) already shows in this page's "Why Velto" section.
+
 ## Owner-supplied photos to confirm
 
 `hero`, `dryCleaning`, `washAndIron`, `ironing` and `regular` were supplied by the owner. Please confirm where each came from and that Velto may use it commercially. Several look AI-generated; if so, record the tool and its terms in `docs/brand/IMAGE-SOURCES.md`.

@@ -1,16 +1,19 @@
 import { ServiceViewTracker } from "@/components/analytics/ServiceViewTracker";
 import { B999Form } from "@/components/b999/B999Form";
+import { dayLabel } from "@/components/b999/day-label";
 import { waHref } from "@/components/b999/wa";
 import { B999Sticky } from "@/components/b999/B999Sticky";
 import { FAQ } from "@/components/home/FAQ";
 import { GoogleProof } from "@/components/home/ProofLine";
+import { ResponsiveImage } from "@/components/ui/ResponsiveImage";
 import { b999Text, type B999Text } from "@/content/i18n/b999";
+import { IMAGES } from "@/content/mock";
 import { B999, b999WhatsApp, dhakaToday, offeredDays } from "@/lib/campaigns/b999";
 import { b999OpenDays, b999PricesOk, b999WritesEnabled } from "@/lib/campaigns/b999-server";
 import { localDigits, type Locale } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
 import { pageMetadata } from "@/lib/seo/page-metadata";
-import { getLocations } from "@/lib/site-content";
+import { getLocations, resolveImage } from "@/lib/site-content";
 import { isSupabaseConfigured } from "@/lib/supabase-server";
 
 /**
@@ -93,6 +96,9 @@ function Summary({ t, fill }: { t: B999Text; fill: (s: string) => string }) {
         <li>{t.summaryPay}</li>
       </ul>
       <p className="mt-3 border-t border-line pt-3 t-caption text-secondary">{fill(t.summarySmall)}</p>
+      <div className="mt-3">
+        <GoogleProof placement="b999_summary" />
+      </div>
     </aside>
   );
 }
@@ -117,39 +123,61 @@ export default async function BlanketB999Page() {
   }
   const [primary] = await getLocations();
   const tomorrow = offeredDays(today)[0] ?? null;
+  // Admin → Images can replace any of these with a real Velto photo. The category slots start empty
+  // (a line drawing shows), and the outlet photo is the real Sector 11 frontage.
+  const [regularPhoto, heavyPhoto, outletPhoto] = await Promise.all([
+    resolveImage(IMAGES.b999.regular),
+    resolveImage(IMAGES.b999.heavy),
+    resolveImage(IMAGES.locations["sector-11"]),
+  ]);
+  // The next open pickup day from the live cap data: an honest reason to book now, never a countdown.
+  const nextDay = open && days[0] ? dayLabel(days[0], t, locale, tomorrow) : null;
 
   return (
     <>
       <ServiceViewTracker service="blanket-comforter-cleaning" />
 
-      {/* 1. Hero: what, how many, price, where. */}
+      {/* 1. Hero: what, how many, price, where. Photo on the right from md up. */}
       <section id="hero" aria-labelledby="page-title" className="bg-warm pb-10 pt-8 md:pb-16 md:pt-14">
-        <div className="container-page">
-          <p className="t-label uppercase text-action">{t.heroEyebrow}</p>
-          <h1 id="page-title" className="mt-3 text-navy">
-            <span className="block t-h1">{t.heroTitle}</span>
-            <span className="mt-1 block text-[56px] font-semibold leading-none tracking-[-0.02em] md:text-[80px]">৳{fill("{package}")}</span>
-          </h1>
-          <p className="mt-3 text-[18px] font-semibold text-navy">{t.pickupIncluded}</p>
-          <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 t-small text-secondary">
-            {t.heroFacts.map((f) => (
-              <li key={f}>{f}</li>
-            ))}
-          </ul>
-          <p className="mt-4 max-w-[52ch] text-body md:t-body-lg">{t.heroSupport}</p>
-          <p className="mt-2 max-w-[52ch] t-small text-secondary">{fill(t.heroQualifier)}</p>
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <a
-              href={`#${BOOK}`}
-              data-b999-hero-cta
-              data-analytics="book_pickup_click"
-              data-placement="b999_hero"
-              data-service="blanket-comforter-cleaning"
-              className="inline-flex min-h-[52px] items-center justify-center rounded-md bg-action px-7 text-[17px] font-semibold text-white hover:bg-action-hover"
-            >
-              {t.bookPickup}
-            </a>
-            <WhatsAppCta text={b999WhatsApp.check} placement="b999_hero" label={t.whatsappUs} />
+        <div className="container-page grid gap-8 md:grid-cols-12 md:items-center">
+          <div className="md:col-span-7">
+            <p className="t-label uppercase text-action">{t.heroEyebrow}</p>
+            <h1 id="page-title" className="mt-3 text-navy">
+              <span className="block t-h1">{t.heroTitle}</span>
+              <span className="mt-1 block text-[56px] font-semibold leading-none tracking-[-0.02em] md:text-[80px]">৳{fill("{package}")}</span>
+            </h1>
+            <p className="mt-3 text-[18px] font-semibold text-navy">{t.pickupIncluded}</p>
+            <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 t-small text-secondary">
+              {t.heroFacts.map((f) => (
+                <li key={f}>{f}</li>
+              ))}
+              {nextDay ? (
+                <li className="font-semibold text-navy" data-b999-next-pickup>
+                  {t.nextPickup}: {nextDay}
+                </li>
+              ) : null}
+            </ul>
+            <p className="mt-4 max-w-[52ch] text-body md:t-body-lg">{t.heroSupport}</p>
+            <p className="mt-2 max-w-[52ch] t-small text-secondary">{fill(t.heroQualifier)}</p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <a
+                href={`#${BOOK}`}
+                data-b999-hero-cta
+                data-analytics="book_pickup_click"
+                data-placement="b999_hero"
+                data-service="blanket-comforter-cleaning"
+                className="inline-flex min-h-[52px] items-center justify-center rounded-md bg-action px-7 text-[17px] font-semibold text-white hover:bg-action-hover"
+              >
+                {t.bookPickup}
+              </a>
+              <WhatsAppCta text={b999WhatsApp.check} placement="b999_hero" label={t.whatsappUs} />
+            </div>
+            <div className="mt-5">
+              <GoogleProof placement="b999_hero" />
+            </div>
+          </div>
+          <div className="md:col-span-5">
+            <ResponsiveImage image={IMAGES.b999.hero} sizes="(min-width: 768px) 40vw, 100vw" aspect="aspect-[4/3] md:aspect-[4/5]" priority />
           </div>
         </div>
       </section>
@@ -170,11 +198,11 @@ export default async function BlanketB999Page() {
       <Section id="qualify" title={t.qualifyTitle} className="bg-soft">
         <div className="grid gap-4 md:grid-cols-2">
           {[
-            { title: t.regularTitle, price: fill(t.regularPrice), points: t.regularPoints, heavy: false },
-            { title: t.heavyTitle, price: fill(t.heavyPrice), points: t.heavyPoints, heavy: true },
+            { title: t.regularTitle, price: fill(t.regularPrice), points: t.regularPoints, heavy: false, photo: regularPhoto },
+            { title: t.heavyTitle, price: fill(t.heavyPrice), points: t.heavyPoints, heavy: true, photo: heavyPhoto },
           ].map((c) => (
             <div key={c.title} className="rounded-lg border border-line bg-white p-5 md:p-6" data-b999-category={c.heavy ? "heavy" : "regular"}>
-              <BlanketDrawing heavy={c.heavy} />
+              {c.photo.src ? <ResponsiveImage image={c.photo} sizes="(min-width: 768px) 45vw, 100vw" aspect="aspect-[16/10]" /> : <BlanketDrawing heavy={c.heavy} />}
               <div className="mt-3 flex flex-wrap items-baseline justify-between gap-2">
                 <h3 className="t-h4 text-navy">{c.title}</h3>
                 <p className="text-[20px] font-semibold text-navy">{c.price}</p>
@@ -234,15 +262,24 @@ export default async function BlanketB999Page() {
 
       {/* 7. Trust proof: real data only (rating and count from Site settings). */}
       <Section id="trust" title={t.trustTitle} className="bg-soft">
-        <GoogleProof placement="b999_trust" />
-        <ul className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-          {t.trustPoints.map((p, i) => (
-            <li key={p} className="rounded-md border border-line bg-white px-4 py-3 text-navy">
-              {p}
-              {i === 0 ? <span className="mt-1 block t-small text-secondary">{primary.address}</span> : null}
-            </li>
-          ))}
-        </ul>
+        <div className={`grid gap-6 ${outletPhoto.src ? "md:grid-cols-12" : ""}`}>
+          {outletPhoto.src ? (
+            <div className="md:col-span-4">
+              <ResponsiveImage image={outletPhoto} sizes="(min-width: 768px) 30vw, 100vw" aspect="aspect-[4/3]" />
+            </div>
+          ) : null}
+          <div className={outletPhoto.src ? "md:col-span-8" : ""}>
+            <GoogleProof placement="b999_trust" />
+            <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+              {t.trustPoints.map((p, i) => (
+                <li key={p} className="rounded-md border border-line bg-white px-4 py-3 text-navy">
+                  {p}
+                  {i === 0 ? <span className="mt-1 block t-small text-secondary">{primary.address}</span> : null}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
       </Section>
 
       {/* 8. Booking summary + 9. Booking form. */}

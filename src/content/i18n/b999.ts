@@ -16,6 +16,8 @@ const en = {
   bookPickup: "Book Pickup",
   whatsappUs: "WhatsApp Us",
   heroFacts: ["Uttara Sectors 1 to 18", "Pay at delivery"],
+  nextPickup: "Next pickup",
+  underSubmit: "Nothing to pay now. You pay at delivery, cash or bKash. We call to confirm the pickup time.",
 
   howTitle: "How it works",
   howSteps: ["Book", "Pickup", "Check, clean, dry", "Fold, pack", "Deliver"],
@@ -133,6 +135,8 @@ const bn: B999Text = {
   bookPickup: "Book Pickup",
   whatsappUs: "WhatsApp Us",
   heroFacts: ["Uttara Sector 1–18", "Payment at Delivery"],
+  nextPickup: "পরের pickup",
+  underSubmit: "এখন কোনো payment নেই। Delivery-র সময় cash বা bKash-এ দেবেন। Pickup-এর সময় confirm করতে আমরা call করবো।",
 
   howTitle: "কীভাবে কাজ করে",
   howSteps: ["Book", "Pickup", "Check, Wash, Dry", "Fold & Pack", "Delivery"],

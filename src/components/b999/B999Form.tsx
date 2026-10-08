@@ -7,6 +7,7 @@ import { submissionAttribution } from "@/lib/attribution-client";
 import type { B999Text } from "@/content/i18n/b999";
 import { localDigits, type Locale } from "@/lib/i18n/config";
 import { B999, b999WhatsApp } from "@/lib/campaigns/b999";
+import { dayLabel } from "./day-label";
 import { waHref } from "./wa";
 
 type Field = "name" | "phone" | "sector" | "address" | "date";
@@ -48,12 +49,6 @@ function WhatsAppLink({ text, placement, children, className = "" }: { text: str
       {children}
     </a>
   );
-}
-
-export function dayLabel(iso: string, t: B999Text, locale: Locale, tomorrow: string | null) {
-  const d = new Date(`${iso}T00:00:00Z`);
-  const text = `${t.weekdays[d.getUTCDay()]} ${localDigits(d.getUTCDate(), locale)} ${t.months[d.getUTCMonth()]}`;
-  return iso === tomorrow ? `${t.tomorrow}, ${text}` : text;
 }
 
 /**
@@ -316,6 +311,9 @@ export function B999Form({
           >
             {sending ? t.sending : fill(t.submit)}
           </button>
+          <p className="t-small text-secondary" data-b999-under-submit>
+            {t.underSubmit}
+          </p>
         </>
       )}
     </form>
