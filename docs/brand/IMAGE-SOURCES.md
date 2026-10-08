@@ -55,7 +55,8 @@ Added in the public visual pass (2026-09-25). They are licensed Pexels stock und
 |---|---|---|---|
 | `public/images/pages/bedding-folded.webp` | Blankets & Comforters hero, homepage household row | https://www.pexels.com/photo/11125918/ | Qiana Zhang |
 | `public/images/pages/bedding-linen-stack.webp` | Blankets & Comforters, "How a bedding order is handled" | https://www.pexels.com/photo/31902663/ | chikawaztla |
-| `public/images/pages/bedding-folded.webp` (same file, slot `b999.hero`) | Blanket ৳999 landing page hero (illustrative until a real Velto blanket photo is uploaded) | https://www.pexels.com/photo/11125918/ | Qiana Zhang |
+| `public/images/pages/b999-couple-bed.webp` (slot `b999.hero`) | Blanket ৳999 landing page hero: a couple at home on fresh white bedding | https://www.pexels.com/photo/4307820/ | Ketut Subiyanto |
+| `public/images/pages/b999-couple-sofa.webp` (slot `b999.home`) | Blanket ৳999 landing page, "How it works / Why Velto" | https://www.pexels.com/photo/4307927/ | Ketut Subiyanto |
 | `public/images/pages/carpet-woven.webp` | Carpet Cleaning hero, homepage household row | https://www.pexels.com/photo/35964344/ | Thomas Parker |
 | `public/images/pages/express-shirt-hanger.webp` | Express hero | https://www.pexels.com/photo/9594952/ | Ron Lach |
 | `public/images/pages/finished-shirts-rail.webp` | About hero | https://www.pexels.com/photo/17293343/ | nguyendesigner |

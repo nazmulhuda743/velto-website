@@ -116,12 +116,8 @@ export default async function BlanketB999Page() {
   const [primary] = await getLocations();
   const tomorrow = offeredDays(today)[0] ?? null;
   // Admin → Images can replace any of these with a real Velto photo. The category slots start empty
-  // (a line drawing shows), and the outlet photo is the real Sector 11 frontage.
-  const [regularPhoto, heavyPhoto, outletPhoto] = await Promise.all([
-    resolveImage(IMAGES.b999.regular),
-    resolveImage(IMAGES.b999.heavy),
-    resolveImage(IMAGES.locations["sector-11"]),
-  ]);
+  // (a line drawing shows until a real photo is uploaded).
+  const [regularPhoto, heavyPhoto] = await Promise.all([resolveImage(IMAGES.b999.regular), resolveImage(IMAGES.b999.heavy)]);
   // The next open pickup day from the live cap data: an honest reason to book now, never a countdown.
   const nextDay = open && days[0] ? dayLabel(days[0], t, locale, tomorrow) : null;
 
@@ -146,7 +142,7 @@ export default async function BlanketB999Page() {
       <section id="hero" aria-labelledby="page-title" className="bg-warm pb-10 pt-5 md:pt-8 lg:pb-14 lg:pt-10">
         <div className="container-page grid gap-6 lg:grid-cols-12 lg:gap-10">
           <div className="lg:col-span-7">
-            <ResponsiveImage image={IMAGES.b999.hero} sizes="(min-width: 1024px) 55vw, 100vw" aspect="aspect-[2/1] lg:aspect-[16/7]" priority />
+            <ResponsiveImage image={IMAGES.b999.hero} sizes="(min-width: 1024px) 55vw, 100vw" aspect="aspect-[5/2] sm:aspect-[16/9]" priority />
             <p className="mt-5 t-label uppercase text-action">{t.heroEyebrow}</p>
             <h1 id="page-title" className="mt-2 text-navy">
               <span className="block t-h1">{t.heroTitle}</span>
@@ -255,13 +251,11 @@ export default async function BlanketB999Page() {
             </li>
           ))}
         </ol>
-        <div className={`mt-8 grid gap-6 ${outletPhoto.src ? "md:grid-cols-12 md:items-start" : ""}`}>
-          {outletPhoto.src ? (
-            <div className="md:col-span-4">
-              <ResponsiveImage image={outletPhoto} sizes="(min-width: 768px) 30vw, 100vw" aspect="aspect-[4/3]" />
-            </div>
-          ) : null}
-          <div className={outletPhoto.src ? "md:col-span-8" : ""}>
+        <div className="mt-8 grid gap-6 md:grid-cols-12 md:items-center">
+          <div className="md:col-span-5">
+            <ResponsiveImage image={IMAGES.b999.home} sizes="(min-width: 768px) 40vw, 100vw" aspect="aspect-[3/2]" />
+          </div>
+          <div className="md:col-span-7">
             <h3 className="t-h4 text-navy">{t.trustTitle}</h3>
             <ul className="mt-3 grid gap-2 sm:grid-cols-2">
               {t.trustPoints.map((p, i) => (
