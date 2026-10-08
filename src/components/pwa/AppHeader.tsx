@@ -4,7 +4,7 @@ import { Logo } from "@/components/ui/Logo";
 
 /**
  * The top of an app screen, on the page ground (no bar): the Velto logo, which goes Home, and the
- * screen's own actions on the right (Home: Prices and WhatsApp; Book: Prices). A detail screen
+ * screen's own actions on the right (Home: Prices and WhatsApp; Book: Prices, components/app/prices). A detail screen
  * passes `back` (e.g. "← Orders") and `aside` (the order number) instead of the logo.
  */
 export function AppHeader({ actions, back, aside }: { actions?: ReactNode; back?: { href: string; label: string }; aside?: ReactNode }) {
@@ -28,15 +28,6 @@ export function AppHeader({ actions, back, aside }: { actions?: ReactNode; back?
 }
 
 const pill = "inline-flex min-h-11 items-center justify-center";
-
-/** Header pill (Prices). The visible pill is 34 px; the tap target is 44. */
-export function HeaderPill({ href, children }: { href: string; children: ReactNode }) {
-  return (
-    <Link href={href} className={pill}>
-      <span className="rounded-full border border-app-chip bg-app-card px-3 py-[7px] a-cap font-semibold text-navy">{children}</span>
-    </Link>
-  );
-}
 
 /** Header WhatsApp button (icon only, labelled). */
 export function HeaderWhatsApp({ href, label }: { href: string; label: string }) {
