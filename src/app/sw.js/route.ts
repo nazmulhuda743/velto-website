@@ -1,4 +1,4 @@
-import { swCanStore, swStrategy } from "@/lib/pwa/sw-rules";
+import { swCanStore, swOfflinePage, swStrategy } from "@/lib/pwa/sw-rules";
 
 /**
  * The service worker (installable app + offline page). Served from a route so every deploy gets a
@@ -30,12 +30,14 @@ const PAGES = "velto-pages-" + VERSION;
 const IMAGES = "velto-images-v1";
 const KEEP = [STATIC, PAGES, IMAGES];
 const OFFLINE = "/offline";
+const APP_OFFLINE = "/app/offline";
 const MAX_IMAGES = 60;
 const MAX_PAGES = 40;
 const PAGE_TIMEOUT_MS = 4000;
 
 const swStrategy = ${swStrategy.toString()};
 const swCanStore = ${swCanStore.toString()};
+const swOfflinePage = ${swOfflinePage.toString()};
 
 const storable = (res) => swCanStore(res.status, res.type, res.headers.get("cache-control"));
 
@@ -45,17 +47,22 @@ async function trim(name, max) {
   for (const key of keys.slice(0, Math.max(0, keys.length - max))) await cache.delete(key);
 }
 
-// Install: keep the offline page and the files it needs, so it renders with no connection.
+// Install: keep the offline pages (the website's and the app's) and the files they need, so they
+// render with no connection. The app's is a bonus: without it, the app falls back to the website's.
 self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
     const pages = await caches.open(PAGES);
-    const res = await fetch(OFFLINE, { cache: "reload", credentials: "omit" });
-    if (!res.ok) throw new Error("offline page unavailable");
-    const html = await res.clone().text();
-    await pages.put(OFFLINE, res);
-    const assets = [...new Set(html.match(/\\/_next\\/static\\/[^"'\\s)]+/g) || [])];
+    const keep = async (path) => {
+      const res = await fetch(path, { cache: "reload", credentials: "omit" });
+      if (!res.ok || res.redirected) throw new Error("offline page unavailable");
+      const html = await res.clone().text();
+      await pages.put(path, res);
+      return [...new Set(html.match(/\\/_next\\/static\\/[^"'\\s)]+/g) || [])];
+    };
+    const assets = await keep(OFFLINE);
+    const appAssets = await keep(APP_OFFLINE).catch(() => []);
     const statics = await caches.open(STATIC);
-    await Promise.all([...assets, "/icons/icon-192.png"].map((u) => statics.add(u).catch(() => {})));
+    await Promise.all([...new Set([...assets, ...appAssets, "/icons/icon-192.png"])].map((u) => statics.add(u).catch(() => {})));
   })());
 });
 
@@ -101,9 +108,10 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Personal and live pages: the network only. Nothing is stored; offline shows the offline page.
+  // Personal and live pages: the network only. Nothing is stored; offline shows the offline page
+  // (the app's own for /app pages).
   if (strategy === "live") {
-    event.respondWith(fetch(req).catch(async () => (await caches.match(OFFLINE)) || Response.error()));
+    event.respondWith(fetch(req).catch(async () => (await caches.match(swOfflinePage(req.url))) || (await caches.match(OFFLINE)) || Response.error()));
     return;
   }
 

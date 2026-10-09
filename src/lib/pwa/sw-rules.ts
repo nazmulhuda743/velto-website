@@ -60,6 +60,18 @@ export function swStrategy(req: SwRequest, origin: string): SwStrategy {
 }
 
 /**
+ * Which stored offline page stands in for a page the network can't reach: the app's own (no
+ * website around it) for /app pages, the website's for everything else.
+ */
+export function swOfflinePage(url: string): "/app/offline" | "/offline" {
+  try {
+    return /^\/(?:bn\/)?app(?:\/|$)/.test(new URL(url).pathname) ? "/app/offline" : "/offline";
+  } catch {
+    return "/offline";
+  }
+}
+
+/**
  * Whether a response may be stored. Personal pages are excluded by path above; this is the second
  * lock: anything marked private or no-store, redirected, partial or failed is never kept.
  */

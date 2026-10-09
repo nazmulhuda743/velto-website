@@ -86,6 +86,27 @@ html[lang="bn"] :is([data-app-shell], [data-app-login], [data-app-entry]) * {
   letter-spacing: normal;
 }
 
+/* ---------- Sign in (app/login) ---------- */
+
+/* The website's sign-in form, in the app's field and button shape: 12 px corners, 1.5 px borders. */
+[data-app-login] {
+  --radius-md: 12px;
+}
+[data-app-login] form :is(input[type="tel"], input[type="text"], input:not([type])) {
+  border-width: 1.5px;
+}
+/* The code's real input lies over the six boxes; the active box's border shows the focus. */
+[data-app-login] [data-code-input]:focus-visible {
+  outline: none;
+}
+
+/* ---------- Offline (app/offline): both languages are stored; the chosen one shows ---------- */
+
+html[lang="bn"] [data-offline-copy="en"],
+html:not([lang="bn"]) [data-offline-copy="bn"] {
+  display: none;
+}
+
 /* ---------- Bottom sheet (components/app/BottomSheet.tsx) ---------- */
 
 dialog[data-app-sheet] {

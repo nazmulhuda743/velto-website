@@ -41,7 +41,7 @@ export const formsEn = {
     /** velto.com.bd/app: the link in WhatsApp messages. No sign-in first; that happens inside the app. */
     appPage: {
       title: "Velto on your phone",
-      body: "Book a pickup, see where your order is and rebook in two taps. It lives on your home screen like any app.",
+      body: "Book a pickup and see where your order is, from your home screen.",
       installed: "Velto is already on your phone",
       installedBody: "Open Velto from your home screen. Your orders and pickups are there.",
       openChrome: "Open in Chrome to install",
@@ -50,7 +50,10 @@ export const formsEn = {
       copied: "Link copied",
       chromeMenu: "If the button doesn't appear, open the Chrome menu (⋮) and tap Install app.",
       desktop: "Velto is made for your phone. Open velto.com.bd/app on your phone to add it.",
-      continueWeb: "Continue in the browser",
+      continueWeb: "Not now, continue in the browser",
+      /** The app's own wording; the website's install card keeps common.install. */
+      install: "Install",
+      iosLine: "Tap Share, then Add to Home Screen.",
     },
     /** The installed app's own screens (/app/*): tab bar and the few words only the app needs. */
     appBar: {
@@ -65,8 +68,8 @@ export const formsEn = {
       pricesIntro: "Search any item to see what it costs, then book it in a tap.",
       bookTitle: "Book a pickup",
       bookIntro: "Tell us what to collect and when. Your details are filled in.",
-      signInTitle: "Sign in to Velto",
-      signInIntro: "Your mobile number and a code by SMS. That's all.",
+      signInTitle: "Sign in",
+      signInIntro: "Your mobile number. We text you a code.",
       more: "More",
       help: "Help on WhatsApp",
       helpBody: "Questions about an order or a pickup? Message Velto.",
@@ -203,6 +206,12 @@ export const formsEn = {
       sendFailTitle: "We could not send this",
       sendFailBody: "Check your connection and try again. Nothing was booked.",
       retry: "Try again",
+      offlineTitle: "You're offline",
+      offlineBody: "Connect to see your latest orders.",
+      offlineCardTitle: "Your orders aren't saved for offline viewing",
+      offlineCardBody: "Connect to load your latest orders, addresses and prices.",
+      errorTitle: "Something went wrong on our side",
+      errorBody: "Your orders are safe. Try again in a moment, or message us on WhatsApp.",
       bookOnWhatsapp: "Book on WhatsApp instead",
       whatsappPrefill: "Your service, address and time are filled in the message.",
       notifTitle: "Get updates on this phone",
