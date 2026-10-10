@@ -289,6 +289,38 @@ export const pagesEn = {
     promise2:
       "Turnaround times are usual times, not guarantees. Special garments and household items can take longer, and we will say so when they do.",
   },
+  careersPage: {
+    crumb: "Careers",
+    eyebrow: "Careers at Velto",
+    title: "Join the team that takes care of Uttara's clothes.",
+    highlight: "takes care of Uttara's clothes",
+    intro:
+      "Velto is a laundry and dry cleaning team in Uttara, Dhaka. We hire people who handle every garment with care, work to a written process and arrive on time.",
+    openEyebrow: "Open roles",
+    openTitle: "Roles we're hiring for",
+    openIntro: "Every role is at Velto's own outlets in Uttara. Apply on WhatsApp, in Bangla or English.",
+    noneTitle: "No open roles right now.",
+    noneBody: "New roles are posted here first. Follow the Velto team on Facebook to hear when one opens.",
+    followTeam: "See the Velto team on Facebook",
+    types: { "full-time": "Full-time", "part-time": "Part-time", contract: "Contract" },
+    where: "Where",
+    hours: "Days and hours",
+    salary: "Salary",
+    posted: "Posted {date}",
+    duties: "What you'll do",
+    requirements: "What we look for",
+    offer: "What we offer",
+    apply: "Apply on WhatsApp",
+    applyNote: "Or send a WhatsApp message to {number}.",
+    applyMessage: "Hello Velto, I would like to apply for the {role} role.\nName:\nArea:\nExperience:",
+    processEyebrow: "How hiring works",
+    processTitle: "From your message to meeting the team.",
+    steps: [
+      { title: "Message us on WhatsApp", body: "Tell us the role, your name, where you live and your experience." },
+      { title: "A short phone call", body: "If the role fits, someone from the Velto team calls you to talk about the work and the hours." },
+      { title: "Meet us at the outlet", body: "Come in to meet the team, see the work and ask your questions before you decide." },
+    ],
+  },
 };
 
 export type PageText = typeof pagesEn;

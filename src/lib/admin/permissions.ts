@@ -35,6 +35,7 @@ export const SECTIONS = [
   "settings",
   "promo",
   "prices",
+  "careers",
   "notifications",
   "board",
   "activity",

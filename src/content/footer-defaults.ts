@@ -12,6 +12,7 @@ const HELP: { key: keyof Dictionary["nav"]; href: string }[] = [
   { key: "trackAnOrder", href: "/track" },
   ...(CUSTOMER_PORTAL.enabled ? [{ key: "myAccount" as const, href: CUSTOMER_PORTAL.href }] : []),
   { key: "about", href: "/about" },
+  { key: "careers", href: "/careers" },
 ];
 
 /** The footer's built-in links, in both languages: what the site shows until a column is saved in the admin. */

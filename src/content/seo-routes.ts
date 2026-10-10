@@ -86,6 +86,14 @@ export const SEO_ROUTES: SeoRoute[] = [
       "Velto is a laundry and dry cleaning service in Uttara with outlets in Sector 11 and Sector 18 and written procedures for every order.",
   },
   {
+    path: "/careers",
+    label: "Careers",
+    group: "Main",
+    title: "Jobs at Velto Laundry & Dry Cleaning, Uttara | Careers",
+    description:
+      "Open jobs at Velto, a laundry and dry cleaning team in Uttara, Dhaka. See each role's hours and duties, then apply on WhatsApp.",
+  },
+  {
     path: "/book",
     label: "Book a Pickup",
     group: "Forms",
