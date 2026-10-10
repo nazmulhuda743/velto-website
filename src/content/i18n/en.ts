@@ -36,6 +36,7 @@ export const en = {
     trackOrder: "Track Order",
     requestQuote: "Request a Quote",
     about: "About Velto",
+    careers: "Careers",
     myAccount: "My Account",
     signIn: "Sign in",
     accountSignedIn: "Your orders, their status and your details",
