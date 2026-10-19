@@ -16,7 +16,7 @@ export default async function AppPrices() {
       <div className="mt-2">
         <PricesPanel popular={await popularPrices()} t={pricesText(locale)} locale={locale} />
       </div>
-      <Link href="/app/book" className={buttonClass("primary", "mt-5")}>
+      <Link href="/app/book?source=app_prices" className={buttonClass("primary", "mt-5")}>
         {f.app.bookPickup}
       </Link>
     </AppScreen>

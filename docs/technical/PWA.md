@@ -9,7 +9,8 @@ its own screens under `/app/` (see below), starting at `/app/home`.
 The installed app is **everything under `/app/`** (manifest `scope: "/app/"`, `start_url: "/app/home"`),
 with its own layout: `src/app/[lang]/app/(shell)/layout.tsx` (logo header, the screen, tab bar
 Home · Book · Orders · Profile). No website component loads there, so nothing from the website can
-appear in the app. The website's routes and pages are unchanged.
+appear in the app, with one exception: the cookie choice, which shows above the tab bar (an installed
+iPhone app keeps its own storage, so it asks once itself). The website's routes and pages are unchanged.
 
 | App screen | Route | Shared view (also used by the website) |
 |---|---|---|
@@ -34,7 +35,9 @@ appear in the app. The website's routes and pages are unchanged.
   `/account`, a push or email link) goes to the app's own page: `appSafetyTarget` /
   `APP_MODE_SCRIPT` (`src/lib/pwa/install-card.ts`) and `AppMode`. Legal pages, `/auth`, `/r`, `/i`
   open as they are.
-- `/app/*` is private for analytics, never cached by the worker, and disallowed in robots.txt.
+- `/app/*` is never cached by the worker and is disallowed in robots.txt. GTM and the Meta Pixel never
+  load there. With Analytics consent, only the app's own first-party events are stored, for the app
+  report (Admin → Velto app; [APP-METRICS.md](APP-METRICS.md)).
 
 ## "Install Velto" popup
 

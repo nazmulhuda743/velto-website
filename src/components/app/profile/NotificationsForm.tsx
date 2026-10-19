@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Switch } from "@/components/app/controls";
+import { track } from "@/components/layout/Analytics";
 import { buttonClass } from "@/components/app/ui";
 import { currentSubscription, permission, pushSupport, subscribe } from "@/lib/push/client";
 import type { PushPrefs } from "@/lib/push/prefs";
@@ -31,8 +32,11 @@ export function NotificationsForm({ initial, lang, t }: { initial: PushPrefs; la
   async function flip(key: keyof PushPrefs, value: boolean) {
     setPrefs((p) => ({ ...p, [key]: value }));
     const r = await fetch("/api/push/manage", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "prefs", [key]: value }) }).catch(() => null);
-    if (r?.ok) announceSaved();
-    else setPrefs((p) => ({ ...p, [key]: !value }));
+    if (r?.ok) {
+      announceSaved();
+      // Opt-out rate: which kind of message was turned off (or back on).
+      track(value ? "notify_on" : "notify_off", { placement: "app_profile_notifications", detail: key.toLowerCase() });
+    } else setPrefs((p) => ({ ...p, [key]: !value }));
   }
 
   return (
@@ -40,7 +44,14 @@ export function NotificationsForm({ initial, lang, t }: { initial: PushPrefs; la
       {phoneOn === false && pushSupport() === "ok" && permission() !== "denied" ? (
         <div className="space-y-2.5 rounded-2xl bg-app-tint p-4">
           <p className="a-sec text-navy">{t.phoneOff}</p>
-          <button type="button" className={buttonClass("primary", "!h-11")} onClick={async () => setPhoneOn((await subscribe(lang)).ok)}>
+          <button type="button" className={buttonClass("primary", "!h-11")} onClick={async () => {
+              track("notify_prompt", { placement: "app_profile_notifications" });
+              const r = await subscribe(lang);
+              setPhoneOn(r.ok);
+              if (r.ok) track("notify_on", { placement: "app_profile_notifications", detail: "phone" });
+              else if (r.reason === "denied") track("notify_denied", { placement: "app_profile_notifications" });
+            }}
+          >
             {t.turnOn}
           </button>
         </div>

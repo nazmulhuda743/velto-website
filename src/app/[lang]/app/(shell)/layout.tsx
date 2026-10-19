@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { AppErrorText } from "@/components/app/AppErrorScreen";
+import { AppOpenTracker } from "@/components/app/AppOpenTracker";
 import { AppScreen } from "@/components/app/AppScreen";
 import { accountGate } from "@/components/account/AccountGate";
+import { ConsentManager } from "@/components/consent/ConsentManager";
 import { Analytics } from "@/components/layout/Analytics";
 import { AppHeader } from "@/components/pwa/AppHeader";
 import { AppInstalledMark } from "@/components/pwa/AppInstalledMark";
@@ -14,8 +16,10 @@ export const metadata: Metadata = { title: "Velto", robots: { index: false, foll
 
 /**
  * The installed app's own shell (manifest scope "/app/"): each screen (its own header and content), the tab bar.
- * No website component loads here (no menu, footer, promo bar, popups, cookie banner, breadcrumbs),
- * so nothing from the website can appear in the app. Every screen needs a customer session; the
+ * No website component loads here (no menu, footer, promo bar, popups, breadcrumbs), so nothing
+ * from the website can appear in the app. The one exception is the cookie choice: the installed app
+ * on iPhone keeps its own storage, so it asks once itself (above the tab bar). GTM and the Meta
+ * Pixel still never load on /app; with Analytics consent only Velto's own app events are stored. Every screen needs a customer session; the
  * same states as the website's account (unavailable, staff, welcome back, unfinished profile) come
  * from AccountGate.
  */
@@ -30,6 +34,8 @@ export default async function AppShellLayout({ children }: { children: ReactNode
       </AppErrorText>
       {gate.screen ? null : <AppTabBar t={t} />}
       <Analytics />
+      <ConsentManager inApp />
+      {gate.screen ? null : <AppOpenTracker />}
       <AppInstalledMark />
     </div>
   );

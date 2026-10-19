@@ -31,7 +31,8 @@ function Fact({ label, children }: { label: string; children: React.ReactNode })
  * One order. The order number in the URL is only a lookup key: the database returns the
  * order only if it belongs to the signed-in customer's verified Velto record.
  */
-export async function OrderDetailView({ id, care: careParam, base = "/account" }: { id: string; care?: string | string[]; base?: AppBase }) {
+export async function OrderDetailView({ id, care: careParam }: { id: string; care?: string | string[] }) {
+  const base: AppBase = "/account";
   const routes = customerRoutes(base);
   const number = validOrderNumber(id);
   if (!number) notFound();

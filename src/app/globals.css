@@ -135,7 +135,6 @@
   /* The installed app's own colours (used only by app components; src/app/app-shell.css). */
   --color-app-tint: #eaf3fb;
   --color-app-card: #ffffff;
-  --color-app-field: #c9d0d9;
   --color-app-chip: #d7dce3;
   --color-app-off: #f3f4f6;
   --color-app-off-text: #9aa3af;
@@ -146,7 +145,6 @@
   --color-app-red: #b42318;
   --color-app-red-tint: #fee2e2;
   --color-app-red-line: #f5b5b5;
-  --color-app-scrim: rgb(91 107 127 / 0.6);
 
   /* Layout breakpoints — spec §14 */
   --breakpoint-xs: 360px;

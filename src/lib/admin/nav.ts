@@ -45,6 +45,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/admin", label: "Overview", icon: "home" },
       { href: "/admin/funnel", label: "Visitor journey", icon: "funnel" },
+      { href: "/admin/app", label: "Velto app", icon: "funnel" },
       { href: "/admin/visitors", label: "Visitors", icon: "visitors" },
       { href: "/admin/marketing", label: "Ads & campaigns", icon: "marketing" },
       { href: "/admin/revenue", label: "Revenue", icon: "revenue" },

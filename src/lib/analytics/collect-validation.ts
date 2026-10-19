@@ -45,6 +45,8 @@ export type CollectBody =
       sessionId: string;
       isNew: boolean;
       device: Device;
+      /** The page language, when the browser sent one. */
+      lang: "en" | "bn" | null;
       attribution: CleanAttribution;
       events: CleanEvent[];
     }
@@ -133,7 +135,7 @@ export function validateCollectBody(input: unknown): CollectBody | null {
       if (typeof e.event !== "string" || !isAnalyticsEvent(e.event) || CONSENT_EVENT_SET.has(e.event)) continue;
       const path = cleanPath(e.path);
       // Customer-account pages are never part of behavioral analytics (bar app launches and the install card).
-      if (!path || (isPrivatePath(path) && !allowedOnPrivatePath(e.event))) continue;
+      if (!path || (isPrivatePath(path) && !allowedOnPrivatePath(e.event, path))) continue;
       events.push({ event: e.event, path, service: slug(e.service), placement: slug(e.placement), detail: slug(e.detail) });
     }
     if (!events.length) return null;
@@ -143,6 +145,7 @@ export function validateCollectBody(input: unknown): CollectBody | null {
       sessionId: body.sessionId.toLowerCase(),
       isNew: body.isNew === true,
       device: body.device,
+      lang: body.lang === "en" || body.lang === "bn" ? body.lang : null,
       attribution: cleanAttribution(body.attribution),
       events,
     };

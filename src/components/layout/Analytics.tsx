@@ -27,7 +27,7 @@ export function track(event: string, context: Payload = {}) {
   }
 
   if (isPrivatePath(window.location.pathname)) {
-    if (allowedOnPrivatePath(event)) sendAnalyticsEvent(event, context);
+    if (allowedOnPrivatePath(event, window.location.pathname)) sendAnalyticsEvent(event, context);
     return;
   }
 

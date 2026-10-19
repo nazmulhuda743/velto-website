@@ -44,6 +44,7 @@ export function NotifyPrompt({ lang, t }: { lang: "en" | "bn"; t: { title: strin
             const r = await subscribe(lang);
             setBusy(false);
             if (r.ok) track("notify_on", { placement: "app_book_success" });
+            else if (r.reason === "denied") track("notify_denied", { placement: "app_book_success" });
             setShow(false);
           }}
         >

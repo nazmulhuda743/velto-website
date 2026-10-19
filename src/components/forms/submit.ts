@@ -59,8 +59,8 @@ function idempotencyKeyFor(fingerprint: string) {
   return key;
 }
 
-async function post(path: string, data: Record<string, unknown>): Promise<SubmitResult> {
-  const payload = { ...data, attribution: submissionAttribution() };
+async function post(path: string, data: Record<string, unknown>, source?: string): Promise<SubmitResult> {
+  const payload = { ...data, attribution: { ...submissionAttribution(), ...(source ? { source } : {}) } };
   try {
     const res = await fetch(path, {
       method: "POST",
@@ -83,8 +83,9 @@ async function post(path: string, data: Record<string, unknown>): Promise<Submit
   }
 }
 
-export async function submitBooking(data: BookingFormData): Promise<SubmitResult> {
-  const result = await post("/api/bookings", { ...data });
+/** `source` names where an app booking started (lib/customer/app-sources) when the page URL can't. */
+export async function submitBooking(data: BookingFormData, opts: { source?: string } = {}): Promise<SubmitResult> {
+  const result = await post("/api/bookings", { ...data }, opts.source);
   if (!result.ok) {
     track("booking_error", {
       section: "booking-form",
