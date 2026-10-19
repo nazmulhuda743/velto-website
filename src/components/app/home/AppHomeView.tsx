@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LinkHistoryCard } from "@/components/account/LinkHistoryCard";
+import { AppEvent } from "@/components/app/appEvents";
 import { WeeklyOffer } from "@/components/app/orders/WeeklyOffer";
 import { appOrderFormat, type AppOrderFormat } from "@/components/app/orders/format";
 import { Banner, ButtonLink, Card, Eyebrow, WhatsAppButton } from "@/components/app/ui";
@@ -237,6 +238,7 @@ export async function AppHomeView({ params }: { params: Record<string, string | 
     const weekday = new Date(`${(last.pickupDate ?? last.orderDate).slice(0, 10)}T12:00:00Z`).getUTCDay();
     weekly = (
       <WeeklyOffer
+        placement="home"
         weekday={weekday}
         window={lastWindow}
         sector={sectorNumber(account.area)}
@@ -276,6 +278,8 @@ export async function AppHomeView({ params }: { params: Record<string, string | 
       {orders === null ? <Banner tone="error">{a.home.ordersFailed}</Banner> : null}
 
       {card}
+      {/* "Pending" (a booking not yet an order) is in progress for the customer. */}
+      <AppEvent event="app_home_state" detail={state === "pending" ? "in_progress" : state} />
 
       {linked ? null : <LinkHistoryCard account={account} base="/app" />}
 

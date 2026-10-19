@@ -201,6 +201,22 @@ test("customer-account pages stay out of analytics and order numbers are redacte
   assert.deepEqual(launch.events.map((e) => [e.event, e.path]), [["app_launch", "/account/orders/[order]"]]);
   assert.equal(validateCollectBody({ ...body("/account"), events: [{ event: "install_accepted", path: "/account", placement: "account_home" }] }).events[0].placement, "account_home");
   assert.equal(validateCollectBody({ type: "not_found", path: "/account/orders/VEL-99999" }).path, "/account/orders/[order]");
+  // The installed app's own events are kept (path redacted, slugs only); the website's funnel events are not.
+  const app = validateCollectBody({
+    ...body("/app/orders/VEL-00001"),
+    events: [
+      { event: "order_view", path: "/app/orders/VEL-00001", detail: "cleaning" },
+      { event: "app_booking_success", path: "/app/book", detail: "24" },
+      { event: "rebook_tap", path: "/app/home", placement: "home_card" },
+      { event: "booking_success", path: "/app/book" },
+      { event: "page_view", path: "/app/home" },
+    ],
+  });
+  assert.deepEqual(app.events.map((e) => [e.event, e.path, e.detail ?? e.placement]), [
+    ["order_view", "/app/orders/[order]", "cleaning"],
+    ["app_booking_success", "/app/book", "24"],
+    ["rebook_tap", "/app/home", "home_card"],
+  ]);
 });
 
 test("language paths: English keeps its URLs, Bangla lives under /bn", () => {

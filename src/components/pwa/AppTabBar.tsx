@@ -27,7 +27,7 @@ function Icon({ d }: { d: string }) {
 export function AppTabBar({ t }: { t: Labels }) {
   const path = pathWithoutLocale(usePathname());
   const items = [
-    { key: "home", href: "/app/home", label: t.home, active: path === "/app/home" || path.startsWith("/app/prices") },
+    { key: "home", href: "/app/home", label: t.home, active: path === "/app/home" },
     { key: "book", href: "/app/book", label: t.book, active: path.startsWith("/app/book") },
     { key: "orders", href: "/app/orders", label: t.orders, active: path.startsWith("/app/orders") },
     { key: "profile", href: "/app/profile", label: t.profile, active: path.startsWith("/app/profile") || path.startsWith("/app/rewards") },

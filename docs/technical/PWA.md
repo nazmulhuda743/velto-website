@@ -11,19 +11,25 @@ with its own layout: `src/app/[lang]/app/(shell)/layout.tsx` (logo header, the s
 Home · Book · Orders · Profile). No website component loads there, so nothing from the website can
 appear in the app. The website's routes and pages are unchanged.
 
-| App screen | Route | Shared view (also used by the website) |
-|---|---|---|
-| Home | `/app/home` | `AccountHomeView` (+ a link to Prices) |
-| Book | `/app/book` | `BookingSection` (same form as `/book`) |
-| Orders | `/app/orders`, `/app/orders/[id]` | `OrdersView`, `OrderDetailView` |
-| Profile | `/app/profile` | `ProfileView` + rewards, help, language, legal, sign out |
-| Prices | `/app/prices` | `PriceFinder` + `PopularPrices`, booking into `/app/book` |
-| Rewards | `/app/rewards` | `RewardsView` |
-| Sign-in | `/app/login` | the website's mobile sign-in, inside the app |
-| Install screen | `/app` | `AppInstallPage` (for browsers; inside the app it goes to `/app/home`) |
+The screens follow the owner's app design (`docs/design/velto-app-screens.dc.html`); their rules
+(home state, default slot, expected return, tracker) are pure and tested in
+`src/lib/customer/app-logic.ts` / `tests/app-logic.test.cjs`.
 
-- **Links** come from `customerRoutes(base)` (`src/lib/app-routes.ts`): every shared view takes `base`
-  (`"/account"` or `"/app"`), so the app never links out of `/app/` and the website never links in.
+| App screen | Route | View (`src/components/app/…`) |
+|---|---|---|
+| Home | `/app/home` | `home/AppHomeView` (state card: first, rebook, welcome back, in progress; `RebookCard`) |
+| Book | `/app/book` | `book/AppBookView` + `book/AppBookingFlow` (summary rows and sheets) |
+| Orders | `/app/orders`, `/app/orders/[id]` | `orders/AppOrdersView`, `orders/AppOrderView` |
+| Prices | sheet from the header's Prices pill; `/app/prices` for links | `prices/PricesButton`, `prices/PricesPanel` |
+| Profile | `/app/profile` and its sub-screens | `profile/AppProfileView` (details, addresses, preferences, weekly, notifications, language) |
+| Rewards | `/app/rewards` (only when rewards are on) | `RewardsView` (shared with the website) |
+| Sign-in | `/app/login` | the website's mobile sign-in, the code as six boxes |
+| Install screen | `/app` | `pwa/AppInstallPage` (for browsers; inside the app it goes to `/app/home`) |
+| Offline | `/app/offline` | stored by the worker, shown for `/app` pages it can't reach |
+| Error, loading | `(shell)/error.tsx`, `(shell)/loading.tsx` | `AppErrorScreen`, the Home skeleton |
+
+- **Links** come from `customerRoutes("/app")` (`src/lib/app-routes.ts`), so the app never links out
+  of `/app/` and the website never links in.
 - **Sessions:** `accountGate()` (`src/components/account/AccountGate.tsx`) gives the website account
   and the app the same states (can't load, staff, welcome back, unfinished profile). Signed out, the
   proxy sends `/app/*` to `/app/login?next=…`.
@@ -34,7 +40,15 @@ appear in the app. The website's routes and pages are unchanged.
   `/account`, a push or email link) goes to the app's own page: `appSafetyTarget` /
   `APP_MODE_SCRIPT` (`src/lib/pwa/install-card.ts`) and `AppMode`. Legal pages, `/auth`, `/r`, `/i`
   open as they are.
-- `/app/*` is private for analytics, never cached by the worker, and disallowed in robots.txt.
+- `/app/*` is private for analytics (only the app's own events below), never cached by the worker
+  (only its offline screen is stored), and disallowed in robots.txt.
+- **App events** (handoff §7; first-party only, consent-gated, no order or customer data, order
+  numbers redacted from the path): `app_home_state` (detail: first, regular, lapsed, in_progress),
+  `rebook_tap` (placement: home_card, book_again, book_tab), `app_booking_success` (detail: seconds
+  from app open; the website's `booking_success` stays the website's conversion), `order_view`
+  (detail: the step), `prices_open` (sheet, page), `feedback` (all_good, off), `weekly_offer_shown`
+  and `weekly_on` (home, order), `notify_prompt` / `notify_on` / `notify_denied`. Helpers in
+  `src/components/app/appEvents.tsx`.
 
 ## "Install Velto" popup
 
@@ -55,8 +69,9 @@ once the customer has booked or opened their account.
   for 14 days (`velto.install.dismissed`). Rules in `install-card.ts`, tests in
   `tests/command-center/install-card.test.cjs`.
 - **Events:** `install_prompt_shown`, `install_ios_shown`, `install_accepted`, `install_dismissed`
-  (detail: prompt, not_now, close), plus `app_launch`. They are the only events recorded on account
-  pages (`PRIVATE_PATH_EVENTS`, `src/lib/analytics/events.ts`); the path stays redacted.
+  (detail: prompt, not_now, close), plus `app_launch`. With the notification and app events above,
+  they are the only events recorded on account pages (`PRIVATE_PATH_EVENTS`,
+  `src/lib/analytics/events.ts`); the path stays redacted.
 
 ## Pieces
 
@@ -76,7 +91,8 @@ once the customer has booked or opened their account.
 - **Photos**: stale-while-revalidate, up to 60.
 - **Public pages**: network first. After 4 s, or offline, the last saved copy; otherwise `/offline`.
   Only responses that are not `private`/`no-store` are saved (e.g. `/pricing` is live and never saved).
-- **Account, booking, quote, track, sign-in, admin**: network only, never saved; offline shows `/offline`.
+- **Account, booking, quote, track, sign-in, admin**: network only, never saved; offline shows `/offline`
+  (the app's own `/app/offline` for `/app` pages, `swOfflinePage`).
 - **API, `/go/*`, other sites, POSTs, server actions, RSC payloads**: not touched.
 - Every deploy gets a new worker version (`VERCEL_DEPLOYMENT_ID`); old caches are deleted on activate.
 

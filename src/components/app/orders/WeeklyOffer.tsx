@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { track } from "@/components/layout/Analytics";
 import { Switch } from "@/components/app/controls";
 import { usePickupDays } from "@/components/app/usePickupDays";
 import { defaultSlot } from "@/lib/customer/app-logic";
@@ -30,12 +31,32 @@ type Text = {
  * earlier pickup it uses the window the rebook card starts on (same capacity, same rule), so Home
  * never offers "tomorrow morning" and "every Tuesday evening" side by side.
  */
-export function WeeklyOffer({ weekday, window: known, sector, service, locale, t }: { weekday: number; window: string | null; sector: number | null; service: string; locale: Locale; t: Text }) {
+export function WeeklyOffer({
+  weekday,
+  window: known,
+  sector,
+  service,
+  placement,
+  locale,
+  t,
+}: {
+  weekday: number;
+  window: string | null;
+  sector: number | null;
+  service: string;
+  /** Where it shows: Home (after two orders) or an order (after "All good"). */
+  placement: "home" | "order";
+  locale: Locale;
+  t: Text;
+}) {
   const [on, setOn] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const load = usePickupDays(known ? null : sector);
   const routineWindow = (w: string | null | undefined) => (w && (ROUTINE_WINDOWS as readonly string[]).includes(w) ? w : null);
+  useEffect(() => {
+    track("weekly_offer_shown", { placement });
+  }, [placement]);
   const window = routineWindow(known) ?? (load.state === "ready" ? routineWindow(defaultSlot(load.days, load.today, null)?.window) : null);
 
   const toggle = (next: boolean) => {
@@ -50,7 +71,10 @@ export function WeeklyOffer({ weekday, window: known, sector, service, locale, t
         form.set("service", service);
       }
       const result = await routineAction({ status: "idle" }, form);
-      if (result.status === "done") setOn(next);
+      if (result.status === "done") {
+        setOn(next);
+        if (next) track("weekly_on", { placement });
+      }
       else setError(result.status === "error" && result.code === "address" ? t.needAddress : t.failed);
     });
   };

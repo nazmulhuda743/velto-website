@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { CareDecision } from "@/components/account/CareDecision";
+import { AppEvent } from "@/components/app/appEvents";
 import { Tracker, type TrackerItem } from "@/components/app/Tracker";
 import { Banner, ButtonLink, Card, WhatsAppButton, WhatsAppIcon, whatsappHref } from "@/components/app/ui";
 import { accountText, orderFormat } from "@/content/i18n/account";
@@ -153,6 +154,7 @@ export async function AppOrderView({ id, care: careParam }: { id: string; care?:
     const fb = formText(locale);
     weekly = (
       <WeeklyOffer
+        placement="order"
         weekday={weekday}
         window={lastSlot}
         sector={sectorNumber(session.account.area)}
@@ -212,6 +214,7 @@ export async function AppOrderView({ id, care: careParam }: { id: string; care?:
 
   return (
     <div className="space-y-3" data-app-order data-status={key}>
+      <AppEvent event="order_view" detail={cancelled ? "cancelled" : key} />
       <header className="space-y-1.5 pb-1">
         <h1 className="a-title">{title}</h1>
         {sub ? <p className={`a-body ${subTone === "amber" ? "text-app-amber" : "text-secondary"}`}>{sub}</p> : null}
@@ -247,8 +250,6 @@ export async function AppOrderView({ id, care: careParam }: { id: string; care?:
         <ButtonLink
           href={repeatHref({ last: order, repeatService: routineService }, "app_order", routes.book())}
           className="!h-12"
-          data-analytics="book_pickup_click"
-          data-placement="app_order_rebook"
         >
           {t.bookAgain}
         </ButtonLink>

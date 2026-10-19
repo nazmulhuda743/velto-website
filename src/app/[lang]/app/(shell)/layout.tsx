@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { AppOpenClock } from "@/components/app/appEvents";
 import { AppErrorText } from "@/components/app/AppErrorScreen";
 import { AppScreen } from "@/components/app/AppScreen";
 import { accountGate } from "@/components/account/AccountGate";
@@ -30,6 +31,7 @@ export default async function AppShellLayout({ children }: { children: ReactNode
       </AppErrorText>
       {gate.screen ? null : <AppTabBar t={t} />}
       <Analytics />
+      <AppOpenClock />
       <AppInstalledMark />
     </div>
   );

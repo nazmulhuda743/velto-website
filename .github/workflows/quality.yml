@@ -56,7 +56,15 @@ jobs:
         run: npm run test:i18n
 
       - name: Production build
-        run: npm run build
+        shell: bash
+        # The job log isn't always reachable (it is served from another host); a failure's last
+        # lines also go into an annotation, which the check-run API returns.
+        run: |
+          set -o pipefail
+          if ! npm run build 2>&1 | tee /tmp/velto-build.log; then
+            printf '::error title=Production build failed::%s\n' "$(tail -c 3500 /tmp/velto-build.log | sed -e 's/%/%25/g' -e 's/\r/%0D/g' | awk '{printf "%s%%0A", $0}')"
+            exit 1
+          fi
 
       - name: Launch smoke audit
         shell: bash
@@ -106,7 +114,15 @@ jobs:
         run: npm ci
 
       - name: Production build (Bangla on)
-        run: npm run build
+        shell: bash
+        # The job log isn't always reachable (it is served from another host); a failure's last
+        # lines also go into an annotation, which the check-run API returns.
+        run: |
+          set -o pipefail
+          if ! npm run build 2>&1 | tee /tmp/velto-build.log; then
+            printf '::error title=Production build (Bangla on) failed::%s\n' "$(tail -c 3500 /tmp/velto-build.log | sed -e 's/%/%25/g' -e 's/\r/%0D/g' | awk '{printf "%s%%0A", $0}')"
+            exit 1
+          fi
 
       - name: Launch, portal and SEO audits (Bangla on)
         shell: bash
