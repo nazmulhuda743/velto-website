@@ -217,6 +217,7 @@ as $$
     'last_booking_success_at', (select max(occurred_at) from website_analytics_events where event = 'booking_success'),
     'last_quote_success_at',   (select max(occurred_at) from website_analytics_events where event = 'quote_success'),
     'last_consent_at',         (select max(occurred_at) from website_consent_events where action <> 'banner_view'),
+    'last_analytics_consent_at', (select max(occurred_at) from website_consent_events where action <> 'banner_view' and analytics),
     'events_24h',              (select count(*) from website_analytics_events where occurred_at > now() - interval '24 hours'),
     'marketing_events_24h',    (select count(*) from website_analytics_events where occurred_at > now() - interval '24 hours' and consent_marketing)
   );

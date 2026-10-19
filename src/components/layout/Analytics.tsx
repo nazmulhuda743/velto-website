@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { sendAnalyticsEvent } from "@/lib/analytics/client";
+import { CONSENT_CHANGE_EVENT, sendAnalyticsEvent } from "@/lib/analytics/client";
 import { allowedOnPrivatePath, isAnalyticsEvent } from "@/lib/analytics/events";
 import { isPrivatePath } from "@/lib/analytics/private-paths";
 import { appendAttribution } from "@/lib/attribution";
@@ -63,6 +63,17 @@ export function Analytics() {
   useEffect(() => {
     track("page_view");
   }, [pathname]);
+
+  // The page view for the page the visitor is on fired before they allowed Analytics, so it was
+  // dropped: record it once Analytics is newly allowed (first-party only; Meta sends its own).
+  useEffect(() => {
+    const onConsent = (e: Event) => {
+      const { choice, previous } = (e as CustomEvent<{ choice: { analytics: boolean }; previous: { analytics: boolean } | null }>).detail ?? {};
+      if (choice?.analytics && !previous?.analytics && !isPrivatePath(window.location.pathname)) sendAnalyticsEvent("page_view");
+    };
+    window.addEventListener(CONSENT_CHANGE_EVENT, onConsent);
+    return () => window.removeEventListener(CONSENT_CHANGE_EVENT, onConsent);
+  }, []);
 
   useEffect(() => {
     captureAttributionFromUrl();
