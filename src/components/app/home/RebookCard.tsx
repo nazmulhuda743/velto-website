@@ -9,6 +9,7 @@ import { hoursText } from "@/components/forms/PickupWindows";
 import { usePickupDays } from "@/components/app/usePickupDays";
 import { submitBooking, type BookingFormData } from "@/components/forms/submit";
 import { track } from "@/components/layout/Analytics";
+import { trackAppBooking } from "@/components/app/appEvents";
 import { defaultSlot, isTomorrow, pickupDays } from "@/lib/customer/app-logic";
 import type { WindowId } from "@/lib/capacity-logic";
 import { fill, format, localDigits, type Locale } from "@/lib/i18n/config";
@@ -105,14 +106,14 @@ export function RebookCard({
   async function book() {
     if (!slot || !win || load.state !== "ready" || state.kind === "sending") return;
     setState({ kind: "sending" });
-    track("booking_start", { section: "app-rebook", placement });
+    track("rebook_tap", { placement: "home_card" });
     const result = await submitBooking({
       ...data,
       preferredPickup: opsPickupWhen(slot.date, { id: win.id as WindowId, starts: win.starts, ends: win.ends }, load.live),
       ...(load.live ? { slot: { date: slot.date, window: win.id as WindowId } } : {}),
     });
     if (result.ok) {
-      track("booking_success", { section: "app-rebook", placement, service: data.service });
+      trackAppBooking("home_card", data.service);
       setState({ kind: "done", reference: result.reference, when: slotText(false) });
     } else if (result.code === "slot_unavailable") {
       setPicked(null);

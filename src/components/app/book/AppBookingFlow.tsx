@@ -9,6 +9,7 @@ import { hoursText } from "@/components/forms/PickupWindows";
 import { usePickupDays } from "@/components/app/usePickupDays";
 import { submitBooking, type BookingFormData } from "@/components/forms/submit";
 import { track } from "@/components/layout/Analytics";
+import { rebookPlacement, trackAppBooking } from "@/components/app/appEvents";
 import type { FormText } from "@/content/i18n/forms/en";
 import { GARMENT_SERVICES, sharedItemService, type GarmentService } from "@/lib/booking-items";
 import type { WindowId } from "@/lib/capacity-logic";
@@ -66,6 +67,7 @@ export function AppBookingFlow({
   services: initialServices,
   items: initialItems,
   sameAsLast,
+  source,
   addresses,
   prices,
   popular,
@@ -83,6 +85,8 @@ export function AppBookingFlow({
   services: GarmentService[];
   items: BookItem[];
   sameAsLast: boolean;
+  /** How the customer got here (?source=): Home's card, "Book this again", or the Book tab. */
+  source: string | null;
   addresses: BookAddress[];
   prices: PriceRow[];
   popular: string[];
@@ -208,10 +212,11 @@ export function AppBookingFlow({
     const data = payload();
     if (!data) return;
     setState({ kind: "sending" });
-    track("booking_start", { section: "app-book", placement: "app_book" });
+    const placement = rebookPlacement(source);
+    track("rebook_tap", { placement });
     const result = await submitBooking(data);
     if (result.ok) {
-      track("booking_success", { section: "app-book", placement: "app_book", service: data.service });
+      trackAppBooking(placement, data.service);
       setState({ kind: "done", reference: result.reference, when: slotText(false) });
       window.scrollTo({ top: 0 });
     } else if (result.code === "slot_unavailable") {

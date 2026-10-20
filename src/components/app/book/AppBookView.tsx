@@ -93,6 +93,7 @@ export async function AppBookView({ params }: { params: Record<string, string | 
       services={services}
       items={items}
       sameAsLast={Boolean(repeat && (items.length || services.length))}
+      source={one(params.source) ?? null}
       addresses={addresses}
       prices={prices}
       popular={POPULAR}

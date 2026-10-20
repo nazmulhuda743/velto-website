@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AppEvent } from "@/components/app/appEvents";
 import { AppScreen } from "@/components/app/AppScreen";
 import { PricesPanel } from "@/components/app/prices/PricesPanel";
 import { popularPrices, pricesText } from "@/components/app/prices/data";
@@ -12,6 +13,7 @@ export default async function AppPrices() {
   const f = formText(locale).common;
   return (
     <AppScreen>
+      <AppEvent event="prices_open" placement="page" />
       <h1 className="a-title">{f.appBar.prices}</h1>
       <div className="mt-2">
         <PricesPanel popular={await popularPrices()} t={pricesText(locale)} locale={locale} />
