@@ -58,6 +58,9 @@ const OPS_TO_BOOKING: Record<string, string> = {
 export const bookingServiceFor = (services: string[]) =>
   services.map((s) => OPS_TO_BOOKING[s.trim()]).find(Boolean) ?? null;
 
+/** Every booking service of an order, in order, without repeats ("A + B" rebooks as A and B). */
+export const bookingServicesFor = (services: string[]) => [...new Set(services.map((s) => OPS_TO_BOOKING[s.trim()]).filter((s): s is string => Boolean(s)))];
+
 /** Dhaka calendar day for a date or timestamp. */
 export function dhakaDay(value: string | Date) {
   const d = typeof value === "string" ? new Date(value.length === 10 ? `${value}T00:00:00+06:00` : value) : value;

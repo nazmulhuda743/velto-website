@@ -8,7 +8,8 @@ import { GARMENT_SERVICES, isGarmentService, type GarmentService } from "@/lib/b
 import { lastOrder, showFirstOrderLine } from "@/lib/customer/app-logic";
 import { careNote, joinNotes } from "@/lib/customer/extras";
 import { getCustomerSession, getPickups, getPortalOrders, getPreferences } from "@/lib/customer/portal";
-import { bookingServiceFor } from "@/lib/customer/rhythm";
+import { appBookSource } from "@/lib/customer/app-sources";
+import { bookingServicesFor } from "@/lib/customer/rhythm";
 import { displayBdPhone, validOrderNumber } from "@/lib/customer/validation";
 import { FIRST_ORDER_OFFER } from "@/lib/first-order-offer";
 import { firstWebsiteBooking } from "@/lib/first-order-lookup";
@@ -51,15 +52,19 @@ export async function AppBookView({ params }: { params: Record<string, string | 
   const items: BookItem[] = repeated
     .filter((l) => isGarmentService(l.service))
     .map((l) => ({ item: l.item, service: l.service as GarmentService, quantity: l.quantity }));
+  // Rebook repeats the whole set: the repeated order's services win; ?service= only fills in when
+  // there is no order to repeat (design: "rebook repeats the whole set").
   const asService = one(params.service);
-  const services: GarmentService[] = isGarmentService(asService)
-    ? [asService]
-    : items.length
-      ? [...new Set(items.map((i) => i.service))]
-      : (() => {
-          const s = last ? bookingServiceFor(last.services) : null;
-          return isGarmentService(s) ? [s] : [];
-        })();
+  const repeatedOrder = repeat ? (list.find((o) => o.orderNumber === repeat) ?? null) : null;
+  const base = repeatedOrder ?? last;
+  const orderServices = base ? bookingServicesFor(base.services).filter(isGarmentService) : [];
+  const services: GarmentService[] = items.length
+    ? [...new Set(items.map((i) => i.service))]
+    : repeat && orderServices.length
+      ? orderServices
+      : isGarmentService(asService)
+        ? [asService]
+        : orderServices;
 
   // Prices for the picker and the estimate: the popular items and anything being repeated.
   const priced = await getServicePrices([...new Set([...POPULAR, ...items.map((i) => i.item)])].slice(0, 40));
@@ -101,7 +106,7 @@ export async function AppBookView({ params }: { params: Record<string, string | 
       // The notifications prompt follows only the first booking.
       notifyAfter={list.length === 0 && !hasPending}
       homeHref={routes.home}
-      pricesHref={routes.prices}
+      source={appBookSource(one(params.source))}
       t={{
         ...t,
         serviceNames: Object.fromEntries(GARMENT_SERVICES.map((s) => [s, fm.booking.services[s]])) as Record<GarmentService, string>,

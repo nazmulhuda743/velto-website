@@ -222,6 +222,11 @@ let queue: Queued[] = [];
 let timer: ReturnType<typeof setTimeout> | undefined;
 const CONSENT_EVENT_SET = new Set<string>(CONSENT_EVENTS);
 
+function pageLang(): "en" | "bn" | undefined {
+  const l = document.documentElement.lang;
+  return l === "en" || l === "bn" ? l : undefined;
+}
+
 function flush() {
   timer = undefined;
   const events = queue;
@@ -236,6 +241,8 @@ function flush() {
     sessionId: id.session.id,
     isNew: id.session.isNew,
     device: currentDevice(),
+    // The page language (the app has no /bn in its addresses; the <html lang> is set per language).
+    lang: pageLang(),
     attribution: {
       landing_page: a.landing_page,
       referrer_host: id.session.referrer ?? a.referrer,
@@ -254,7 +261,7 @@ function flush() {
 /** Queue a first-party event. Dropped silently without analytics consent and on account pages (bar the PRIVATE_PATH_EVENTS). */
 export function sendAnalyticsEvent(event: string, context: Record<string, string | undefined> = {}) {
   if (CONSENT_EVENT_SET.has(event) || !readConsent()?.analytics || isStaffBrowser()) return;
-  if (isPrivatePath(window.location.pathname) && !allowedOnPrivatePath(event)) return;
+  if (isPrivatePath(window.location.pathname) && !allowedOnPrivatePath(event, window.location.pathname)) return;
   queue.push({
     event,
     path: window.location.pathname,

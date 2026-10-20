@@ -39,6 +39,9 @@ execFileSync(
     "src/lib/push/messages.ts",
     "src/lib/i18n/copy-overrides.ts",
     "src/content/mock.ts",
+    "src/lib/admin/app-metrics.ts",
+    "src/lib/analytics/app-open.ts",
+    "src/lib/customer/app-sources.ts",
   ],
   { stdio: "inherit" },
 );

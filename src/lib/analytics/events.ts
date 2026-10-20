@@ -50,6 +50,13 @@ export const ANALYTICS_EVENTS = [
   "notify_prompt",
   "notify_on",
   "notify_denied",
+  // Installed app (step 7, docs/technical/APP-METRICS.md): opened or brought back to the screen
+  // (detail = Home state), an order opened (detail = tracker step), notifications turned off,
+  // a weekly pickup requested, changed, paused, resumed, withdrawn or stopped (detail).
+  "app_open",
+  "order_view",
+  "notify_off",
+  "routine_change",
 ] as const;
 
 export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[number];
@@ -87,8 +94,8 @@ export function isAnalyticsEvent(value: string): value is AnalyticsEvent {
 
 /**
  * The few events that may be recorded on customer-account pages (src/lib/analytics/private-paths.ts):
- * app launches and the install popup. They carry no order or customer data, and nothing else from
- * those pages is measured. Checked in the browser (track) and again by /api/collect.
+ * app launches and the install popup. They carry no order or customer data. Checked in the browser
+ * (track) and again by /api/collect.
  */
 export const PRIVATE_PATH_EVENTS = [
   "app_launch",
@@ -98,8 +105,34 @@ export const PRIVATE_PATH_EVENTS = [
   "install_ios_shown",
 ] as const satisfies readonly AnalyticsEvent[];
 
-const PRIVATE_PATH_EVENT_SET = new Set<string>(PRIVATE_PATH_EVENTS);
+/**
+ * In the installed app's screens (/app/…) also the events behind the app's metrics (design "Metrics
+ * that prove it works"): bookings and where they started, opens, order views, WhatsApp, notifications
+ * and weekly pickup. First-party only (GTM and the Meta Pixel never load on /app), with Analytics
+ * consent, never from staff browsers, with no customer id and order numbers redacted from paths.
+ * The website's /account pages stay as before.
+ */
+export const APP_PATH_EVENTS = [
+  ...PRIVATE_PATH_EVENTS,
+  "app_open",
+  "booking_start",
+  "booking_success",
+  "booking_error",
+  "book_pickup_click",
+  "whatsapp_click",
+  "order_view",
+  "notify_prompt",
+  "notify_on",
+  "notify_denied",
+  "notify_off",
+  "routine_change",
+] as const satisfies readonly AnalyticsEvent[];
 
-export function allowedOnPrivatePath(event: string): boolean {
-  return PRIVATE_PATH_EVENT_SET.has(event);
+const PRIVATE_PATH_EVENT_SET = new Set<string>(PRIVATE_PATH_EVENTS);
+const APP_PATH_EVENT_SET = new Set<string>(APP_PATH_EVENTS);
+const APP_PATH = /^(?:\/(?:en|bn))?\/app\//;
+
+/** May this event be recorded from this private page? `path` is the page's pathname. */
+export function allowedOnPrivatePath(event: string, path = ""): boolean {
+  return APP_PATH.test(path) ? APP_PATH_EVENT_SET.has(event) : PRIVATE_PATH_EVENT_SET.has(event);
 }

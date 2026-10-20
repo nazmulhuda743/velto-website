@@ -65,6 +65,10 @@ test("the same-again link preselects the booking service and names the order", (
   assert.equal(r.bookingServiceFor(["Dry Cleaning"]), "dry-cleaning");
   assert.equal(r.bookingServiceFor(["Wash + Iron", "Ironing"]), "wash-and-iron");
   assert.equal(r.bookingServiceFor(["Something new"]), null);
+  // Rebook repeats the whole set: every service of the order, in order, once each.
+  assert.deepEqual(r.bookingServicesFor(["Dry Cleaning", "Wash + Iron"]), ["dry-cleaning", "wash-and-iron"]);
+  assert.deepEqual(r.bookingServicesFor(["Wash + Iron", "Something new", "Wash + Iron"]), ["wash-and-iron"]);
+  assert.deepEqual(r.bookingServicesFor([]), []);
   const x = r.laundryRhythm([order("VEL-00001", "2026-09-01", "Delivered", ["Dry Cleaning"])], at("2026-09-11"));
   assert.equal(r.repeatHref(x, "account_second"), "/book?source=account_second&service=dry-cleaning&repeat=VEL-00001");
   const y = r.laundryRhythm([order("VEL-00001", "2026-09-01", "Delivered", ["Something new"])], at("2026-09-11"));

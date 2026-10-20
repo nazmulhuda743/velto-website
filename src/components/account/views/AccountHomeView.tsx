@@ -103,10 +103,11 @@ function ActiveOrderCard({ order, more, t, locale, plan, routes }: { order: Port
 
 /**
  * The customer's home: what's happening with their laundry, the next pickup, rewards and help.
- * Rendered by the website's /account and by the installed app's /app/home; `base` decides where
- * every link goes, so neither surface links into the other.
+ * The website's /account only (the installed app has its own Home, components/app/home); its
+ * links stay inside /account.
  */
-export async function AccountHomeView({ params, base = "/account" }: { params: Record<string, string | string[] | undefined>; base?: AppBase }) {
+export async function AccountHomeView({ params }: { params: Record<string, string | string[] | undefined> }) {
+  const base: AppBase = "/account";
   const routes = customerRoutes(base);
   const session = await getCustomerSession();
   if (session.kind !== "customer" || session.account.state !== "ready") redirect(await signInFor(base, routes.home));

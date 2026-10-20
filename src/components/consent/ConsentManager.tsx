@@ -28,7 +28,11 @@ import { dictionary } from "@/content/i18n";
 const BANNER_SCROLL_PX = 240;
 const BANNER_DELAY_MS = 6000;
 
-export function ConsentManager() {
+/**
+ * `inApp`: the installed app's shell. The banner then sits on top of the tab bar instead of the
+ * page's bottom edge (on iPhone the installed app keeps its own storage, so it asks once itself).
+ */
+export function ConsentManager({ inApp = false }: { inApp?: boolean } = {}) {
   const t = dictionary(useLocale()).consent;
   const [banner, setBanner] = useState(false);
   const [prefsOpen, setPrefsOpen] = useState(false);
@@ -99,7 +103,11 @@ export function ConsentManager() {
           // Mobile: a short bottom sheet; the sticky booking bar steps aside while it is open, so the
           // hero and its proof aren't covered by two stacked bars. Desktop: a compact floating panel,
           // bottom-right so it sits over imagery rather than the hero copy. Neither blocks the page.
-          className="fixed inset-x-0 bottom-0 z-[45] border-t border-line bg-white px-4 pb-[calc(6px+env(safe-area-inset-bottom))] pt-3 shadow-[0_-8px_24px_rgba(0,49,83,0.10)] min-[360px]:px-5 md:inset-x-auto md:bottom-6 md:right-6 md:w-[400px] md:rounded-lg md:border md:px-5 md:pb-3 md:pt-5 md:shadow-[0_12px_32px_rgba(0,49,83,0.14)]"
+          className={
+            inApp
+              ? "fixed inset-x-0 bottom-[calc(64px+env(safe-area-inset-bottom))] z-[45] border-t border-line bg-white px-4 pb-2 pt-3 shadow-[0_-8px_24px_rgba(0,49,83,0.10)] min-[360px]:px-5"
+              : "fixed inset-x-0 bottom-0 z-[45] border-t border-line bg-white px-4 pb-[calc(6px+env(safe-area-inset-bottom))] pt-3 shadow-[0_-8px_24px_rgba(0,49,83,0.10)] min-[360px]:px-5 md:inset-x-auto md:bottom-6 md:right-6 md:w-[400px] md:rounded-lg md:border md:px-5 md:pb-3 md:pt-5 md:shadow-[0_12px_32px_rgba(0,49,83,0.14)]"
+          }
         >
           <h2 id={titleId} className="sr-only md:not-sr-only md:mb-1.5 md:text-[16px] md:font-semibold md:leading-snug md:text-navy">
             {t.bannerTitle}

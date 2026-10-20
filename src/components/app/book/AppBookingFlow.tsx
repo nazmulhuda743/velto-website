@@ -9,6 +9,7 @@ import { hoursText } from "@/components/forms/PickupWindows";
 import { usePickupDays } from "@/components/app/usePickupDays";
 import { submitBooking, type BookingFormData } from "@/components/forms/submit";
 import { track } from "@/components/layout/Analytics";
+import { openToNowBucket } from "@/lib/analytics/app-open";
 import type { FormText } from "@/content/i18n/forms/en";
 import { GARMENT_SERVICES, sharedItemService, type GarmentService } from "@/lib/booking-items";
 import type { WindowId } from "@/lib/capacity-logic";
@@ -17,6 +18,7 @@ import { joinNotes } from "@/lib/customer/extras";
 import { areaLabel } from "@/lib/customer/validation";
 import { fill, format, localDigits, type Locale } from "@/lib/i18n/config";
 import { opsPickupWhen } from "@/lib/pickup-when";
+import { PricesPanel } from "@/components/app/prices/PricesPanel";
 import { NotifyPrompt } from "./NotifyPrompt";
 
 export type BookItem = { item: string; service: GarmentService; quantity: number };
@@ -46,7 +48,7 @@ type Text = FormText["common"]["app"] & {
   dayMonth: string;
 };
 
-type Sheet = null | "service" | "items" | "address" | "note";
+type Sheet = null | "service" | "items" | "prices" | "address" | "note";
 type Errors = Partial<Record<"service" | "address" | "slot", string>>;
 
 const dhakaToday = () => new Date(Date.now() + 6 * 3_600_000).toISOString().slice(0, 10);
@@ -73,7 +75,7 @@ export function AppBookingFlow({
   offer,
   notifyAfter,
   homeHref,
-  pricesHref,
+  source,
   t,
 }: {
   locale: Locale;
@@ -90,7 +92,8 @@ export function AppBookingFlow({
   offer: string | null;
   notifyAfter: boolean;
   homeHref: string;
-  pricesHref: string;
+  /** Where this booking started (lib/customer/app-sources). */
+  source: string;
   t: Text;
 }) {
   const [services, setServices] = useState<GarmentService[]>(initialServices);
@@ -208,10 +211,10 @@ export function AppBookingFlow({
     const data = payload();
     if (!data) return;
     setState({ kind: "sending" });
-    track("booking_start", { section: "app-book", placement: "app_book" });
-    const result = await submitBooking(data);
+    track("booking_start", { section: "app-book", placement: source });
+    const result = await submitBooking(data, { source });
     if (result.ok) {
-      track("booking_success", { section: "app-book", placement: "app_book", service: data.service });
+      track("booking_success", { section: "app-book", placement: source, service: data.service, detail: openToNowBucket() });
       setState({ kind: "done", reference: result.reference, when: slotText(false) });
       window.scrollTo({ top: 0 });
     } else if (result.code === "slot_unavailable") {
@@ -455,7 +458,9 @@ export function AppBookingFlow({
 
       <BottomSheet
         open={sheet === "items"}
-        onClose={() => setSheet(null)}
+        // Only when this sheet itself closes: switching to the price list closes it too, and must not
+        // close the price list (the dialog's close event fires after the switch).
+        onClose={() => setSheet((x) => (x === "items" ? null : x))}
         title={t.addItems}
         sub={t.pickerSub}
         closeLabel={t.close}
@@ -521,10 +526,29 @@ export function AppBookingFlow({
                 );
               })}
           </ul>
-          <Link href={pricesHref} className="inline-flex min-h-11 items-center a-sec font-semibold text-action">
+          {/* The full price list opens over the picker; the picked items stay. */}
+          <button type="button" onClick={() => setSheet("prices")} className="inline-flex min-h-11 items-center a-sec font-semibold text-action" data-app-all-prices>
             {t.allItems}
-          </Link>
+          </button>
         </div>
+      </BottomSheet>
+
+      <BottomSheet
+        open={sheet === "prices"}
+        onClose={() => setSheet((x) => (x === "prices" ? "items" : x))}
+        title={t.allItems}
+        closeLabel={t.close}
+        footer={
+          <button type="button" className={buttonClass("primary")} onClick={() => setSheet("items")}>
+            {t.addItems}
+          </button>
+        }
+      >
+        <PricesPanel
+          popular={popular.map((n) => prices.find((p) => p.name === n)).filter((p): p is PriceRow => Boolean(p))}
+          t={{ pricesSub: t.pricesSub, pricesFoot: t.pricesFoot, searchPlaceholder: t.searchPlaceholder, serviceNames: t.serviceNames }}
+          locale={locale}
+        />
       </BottomSheet>
 
       <BottomSheet open={sheet === "address"} onClose={() => setSheet(null)} title={t.pickupFrom} closeLabel={t.close}>

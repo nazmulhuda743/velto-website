@@ -2,13 +2,14 @@ import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { CareDecision } from "@/components/account/CareDecision";
 import { Tracker, type TrackerItem } from "@/components/app/Tracker";
-import { Banner, ButtonLink, Card, WhatsAppButton, WhatsAppIcon, whatsappHref } from "@/components/app/ui";
+import { Banner, ButtonLink, Card, Pill, WhatsAppButton, WhatsAppIcon, whatsappHref } from "@/components/app/ui";
 import { accountText, orderFormat } from "@/content/i18n/account";
 import { careText } from "@/content/i18n/care";
 import { formText } from "@/content/i18n/forms";
 import { LOCATIONS } from "@/content/site";
 import { customerRoutes } from "@/lib/app-routes";
 import { signInFor } from "@/lib/app-routes-server";
+import { APP_SOURCE } from "@/lib/customer/app-sources";
 import { askFeedback, dhakaDate, expectedReturn, sectorNumber, trustedAt, trustedTimeline, isMixed, readyLine, reachedAt, serviceList, stepIndex, STEPS, trackerSteps } from "@/lib/customer/app-logic";
 import { getCare, signedRiskPhotos } from "@/lib/customer/care";
 import { happy } from "@/lib/customer/extras";
@@ -21,6 +22,7 @@ import { fill, format, localDigits } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
 import { appOrderFormat } from "./format";
 import { OrderFeedback } from "./OrderFeedback";
+import { OrderViewBeacon } from "./OrderViewBeacon";
 import { WeeklyOffer } from "./WeeklyOffer";
 
 const routes = customerRoutes("/app");
@@ -67,8 +69,10 @@ export async function AppOrderView({ id, care: careParam }: { id: string; care?:
   const backDate = back ? f.day(back.date) : null;
   const counted = order.items !== null && order.items !== undefined;
   const hasLines = order.lines.length > 0;
-  // Before the items are counted there is nothing to owe yet: the total is set after counting.
-  const beforeCount = !delivered && !cancelled && !counted && !hasLines && order.total <= 0;
+  // Before the items are counted there is nothing to owe yet: no Due row (design: "hide the Due row
+  // until items are counted"), and the total reads "Set after counting" unless Ops already set one.
+  const beforeCount = !delivered && !cancelled && !counted && !hasLines;
+  const noTotalYet = beforeCount && order.total <= 0;
   const [plans, feedbackList, routine, care] = await Promise.all([
     key === "ready" ? getDispatchPlans() : Promise.resolve([]),
     delivered ? getFeedbackList() : Promise.resolve([]),
@@ -129,7 +133,9 @@ export async function AppOrderView({ id, care: careParam }: { id: string; care?:
             : doneLine[s.key],
     extra:
       s.state === "current" && s.key === "ready" && ready ? (
-        <p className="a-cap font-semibold text-action">{ready.kind === "notPlanned" ? t.delivNotPlanned : fill(t.delivToday, { window: readyWindow ?? "" }, locale)}</p>
+        <span className="mt-1 inline-block">
+          <Pill tone="progress">{ready.kind === "notPlanned" ? t.delivNotPlanned : fill(t.delivToday, { window: readyWindow ?? "" }, locale)}</Pill>
+        </span>
       ) : undefined,
   }));
 
@@ -208,10 +214,11 @@ export async function AppOrderView({ id, care: careParam }: { id: string; care?:
   ) : null;
 
   const mixed = isMixed(order.lines, order.services);
-  const totalLabel = beforeCount ? t.estimateLabel : t.totalLabel;
+  const totalLabel = noTotalYet ? t.estimateLabel : t.totalLabel;
 
   return (
     <div className="space-y-3" data-app-order data-status={key}>
+      <OrderViewBeacon step={cancelled ? "cancelled" : key} />
       <header className="space-y-1.5 pb-1">
         <h1 className="a-title">{title}</h1>
         {sub ? <p className={`a-body ${subTone === "amber" ? "text-app-amber" : "text-secondary"}`}>{sub}</p> : null}
@@ -245,7 +252,7 @@ export async function AppOrderView({ id, care: careParam }: { id: string; care?:
 
       {delivered ? (
         <ButtonLink
-          href={repeatHref({ last: order, repeatService: routineService }, "app_order", routes.book())}
+          href={repeatHref({ last: order, repeatService: routineService }, APP_SOURCE.bookAgain, routes.book())}
           className="!h-12"
           data-analytics="book_pickup_click"
           data-placement="app_order_rebook"
@@ -284,7 +291,7 @@ export async function AppOrderView({ id, care: careParam }: { id: string; care?:
           <p className="a-sec text-muted">{delivered && !counted ? t.missingItems : t.lineCollectedWait}</p>
         )}
         <dl className="space-y-1.5 border-t border-line pt-3">
-          <Row label={totalLabel} value={beforeCount ? t.toBeSet : f.money(order.total)} />
+          <Row label={totalLabel} value={noTotalYet ? t.toBeSet : f.money(order.total)} />
           <Row label={t.paid} value={f.money(order.paid)} />
           {beforeCount || cancelled ? null : <Row label={t.due} value={f.money(order.due)} strong tone={order.due > 0 ? (delivered ? "amber" : undefined) : "green"} />}
         </dl>

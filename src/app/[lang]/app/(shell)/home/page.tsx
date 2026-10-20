@@ -20,7 +20,7 @@ export default async function AppHome({ searchParams }: { searchParams: SearchPa
         <AppHeader
           actions={
             <>
-              <PricesButton label={t.prices} close={f.app.close} book={f.app.bookPickup} bookHref="/app/book" popular={await popularPrices()} t={pricesText(locale)} locale={locale} />
+              <PricesButton label={t.prices} close={f.app.close} book={f.app.bookPickup} bookHref="/app/book?source=app_prices" popular={await popularPrices()} t={pricesText(locale)} locale={locale} />
               <HeaderWhatsApp href={WHATSAPP_URL} label={t.whatsapp} />
             </>
           }

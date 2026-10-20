@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import Link from "@/components/i18n/Link";
 import { WhatsAppButton } from "@/components/ui/Button";
+import { track } from "@/components/layout/Analytics";
 import type { AccountText } from "@/content/i18n/account";
 import { WHATSAPP_URL } from "@/content/site";
 import { format } from "@/lib/i18n/config";
@@ -68,23 +69,41 @@ export function RoutineCard({
         ? format(t.pausedBody, when!)
         : t.activeBody;
 
-  const secondary = "inline-flex h-11 items-center justify-center rounded-md border border-line-strong bg-white px-4 text-[15px] font-semibold text-navy hover:border-navy disabled:opacity-50";
-  const intent = (name: string, label: string, extra = "") => (
-    <form action={action}>
+  // In the installed app (base "/app") it wears the app's shapes: 12 px corners, 1.5 px borders, 52 px rows.
+  const app = base === "/app";
+  const secondary = app
+    ? "inline-flex min-h-12 items-center justify-center rounded-xl border-[1.5px] border-line-strong bg-app-card px-4 a-body font-semibold text-navy disabled:opacity-50"
+    : "inline-flex h-11 items-center justify-center rounded-md border border-line-strong bg-white px-4 text-[15px] font-semibold text-navy hover:border-navy disabled:opacity-50";
+  const field = app
+    ? "mt-1.5 block h-13 w-full rounded-xl border-[1.5px] border-line-strong bg-app-card px-4 a-row font-normal text-navy"
+    : "mt-1 block h-11 w-full rounded-md border border-line-strong bg-white px-3 text-navy";
+  const primary = app
+    ? "inline-flex min-h-13 w-full items-center justify-center rounded-xl bg-action px-5 a-row font-semibold text-white active:bg-action-active disabled:opacity-50"
+    : "inline-flex h-11 items-center justify-center rounded-md bg-action px-5 font-semibold text-white hover:bg-action-hover disabled:opacity-50";
+  const label = app ? "block a-sec font-semibold text-navy" : "block t-small font-semibold text-navy";
+  // routine_change: request, change, pause, resume, withdraw or stop (the app report counts adoption).
+  const placement = app ? "app_profile_weekly" : "account_routine";
+  const changed = (detail: string) => track("routine_change", { placement, detail });
+  const intent = (name: string, text: string, extra = "") => (
+    <form action={action} onSubmit={() => changed(name === "pause" && open?.status === "requested" ? "withdraw" : name)}>
       <input type="hidden" name="intent" value={name} />
       <button type="submit" disabled={pending} className={`${secondary} ${extra}`}>
-        {label}
+        {text}
       </button>
     </form>
   );
 
   return (
-    <section aria-labelledby="routine-title" className="rounded-lg border border-line bg-white p-5 md:p-6" data-routine={open?.status ?? "ask"}>
-      <p className="t-label uppercase text-action">{t.eyebrow}</p>
-      <h2 id="routine-title" className="mt-1.5 text-[20px] font-semibold tracking-[-0.01em] text-navy">
+    <section
+      aria-labelledby="routine-title"
+      className={app ? "rounded-2xl border border-line bg-app-card p-4" : "rounded-lg border border-line bg-white p-5 md:p-6"}
+      data-routine={open?.status ?? "ask"}
+    >
+      <p className={app ? "a-eyebrow text-action" : "t-label uppercase text-action"}>{t.eyebrow}</p>
+      <h2 id="routine-title" className={app ? "mt-1.5 a-card text-navy" : "mt-1.5 text-[20px] font-semibold tracking-[-0.01em] text-navy"}>
         {title}
       </h2>
-      <p className="mt-1.5 max-w-[56ch] t-small text-body">{body}</p>
+      <p className={app ? "mt-1.5 a-body text-body" : "mt-1.5 max-w-[56ch] t-small text-body"}>{body}</p>
       {open?.status === "active" && nextOnLabel ? <p className="mt-1 t-small font-semibold text-navy">{format(t.nextOn, { date: nextOnLabel })}</p> : null}
       {!open && routine?.status === "declined" ? (
         <p className="mt-3 rounded-md bg-soft p-3 t-small text-body" data-routine-declined>
@@ -100,11 +119,18 @@ export function RoutineCard({
           </Link>
         </p>
       ) : showForm ? (
-        <form action={action} className="mt-4 grid gap-3 sm:grid-cols-[repeat(3,minmax(0,1fr))] sm:items-end" onSubmit={() => setEditing(false)}>
+        <form
+          action={action}
+          className={app ? "mt-4 grid gap-3" : "mt-4 grid gap-3 sm:grid-cols-[repeat(3,minmax(0,1fr))] sm:items-end"}
+          onSubmit={() => {
+            changed(open ? "change" : "request");
+            setEditing(false);
+          }}
+        >
           <input type="hidden" name="intent" value="request" />
-          <label className="block t-small font-semibold text-navy">
+          <label className={label}>
             {t.day}
-            <select name="weekday" defaultValue={String(open?.weekday ?? suggestedDay ?? 6)} className="mt-1 block h-11 w-full rounded-md border border-line-strong bg-white px-3 text-navy">
+            <select name="weekday" defaultValue={String(open?.weekday ?? suggestedDay ?? 6)} className={field}>
               {days.map((d, i) => (
                 <option key={d} value={i}>
                   {d}
@@ -112,9 +138,9 @@ export function RoutineCard({
               ))}
             </select>
           </label>
-          <label className="block t-small font-semibold text-navy">
+          <label className={label}>
             {t.time}
-            <select name="window" defaultValue={open?.window ?? "afternoon"} className="mt-1 block h-11 w-full rounded-md border border-line-strong bg-white px-3 text-navy">
+            <select name="window" defaultValue={open?.window ?? "afternoon"} className={field}>
               {ROUTINE_WINDOWS.map((w) => (
                 <option key={w} value={w}>
                   {windows[w]}
@@ -122,9 +148,9 @@ export function RoutineCard({
               ))}
             </select>
           </label>
-          <label className="block t-small font-semibold text-navy">
+          <label className={label}>
             {t.service}
-            <select name="service" defaultValue={open ? (open.service ?? "") : (suggestedService ?? "")} className="mt-1 block h-11 w-full rounded-md border border-line-strong bg-white px-3 text-navy">
+            <select name="service" defaultValue={open ? (open.service ?? "") : (suggestedService ?? "")} className={field}>
               <option value="">{t.serviceAny}</option>
               {ROUTINE_SERVICES.map((s) => (
                 <option key={s} value={s}>
@@ -133,12 +159,12 @@ export function RoutineCard({
               ))}
             </select>
           </label>
-          <label className="block t-small font-semibold text-navy sm:col-span-3">
+          <label className={`${label} sm:col-span-3`}>
             {t.note}
-            <input name="note" maxLength={300} defaultValue={open?.note ?? ""} className="mt-1 block h-11 w-full rounded-md border border-line-strong bg-white px-3 font-normal text-navy" />
+            <input name="note" maxLength={300} defaultValue={open?.note ?? ""} className={field} />
           </label>
           <div className="flex flex-wrap gap-3 sm:col-span-3">
-            <button type="submit" disabled={pending} className="inline-flex h-11 items-center justify-center rounded-md bg-action px-5 font-semibold text-white hover:bg-action-hover disabled:opacity-50">
+            <button type="submit" disabled={pending} className={primary}>
               {open ? t.requestChange : t.request}
             </button>
             {editing ? (

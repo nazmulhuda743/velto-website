@@ -9,6 +9,7 @@ import { hoursText } from "@/components/forms/PickupWindows";
 import { usePickupDays } from "@/components/app/usePickupDays";
 import { submitBooking, type BookingFormData } from "@/components/forms/submit";
 import { track } from "@/components/layout/Analytics";
+import { openToNowBucket } from "@/lib/analytics/app-open";
 import { defaultSlot, isTomorrow, pickupDays } from "@/lib/customer/app-logic";
 import type { WindowId } from "@/lib/capacity-logic";
 import { fill, format, localDigits, type Locale } from "@/lib/i18n/config";
@@ -106,13 +107,17 @@ export function RebookCard({
     if (!slot || !win || load.state !== "ready" || state.kind === "sending") return;
     setState({ kind: "sending" });
     track("booking_start", { section: "app-rebook", placement });
-    const result = await submitBooking({
-      ...data,
-      preferredPickup: opsPickupWhen(slot.date, { id: win.id as WindowId, starts: win.starts, ends: win.ends }, load.live),
-      ...(load.live ? { slot: { date: slot.date, window: win.id as WindowId } } : {}),
-    });
+    const result = await submitBooking(
+      {
+        ...data,
+        preferredPickup: opsPickupWhen(slot.date, { id: win.id as WindowId, starts: win.starts, ends: win.ends }, load.live),
+        ...(load.live ? { slot: { date: slot.date, window: win.id as WindowId } } : {}),
+      },
+      // Booked from Home, whose address has no ?source=: name the card so the report can count it.
+      { source: placement },
+    );
     if (result.ok) {
-      track("booking_success", { section: "app-rebook", placement, service: data.service });
+      track("booking_success", { section: "app-rebook", placement, service: data.service, detail: openToNowBucket() });
       setState({ kind: "done", reference: result.reference, when: slotText(false) });
     } else if (result.code === "slot_unavailable") {
       setPicked(null);

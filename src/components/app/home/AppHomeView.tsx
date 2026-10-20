@@ -3,12 +3,15 @@ import { redirect } from "next/navigation";
 import { LinkHistoryCard } from "@/components/account/LinkHistoryCard";
 import { WeeklyOffer } from "@/components/app/orders/WeeklyOffer";
 import { appOrderFormat, type AppOrderFormat } from "@/components/app/orders/format";
+import { PricesButton } from "@/components/app/prices/PricesButton";
+import { popularPrices, pricesText } from "@/components/app/prices/data";
 import { Banner, ButtonLink, Card, Eyebrow, WhatsAppButton } from "@/components/app/ui";
 import { accountText, type AccountText } from "@/content/i18n/account";
 import { careText } from "@/content/i18n/care";
 import { formText } from "@/content/i18n/forms";
 import { customerRoutes } from "@/lib/app-routes";
 import { signInFor } from "@/lib/app-routes-server";
+import { APP_SOURCE } from "@/lib/customer/app-sources";
 import { addressWithArea, completedCount, sectorNumber, expectedReturn, homeState, lastOrder, reachedAt, serviceList, trustedAt, trustedTimeline, showFirstOrderLine, showWeeklyOnHome, stepIndex, STEPS } from "@/lib/customer/app-logic";
 import { getCarePending } from "@/lib/customer/care";
 import { getCustomerSession, getPickups, getPortalOrder, getPortalOrders, type PortalOrder, type PortalPickup } from "@/lib/customer/portal";
@@ -129,7 +132,7 @@ export async function AppHomeView({ params }: { params: Record<string, string | 
     card = <HeroCard eyebrow={format(t.inProgressEyebrow, { id: pending.reference })} step={0} headline={t.lineWaitingCall} facts={[]} f={f} />;
   } else if ((state === "regular" || state === "lapsed") && last) {
     const quick = await quickRepeatFor(account, last.orderNumber, bookingServiceFor(last.services), locale);
-    const changeHref = repeatHref({ last, repeatService: bookingServiceFor(last.services) }, `app_home_${state}`, routes.book());
+    const changeHref = repeatHref({ last, repeatService: bookingServiceFor(last.services) }, APP_SOURCE.homeChange, routes.book());
     const items = quick?.data.items?.reduce((n, l) => n + l.quantity, 0) ?? last.items ?? 0;
     const services = f.services(last.services);
     if (quick) {
@@ -142,10 +145,10 @@ export async function AppHomeView({ params }: { params: Record<string, string | 
           lastWindow={lastWindow}
           address={addressWithArea(account.address ?? "", account.area, areaLabel(account.area))}
           changeHref={changeHref}
-          otherHref={lapsed ? routes.book({ source: "app-home-lapsed" }) : undefined}
+          otherHref={lapsed ? routes.book({ source: APP_SOURCE.homeOther }) : undefined}
           phone={displayBdPhone(account.phone) ?? account.phone}
           locale={locale}
-          placement={lapsed ? "app_home_lapsed" : "app_home_regular"}
+          placement={APP_SOURCE.homeCard}
           t={{
             eyebrow: lapsed ? t.lapsedEyebrow : t.sameEyebrow,
             title: lapsed
@@ -203,12 +206,19 @@ export async function AppHomeView({ params }: { params: Record<string, string | 
           <h2 className="a-card text-navy">{t.firstTitle}</h2>
           <p className="a-body text-secondary">{t.firstBody}</p>
           {firstOrder ? <Banner>{fill(a.home.offerTitle, { percent: FIRST_ORDER_OFFER.percent }, locale)}</Banner> : null}
-          <ButtonLink href={routes.book({ source: "app-home-first" })} className="mt-1" data-analytics="book_pickup_click" data-placement="app_home_first">
+          <ButtonLink href={routes.book({ source: APP_SOURCE.homeFirst })} className="mt-1" data-analytics="book_pickup_click" data-placement="app_home_first">
             {t.bookPickup}
           </ButtonLink>
-          <ButtonLink href={routes.prices} variant="text" className="w-full">
-            {t.seePricesFirst}
-          </ButtonLink>
+          <PricesButton
+            trigger={t.seePricesFirst}
+            label={fm.common.appBar.prices}
+            close={fm.common.app.close}
+            book={fm.common.app.bookPickup}
+            bookHref={routes.book({ source: APP_SOURCE.prices })}
+            popular={await popularPrices()}
+            t={pricesText(locale)}
+            locale={locale}
+          />
         </Card>
         <Card tone="dashed" className="space-y-3 !p-4">
           <h2 className="a-body font-semibold text-navy">{t.howItWorks}</h2>
@@ -258,7 +268,8 @@ export async function AppHomeView({ params }: { params: Record<string, string | 
   const ct = careText(locale);
 
   return (
-    <div className="space-y-3">
+    // data-app-home-state: the app_open event reads it (AppOpenTracker), so lapsed opens can be counted.
+    <div className="space-y-3" data-app-home-state={state}>
       <header className="space-y-1.5 pb-2">
         <h1 className="a-title">{greeting(a.home, greetingName(account.fullName))}</h1>
         {state === "regular" ? <p className="a-body text-muted">{t.nothingInProgress}</p> : null}

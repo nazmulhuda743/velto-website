@@ -22,16 +22,31 @@ async function insert(table: string, rows: Record<string, unknown>[]) {
     cache: "no-store",
     signal: AbortSignal.timeout(WRITE_TIMEOUT_MS),
   });
-  if (!res.ok) throw new Error(`${table} insert failed with HTTP ${res.status}`);
+  if (!res.ok) throw new InsertError(table, res.status, await res.text().catch(() => ""));
 }
+
+class InsertError extends Error {
+  constructor(
+    table: string,
+    readonly status: number,
+    readonly body: string,
+  ) {
+    super(`${table} insert failed with HTTP ${status}`);
+  }
+}
+
+/**
+ * The `lang` column comes with docs/technical/sql/website_analytics_lang.sql. Until that SQL is applied
+ * PostgREST rejects the unknown column (PGRST204); the rows are then stored without it, so a deploy
+ * that runs ahead of the SQL never loses events.
+ */
+export const missingLangColumn = (e: unknown) => e instanceof InsertError && e.status === 400 && /PGRST204|'lang' column/.test(e.body);
 
 /** Store a validated /api/collect body. `marketing` comes from the server-read consent cookie. */
 export async function storeCollected(body: CollectBody, marketing: boolean) {
   if (body.type === "events") {
     const a = body.attribution;
-    await insert(
-      "website_analytics_events",
-      body.events.map((e) => ({
+    const rows = body.events.map((e) => ({
         visitor_id: body.visitorId,
         session_id: body.sessionId,
         event: e.event,
@@ -50,8 +65,14 @@ export async function storeCollected(body: CollectBody, marketing: boolean) {
         device: body.device,
         is_new_visitor: body.isNew,
         consent_marketing: marketing,
-      })),
-    );
+        lang: body.lang,
+      }));
+    try {
+      await insert("website_analytics_events", rows);
+    } catch (e) {
+      if (!missingLangColumn(e)) throw e;
+      await insert("website_analytics_events", rows.map(({ lang, ...rest }) => (void lang, rest)));
+    }
   } else if (body.type === "consent") {
     await insert("website_consent_events", [
       {

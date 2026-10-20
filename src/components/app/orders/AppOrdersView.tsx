@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { APP_SOURCE } from "@/lib/customer/app-sources";
 import { redirect } from "next/navigation";
 import { LinkHistoryCard } from "@/components/account/LinkHistoryCard";
 import { Banner, ButtonLink, Card, Eyebrow, Pill } from "@/components/app/ui";
@@ -104,7 +105,7 @@ export async function AppOrdersView() {
       ) : orders.length === 0 ? (
         <Card className="mt-6 space-y-3 px-5 py-6">
           <p className="a-row text-body">{t.ordersEmpty}</p>
-          <ButtonLink href={routes.book({ source: "app-orders" })} className="!h-12" data-analytics="book_pickup_click" data-placement="app_orders_empty">
+          <ButtonLink href={routes.book({ source: APP_SOURCE.orders })} className="!h-12" data-analytics="book_pickup_click" data-placement="app_orders_empty">
             {t.bookPickup}
           </ButtonLink>
         </Card>

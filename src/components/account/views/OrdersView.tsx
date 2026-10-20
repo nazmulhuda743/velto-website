@@ -30,7 +30,8 @@ function Group({ id, title, orders, empty, count, base }: { id: string; title: s
 }
 
 /** All orders, in progress first. Website /account/orders and the app's /app/orders. */
-export async function OrdersView({ base = "/account" }: { base?: AppBase }) {
+export async function OrdersView() {
+  const base: AppBase = "/account";
   const routes = customerRoutes(base);
   const session = await getCustomerSession();
   if (session.kind !== "customer" || session.account.state !== "ready") redirect(await signInFor(base, routes.orders));

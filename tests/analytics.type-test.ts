@@ -40,6 +40,10 @@ const approvedEvents = [
   "notify_prompt",
   "notify_on",
   "notify_denied",
+  "app_open",
+  "order_view",
+  "notify_off",
+  "routine_change",
 ] as const satisfies readonly AnalyticsEvent[];
 
 const taxonomyIsComplete: Exclude<AnalyticsEvent, (typeof approvedEvents)[number]> extends never

@@ -17,7 +17,8 @@ import { pushPrefsFromStatus, type PushPrefs } from "@/lib/push/prefs";
 import { supabaseRpc } from "@/lib/supabase-server";
 
 /** Details, preferences, notifications and sign-in. Website /account/profile and the app's /app/profile (which adds help, language and sign-out below). */
-export async function ProfileView({ base = "/account" }: { base?: AppBase }) {
+export async function ProfileView() {
+  const base: AppBase = "/account";
   const routes = customerRoutes(base);
   const session = await getCustomerSession();
   if (session.kind !== "customer" || session.account.state !== "ready") redirect(await signInFor(base, routes.profile));
