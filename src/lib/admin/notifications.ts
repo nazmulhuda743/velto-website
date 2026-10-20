@@ -3,6 +3,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { cache } from "react";
 import { SEO_ROUTES } from "@/content/seo-routes";
+import { ingestionState } from "../analytics/ingestion";
 import { isAnalyticsWritesEnabled } from "../analytics/store";
 import { configuredGtmId } from "../gtm";
 import { isPricingConfigured } from "../integrations/pricing/server";
@@ -94,16 +95,18 @@ export const getNotifications = cache(async (): Promise<{ items: Notification[];
 
   if (isAnalyticsWritesEnabled() || isAdminPreview()) {
     if (analytics.state === "ok") {
-      const last = analytics.data.last_event_at ? Date.parse(analytics.data.last_event_at) : null;
-      if (!last || now - last > 6 * HOUR) {
+      // Only when a visitor allowed Analytics and nothing arrived: a quiet spell where everyone chose
+      // Essential only is normal, not a fault.
+      const state = ingestionState(analytics.data, now);
+      if (state.kind === "stalled") {
         items.push({
-          id: `ingestion-${last ?? 0}`,
+          id: `ingestion-${state.consentAt}`,
           tone: "warning",
           title: "Consent-based tracking stopped",
-          body: last ? `No analytics event received in ${Math.round((now - last) / HOUR)} hours.` : "No analytics event has been received yet.",
+          body: `A visitor allowed Analytics ${Math.max(1, Math.round((now - state.consentAt) / HOUR))} h ago, but no event arrived after that.`,
           href: "/admin/consent",
           action: "Check tracking",
-          at: analytics.data.last_event_at,
+          at: new Date(state.consentAt).toISOString(),
         });
       }
     } else if (analytics.state === "error") {

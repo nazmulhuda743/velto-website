@@ -5,6 +5,7 @@ import { configuredGtmId } from "@/lib/gtm";
 import { getAnalyticsHealth, getConsentSummary, isAnalyticsWritesEnabled } from "@/lib/admin/analytics-data";
 import { consentRates, pct } from "@/lib/admin/insights";
 import { isAdminPreview } from "@/lib/admin/preview";
+import { ingestionState } from "@/lib/analytics/ingestion";
 import { dayLabel, hoursSince, readDashboardParams, timeAgo } from "@/lib/admin/page-helpers";
 import { requireSection } from "@/lib/admin/session";
 
@@ -22,6 +23,8 @@ export default async function ConsentPage({ searchParams }: { searchParams: Sear
   const gtm = configuredGtmId();
   const writes = isAnalyticsWritesEnabled() || isAdminPreview();
   const hoursSinceEvent = hoursSince(h?.last_event_at);
+  const ingestion = h ? ingestionState(h) : null;
+  const stalled = ingestion?.kind === "stalled";
 
   const rows: Row[] = [
     {
@@ -45,19 +48,21 @@ export default async function ConsentPage({ searchParams }: { searchParams: Sear
     },
     {
       label: "First-party analytics ingestion",
-      status: !writes ? "warning" : hoursSinceEvent === null || hoursSinceEvent > 6 ? "warning" : "healthy",
+      status: !writes ? "warning" : hoursSinceEvent === null || stalled ? "warning" : "healthy",
       detail: !writes
         ? "Storage is switched off (WEBSITE_ANALYTICS_WRITES_ENABLED)."
         : hoursSinceEvent === null
           ? "No event has been received yet."
-          : `Last event ${timeAgo(h?.last_event_at)}. ${fmt(h?.events_24h ?? 0)} events in 24 h.`,
+          : stalled
+            ? `A visitor allowed Analytics ${timeAgo(h?.last_analytics_consent_at)}, but no event arrived after that.`
+            : `Last event ${timeAgo(h?.last_event_at)}. ${fmt(h?.events_24h ?? 0)} events in 24 h.${ingestion?.kind === "quiet" ? " Quiet because no visitor has allowed Analytics since; that is normal." : ""}`,
     },
   ];
 
   const warnings: string[] = [];
   warnings.push("Meta marketing events are blocked until a visitor allows Marketing. Visitors who choose Essential only never load the Meta Pixel.");
   if (!gtm) warnings.push("GTM container ID is missing.");
-  if (writes && hoursSinceEvent !== null && hoursSinceEvent > 6) warnings.push(`Analytics ingestion has not received an event in ${Math.round(hoursSinceEvent)} hours.`);
+  if (writes && stalled) warnings.push(`A visitor allowed Analytics ${timeAgo(h?.last_analytics_consent_at)}, but no analytics event arrived after that. Check that /api/collect is working.`);
   if (writes && hoursSinceEvent === null) warnings.push("Analytics ingestion has not received any event yet.");
   if (r?.analytics !== null && r?.analytics !== undefined && r.analytics < 0.4)
     warnings.push(`Only ${pct(r.analytics)} of visitors allow analytics, so dashboard numbers cover a minority of traffic.`);
