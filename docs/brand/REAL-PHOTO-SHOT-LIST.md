@@ -14,6 +14,23 @@ Upload through the admin dashboard, under Images, using the slot id shown. Alter
 - Shoot landscape (3:2) unless noted, at least 2000 px on the long edge.
 - Keep the background tidy. Don't stage it to look like a hotel.
 
+## Priority 0: the premium set (owner, 24 Oct 2026)
+
+The single biggest upgrade to how the site feels. Six photos, one shoot, so they read as one set:
+- the same natural daylight;
+- the same colour grade;
+- 3:2 landscape, at least 2000 px on the long edge;
+- no stock or AI for any of these, because customers want to see the actual business.
+
+| # | Shot | Slot ids | Where it shows |
+|---|---|---|---|
+| A | A Velto rider handing over clean, packaged laundry at an Uttara door | `hero` | Homepage hero, How It Works |
+| B | Checking, tagging and sorting garments at the counter (a tag clearly visible, no customer data) | `process.1`, `process.2` | How It Works |
+| C | Stain inspection or final finishing (pressing a shirt or a sari) | `process.3`, `process.4` | Homepage process, Dry Cleaning, How It Works |
+| D | Neatly packed clothing with visible Velto branding | `process.6`, `final` | Homepage final booking, How It Works |
+| E | Clear exterior of both outlets, signs readable | `locations.sector-11`, `locations.sector-18` | Locations, outlet pages (Sector 18 shows no image until then) |
+| F | Folded household laundry in a real Velto setting | `regular` | Regular laundry |
+
 ## Priority 1: real places (no stock is allowed here)
 
 | # | Shot | Slot id | Where it shows | Notes |

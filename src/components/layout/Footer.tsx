@@ -101,7 +101,7 @@ export async function Footer() {
           </div>
 
           <nav aria-labelledby="footer-services" className="col-span-2 md:col-span-3 xl:col-span-2">
-            <h2 id="footer-services" className="t-label uppercase text-white/60">
+            <h2 id="footer-services" className="t-label uppercase text-white/75">
               {t.footer.services}
             </h2>
             <ul className="mt-4 space-y-1">
@@ -112,7 +112,7 @@ export async function Footer() {
           </nav>
 
           <nav aria-labelledby="footer-help" className="col-span-2 md:col-span-3 xl:col-span-2">
-            <h2 id="footer-help" className="t-label uppercase text-white/60">
+            <h2 id="footer-help" className="t-label uppercase text-white/75">
               {t.footer.help}
             </h2>
             <ul className="mt-4 space-y-1">
@@ -124,7 +124,7 @@ export async function Footer() {
 
           {locations.map((loc, i) => (
             <div key={loc.id} className={`col-span-4 md:col-span-4 xl:col-span-2 ${i === 0 ? "xl:col-start-9" : ""}`}>
-              <h2 className="t-label uppercase text-white/60">
+              <h2 className="t-label uppercase text-white/75">
                 <Link href={`/locations/${loc.id}`} className="hover:text-cyan">
                   Velto {t.locationNames[loc.id] ?? loc.name}
                 </Link>
@@ -149,7 +149,7 @@ export async function Footer() {
           ))}
         </div>
 
-        <div className="mt-16 flex flex-col gap-3 border-t border-white/15 pt-6 t-caption text-white/60 md:flex-row md:items-center md:justify-between">
+        <div className="mt-16 flex flex-col gap-3 border-t border-white/15 pt-6 t-caption text-white/75 md:flex-row md:items-center md:justify-between">
           <p>© {new Date().getFullYear()} Velto Premium Laundry</p>
           <ul className="flex flex-wrap gap-x-4">
             <li>

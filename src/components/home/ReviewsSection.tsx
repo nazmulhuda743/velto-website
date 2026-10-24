@@ -165,14 +165,15 @@ export async function ReviewsSection() {
   const [primary] = await getLocations();
   const t = dictionary(await getLocale()).home.reviews;
   return (
-    <section id="reviews" aria-labelledby="reviews-title" className="bg-warm py-(--space-section)">
+    <section id="reviews" aria-labelledby="reviews-title" className="py-(--space-section)">
       <div className="container-page">
         <h2 id="reviews-title" className="t-h2 text-navy">
           {t.title}
         </h2>
-        <ul className="mt-(--space-intro-content) grid gap-10 md:grid-cols-2 md:gap-x-10 xl:gap-x-16">
+        {/* One review takes the row (not half of an empty grid) but keeps a readable measure. */}
+        <ul className={`mt-(--space-intro-content) grid gap-10 ${reviews.length > 1 ? "md:grid-cols-2 md:gap-x-10 xl:gap-x-16" : ""}`}>
           {reviews.map((review) => (
-            <li key={`${review.name}|${review.branch ?? ""}`}>
+            <li key={`${review.name}|${review.branch ?? ""}`} className={reviews.length > 1 ? undefined : "max-w-[62ch]"}>
               <ReviewBlock review={review} />
             </li>
           ))}

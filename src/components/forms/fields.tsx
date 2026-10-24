@@ -5,7 +5,7 @@ import type { InputHTMLAttributes, ReactNode, Ref, SelectHTMLAttributes, Textare
  * inputs, 120px min textarea, clear focus, and errors in text, not colour only.
  */
 const control =
-  "w-full rounded-md border bg-white px-4 text-base text-navy placeholder:text-secondary/80 hover:border-navy/50 focus:border-blue focus:outline-1 focus:outline-offset-0 focus:outline-blue aria-[invalid=true]:border-error";
+  "w-full rounded-md border bg-white px-4 text-base text-navy placeholder:text-muted hover:border-navy/50 focus:border-blue focus:outline-1 focus:outline-offset-0 focus:outline-blue aria-[invalid=true]:border-error";
 
 type FieldShellProps = {
   id: string;

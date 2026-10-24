@@ -19,7 +19,9 @@ export const generateMetadata = () => pageMetadata("/");
 
 /**
  * Homepage — section order is LOCKED (spec §19). The owner-requested proof strip was retired when hero proof
- * became figures (H9). Owner-approved tightening: same sections and order, repetition removed within them.
+ * became figures (H9). Changed by the owner on 24 Oct 2026: Find a Price moved up to third, so "how much will it
+ * cost?" is answered early and proof (process, reviews, Uttara) follows right after. Backgrounds keep the
+ * spec's alternation by position: white / warm / white / warm / white / soft / white / soft / white / navy.
  */
 export default async function HomePage() {
   const locale = await getLocale();
@@ -27,10 +29,10 @@ export default async function HomePage() {
     <>
       <Hero />
       <ServiceChooser />
+      <FindAPrice />
       <ProcessStory />
       <ReviewsSection />
       <LocationsSection />
-      <FindAPrice />
       <HouseholdSection />
       <RegularLaundrySection />
       {/* Turnaround and free delivery are already stated in the hero figures and Find a Price. */}

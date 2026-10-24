@@ -120,7 +120,7 @@ type Status =
 /* ---------- presentational pieces (booking page only) ---------- */
 
 const inputBase =
-  "block w-full rounded-md border border-line-strong bg-white px-4 text-base text-navy placeholder:text-secondary/80 hover:border-navy/50 focus:border-blue focus:outline-1 focus:outline-offset-0 focus:outline-blue aria-[invalid=true]:border-error";
+  "block w-full rounded-md border border-line-strong bg-white px-4 text-base text-navy placeholder:text-muted hover:border-navy/50 focus:border-blue focus:outline-1 focus:outline-offset-0 focus:outline-blue aria-[invalid=true]:border-error";
 const inputHeight = "h-[54px] md:h-[52px]";
 
 function Group({
