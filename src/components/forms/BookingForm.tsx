@@ -1,50 +1,62 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode, type Ref } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode } from "react";
 import { track } from "@/components/layout/Analytics";
-import { NotifyCard } from "@/components/notify/NotifyCard";
-import { InstallSheet } from "@/components/pwa/InstallSheet";
 import type { NotifyText } from "@/content/i18n/notify";
-import { ButtonLink } from "@/components/ui/Button";
-import { WhatsAppIcon } from "@/components/ui/icons";
-import { FREE_DELIVERY_THRESHOLD, WHATSAPP_URL } from "@/content/site";
+import { FREE_DELIVERY_THRESHOLD } from "@/content/site";
 import {
   composeBookingNotes,
-  estimateBooking,
-  FREE_DELIVERY_MIN_MINOR,
   GARMENT_SERVICES,
   isGarmentService,
   MAX_BOOKING_NOTES,
-  MIXED_ITEM,
   NOTE_EXTRAS_RESERVE,
   NOTE_PHOTO_RESERVE,
-  sharedItemService,
-  type BookingEstimate,
-  type BookingItem,
   type GarmentService,
   type ItemService,
 } from "@/lib/booking-items";
 import { useLocale } from "@/components/i18n/LocaleProvider";
-import type { FormText } from "@/content/i18n/forms/en";
 import { fill, format, localDigits, type Locale } from "@/lib/i18n/config";
-import { progressToFree, smartAddOns, type SmartAddOn, type UpsellHints } from "@/lib/booking-upsell";
-import { BookingItems, lineUnit, money, repeatLine, type ItemLine, type PriceItem } from "./BookingItems";
+import type { UpsellHints } from "@/lib/booking-upsell";
+import { BookingItems, repeatLine, type ItemLine, type PriceItem } from "./BookingItems";
 
 /** One line of an earlier order, as the book page reads it on the server. */
 export type RepeatItem = { item: string; service: ItemService | ""; quantity: number; listed?: PriceItem };
-import { normalisePhone, phoneOk, RequiredNote, SelectField, TextField } from "./fields";
+import { phoneOk, RequiredNote, SelectField, TextField } from "./fields";
 import { MAX_BOOKING_PHOTOS } from "@/lib/booking-photos";
 import { shrinkPhoto } from "./shrink-photo";
-import { PickupWindows, hoursText, type PickedWindow } from "./PickupWindows";
-import { submitBooking, uploadBookingPhoto, type BookingFormData, type SubmitResult } from "./submit";
+import { PickupWindows, type PickedWindow } from "./PickupWindows";
+import { submitBooking, uploadBookingPhoto, type SubmitResult } from "./submit";
 import { CallbackRequest } from "./CallbackRequest";
 import { useNightDhaka } from "./useNight";
-import { FIRST_ORDER_OFFER } from "@/lib/first-order-offer";
 import { DRAFT_KEY, makeDraft, readDraft, type BookingDraft } from "@/lib/booking-recovery";
-import { customerRoutes, type AppBase } from "@/lib/app-routes";
-
-type Text = FormText["booking"];
-type Common = FormText["common"];
+import type { AppBase } from "@/lib/app-routes";
+import {
+  areaLabel,
+  bookingService,
+  draftWhen,
+  earliestBackBy,
+  ERROR_TARGET,
+  FIELD_ORDER,
+  isHousehold,
+  itemsOf,
+  niceDate,
+  NO_HINTS,
+  OUTSIDE,
+  pageWords,
+  pickupLabel,
+  toBookingData,
+  validate,
+  whatsappHref,
+  type Common,
+  type Coupon,
+  type Errors,
+  type FirstOrderLine,
+  type FormState,
+  type Photo,
+  type Text,
+} from "./booking-form-model";
+import { MobileTotalBar, OrderSummary } from "./OrderSummary";
+import { BookingSuccess, WhatsAppFallback } from "./BookingSuccess";
 
 /**
  * Book a Pickup, quick first: what we're picking up (a line of text and/or service chips), your
@@ -70,8 +82,6 @@ const HOUSEHOLD_SERVICES = ["curtain-cleaning", "carpet-cleaning", "blanket-comf
 const WHAT_MAX = 160;
 
 const SECTORS = Array.from({ length: 18 }, (_, i) => i + 1);
-const OUTSIDE = "outside";
-const NO_HINTS: UpsellHints = { usual: [], pairs: [] };
 
 /* The unsent booking kept in this browser only (lib/booking-recovery.ts). Storage can be blocked. */
 const noSubscribe = () => () => {};
@@ -101,235 +111,11 @@ const OPS_SERVICE_NAMES: Record<string, string> = {
   "blanket-comforter-cleaning": "Blanket & Comforter Cleaning",
 };
 
-/** Today in Dhaka (YYYY-MM-DD): pickup days are Dhaka days. */
-const dhakaToday = () => new Date(Date.now() + 6 * 3_600_000).toISOString().slice(0, 10);
-
-type Photo = { key: string; preview: string; status: "uploading" | "done" | "failed"; id?: string };
-
-/** Orders are usually ready in about 3 days (spec §4: ~72 hours), so "back by" starts 3 days after pickup. */
-const BACK_BY_DAYS = 3;
-
-type FormState = {
-  /** From a service page (?service=). A household service (curtains, carpets, blankets) stays as the booking's service. */
-  service: string | null;
-  /** Dry Cleaning, Wash & Iron and/or Ironing (chips, optional in the quick form). */
-  services: GarmentService[];
-  /** "4 curtains, some shirts": what to pick up, in the customer's words. */
-  what: string;
-  items: ItemLine[];
-  sector: string;
-  address: string;
-  /** The pickup day and window (booked: from live capacity, reserved on Confirm). */
-  pickup: PickedWindow | null;
-  backBy: string;
-  name: string;
-  phone: string;
-  notes: string;
-  photos: Photo[];
-};
-
-type ErrorKey = "what" | "name" | "phone" | "sector" | "address" | "date" | "slot" | "backBy" | "photos";
-type Errors = Partial<Record<ErrorKey, string>>;
 type Status =
   | { state: "idle" }
   | { state: "submitting" }
   | { state: "failed"; code: Extract<SubmitResult, { ok: false }>["code"] }
   | { state: "success"; reference?: string };
-
-const displayPhone = (v: string) => {
-  const n = normalisePhone(v);
-  return /^01\d{9}$/.test(n) ? `${n.slice(0, 5)} ${n.slice(5)}` : n;
-};
-
-const isoDate = (offsetDays = 0, from?: string) => {
-  const d = from ? new Date(`${from}T00:00:00`) : new Date();
-  d.setDate(d.getDate() + offsetDays);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
-
-/** The pickup date the customer asked for, if any (ISO). */
-const pickupIso = (s: FormState) => s.pickup?.date ?? "";
-
-/** Earliest "back by" date: about 3 days after the preferred pickup (or today). */
-const earliestBackBy = (s: FormState) => isoDate(BACK_BY_DAYS, pickupIso(s) || undefined);
-
-/** Words for dates: English for Ops, or the page language for the customer. */
-type DateWords = {
-  today: string;
-  tomorrow: string;
-  weekdays: readonly string[];
-  months: readonly string[];
-  dayMonth: string;
-  locale: Locale;
-};
-
-/** What Velto Ops receives, whatever the page language. */
-const OPS_WORDS: DateWords = {
-  today: "Today",
-  tomorrow: "Tomorrow",
-  weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-  months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-  dayMonth: "{weekday} {day} {month}",
-  locale: "en",
-};
-
-const niceDate = (iso: string, w: DateWords) => {
-  const d = new Date(`${iso}T00:00:00`);
-  return fill(w.dayMonth, { weekday: w.weekdays[d.getDay()], day: d.getDate(), month: w.months[d.getMonth()] }, w.locale);
-};
-
-/** Ops area label ("Uttara Sector 7"): the value Velto Ops matches on. Never localized. */
-const areaLabel = (sector: string) => (sector === OUTSIDE ? "Outside Uttara Sectors 1–18" : `Uttara Sector ${sector}`);
-
-/** The same area as the customer reads it. */
-const areaText = (sector: string, t: Text, locale: Locale) =>
-  sector === OUTSIDE ? t.areaOutside : fill(t.areaSector, { n: sector }, locale);
-
-const isHousehold = (s: FormState) => Boolean(s.service && !isGarmentService(s.service));
-
-const itemsOf = (s: FormState): BookingItem[] =>
-  s.items.map((l) => ({ item: l.item, quantity: l.quantity, ...(l.service ? { service: l.service } : {}) }));
-
-/** Ops "Service": the one all item lines share, else a household service from the page, else the one chosen service. */
-const bookingService = (s: FormState) =>
-  (s.items.length ? sharedItemService(itemsOf(s)) : undefined) ??
-  (isHousehold(s) ? (s.service ?? undefined) : s.services.length === 1 ? s.services[0] : undefined);
-
-const estimateOf = (s: FormState, chargeMinor: number | null) =>
-  estimateBooking(
-    s.items.map((l) => ({ quantity: l.quantity, unitMinor: lineUnit(l) })),
-    chargeMinor,
-  );
-
-/** Item lines as the customer reads them; in English exactly bookingItemsText (what Ops gets in the notes). */
-const itemsText = (items: BookingItem[], t: Text, locale: Locale) =>
-  items
-    .map(
-      (i) =>
-        `${localDigits(i.quantity, locale)} × ${i.item === MIXED_ITEM ? t.mixedItem : i.item} – ${i.service ? t.services[i.service] : t.itemNotSure}`,
-    )
-    .join("; ");
-
-/** The chosen services (or the page's household service) as the customer reads them. */
-const servicesText = (s: FormState, t: Text) =>
-  isHousehold(s) ? (t.services[s.service ?? ""] ?? "") : s.services.map((x) => t.services[x]).join(", ");
-
-/** One line for summaries: what the customer wrote, then the items or the chosen services. */
-const whatLabel = (s: FormState, t: Text, locale: Locale) =>
-  [s.what.trim(), s.items.length ? itemsText(itemsOf(s), t, locale) : servicesText(s, t)].filter(Boolean).join(" · ");
-
-/** The customer's own words lead the Ops notes, so staff read them first. */
-const opsNotes = (s: FormState) => [s.what.trim() ? `Picking up: ${s.what.trim()}` : "", s.notes.trim()].filter(Boolean).join(" · ") || undefined;
-
-const OPS_WINDOWS: Record<string, string> = { morning: "Morning", afternoon: "Afternoon", evening: "Evening", night: "Night" };
-
-/**
- * Pickup day and window, e.g. "Tomorrow Tue 29 Sep, Evening 4–8 PM (window booked)". With
- * OPS_WORDS (and no `slots`) this is the contract's preferredPickup string, in English; the
- * customer's version uses t.slots and the page language.
- */
-function pickupLabel(s: FormState, w: DateWords = OPS_WORDS, slots?: Record<string, string>) {
-  const p = s.pickup;
-  if (!p) return "";
-  const today = dhakaToday();
-  const prefix = p.date === today ? w.today : p.date === isoDate(1, today) ? w.tomorrow : "";
-  const day = `${prefix} ${niceDate(p.date, w)}`.trim();
-  const window = slots
-    ? `${slots[p.window]} ${hoursText(p.starts, p.ends, w.locale)}`
-    : `${OPS_WINDOWS[p.window]} ${hoursText(p.starts, p.ends, "en")}${p.booked ? " (window booked)" : ""}`;
-  return `${day}, ${window}`;
-}
-
-/** "earlier today" / "yesterday" / "3 days ago" for the continue banner. */
-function draftWhen(savedAt: number, t: Text, locale: Locale) {
-  const days = Math.floor((Date.now() - savedAt) / 86_400_000);
-  return days <= 0 ? t.draftToday : days === 1 ? t.draftDay : fill(t.draftDays, { n: days }, locale);
-}
-
-const pageWords = (t: Text, c: Common, locale: Locale): DateWords => ({
-  today: t.today,
-  tomorrow: t.tomorrow,
-  weekdays: c.weekdays,
-  months: c.months,
-  dayMonth: c.dayMonth,
-  locale,
-});
-
-/** The Ops payload: English values only, identical whatever the page language. */
-function toBookingData(s: FormState): BookingFormData {
-  return {
-    name: s.name.trim(),
-    phone: normalisePhone(s.phone),
-    area: areaLabel(s.sector),
-    address: s.address.trim(),
-    preferredPickup: pickupLabel(s),
-    service: bookingService(s),
-    ...(s.services.length ? { services: s.services } : {}),
-    ...(s.items.length ? { items: itemsOf(s) } : {}),
-    ...(s.backBy ? { deliveryBy: s.backBy } : {}),
-    ...(uploadedPhotos(s).length ? { photos: uploadedPhotos(s) } : {}),
-    notes: opsNotes(s),
-    ...(s.pickup?.booked ? { slot: { date: s.pickup.date, window: s.pickup.window } } : {}),
-  };
-}
-
-/** Ids of the photos that finished uploading (a failed one is simply left out). */
-const uploadedPhotos = (s: FormState) => s.photos.flatMap((p) => (p.status === "done" && p.id ? [p.id] : []));
-
-/** The estimate as one phrase for WhatsApp ("৳610"), when anything could be priced. */
-const estimateLabel = (e: BookingEstimate, locale: Locale) => (e.subtotalMinor > 0 ? money(e.totalMinor, locale) : "");
-
-/** WhatsApp fallback carries what the customer already typed (in their language), so nothing is lost. */
-function whatsappHref(s: FormState, t: Text, c: Common, locale: Locale, chargeMinor: number | null) {
-  const w = t.whatsapp;
-  const words = pageWords(t, c, locale);
-  const when = pickupLabel(s, words, t.slots);
-  const estimate = estimateLabel(estimateOf(s, chargeMinor), locale);
-  const lines = [
-    w.greeting,
-    s.what.trim() ? format(w.what, { v: s.what.trim() }) : "",
-    s.items.length ? format(w.items, { v: itemsText(itemsOf(s), t, locale) }) : servicesText(s, t) ? format(w.service, { v: servicesText(s, t) }) : "",
-    estimate ? format(w.estimate, { v: estimate }) : "",
-    s.sector ? format(w.area, { v: areaText(s.sector, t, locale) }) : "",
-    s.address.trim() ? format(w.address, { v: s.address.trim() }) : "",
-    when ? format(w.pickup, { v: when }) : "",
-    s.backBy ? format(w.backBy, { v: niceDate(s.backBy, words) }) : "",
-    s.name.trim() ? format(w.name, { v: s.name.trim() }) : "",
-    s.notes.trim() ? format(w.note, { v: s.notes.trim() }) : "",
-  ].filter(Boolean);
-  return `${WHATSAPP_URL}?text=${encodeURIComponent(lines.join("\n"))}`;
-}
-
-function validate(s: FormState, t: Text, c: Common, locale: Locale): Errors {
-  const e: Errors = {};
-  // Anything that says what to collect: words, a service chip, or items.
-  if (!s.what.trim() && !s.services.length && !isHousehold(s) && !s.items.length) e.what = t.errors.what;
-  if (!s.name.trim()) e.name = t.errors.name;
-  if (!s.phone.trim()) e.phone = c.phoneMissing;
-  else if (!phoneOk(s.phone)) e.phone = c.phoneInvalid;
-  if (!s.sector) e.sector = t.errors.sector;
-  if (!s.address.trim()) e.address = t.errors.address;
-  if (!s.pickup && s.sector) e.slot = t.errors.slot;
-  if (s.photos.some((p) => p.status === "uploading")) e.photos = t.photosWait;
-  const earliest = earliestBackBy(s);
-  if (s.backBy && s.backBy < earliest) e.backBy = fill(t.errors.backBy, { date: niceDate(earliest, pageWords(t, c, locale)) }, locale);
-  return e;
-}
-
-const FIELD_ORDER: ErrorKey[] = ["what", "name", "phone", "sector", "address", "date", "slot", "backBy", "photos"];
-
-/** Where each error-summary link goes: the field itself (for "what", the first service chip). */
-const ERROR_TARGET: Record<ErrorKey, string> = {
-  what: "booking-service-dry-cleaning",
-  name: "booking-name",
-  phone: "booking-phone",
-  sector: "booking-sector",
-  address: "booking-address",
-  date: "booking-date",
-  slot: "booking-slot",
-  backBy: "booking-backBy",
-  photos: "booking-photos",
-};
 
 /* ---------- presentational pieces (booking page only) ---------- */
 
@@ -448,193 +234,6 @@ function ServiceChips({
   );
 }
 
-/** The order summary right above Confirm: items and prices, pickup & delivery, and the estimated total. */
-type Coupon = { code: string; kind: "delivery" | "taka"; amount: number };
-/** The 10% account offer line: "yours" (signed in) or "guest" (asked to sign in first). */
-/** The first-order 10% line: "yours" for a signed-in customer's first website order, "guest" asks to sign in first. */
-type FirstOrderLine = "guest" | "yours";
-
-/** A free-delivery reward makes the pickup & delivery line free whatever the subtotal; an amount off is applied by Velto at confirmation. */
-const withCoupon = (e: BookingEstimate, coupon?: Coupon): BookingEstimate =>
-  coupon?.kind === "delivery" && !e.free ? { ...e, free: true, chargeMinor: 0, totalMinor: e.subtotalMinor } : e;
-
-function OrderSummary({
-  s,
-  t,
-  locale,
-  chargeMinor,
-  offer,
-  coupon,
-  firstOrder,
-  signInHref,
-  popular = [],
-  hints = NO_HINTS,
-  onAdd,
-}: {
-  s: FormState;
-  t: Text;
-  locale: Locale;
-  chargeMinor: number | null;
-  offer?: string;
-  coupon?: Coupon;
-  firstOrder?: FirstOrderLine;
-  signInHref?: string;
-  popular?: PriceItem[];
-  /** What this customer usually sends and what customers send together (smart add-ons). */
-  hints?: UpsellHints;
-  /** Adds one of an item on a service (the add-ons); `reason` says why it was offered. */
-  onAdd?: (item: PriceItem, service: ItemService, reason: SmartAddOn["reason"]["kind"]) => void;
-}) {
-  const e = withCoupon(estimateOf(s, chargeMinor), coupon);
-  const threshold = localDigits(FREE_DELIVERY_THRESHOLD, locale);
-  const priced = e.subtotalMinor > 0;
-  const gap = FREE_DELIVERY_MIN_MINOR - e.subtotalMinor;
-  const addOns = priced && onAdd ? smartAddOns(s.items, popular, e.free ? 0 : gap, hints, s.services) : [];
-  const row = "flex items-baseline justify-between gap-4 py-2";
-  const addOnsView = addOns.length ? (
-    <div className="mt-3" data-add-ons>
-      <p className="t-small font-semibold text-navy">{addOns.some((a) => a.reason.kind !== "popular") ? t.addOnsTitleOften : t.addOnsTitle}</p>
-      <div className="mt-2 flex flex-wrap gap-2">
-        {addOns.map((a) => {
-          const listed = popular.find((p) => p.name === a.item);
-          const why = a.reason.kind === "usual" ? t.addOnUsual : a.reason.kind === "pair" ? format(t.addOnPair, { item: a.reason.with }) : null;
-          return (
-            <button
-              key={`${a.item}-${a.service}`}
-              type="button"
-              onClick={() => listed && onAdd?.(listed, a.service as ItemService, a.reason.kind)}
-              className="inline-flex min-h-11 flex-col items-start justify-center rounded-2xl border border-line-strong bg-white px-3.5 py-1.5 text-left t-small text-navy hover:border-navy"
-              data-add-on={a.reason.kind}
-            >
-              <span className="inline-flex items-center gap-1.5">
-                <span aria-hidden="true" className="font-semibold text-action">+</span>
-                <span className="font-semibold">{a.item}</span>
-                <span className="text-secondary">
-                  · {t.services[a.service]} · {money(a.amountMinor, locale)}
-                </span>
-              </span>
-              {why ? <span className="t-caption text-secondary">{why}</span> : null}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  ) : null;
-  return (
-    <section aria-labelledby="booking-summary-title" className="rounded-md border border-line bg-soft p-4 md:p-5" data-order-summary>
-      <h2 id="booking-summary-title" className="t-h4 text-navy">
-        {t.summaryTitle}
-      </h2>
-      {s.items.length ? (
-        <ul className="mt-3 divide-y divide-line border-y border-line">
-          {s.items.map((l) => {
-            const unit = lineUnit(l);
-            return (
-              <li key={l.id} className={`${row} t-small`}>
-                <span className="min-w-0 text-body">
-                  {localDigits(l.quantity, locale)} × {l.item === MIXED_ITEM ? t.mixedItem : l.item}
-                  <span className="text-secondary"> · {l.service ? t.services[l.service] : t.itemNotSure}</span>
-                </span>
-                <span className={`shrink-0 tabular-nums ${unit === null ? "text-secondary" : "text-navy"}`}>
-                  {unit === null ? t.items.atPickup : money(unit * l.quantity, locale)}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      ) : (
-        <p className="mt-2 t-small text-body">{t.summaryEmpty}</p>
-      )}
-      {priced ? (
-        <dl className="mt-1">
-          <div className={row}>
-            <dt className="t-small text-body">{t.summaryItems}</dt>
-            <dd className="t-small tabular-nums text-navy">{money(e.subtotalMinor, locale)}</dd>
-          </div>
-          <div className={`${row} border-b border-line`}>
-            <dt className="t-small text-body">{t.summaryDelivery}</dt>
-            <dd className="t-small tabular-nums text-navy">
-              {e.free ? t.summaryFree : e.chargeMinor !== null ? money(e.chargeMinor, locale) : t.summaryChargeUnknown}
-            </dd>
-          </div>
-          <div className={`${row} pt-3`}>
-            <dt className="font-semibold text-navy">{t.summaryTotal}</dt>
-            <dd className="text-[20px] font-semibold tabular-nums text-navy" data-estimate-total>
-              {/* Keyed on the amount: a new total ticks in, so the change is noticed. */}
-              <span key={e.totalMinor} className="inline-block" data-tick>
-                {money(e.totalMinor, locale)}
-              </span>
-            </dd>
-          </div>
-        </dl>
-      ) : null}
-      <div className="mt-2 space-y-1.5 t-small">
-        {priced && !e.free ? (
-          <div data-free-progress>
-            <p className="font-semibold text-navy">{format(t.summaryChargeNote, { amount: threshold, more: money(gap, locale) })}</p>
-            <div
-              role="progressbar"
-              aria-label={t.freeProgressLabel}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={progressToFree(e.subtotalMinor, FREE_DELIVERY_MIN_MINOR)}
-              className="mt-2 h-2 overflow-hidden rounded-full bg-line"
-            >
-              <div
-                className="h-full origin-left rounded-full bg-action"
-                style={{ transform: `scaleX(${progressToFree(e.subtotalMinor, FREE_DELIVERY_MIN_MINOR) / 100})` }}
-                data-progress-fill
-              />
-            </div>
-            <p className="mt-1 t-caption tabular-nums text-secondary">
-              {money(e.subtotalMinor, locale)} / {money(FREE_DELIVERY_MIN_MINOR, locale)}
-            </p>
-            {!e.free ? addOnsView : null}
-          </div>
-        ) : priced && e.free && !coupon ? (
-          <div>
-            <p className="font-semibold text-success" data-free-unlocked>
-              ✓ {t.freeUnlocked}
-            </p>
-            {addOnsView}
-          </div>
-        ) : !priced ? (
-          <p className="text-navy">{format(t.summaryFreeNote, { amount: threshold })}</p>
-        ) : null}
-        {priced && e.unpricedLines ? (
-          <p className="text-secondary">{e.unpricedLines === 1 ? t.summaryUnpricedOne : fill(t.summaryUnpricedMany, { n: e.unpricedLines }, locale)}</p>
-        ) : null}
-        {coupon ? (
-          <p className="font-semibold text-navy" data-coupon={coupon.code}>
-            {format(t.summaryCoupon, { code: coupon.code, what: coupon.kind === "delivery" ? t.couponDelivery : fill(t.couponTaka, { n: coupon.amount }, locale) })}
-          </p>
-        ) : null}
-        {firstOrder ? (
-          <p className="font-semibold text-navy" data-first-order={firstOrder}>
-            {fill(firstOrder === "guest" ? t.firstOrderGuest : coupon ? t.firstOrderOrCoupon : t.firstOrderYours, { percent: FIRST_ORDER_OFFER.percent }, locale)}
-            {firstOrder === "guest" && signInHref ? (
-              <>
-                {" "}
-                <a href={signInHref} className="underline decoration-blue/50 underline-offset-4 hover:decoration-blue">
-                  {t.firstOrderSignIn}
-                </a>
-              </>
-            ) : null}
-          </p>
-        ) : null}
-        {offer ? (
-          // The website's current offer (the top bar), so it is still in view at the moment of booking.
-          <p className="font-semibold text-navy" data-offer>
-            <span className="text-secondary">{t.summaryOffer} </span>
-            {offer}
-          </p>
-        ) : null}
-        <p className="text-secondary">{t.summaryNote}</p>
-      </div>
-    </section>
-  );
-}
-
 /** Optional photos (stains, damage, delicate fabric): thumbnails with upload state, up to three. */
 function PhotoPicker({
   t,
@@ -736,60 +335,6 @@ function PhotoPicker({
     </div>
   );
 }
-
-/**
- * Phones only: once items are added, a slim bar keeps the count and estimate in view while the
- * customer fills in the rest, and jumps to the order summary. Hidden from md up, where the
- * summary sits close to the form.
- */
-function MobileTotalBar({ s, t, locale, chargeMinor, coupon }: { s: FormState; t: Text; locale: Locale; chargeMinor: number | null; coupon?: Coupon }) {
-  // Steps aside once the summary is on screen, so it never covers the summary, Confirm or the footer.
-  const [beforeSummary, setBeforeSummary] = useState(true);
-  useEffect(() => {
-    const summary = document.getElementById("booking-summary-title");
-    if (!summary) return;
-    const check = () => setBeforeSummary(summary.getBoundingClientRect().top > window.innerHeight);
-    check();
-    window.addEventListener("scroll", check, { passive: true });
-    window.addEventListener("resize", check);
-    return () => {
-      window.removeEventListener("scroll", check);
-      window.removeEventListener("resize", check);
-    };
-  }, []);
-  if (!s.items.length || !beforeSummary) return null;
-  const e = withCoupon(estimateOf(s, chargeMinor), coupon);
-  const count = s.items.reduce((n, l) => n + l.quantity, 0);
-  return (
-    <div className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white/95 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-8px_24px_rgba(0,49,83,0.08)] backdrop-blur md:hidden" data-total-bar>
-      <div className="flex items-center justify-between gap-3">
-        <p className="min-w-0 t-small text-body">
-          {count === 1 ? t.barItemsOne : fill(t.barItems, { n: count }, locale)}
-          {e.subtotalMinor > 0 ? <span key={e.totalMinor} className="ml-2 inline-block font-semibold tabular-nums text-navy" data-tick>{money(e.totalMinor, locale)}</span> : null}
-          {e.subtotalMinor > 0 && !e.free ? (
-            <span className="block t-caption text-action" data-bar-to-free>
-              {fill(t.barToFree, { more: money(FREE_DELIVERY_MIN_MINOR - e.subtotalMinor, locale) }, locale)}
-            </span>
-          ) : null}
-        </p>
-        <a href="#booking-summary-title" className="inline-flex h-11 shrink-0 items-center rounded-md bg-action px-5 font-semibold text-white hover:bg-action-hover">
-          {t.barReview}
-        </a>
-      </div>
-    </div>
-  );
-}
-
-/** The success tick: a circle and check that draw once (static with reduced motion). */
-function SuccessMark() {
-  return (
-    <svg viewBox="0 0 48 48" width="48" height="48" aria-hidden="true" className="mb-5 text-success" data-success-mark>
-      <circle cx="24" cy="24" r="22" fill="none" stroke="currentColor" strokeWidth="2.5" pathLength={1} data-mark-ring />
-      <path d="M14.5 24.5l6.5 6.5 13-13.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" pathLength={1} data-mark-check />
-    </svg>
-  );
-}
-
 /** A folded part of the form: a quiet button that opens it in place. Open stays open. */
 function Fold({ id, label, open, onOpen, children }: { id: string; label: string; open: boolean; onOpen: () => void; children: ReactNode }) {
   if (open) return <div id={id} data-fold-open>{children}</div>;
@@ -804,36 +349,6 @@ function Fold({ id, label, open, onOpen, children }: { id: string; label: string
       <span aria-hidden="true" className="text-action">+</span>
       {label}
     </button>
-  );
-}
-
-function WhatsAppFallback({
-  href,
-  placement,
-  label,
-  opens,
-  className = "",
-}: {
-  href: string;
-  placement: string;
-  label: string;
-  /** " (opens WhatsApp)" in the page language. */
-  opens: string;
-  className?: string;
-}) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      data-analytics="whatsapp_click"
-      data-placement={placement}
-      className={`inline-flex h-12 items-center justify-center gap-2.5 whitespace-nowrap rounded-md border border-line-strong bg-white px-5 font-semibold text-navy hover:border-navy ${className}`}
-    >
-      <WhatsAppIcon className="size-5 text-whatsapp" />
-      {label}
-      <span className="sr-only">{opens}</span>
-    </a>
   );
 }
 
@@ -1465,120 +980,5 @@ export function BookingForm({
         </form>
       </div>
     </>
-  );
-}
-
-/* ---------- success: integration-ready, never shows an invented reference ---------- */
-
-function BookingSuccess({
-  headingRef,
-  state,
-  reference,
-  t,
-  c,
-  locale,
-  chargeMinor,
-  notify,
-  signedIn,
-  appInstalled,
-  base,
-}: {
-  headingRef: Ref<HTMLHeadingElement>;
-  state: FormState;
-  reference?: string;
-  t: Text;
-  c: Common;
-  locale: Locale;
-  chargeMinor: number | null;
-  notify?: NotifyText;
-  signedIn: boolean;
-  appInstalled: boolean;
-  base: AppBase;
-}) {
-  const words = pageWords(t, c, locale);
-  const when = pickupLabel(state, words, t.slots);
-  const night = useNightDhaka();
-  const photos = uploadedPhotos(state).length;
-  const firstName = state.name.trim().split(/\s+/)[0];
-  const estimate = estimateLabel(estimateOf(state, chargeMinor), locale);
-  const rows = [
-    { label: state.items.length ? t.rowItems : state.what.trim() ? t.rowWhat : t.rowService, value: whatLabel(state, t, locale) || t.notSpecified },
-    ...(estimate ? [{ label: t.rowEstimate, value: estimate }] : []),
-    { label: t.rowPickupFrom, value: `${state.address.trim()}, ${areaText(state.sector, t, locale)}` },
-    { label: state.pickup?.booked ? t.rowPickupWindow : t.rowPreferredTime, value: when },
-    ...(photos ? [{ label: t.rowPhotos, value: fill(t.photosAdded, { n: photos }, locale) }] : []),
-    ...(state.backBy ? [{ label: t.rowBackBy, value: niceDate(state.backBy, words) }] : []),
-    // Phone numbers keep their digits.
-    { label: t.rowContact, value: displayPhone(state.phone) },
-  ];
-
-  return (
-    <div data-booking-success>
-      <SuccessMark />
-      <h1 id="page-title" ref={headingRef} tabIndex={-1} className="scroll-mt-32 t-h1 text-navy focus:outline-none">
-        {state.pickup?.booked ? t.successTitleBooked : t.successTitle}
-      </h1>
-      <p className="mt-3 t-body text-body md:mt-4 md:t-body-lg">{state.pickup?.booked ? format(t.successBodyBooked, { name: firstName, when }) : format(night ? t.successBodyNight : t.successBody, { name: firstName })}</p>
-
-      <dl className="mt-7 border-t border-navy">
-        {rows.map((r) => (
-          <div key={r.label} className="grid grid-cols-[7.5rem_1fr] gap-4 border-b border-line py-3.5 md:grid-cols-[10rem_1fr]">
-            <dt className="t-small font-semibold text-navy">{r.label}</dt>
-            <dd className="min-w-0 break-words t-small text-body">{r.value}</dd>
-          </div>
-        ))}
-        {reference ? (
-          <div className="grid grid-cols-[7.5rem_1fr] gap-4 border-b border-line py-3.5 md:grid-cols-[10rem_1fr]">
-            <dt className="t-small font-semibold text-navy">{t.rowReference}</dt>
-            <dd className="t-small text-body">
-              <span className="font-semibold text-navy">{reference}</span>
-              <span className="mt-0.5 block text-secondary">{t.referenceNote}</span>
-            </dd>
-          </div>
-        ) : null}
-      </dl>
-
-      <h2 className="mt-8 t-label uppercase text-navy">{t.nextTitle}</h2>
-      <ol className="mt-3 space-y-2.5 text-body">
-        {(state.pickup?.booked ? t.nextStepsBooked : t.nextSteps).map((step, i) => (
-          <li key={step} className="flex gap-3">
-            <span className="t-label pt-[4px] text-action">{localDigits(String(i + 1).padStart(2, "0"), locale)}</span>
-            {step}
-          </li>
-        ))}
-      </ol>
-
-      {/* "Install Velto", only for customers without the app: after the notification sheet when signed in
-          (it waits for it), straight away for guests. Inside the app it never shows. */}
-      <InstallSheet t={c.install} placement="booking_success" when={notify && signedIn ? "after-notify" : "now"} appInstalled={appInstalled} />
-
-      {notify ? (
-        <div className="mt-8" data-booking-notify>
-          {signedIn ? (
-            <NotifyCard t={notify} lang={locale === "bn" ? "bn" : "en"} variant="after" orderRef={reference} />
-          ) : (
-            <div className="rounded-lg border border-line bg-white p-4">
-              <p className="font-semibold text-navy">{notify.afterBookTitle}</p>
-              <p className="mt-1 t-small text-body">{notify.guestBody}</p>
-              <ButtonLink href={base === "/app" ? `/app/login?next=${encodeURIComponent("/app/home")}` : "/login?next=/account"} variant="secondary" className="mt-3 !h-11 !px-5">
-                {notify.guestButton}
-              </ButtonLink>
-            </div>
-          )}
-        </div>
-      ) : null}
-
-      <div className="mt-8 flex flex-col gap-3 border-t border-line pt-6 md:flex-row md:flex-wrap md:items-center">
-        <WhatsAppFallback
-          href={whatsappHref(state, t, c, locale, chargeMinor)}
-          placement="booking_success"
-          label={t.changeOnWhatsApp}
-          opens={c.opensWhatsApp}
-        />
-        <ButtonLink href={base === "/app" ? customerRoutes(base).home : "/"} variant="secondary">
-          {base === "/app" ? c.backAppHome : c.backHome}
-        </ButtonLink>
-      </div>
-    </div>
   );
 }

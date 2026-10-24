@@ -16,7 +16,7 @@ Known facts (spec §36): Sector 11 is 5.0★ with 102 reviews and open 9:00 AM�
 
 Canonicals strip the UTM parameters, so these links don't create duplicate URLs.
 
-After the DNS cutover, replace the Maps *search* links in `src/content/site.ts` (`directionsUrl`, `reviewsUrl`, marked TODO_VERIFY) with each profile's real place / review URL.
+~~After the DNS cutover, replace the Maps *search* links in `src/content/site.ts` (`directionsUrl`, `reviewsUrl`) with each profile's real place / review URL.~~ Done 2026-09-27: `reviewsUrl` opens each outlet's own Business Profile by place id (`mapListingUrl`) and `directionsUrl` routes to its verified pin (`directionsTo`); see VELTO-SEO-MASTER-PLAN.md §8.
 
 ## 2. Categories
 - **Primary:** Laundry service. Check whether "Dry cleaner" performs better for Sector 11 once Insights data exists. Don't switch primaries often.

@@ -6,4 +6,4 @@ Required production file:
 
 - `velto-logo.png` — official Velto transparent logo artwork. Use the supplied artwork; do not redraw or substitute it.
 
-If an official reversed/white logo is supplied later, add it here as `velto-logo-white.png`.
+- `velto-logo-white.png` — the official reversed/white variant (supplied 2026-09-24), used on navy surfaces such as the footer.
