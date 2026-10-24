@@ -8,7 +8,7 @@ export async function Breadcrumbs({ items }: { items: Crumb[] }) {
   const t = dictionary(await getLocale()).common;
   return (
     <nav aria-label={t.breadcrumb}>
-      <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 t-caption text-secondary">
+      <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 t-small text-secondary">
         {items.map((item, i) => (
           <li key={item.label} className="flex items-center gap-2">
             {item.href ? (

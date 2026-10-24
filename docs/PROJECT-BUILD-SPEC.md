@@ -451,12 +451,14 @@ Secondary: **Source Serif 4**, used selectively for reviews / editorial quotes.
 | H3 | clamp(1.5rem, 2vw, 2rem) | min ~24px | 1.15 | 600 | -0.015em |
 | H4 | 22px | 20px | 1.25 | 600 | -0.01em |
 | Body Large | 20px | 18px | 1.55 | 400 | normal |
-| Body | 16px | 16px | 1.6 | 400 | normal |
-| Small | 14px | 14px | 1.5 | 400 | normal |
-| Caption | 13px | 13px | 1.45 | 400 | 0.01em |
+| Body | 17px | 16px | 1.6 | 400 | normal |
+| Small | 15px | 14px | 1.5 | 400 | normal |
+| Caption | 14px | 14px | 1.45 | 400 | 0.01em |
 | Label | 13px | 13px | 1.3 | 600 | 0.025em |
 | Button | 16px | 16px | 1 | 600 | -0.005em |
 | Input | 16px | 16px | 1.4 | 400 | normal |
+
+Changed by the owner on 24 Oct 2026 (readability): Body 16 → 17px from 768px, Small 14 → 15px from 768px, Caption 13 → 14px; `--color-text-muted` darkened from #7B8288 to #6A7177 so it passes AA on white, warm and soft. Website only: the admin dashboard and the installed app keep their own sizes (`--type-*` variables in `globals.css`).
 
 Major headings normally use Velto navy.
 
@@ -654,16 +656,16 @@ Do not reorder, remove or insert homepage sections without explicit instruction.
 
 1. Hero + local proof
 2. Service chooser
-3. What happens to your clothes after pickup?
-4. Customer proof
-5. Built around Uttara
-6. Find a Price
+3. Find a Price
+4. What happens to your clothes after pickup?
+5. Customer proof
+6. Built around Uttara
 7. Curtains, carpets & bedding
 8. Regular laundry
 9. FAQ
 10. Final booking
 
-Order adjusted in the owner-requested UI audit: the proof cluster (customer proof, locations) now precedes the pricing cluster (Find a Price, household), so trust evidence lands before price. Section backgrounds alternate white / warm / white / warm / white / soft / white / soft / white / navy with no adjacent repeats; the footer sits on `--color-bg-navy-deep` with a hairline top rule so the final booking section and footer read as separate surfaces.
+Changed by the owner on 24 Oct 2026: Find a Price moved from 6th to 3rd, so "how much will it cost?" is answered early and the proof cluster (process, customer proof, Uttara) follows straight after. Treat it as a hypothesis and watch it on Admin → Visitor journey. (Earlier UI audit: proof had been placed before price.) Section backgrounds alternate white / warm / white / warm / white / soft / white / soft / white / navy with no adjacent repeats; the footer sits on `--color-bg-navy-deep` with a hairline top rule so the final booking section and footer read as separate surfaces.
 
 ---
 
@@ -887,6 +889,17 @@ All eight stages stay present, grouped visually into four movements, each with o
 2. Intake: Checked in, Tagged, Checked before cleaning
 3. Cleaning & finishing: Cleaned & finished
 4. QC & return: Checked before packing, Packed for return, Returned to you
+
+### Homepage version (changed by the owner, 24 Oct 2026)
+
+On the homepage the section shows four steps with one photo, then **See the full garment journey** (links to `/how-it-works`, which keeps the eight stages above):
+
+1. **Book your pickup.** Choose your service, address and preferred pickup time.
+2. **We check and tag everything.** We inspect the items and connect them to your order before cleaning.
+3. **We clean and quality-check.** Items are cleaned, finished and checked before packing.
+4. **We pack and return your order.** Everything is packed and returned to your address.
+
+Desktop: the photo on the left, the four numbered steps on the right. Mobile: four compact numbered rows. The delicate-garment insert stays under the steps.
 
 ---
 
