@@ -16,6 +16,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /*
+ * DRAFT (31 Oct 2026): booking photos, account sign-in (SMS code, Google) and GreenWeb added from
+ * the code. Owner or lawyer approval needed before this goes live; photo retention is still open
+ * (docs/legal/LEGAL-REVIEW.md).
+ *
  * Describes the website's real data flows (src/components/forms, src/app/api,
  * src/lib/analytics, docs/technical/COMMAND-CENTER.md). If a flow changes,
  * update this page in the same change. Open items: docs/legal/LEGAL-REVIEW.md.
@@ -47,13 +51,21 @@ const SECTIONS: LegalSection[] = [
       <>
         <p>
           <strong>When you book a pickup:</strong> your name, phone or WhatsApp number, sector, house and road, the
-          service you choose, your preferred pickup day and time, and any note you add.
+          service you choose, your preferred pickup day and time, and any note you add. You can also attach up to three
+          photos of the items. Your browser makes a smaller copy before sending it, and that copy is stored privately
+          with your booking. Our team opens the photos through private links.
         </p>
         <p>
           <strong>When you request a quote:</strong> your name, phone or WhatsApp number, area, the service, approximate
           quantities or dimensions, and any notes about condition. The quote form lets you pick photos, but{" "}
           <strong>photos are not uploaded through the website</strong>: they stay on your device. If you choose to send
           photos, you send them to us on WhatsApp.
+        </p>
+        <p>
+          <strong>Your account:</strong> you can sign in with your phone number, and we text you a one-time code by
+          SMS. If you choose &ldquo;Sign in with Google&rdquo; instead, Google tells us your name and email address. We
+          keep your name, phone number, address and preferences with your account so you can see your orders and book
+          again.
         </p>
         <p>
           <strong>When you track an order:</strong> the order number and phone number you enter, which are checked against
@@ -179,6 +191,13 @@ const SECTIONS: LegalSection[] = [
           <li>
             <strong>Supabase</strong>: the database that holds our operating records, including bookings, quotes, orders
             and website measurement.
+          </li>
+          <li>
+            <strong>GreenWeb (bdbulksms.net)</strong>: sends our SMS messages, such as sign-in codes and reminders. It
+            receives your phone number and the message.
+          </li>
+          <li>
+            <strong>Google sign-in</strong>: only if you choose to sign in with Google.
           </li>
           <li>
             <strong>Meta (WhatsApp)</strong>: when you message us on WhatsApp, your messages are handled under
@@ -321,7 +340,7 @@ export default function PrivacyPage() {
         <>We collect what we need to arrange and deliver your order: name, phone, address, items and preferences.</>,
         <>We never sell your information, and we never put your name or phone number into website analytics.</>,
         <>Analytics and advertising tools run only if you allow them in the cookie banner.</>,
-        <>Photos for quotes are not uploaded through the website. You choose whether to send them on WhatsApp.</>,
+        <>Photos you attach to a booking are stored privately for our team. Photos for quotes stay on your device unless you send them on WhatsApp.</>,
         <>You can ask to see, correct or delete your information at any time.</>,
       ]}
       sections={SECTIONS}

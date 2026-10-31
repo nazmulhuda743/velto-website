@@ -16,7 +16,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 type Row = { name: string; purpose: string; duration: string; setBy: string };
 
-/* Keep in step with src/lib/consent.ts, src/lib/analytics/client.ts, src/lib/attribution-client.ts, src/lib/booking-recovery.ts and src/lib/admin. */
+/* DRAFT (31 Oct 2026): the account and language rows need owner or lawyer approval with the Privacy draft.
+ * Keep in step with src/lib/consent.ts, src/lib/analytics/client.ts, src/lib/attribution-client.ts, src/lib/booking-recovery.ts and src/lib/admin. */
 const ESSENTIAL: Row[] = [
   {
     name: "velto_consent_v1",
@@ -65,6 +66,19 @@ const ESSENTIAL: Row[] = [
     purpose:
       "If your browser supports it, the website keeps copies of its own design files, photos and recently opened public pages on your device, so it opens quickly, can be installed as an app and shows an offline page without a connection. Account, booking and sign-in pages are never stored. No identifier or personal information.",
     duration: "Replaced with each website update; cleared with your browser data",
+    setBy: "Velto",
+  },
+  {
+    name: "sb-…-auth-token, velto_account, velto_link_code",
+    purpose:
+      "Only if you sign in to a Velto account: keep you signed in, remember that this browser has an account, and, for a few minutes, check the code we text when you add a phone number. Sign-in with Google also sets a short check cookie while you sign in.",
+    duration: "Up to 400 days (until you sign out) / 30 days / 10 minutes",
+    setBy: "Velto (with Supabase)",
+  },
+  {
+    name: "velto_lang",
+    purpose: "Remembers whether you chose English or বাংলা, so pages open in that language.",
+    duration: "1 year",
     setBy: "Velto",
   },
   {
