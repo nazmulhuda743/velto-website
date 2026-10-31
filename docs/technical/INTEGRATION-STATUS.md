@@ -1,5 +1,7 @@
 # Integration status — Codex foundation on main
 
+> **Out of date. Checked 31 Oct 2026:** this records the September integration pass. The site is live, and the website SQL is on production. For the current state see [`STATUS.md`](STATUS.md). The rest of this page is kept as history.
+
 Branch: `claude/velto-integration` = `main` + `codex/velto-technical-foundation`
 (merged, history preserved; the Codex branch itself is untouched).
 

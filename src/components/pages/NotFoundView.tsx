@@ -8,6 +8,8 @@ export async function NotFoundView() {
   const t = dictionary(await getLocale()).notFound;
   return (
     <>
+      {/* Its own tab title: the layout's metadata would otherwise give it the homepage's. */}
+      <title>{`${t.title} | Velto`}</title>
       <NotFoundBeacon />
       <section className="container-page py-20 md:py-28">
         <div className="max-w-2xl">
