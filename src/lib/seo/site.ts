@@ -43,4 +43,5 @@ export const INDEXABLE_ROUTES = [
   "/locations/sector-11",
   "/locations/sector-18",
   "/about",
+  "/careers",
 ] as const;

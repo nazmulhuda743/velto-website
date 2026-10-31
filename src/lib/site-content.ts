@@ -12,6 +12,7 @@ import { parsePopup, type PromoPopup } from "./promo";
 import { parseLoyalty, type LoyaltySettings } from "./customer/loyalty";
 import { parseFooterLinks, type FooterLinks } from "./footer-links";
 import { parseRhythm, type RhythmSettings } from "./rhythm";
+import { parseCareers, type CareersContent } from "./careers";
 
 /** Cache tag invalidated by every admin save. */
 export const SITE_CONTENT_TAG = "site-content";
@@ -65,6 +66,8 @@ export type SiteContent = {
   footer: FooterLinks;
   /** Reminders (admin → Reminders): which playbooks run and their SMS text. */
   rhythm: RhythmSettings;
+  /** Open roles for /careers (admin → Careers & jobs). */
+  careers: CareersContent;
   seo: Record<string, SeoEntry>;
   images: Record<string, ImageOverride>;
   reviews: ReviewEntry[];
@@ -229,6 +232,7 @@ export const getSiteContent = cache(async (): Promise<SiteContent> => {
     loyalty: parseLoyalty(rows.loyalty),
     footer: parseFooterLinks(rows.footer),
     rhythm: parseRhythm(rows.rhythm),
+    careers: parseCareers(rows.careers),
   };
 });
 

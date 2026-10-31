@@ -85,6 +85,8 @@ export type AnalyticsHealth = {
   last_booking_success_at: string | null;
   last_quote_success_at: string | null;
   last_consent_at: string | null;
+  /** Last time a visitor allowed Analytics (events are only stored after that). Missing on older databases. */
+  last_analytics_consent_at?: string | null;
   events_24h: number;
   marketing_events_24h: number;
 };
@@ -102,6 +104,7 @@ export const getAnalyticsHealth = cache(async (): Promise<Loaded<AnalyticsHealth
         last_booking_success_at: last("booking_success"),
         last_quote_success_at: last("quote_success"),
         last_consent_at: rows[0]?.started_at ?? null,
+        last_analytics_consent_at: rows[0]?.started_at ?? null,
         events_24h: rows.filter((s) => Date.now() - Date.parse(s.started_at) < 86_400_000).reduce((a, s) => a + s.event_count, 0),
         marketing_events_24h: 0,
       },

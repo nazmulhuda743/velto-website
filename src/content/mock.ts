@@ -231,14 +231,14 @@ export const IMAGE_SLOTS: { id: string; slot: ImageSlot }[] = [];
 })(IMAGES, "");
 
 export type Review = {
-  /** TODO_VERIFY: exact reviewer name. */
+  /** The reviewer's name exactly as shown on the platform (owner-supplied, see below). */
   name: string | null;
   platform: "Google" | "Facebook";
   /** Outlet profile the review was left on (never merged across branches). */
   branch?: "sector-11" | "sector-18";
   /** Rating out of 5, or "recommends" for Facebook recommendations. */
   rating: number | "recommends" | null;
-  /** TODO_VERIFY: exact, unedited customer text. null = placeholder. */
+  /** The customer's exact, unedited text (owner-supplied, see below). null = placeholder. */
   text: string | null;
   /**
    * Optional pull line: an exact substring of `text`, never reworded. It is

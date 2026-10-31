@@ -143,23 +143,6 @@ export function WhatsAppButton({
   );
 }
 
-/** "current step · step n of 5" sits under it; the step names appear only on order detail. */
-export function ProgressBar({ step, total, label, className }: { step: number; total: number; label: string; className?: string }) {
-  const pct = Math.max(0, Math.min(1, step / total)) * 100;
-  return (
-    <div
-      role="progressbar"
-      aria-label={label}
-      aria-valuemin={0}
-      aria-valuemax={total}
-      aria-valuenow={step}
-      className={cx("h-1.5 overflow-hidden rounded-full bg-white/20", className)}
-    >
-      <div className="h-full rounded-full bg-white" style={{ width: `${pct}%` }} />
-    </div>
-  );
-}
-
 /** A labelled value with a "Change" action (Home rebook, Book summary). A button when onClick, a link when href. */
 export function SummaryRow({
   label,

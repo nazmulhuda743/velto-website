@@ -33,7 +33,8 @@ export type NavIcon =
   | "approvals"
   | "access"
   | "promo"
-  | "prices";
+  | "prices"
+  | "careers";
 
 export type NavItem = { href: string; label: string; icon: NavIcon };
 export type NavGroup = { label: string; items: NavItem[] };
@@ -79,6 +80,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/admin/copy/footer", label: "Footer links", icon: "copy" },
       { href: "/admin/reviews", label: "Reviews", icon: "reviews" },
       { href: "/admin/promo", label: "Promo & popup", icon: "promo" },
+      { href: "/admin/careers", label: "Careers & jobs", icon: "careers" },
       { href: "/admin/settings", label: "Site settings", icon: "settings" },
       { href: "/admin/prices", label: "Prices", icon: "prices" },
     ],

@@ -50,6 +50,16 @@ export const ANALYTICS_EVENTS = [
   "notify_prompt",
   "notify_on",
   "notify_denied",
+  // The installed app's screens (/app/*), VELTO-APP-BUILD-HANDOFF §7. Recorded first-party only,
+  // with no order or customer data: what is measured goes in placement/detail as a short slug.
+  "app_home_state", // detail: first | regular | lapsed | in_progress
+  "rebook_tap", // placement: home_card | book_again | book_tab
+  "app_booking_success", // detail: seconds from app open (the website's booking_success stays website-only)
+  "order_view", // detail: the order's step (booked, collected, cleaning, ready, delivered)
+  "prices_open", // placement: sheet | page
+  "feedback", // detail: all_good | off
+  "weekly_offer_shown", // placement: home | order
+  "weekly_on",
 ] as const;
 
 export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[number];
@@ -87,8 +97,10 @@ export function isAnalyticsEvent(value: string): value is AnalyticsEvent {
 
 /**
  * The few events that may be recorded on customer-account pages (src/lib/analytics/private-paths.ts):
- * app launches and the install popup. They carry no order or customer data, and nothing else from
- * those pages is measured. Checked in the browser (track) and again by /api/collect.
+ * app launches, the install popup, notification opt-in and the installed app's own events. They
+ * carry no order or customer data (order numbers are redacted from the path), and nothing else from
+ * those pages is measured: no page views, no website funnel events. Checked in the browser (track)
+ * and again by /api/collect.
  */
 export const PRIVATE_PATH_EVENTS = [
   "app_launch",
@@ -96,6 +108,17 @@ export const PRIVATE_PATH_EVENTS = [
   "install_accepted",
   "install_dismissed",
   "install_ios_shown",
+  "notify_prompt",
+  "notify_on",
+  "notify_denied",
+  "app_home_state",
+  "rebook_tap",
+  "app_booking_success",
+  "order_view",
+  "prices_open",
+  "feedback",
+  "weekly_offer_shown",
+  "weekly_on",
 ] as const satisfies readonly AnalyticsEvent[];
 
 const PRIVATE_PATH_EVENT_SET = new Set<string>(PRIVATE_PATH_EVENTS);

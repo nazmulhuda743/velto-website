@@ -4,6 +4,7 @@ import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
 import { IMAGE_SLOTS } from "@/content/mock";
 import { SEO_ROUTES } from "@/content/seo-routes";
+import { ingestionState } from "../analytics/ingestion";
 import { isAnalyticsWritesEnabled } from "../analytics/store";
 import { getOpsGateway } from "../integrations/ops/server";
 import { isPricingConfigured } from "../integrations/pricing/server";
@@ -196,19 +197,22 @@ export async function runHealthChecks(): Promise<HealthCheck[]> {
       ? "Pixel configured; it loads only after Marketing consent. Check Events Manager for live events."
       : "NEXT_PUBLIC_META_PIXEL_ID is missing (or not a numeric ID), so Meta ads cannot measure website actions.",
   });
+  const ingestion = analytics.state === "ok" ? ingestionState(analytics.data) : null;
   const lastEvent = analytics.state === "ok" ? hoursSince(analytics.data.last_event_at) : null;
   add({
     id: "ingestion",
     group: "Measurement",
     label: "First-party analytics ingestion",
-    status: !isAnalyticsWritesEnabled() && !preview ? "warning" : lastEvent === null ? "warning" : lastEvent > 6 ? "warning" : "healthy",
+    status: !isAnalyticsWritesEnabled() && !preview ? "warning" : !ingestion || ingestion.kind === "stalled" || ingestion.kind === "waiting" ? "warning" : "healthy",
     detail: !isAnalyticsWritesEnabled() && !preview
       ? "Switched off (WEBSITE_ANALYTICS_WRITES_ENABLED); no visitor events are stored."
-      : lastEvent === null
+      : !ingestion || ingestion.kind === "waiting"
         ? "No events received yet."
-        : lastEvent > 6
-          ? `No event received for ${Math.round(lastEvent)} hours.`
-          : "Receiving events.",
+        : ingestion.kind === "stalled"
+          ? `A visitor allowed Analytics ${Math.max(1, Math.round((Date.now() - ingestion.consentAt) / 3_600_000))} h ago, but no event arrived after that.`
+          : ingestion.kind === "quiet"
+            ? `Working. No visitor has allowed Analytics in the last ${Math.round(lastEvent ?? 0)} hours (events are stored only after they do).`
+            : "Receiving events.",
   });
 
   return checks;

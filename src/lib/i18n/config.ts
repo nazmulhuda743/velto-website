@@ -48,6 +48,8 @@ export const BANGLA_READY_PATHS: readonly string[] = [
   "/locations/sector-11",
   "/locations/sector-18",
   "/about",
+  // Careers: page text in both languages; the roles themselves fall back to English where no Bangla is entered.
+  "/careers",
 ];
 export const banglaIndexable = (path: string) => banglaEnabled() && BANGLA_READY_PATHS.includes(path);
 

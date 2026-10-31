@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, type ReactNode } from "react";
+import { useActionState, useEffect, type ReactNode } from "react";
+import { track } from "@/components/layout/Analytics";
 import { saveFeedbackAction, type FeedbackState } from "@/lib/customer/actions";
 import { buttonClass, whatsappHref } from "@/components/app/ui";
 
@@ -13,6 +14,9 @@ type Text = { feedbackTitle: string; allGood: string; somethingOff: string; feed
  */
 export function OrderFeedback({ orderNumber, offText, t, thanks }: { orderNumber: string; offText: string; t: Text; thanks: ReactNode }) {
   const [state, action, pending] = useActionState<FeedbackState, FormData>(saveFeedbackAction, { status: "idle" });
+  useEffect(() => {
+    if (state.status === "saved") track("feedback", { detail: "all_good" });
+  }, [state.status]);
   if (state.status === "saved") return <>{thanks}</>;
   const btn = buttonClass("secondary", "!h-11 flex-1 !px-3 !text-[14px]");
   return (
@@ -26,7 +30,7 @@ export function OrderFeedback({ orderNumber, offText, t, thanks }: { orderNumber
         <button type="submit" className={btn} disabled={pending}>
           {t.allGood}
         </button>
-        <a href={whatsappHref(offText)} target="_blank" rel="noopener noreferrer" className={btn} data-analytics="whatsapp_click" data-placement="feedback_off">
+        <a href={whatsappHref(offText)} target="_blank" rel="noopener noreferrer" className={btn} onClick={() => track("feedback", { detail: "off" })}>
           {t.somethingOff}
         </a>
       </form>

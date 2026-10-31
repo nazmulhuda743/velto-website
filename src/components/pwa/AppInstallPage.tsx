@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import { buttonClass } from "@/components/app/ui";
 import { track } from "@/components/layout/Analytics";
 import type { FormText } from "@/content/i18n/forms/en";
 import { chromeSaysInstalled, deviceInfo, installedOnThisPhone, isStandalone } from "@/lib/pwa/install-detect";
@@ -81,52 +82,51 @@ export function AppInstallPage({ t, install, accountHref, logo }: { t: FormText[
     }
   };
 
-  const primary = "inline-flex min-h-[54px] w-full items-center justify-center rounded-md bg-action px-6 text-[17px] font-semibold text-white hover:bg-action-hover";
+  const primary = buttonClass("primary");
 
   return (
-    <main className="flex min-h-[100dvh] flex-col bg-warm px-5 pb-[calc(24px+env(safe-area-inset-bottom))] pt-[calc(28px+env(safe-area-inset-top))]" data-app-link={view}>
+    <main className="flex min-h-[100dvh] flex-col bg-warm px-6 pb-[calc(32px+env(safe-area-inset-bottom))] pt-[calc(20px+env(safe-area-inset-top))]" data-app-entry data-app-link={view}>
       <div className="mx-auto flex w-full max-w-[420px] flex-1 flex-col">
-        {logo ? <div className="mb-10">{logo}</div> : null}
-        <div className="my-auto">
+        {logo}
+        <div className="flex flex-1 flex-col justify-center gap-4 py-10">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/icons/icon-192.png" alt="" width={72} height={72} className="size-[72px] rounded-[18px] shadow-md" />
-          <h1 className="mt-6 text-[30px] font-semibold leading-tight text-navy">{view === "installed" ? t.installed : t.title}</h1>
-          <p className="mt-3 text-[17px] leading-relaxed text-body">{view === "installed" ? t.installedBody : view === "added" ? install.added : t.body}</p>
-
-          <div className="mt-8 min-h-[54px]">
-            {view === "prompt" ? (
-              <button type="button" onClick={installNow} className={primary} data-install-button>
-                {install.button}
-              </button>
-            ) : view === "ios" ? (
-              <p className="flex items-center gap-2.5 rounded-md bg-white px-4 py-4 text-[16px] font-semibold text-navy shadow-sm">
-                <ShareGlyph className="size-6 shrink-0 text-action" />
-                {install.iosLine}
-              </p>
-            ) : view === "inapp-android" ? (
-              <a href={chromeIntent()} className={primary}>
-                {t.openChrome}
-              </a>
-            ) : view === "inapp-ios" ? (
-              <>
-                <p className="text-[15px] text-body">{t.inAppIos}</p>
-                <button type="button" onClick={copyLink} className={`${primary} mt-4`}>
-                  {copied ? t.copied : t.copy}
-                </button>
-              </>
-            ) : view === "android-wait" ? (
-              <p className="t-small text-secondary">{t.chromeMenu}</p>
-            ) : view === "desktop" ? (
-              <p className="text-[15px] text-body">{t.desktop}</p>
-            ) : null}
-          </div>
+          <img src="/icons/icon-192.png" alt="" width={72} height={72} className="size-[72px] rounded-[18px]" />
+          <h1 className="a-title a-entry">{view === "installed" ? t.installed : t.title}</h1>
+          <p className="a-row text-secondary">{view === "installed" ? t.installedBody : view === "added" ? install.added : t.body}</p>
+          {view === "ios" ? (
+            <p className="mt-2 flex items-center gap-3 rounded-xl border border-line bg-app-card px-4 py-3.5 a-body text-body">
+              <ShareGlyph className="size-[22px] shrink-0 text-action" />
+              {t.iosLine}
+            </p>
+          ) : view === "inapp-ios" ? (
+            <p className="mt-2 a-body text-secondary">{t.inAppIos}</p>
+          ) : view === "android-wait" ? (
+            <p className="mt-2 a-sec text-muted">{t.chromeMenu}</p>
+          ) : view === "desktop" ? (
+            <p className="mt-2 a-body text-secondary">{t.desktop}</p>
+          ) : null}
         </div>
 
-        {view !== "checking" ? (
-          <a href={accountHref} className="mx-auto mt-10 inline-flex min-h-11 items-center px-3 t-small font-semibold text-secondary underline decoration-line underline-offset-4 hover:text-navy">
-            {t.continueWeb}
-          </a>
-        ) : null}
+        <div className="flex flex-col gap-3">
+          {view === "prompt" ? (
+            <button type="button" onClick={installNow} className={primary} data-install-button>
+              {t.install}
+            </button>
+          ) : view === "inapp-android" ? (
+            <a href={chromeIntent()} className={primary}>
+              {t.openChrome}
+            </a>
+          ) : view === "inapp-ios" ? (
+            <button type="button" onClick={copyLink} className={primary}>
+              {copied ? t.copied : t.copy}
+            </button>
+          ) : null}
+          {view !== "checking" ? (
+            <a href={accountHref} className={buttonClass("text", "a-body")}>
+              {t.continueWeb}
+            </a>
+          ) : null}
+        </div>
       </div>
     </main>
   );

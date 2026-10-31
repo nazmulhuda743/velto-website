@@ -147,7 +147,7 @@ test("Bangla copy has no untranslated English left in it", () => {
 });
 
 test("only translated pages are advertised in Bangla", () => {
-  const paths = ["/", "/services", ...SERVICE_PAGES.map((s) => `/services/${s.slug}`), "/pricing", "/how-it-works", "/regular-laundry", "/locations", "/locations/sector-11", "/locations/sector-18", "/about", "/blanket-cleaning-uttara"];
+  const paths = ["/", "/services", ...SERVICE_PAGES.map((s) => `/services/${s.slug}`), "/pricing", "/how-it-works", "/regular-laundry", "/locations", "/locations/sector-11", "/locations/sector-18", "/about", "/careers", "/blanket-cleaning-uttara"];
   for (const p of BANGLA_READY_PATHS) assert.ok(paths.includes(p), `${p} is marked Bangla-ready but has no Bangla page text`);
   for (const p of BANGLA_READY_PATHS.filter((p) => !p.startsWith("/services/"))) {
     // Search titles are required for every advertised page except service pages (they carry their own meta).

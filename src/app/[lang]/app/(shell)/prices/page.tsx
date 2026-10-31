@@ -1,21 +1,26 @@
+import Link from "next/link";
+import { AppEvent } from "@/components/app/appEvents";
 import { AppScreen } from "@/components/app/AppScreen";
-import { PopularPrices } from "@/components/home/PopularPrices";
-import { PriceFinder } from "@/components/home/PriceFinder";
+import { PricesPanel } from "@/components/app/prices/PricesPanel";
+import { popularPrices, pricesText } from "@/components/app/prices/data";
+import { buttonClass } from "@/components/app/ui";
 import { formText } from "@/content/i18n/forms";
 import { getLocale } from "@/lib/i18n/server";
 
-/** Prices in the app: the same price search and popular prices as the website, booking into the app. */
+/** Prices as a page, for links into the app (/app/prices); in the app itself it opens as a sheet. */
 export default async function AppPrices() {
-  const t = formText(await getLocale()).common.appBar;
+  const locale = await getLocale();
+  const f = formText(locale).common;
   return (
     <AppScreen>
-      <div className="space-y-5">
-        <header>
-          <h1 className="a-title">{t.pricesTitle}</h1>
-          <p className="mt-1.5 a-body text-secondary">{t.pricesIntro}</p>
-        </header>
-        <PriceFinder bookFromResult={{ source: "app-prices", bookPath: "/app/book" }} popular={<PopularPrices source="app_popular" placement="app_popular_price" bookPath="/app/book" />} />
+      <AppEvent event="prices_open" placement="page" />
+      <h1 className="a-title">{f.appBar.prices}</h1>
+      <div className="mt-2">
+        <PricesPanel popular={await popularPrices()} t={pricesText(locale)} locale={locale} />
       </div>
+      <Link href="/app/book" className={buttonClass("primary", "mt-5")}>
+        {f.app.bookPickup}
+      </Link>
     </AppScreen>
   );
 }

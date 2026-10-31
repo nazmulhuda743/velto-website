@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { AppOpenClock } from "@/components/app/appEvents";
+import { AppErrorText } from "@/components/app/AppErrorScreen";
 import { AppScreen } from "@/components/app/AppScreen";
 import { accountGate } from "@/components/account/AccountGate";
 import { Analytics } from "@/components/layout/Analytics";
+import { AppHeader } from "@/components/pwa/AppHeader";
 import { AppInstalledMark } from "@/components/pwa/AppInstalledMark";
 import { AppTabBar } from "@/components/pwa/AppTabBar";
 import { formText } from "@/content/i18n/forms";
@@ -19,13 +22,16 @@ export const metadata: Metadata = { title: "Velto", robots: { index: false, foll
  */
 export default async function AppShellLayout({ children }: { children: ReactNode }) {
   const gate = await accountGate("/app");
-  const t = formText(await getLocale()).common.appBar;
+  const { appBar: t, app } = formText(await getLocale()).common;
   return (
     <div className="min-h-dvh bg-warm pb-[calc(64px+env(safe-area-inset-bottom))]" data-app-shell>
       {/* Each screen draws its own header (AppScreen); a gate screen gets the plain logo one. */}
-      {gate.screen ? <AppScreen>{gate.screen}</AppScreen> : children}
+      <AppErrorText t={{ errorTitle: app.errorTitle, errorBody: app.errorBody, retry: app.retry, whatsapp: t.whatsapp }} header={<AppHeader />}>
+        {gate.screen ? <AppScreen>{gate.screen}</AppScreen> : children}
+      </AppErrorText>
       {gate.screen ? null : <AppTabBar t={t} />}
       <Analytics />
+      <AppOpenClock />
       <AppInstalledMark />
     </div>
   );

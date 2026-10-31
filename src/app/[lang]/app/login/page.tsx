@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import { Alert } from "@/components/account/Alert";
-import { AuthShell } from "@/components/account/AuthShell";
 import { SignInForm } from "@/components/account/forms";
 import { AccountsUnavailable, SignedInNotice, StaffAccountNotice } from "@/components/account/SignedInNotice";
-import { AppHeader } from "@/components/pwa/AppHeader";
+import { Logo } from "@/components/ui/Logo";
 import { accountText } from "@/content/i18n/account";
 import { formText } from "@/content/i18n/forms";
 import { authProviders } from "@/lib/customer/providers";
@@ -17,8 +16,9 @@ type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
 /**
- * The app's sign-in: the same mobile-number sign-in as the website's /login, inside the app (logo
- * header, no tabs), coming back to the app screen that was asked for (Home by default).
+ * The app's sign-in: the same mobile-number sign-in as the website's /login, drawn as an app entry
+ * screen (logo, title, the form; the code as six boxes), coming back to the app screen that was
+ * asked for (Home by default).
  */
 export default async function AppLogin({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
@@ -39,14 +39,17 @@ export default async function AppLogin({ searchParams }: { searchParams: SearchP
         google={providers.google}
         phone={providers.phone}
         notice={session.kind === "unavailable" ? <Alert tone="error">{a.pages.signInUnavailable}</Alert> : undefined}
+        codeBoxes
       />
     );
   return (
-    <div className="min-h-dvh bg-warm" data-app-login>
-      <AppHeader />
-      <AuthShell title={app.signInTitle} intro={app.signInIntro}>
-        {body}
-      </AuthShell>
-    </div>
+    <main className="min-h-dvh bg-warm px-6 pb-[calc(32px+env(safe-area-inset-bottom))] pt-[calc(20px+env(safe-area-inset-top))]" data-app-login>
+      <div className="mx-auto w-full max-w-[420px]">
+        <Logo className="h-6 w-auto" />
+        <h1 className="mt-12 a-title a-entry">{app.signInTitle}</h1>
+        <p className="mt-2.5 a-row text-secondary">{app.signInIntro}</p>
+        <div className="mt-8">{body}</div>
+      </div>
+    </main>
   );
 }
