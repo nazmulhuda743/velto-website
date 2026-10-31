@@ -13,6 +13,7 @@ const routes = [
   "/services/carpet-cleaning",
   "/services/blanket-comforter-cleaning",
   "/services/express",
+  "/blanket-cleaning-uttara",
   "/regular-laundry",
   "/pricing",
   "/how-it-works",

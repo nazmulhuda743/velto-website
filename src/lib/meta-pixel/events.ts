@@ -73,6 +73,8 @@ export function pageSubject(pathname: string): { service?: string; branch?: stri
   const path = pathname.replace(LOCALE_PREFIX, "") || "/";
   const service = /^\/services\/([a-z0-9-]+)\/?$/.exec(path)?.[1];
   if (service) return { service: metaService(service) };
+  // The B999 blanket landing page is a blanket service page for Meta (ViewContent on load).
+  if (/^\/blanket-cleaning-uttara\/?$/.test(path)) return { service: metaService("blanket-comforter-cleaning") };
   const branch = /^\/locations\/([a-z0-9-]+)\/?$/.exec(path)?.[1];
   if (branch) return { branch: metaBranch(branch) };
   return {};

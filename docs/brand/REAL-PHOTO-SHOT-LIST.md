@@ -43,6 +43,18 @@ Upload through the admin dashboard, under Images, using the slot id shown. Alter
 | 13 | A sari or sherwani on a hanger in a Velto cover | `dryCleaning` or `delicate` | Dry Cleaning, homepage |
 | 14 | Staff at work inside the outlet (hands or over-the-shoulder is fine) | `about` | About hero |
 
+## Priority 3b: Blanket ৳999 landing page (`/blanket-cleaning-uttara`)
+
+The page sells one package to Uttara families, so people photos carry it. It uses licensed stock of a South Asian
+couple at home for now (no stock shows a Bangladeshi doorstep handover with blankets). Real photos replace them.
+
+| # | Shot | Slot id | Where it shows | Notes |
+|---|---|---|---|---|
+| 15 | A Velto rider handing three packed, folded blankets to a customer at an Uttara apartment door, both smiling (customer's written consent) | `b999.hero` | Page hero | Landscape 16:9. The customer faces right, toward the booking form. |
+| 16 | A family at home in Uttara on a sofa or bed with a freshly cleaned blanket, relaxed | `b999.home` | "How it works / Why Velto" | 3:2. Natural light, real home, no posing. |
+| 17 | One regular single or double-bed blanket, folded, normal thickness | `b999.regular` | "Regular / Medium" card | 16:10. Plain background. |
+| 18 | A heavy or oversized blanket (thick mink or Korean style) folded next to a regular one | `b999.heavy` | "Heavy / Large" card | 16:10. The size difference is the point. |
+
 ## Owner-supplied photos to confirm
 
 `hero`, `dryCleaning`, `washAndIron`, `ironing` and `regular` were supplied by the owner. Please confirm where each came from and that Velto may use it commercially. Several look AI-generated; if so, record the tool and its terms in `docs/brand/IMAGE-SOURCES.md`.

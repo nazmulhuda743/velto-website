@@ -25,6 +25,10 @@ const NAMES: Record<string, string> = {
   about: "About Velto",
   curtainsMeasured: "Curtains being measured",
   carpetMeasured: "Carpet being measured",
+  "b999.hero": "Blanket ৳999 hero",
+  "b999.home": "Blanket ৳999: people at home",
+  "b999.regular": "Blanket ৳999: regular blanket",
+  "b999.heavy": "Blanket ৳999: heavy blanket",
   "locations.sector-11": "Sector 11 outlet",
   "locations.sector-18": "Sector 18 outlet",
 };
@@ -52,6 +56,7 @@ export const SITE_PAGES: SitePage[] = [
   { key: "carpet-cleaning", title: "Carpet Cleaning", path: "/services/carpet-cleaning", slots: ["carpet"] },
   { key: "blankets", title: "Blankets & Comforters", path: "/services/blanket-comforter-cleaning", slots: ["blankets", "bedding"] },
   { key: "express", title: "Express", path: "/services/express", slots: ["express"] },
+  { key: "b999", title: "Blanket ৳999", path: "/blanket-cleaning-uttara", slots: ["b999.hero", "b999.home", "b999.regular", "b999.heavy"] },
   { key: "regular-laundry", title: "Regular Laundry", path: "/regular-laundry", slots: ["regular"] },
   { key: "how-it-works", title: "How It Works", path: "/how-it-works", slots: ["hero", ...process(2, 3, 4, 6)] },
   { key: "about", title: "About", path: "/about", slots: ["about"] },

@@ -40,6 +40,7 @@ export const BANGLA_READY_PATHS: readonly string[] = [
   "/services/carpet-cleaning",
   "/services/blanket-comforter-cleaning",
   "/services/express",
+  "/blanket-cleaning-uttara",
   "/pricing",
   "/how-it-works",
   "/regular-laundry",

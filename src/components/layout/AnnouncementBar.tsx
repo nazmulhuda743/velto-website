@@ -1,8 +1,10 @@
+import { headers } from "next/headers";
 import Link from "@/components/i18n/Link";
 import { dictionary } from "@/content/i18n";
 import { keepBanglaSuffixes } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
-import { barLink, barMessages, tickerCopies, tickerSeconds } from "@/lib/promo";
+import { PATH_HEADER } from "@/lib/app-routes";
+import { barLink, barMessages, promoBarHidden, tickerCopies, tickerSeconds } from "@/lib/promo";
 import { getSiteContent } from "@/lib/site-content";
 import { TickerControl } from "./TickerControl";
 
@@ -15,6 +17,8 @@ import { TickerControl } from "./TickerControl";
 export async function AnnouncementBar() {
   const { announcement } = (await getSiteContent()).settings;
   if (!announcement.enabled || !announcement.text.trim()) return null;
+  // Campaign pages with a locked price never show the site-wide offer (lib/promo.ts).
+  if (promoBarHidden((await headers()).get(PATH_HEADER) ?? "")) return null;
   const locale = await getLocale();
   const t = dictionary(locale).promo;
   const href = barLink(announcement);

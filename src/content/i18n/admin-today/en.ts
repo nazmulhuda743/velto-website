@@ -37,6 +37,8 @@ export const todayEn = {
   opsDown: (t: string) => `Can't reach Velto Ops right now. Showing the list from ${t}.`,
   retry: "Retry",
   firstOrder: "First website order · 10% off",
+  /** The B999 blanket package: 3 blankets ৳999 fixed, no 10% or coupon. */
+  b999: "B999 · 3 blankets ৳999 fixed · no 10%",
   callback: "Call-back",
   weekly: "Weekly",
   changedTime: "Changed time",
