@@ -12,7 +12,7 @@ export async function FindAPrice() {
   const d = dictionary(locale);
   const t = d.home.findPrice;
   return (
-    <section id="find-a-price" aria-labelledby="price-title" className="bg-soft py-(--space-section)">
+    <section id="find-a-price" aria-labelledby="price-title" className="py-(--space-section)">
       <div className="container-page grid-page gap-y-10">
         <div className="col-span-4 md:col-span-8 xl:col-span-7">
           <SectionIntro id="price-title" title={t.title}>

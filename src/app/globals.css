@@ -28,7 +28,8 @@
   --color-text-primary: var(--velto-navy);
   --color-text-body: #30373d;
   --color-text-secondary: #596168;
-  --color-text-muted: #7b8288;
+  /* Darkened on 24 Oct 2026 (owner): #7b8288 was 3.6–3.9:1; this passes AA on white, warm and soft (4.6–4.95:1). */
+  --color-text-muted: #6a7177;
   --color-text-inverse: #ffffff;
 
   --color-bg: #ffffff;
@@ -68,6 +69,14 @@
 
   /* Mobile conversion bar — spec §18 */
   --mobile-bar-h: 64px;
+
+  /*
+   * Reading sizes (owner, 24 Oct 2026): body 17px and small text 15px from 768px, captions 14px.
+   * Phones keep 16 / 14. The admin dashboard and the installed app keep their own sizes (below).
+   */
+  --type-body: 16px;
+  --type-small: 14px;
+  --type-caption: 14px;
 }
 
 @media (min-width: 768px) {
@@ -79,7 +88,19 @@
     --space-group: 28px;
     --space-tight: 16px;
     --space-caption: 8px;
+    --type-body: 17px;
+    --type-small: 15px;
   }
+}
+
+/* The admin dashboard and the installed app are not part of the reading-size change: their sizes and grey stay. */
+:is(html[data-surface="admin"], [data-app-shell], [data-app-login], [data-app-entry]) {
+  --type-body: 16px;
+  --type-small: 14px;
+  --type-caption: 13px;
+}
+html[data-surface="admin"] {
+  --color-text-muted: #7b8288;
 }
 
 @media (min-width: 1024px) {
@@ -179,7 +200,7 @@ body {
   background: var(--color-bg);
   color: var(--color-text-body);
   font-family: var(--font-sans);
-  font-size: 16px;
+  font-size: var(--type-body);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -269,19 +290,19 @@ body {
 }
 
 @utility t-body {
-  font-size: 16px;
+  font-size: var(--type-body);
   line-height: 1.6;
   font-weight: 400;
 }
 
 @utility t-small {
-  font-size: 14px;
+  font-size: var(--type-small);
   line-height: 1.5;
   font-weight: 400;
 }
 
 @utility t-caption {
-  font-size: 13px;
+  font-size: var(--type-caption);
   line-height: 1.45;
   font-weight: 400;
   letter-spacing: 0.01em;
@@ -416,6 +437,39 @@ body {
 }
 .faq-item[open] .faq-icon-v {
   transform: scaleY(0);
+}
+
+/*
+ * Quiet polish (owner, 24 Oct 2026): the FAQ answer eases open and the mobile menu fades in.
+ * Progressive: browsers without ::details-content / interpolate-size open instantly, as before.
+ * Off with reduced motion.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .faq-item {
+    interpolate-size: allow-keywords;
+  }
+  .faq-item::details-content {
+    block-size: 0;
+    overflow: clip;
+    opacity: 0;
+    transition:
+      block-size 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      opacity 180ms ease,
+      content-visibility 180ms allow-discrete;
+  }
+  .faq-item[open]::details-content {
+    block-size: auto;
+    opacity: 1;
+  }
+  #mobile-menu {
+    animation: menu-in 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  @keyframes menu-in {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+  }
 }
 
 /* Skeleton rows for pricing loading */

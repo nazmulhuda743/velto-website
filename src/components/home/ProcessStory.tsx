@@ -8,19 +8,17 @@ import { getLocale } from "@/lib/i18n/server";
 import { SectionIntro } from "./SectionIntro";
 
 /**
- * Homepage "after pickup" story, shortened with the owner's approval: the four
- * movements as a compact numbered list, each with the first stage's line, and
- * one photo for the whole section. The full eight-stage walk-through lives on
- * /how-it-works. Stage and movement text lives in the UI dictionary (home.process).
+ * Homepage "after pickup" story: four steps as a compact numbered list and one photo for the whole
+ * section (owner, 24 Oct 2026: book, check and tag, clean and quality-check, pack and return). The full
+ * garment journey lives on /how-it-works, linked under the steps. Text: the UI dictionary (home.process).
  */
-const MOVEMENT_FIRST_STAGE = [0, 1, 4, 5];
 
 export async function ProcessStory() {
   const locale = await getLocale();
   const t = dictionary(locale).home.process;
   const num = (i: number) => localDigits(String(i + 1).padStart(2, "0"), locale);
   return (
-    <section id="process" aria-labelledby="process-title" className="py-(--space-section)">
+    <section id="process" aria-labelledby="process-title" className="bg-warm py-(--space-section)">
       <div className="container-page">
         <SectionIntro id="process-title" title={t.title} titleClassName="max-w-[18ch]" />
 
@@ -35,18 +33,23 @@ export async function ProcessStory() {
 
           <div className="col-span-4 md:col-span-5 xl:col-span-6 xl:col-start-7">
             <ol className="list-none border-t border-navy">
-              {MOVEMENT_FIRST_STAGE.map((stage, g) => (
-                <li key={g} className="grid grid-cols-[2rem_1fr] gap-x-3 border-b border-line py-3.5 md:grid-cols-[2.5rem_1fr] md:py-5">
+              {t.steps.map((step, g) => (
+                <li key={step.title} className="grid grid-cols-[2rem_1fr] gap-x-3 border-b border-line py-3.5 md:grid-cols-[2.5rem_1fr] md:py-5">
                   <span aria-hidden="true" className="pt-1 t-label text-action">
                     {num(g)}
                   </span>
                   <div>
-                    <h3 className="t-h4 text-navy">{t.movements[g]}</h3>
-                    <p className="mt-1 max-w-[48ch] t-small text-secondary md:t-body">{t.stages[stage].copy}</p>
+                    <h3 className="t-h4 text-navy">{step.title}</h3>
+                    <p className="mt-1 max-w-[48ch] t-small text-secondary md:t-body">{step.copy}</p>
                   </div>
                 </li>
               ))}
             </ol>
+            <div className="mt-4">
+              <TextLink href="/how-it-works" placement="process_journey">
+                {t.journeyLink}
+              </TextLink>
+            </div>
 
             {/* Delicate garment note */}
             <div className="mt-8 md:mt-10">
