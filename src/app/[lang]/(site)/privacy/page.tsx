@@ -69,6 +69,13 @@ const SECTIONS: LegalSection[] = [
           one-way scrambled (hashed) versions for a short time, to limit repeated attempts.
         </p>
         <p>
+          <strong>When you use the chat:</strong> the questions you type and the answers shown, the page you were on and
+          a random chat code. The chat doesn&apos;t ask for your name or phone number, so please don&apos;t type personal
+          details there; for anything about your own order, message us on WhatsApp. To prevent misuse, the website keeps a
+          one-way scrambled (hashed) version of your connection&apos;s address for up to two days, to limit repeated
+          messages. Our team reads the questions to improve the answers.
+        </p>
+        <p>
           <strong>When we provide the service:</strong> your order details, such as the items received, their condition,
           services, prices, payment status and pickup and delivery dates, along with records of our calls and messages
           with you about the order.
@@ -223,6 +230,10 @@ const SECTIONS: LegalSection[] = [
             <strong>Bookings, quotes, orders, photos added to them and related messages</strong>: for as long as we need them to provide the
             service, deal with questions or claims about an order, and meet our accounting and legal obligations. After
             that they are deleted or anonymised.
+          </li>
+          <li>
+            <strong>Chat questions and answers</strong> (a random chat code, no name or phone number unless you type one):
+            90 days.
           </li>
           <li>
             <strong>Website analytics events</strong> (random identifiers, no names or phone numbers): 90 days, after
