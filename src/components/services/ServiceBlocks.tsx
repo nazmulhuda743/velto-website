@@ -33,11 +33,14 @@ export async function ServiceBlockView({
   id,
   tone,
   serviceName,
+  continued = false,
 }: {
   block: ServiceBlock;
   id: string;
   tone: Tone;
   serviceName: string;
+  /** Follows a block of the same type: its section label is already showing, so it isn't repeated. */
+  continued?: boolean;
 }) {
   const locale = await getLocale();
   const t = pageText(locale).service;
@@ -48,7 +51,7 @@ export async function ServiceBlockView({
       return (
         <Section id={id} tone={tone}>
           <div className={LEFT}>
-            <SectionIntro id={id} eyebrow={EYEBROW[block.type]} title={block.title} titleClassName="max-w-[16ch]">
+            <SectionIntro id={id} eyebrow={continued ? undefined : EYEBROW[block.type]} title={block.title} titleClassName="max-w-[16ch]">
               {block.intro ? <p>{block.intro}</p> : null}
             </SectionIntro>
           </div>
@@ -67,7 +70,7 @@ export async function ServiceBlockView({
       return (
         <Section id={id} tone={tone}>
           <div className={LEFT}>
-            <SectionIntro id={id} eyebrow={EYEBROW[block.type]} title={block.title} titleClassName="max-w-[14ch]" className="xl:sticky xl:top-[calc(100px+var(--promo-h,0px))]">
+            <SectionIntro id={id} eyebrow={continued ? undefined : EYEBROW[block.type]} title={block.title} titleClassName="max-w-[14ch]" className="xl:sticky xl:top-[calc(100px+var(--promo-h,0px))]">
               <p>{block.intro}</p>
             </SectionIntro>
           </div>
@@ -102,7 +105,7 @@ export async function ServiceBlockView({
         return (
           <Section id={id} tone={tone}>
             <div className={LEFT}>
-              <SectionIntro id={id} eyebrow={EYEBROW[block.type]} title={block.title} titleClassName="max-w-[14ch]">
+              <SectionIntro id={id} eyebrow={continued ? undefined : EYEBROW[block.type]} title={block.title} titleClassName="max-w-[14ch]">
                 <p>{block.intro}</p>
               </SectionIntro>
             </div>
@@ -129,7 +132,7 @@ export async function ServiceBlockView({
             </div>
           </div>
           <div className="col-span-4 md:col-span-8 lg:col-span-4 xl:col-span-6 xl:col-start-7">
-            <SectionIntro id={id} eyebrow={EYEBROW[block.type]} title={block.title}>
+            <SectionIntro id={id} eyebrow={continued ? undefined : EYEBROW[block.type]} title={block.title}>
               <p>{block.intro}</p>
             </SectionIntro>
             <ProcessSteps className="mt-(--space-intro-content)" steps={block.steps} />
@@ -146,7 +149,7 @@ export async function ServiceBlockView({
       return (
         <Section id={id} tone={tone}>
           <div className={LEFT}>
-            <SectionIntro id={id} eyebrow={EYEBROW[block.type]} title={block.title} titleClassName="max-w-[14ch]">
+            <SectionIntro id={id} eyebrow={continued ? undefined : EYEBROW[block.type]} title={block.title} titleClassName="max-w-[14ch]">
               {block.intro ? <p>{block.intro}</p> : null}
             </SectionIntro>
           </div>
@@ -165,7 +168,7 @@ export async function ServiceBlockView({
       return (
         <Section id={id} tone={tone}>
           <div className="col-span-4 md:col-span-8 xl:col-span-8">
-            <SectionIntro id={id} eyebrow={EYEBROW[block.type]} title={block.title}>
+            <SectionIntro id={id} eyebrow={continued ? undefined : EYEBROW[block.type]} title={block.title}>
               {block.intro ? <p>{block.intro}</p> : null}
             </SectionIntro>
           </div>
@@ -179,7 +182,7 @@ export async function ServiceBlockView({
       return (
         <Section id={id} tone={tone}>
           <div className="col-span-4 md:col-span-8 xl:col-span-6">
-            <SectionIntro id={id} eyebrow={EYEBROW[block.type]} title={block.title} titleClassName="max-w-[16ch]">
+            <SectionIntro id={id} eyebrow={continued ? undefined : EYEBROW[block.type]} title={block.title} titleClassName="max-w-[16ch]">
               <p>{block.intro}</p>
             </SectionIntro>
             <ProcessSteps className="mt-(--space-intro-content)" steps={block.steps} />
@@ -203,7 +206,7 @@ export async function ServiceBlockView({
       return (
         <Section id={id} tone={tone}>
           <div className={LEFT}>
-            <SectionIntro id={id} eyebrow={EYEBROW[block.type]} title={block.title} titleClassName="max-w-[14ch]">
+            <SectionIntro id={id} eyebrow={continued ? undefined : EYEBROW[block.type]} title={block.title} titleClassName="max-w-[14ch]">
               {block.intro ? <p>{block.intro}</p> : null}
             </SectionIntro>
           </div>
@@ -227,7 +230,7 @@ export async function ServiceBlockView({
       return (
         <Section id={id} tone={tone}>
           <div className={LEFT}>
-            <SectionIntro id={id} eyebrow={EYEBROW[block.type]} title={block.title} titleClassName="max-w-[14ch]" />
+            <SectionIntro id={id} eyebrow={continued ? undefined : EYEBROW[block.type]} title={block.title} titleClassName="max-w-[14ch]" />
           </div>
           <div className={`${RIGHT} max-w-[720px]`}>
             <ReviewBlock review={review} />

@@ -142,17 +142,14 @@ export const en = {
     },
     process: {
       title: "What happens to your clothes after pickup?",
-      stages: [
-        { title: "Collected", copy: "We arrange pickup from your address in Uttara." },
-        { title: "Checked in", copy: "We count the order and connect the items to the right customer and order." },
-        { title: "Tagged", copy: "Items are tagged so they stay connected to the correct order." },
-        { title: "Checked before cleaning", copy: "We look over the garment condition and visible stains before cleaning starts." },
-        { title: "Cleaned & finished", copy: "The garment is cleaned for the booked service, then pressed or finished where needed." },
-        { title: "Checked before packing", copy: "Finished items are checked again before they are packed." },
-        { title: "Packed for return", copy: "Your finished order is organised and packed for delivery." },
-        { title: "Returned to you", copy: "Delivery is arranged back to your address." },
+      // Four steps (changed by the owner, 24 Oct 2026); the full journey lives on /how-it-works.
+      steps: [
+        { title: "Book your pickup", copy: "Choose your service, address and preferred pickup time." },
+        { title: "We check and tag everything", copy: "We inspect the items and connect them to your order before cleaning." },
+        { title: "We clean and quality-check", copy: "Items are cleaned, finished and checked before packing." },
+        { title: "We pack and return your order", copy: "Everything is packed and returned to your address." },
       ],
-      movements: ["Pickup", "Intake", "Cleaning & finishing", "QC & return"],
+      journeyLink: "See the full garment journey",
       delicateTitle: "Some garments need a closer look.",
       delicate2: "Some stains cannot be fully removed. If something needs extra attention, we'll explain the options first.",
       seeDryCleaning: "See Dry Cleaning",
@@ -259,7 +256,6 @@ export const en = {
     onPlatform: "On {platform}",
   },
   locationBlock: {
-    plate: "Velto outlet · Uttara Sector",
     ratingTerm: "Google rating",
     reviewsCount: "{count} Google reviews",
     ratingSpoken: "{rating} out of 5 from {count} Google reviews",

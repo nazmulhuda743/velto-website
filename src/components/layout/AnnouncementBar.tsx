@@ -49,12 +49,12 @@ export async function AnnouncementBar() {
   if (announcement.still) {
     return (
       <div data-promo-bar className="bg-navy text-white">
-        <div className="container-page flex min-h-10 items-center justify-center py-2 text-center t-small">
+        <div className="container-page flex min-h-10 items-center justify-center text-center t-small">
           {wrap(
             <span className="font-medium" lang={lang}>
               {messages.join(" · ")}
             </span>,
-            href ? "underline decoration-cyan underline-offset-4" : "",
+            href ? "inline-flex min-h-10 items-center py-2 underline decoration-cyan underline-offset-4" : "py-2",
           )}
         </div>
       </div>
@@ -78,16 +78,17 @@ export async function AnnouncementBar() {
 
   return (
     <TickerControl label={t.barLabel} pauseLabel={t.pause} playLabel={t.play}>
-      <div className="promo-ticker-viewport min-h-10 flex-1 overflow-hidden py-2 t-small">
+      <div className="promo-ticker-viewport min-h-10 flex-1 overflow-hidden t-small">
+        {/* The link fills the bar's full height, so it is a comfortable tap target (not just the text line). */}
         {wrap(
           <div className="promo-ticker-track" style={{ ["--ticker-duration" as string]: `${seconds}s` }}>
             {group(false)}
             {group(true)}
           </div>,
-          "block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan",
+          "flex min-h-10 items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan",
         )}
         {/* Reduced motion: the same messages as one still, wrapping line. */}
-        <div className="promo-ticker-still container-page text-center">
+        <div className="promo-ticker-still container-page py-2 text-center">
           {wrap(
             <span className="font-medium" lang={lang}>
               {messages.join(" · ")}

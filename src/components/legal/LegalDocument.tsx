@@ -17,10 +17,13 @@ export function LegalDocument({
   intro,
   summary,
   sections,
+  updated = LEGAL.updated,
   children,
 }: {
   label: string;
   title: string;
+  /** "Last updated" date; defaults to the shared LEGAL.updated. */
+  updated?: string;
   intro: ReactNode;
   /** "The short version": the handful of points most people need. */
   summary: ReactNode[];
@@ -30,34 +33,42 @@ export function LegalDocument({
 }) {
   return (
     <article className="container-page py-16 md:py-24">
-      <div className="max-w-3xl">
-        <p className="t-label uppercase text-action">{label}</p>
-        <h1 className="mt-3 t-h1 text-navy">{title}</h1>
-        <p className="mt-4 t-small text-secondary">Last updated: {LEGAL.updated}</p>
-        <div className="mt-6 space-y-4 t-body-lg text-body">{intro}</div>
+      {/* Desktop: the text keeps its measure and the contents sit in the free right column, always in reach. */}
+      <div className="xl:grid xl:grid-cols-12 xl:gap-x-8">
+        <div className="max-w-3xl xl:col-span-8 xl:col-start-1 xl:row-start-1">
+          <p className="t-label uppercase text-action">{label}</p>
+          <h1 className="mt-3 t-h1 text-navy">{title}</h1>
+          <p className="mt-4 t-small text-secondary">Last updated: {updated}</p>
+          <div className="mt-6 space-y-4 t-body-lg text-body">{intro}</div>
 
-        <section aria-labelledby="summary-title" className="mt-10 rounded-md border border-line bg-soft p-5 md:p-7">
-          <h2 id="summary-title" className="t-h4 text-navy">
-            The short version
-          </h2>
-          <ul className="mt-4 space-y-2.5 text-body">
-            {summary.map((point, i) => (
-              <li key={i} className="flex gap-3">
-                <span aria-hidden="true" className="mt-[11px] h-px w-3 shrink-0 bg-action" />
-                <span>{point}</span>
-              </li>
-            ))}
-          </ul>
-          {children ? <div className="mt-5">{children}</div> : null}
-        </section>
+          <section aria-labelledby="summary-title" className="mt-10 rounded-md border border-line bg-soft p-5 md:p-7">
+            <h2 id="summary-title" className="t-h4 text-navy">
+              The short version
+            </h2>
+            <ul className="mt-4 space-y-2.5 text-body">
+              {summary.map((point, i) => (
+                <li key={i} className="flex gap-3">
+                  <span aria-hidden="true" className="mt-[11px] h-px w-3 shrink-0 bg-action" />
+                  <span>{point}</span>
+                </li>
+              ))}
+            </ul>
+            {children ? <div className="mt-5">{children}</div> : null}
+          </section>
+        </div>
 
-        <nav aria-labelledby="contents-title" className="mt-12">
+        <nav
+          id="contents"
+          aria-labelledby="contents-title"
+          className="mt-12 max-w-3xl scroll-mt-24 xl:sticky xl:top-[calc(var(--header-h)+var(--promo-h,0px)+24px)] xl:col-span-3 xl:col-start-10 xl:row-span-2 xl:row-start-1 xl:mt-0 xl:max-h-[calc(100vh-var(--header-h)-var(--promo-h,0px)-48px)] xl:self-start xl:overflow-y-auto"
+        >
           <h2 id="contents-title" className="t-label uppercase text-navy">
             Contents
           </h2>
-          <ol className="mt-4 grid gap-x-8 border-t border-line pt-3 md:grid-cols-2">
+          {/* Numbered down each column (not across rows), one column beside the text on desktop. */}
+          <ol className="mt-4 gap-x-8 border-t border-line pt-3 md:columns-2 xl:columns-1">
             {sections.map((s, i) => (
-              <li key={s.id}>
+              <li key={s.id} className="break-inside-avoid">
                 <a href={`#${s.id}`} className="flex gap-3 py-1.5 t-small text-body hover:text-navy">
                   <span className="w-6 shrink-0 tabular-nums text-secondary">{i + 1}.</span>
                   <span className="underline decoration-line underline-offset-4 hover:decoration-navy">{s.title}</span>
@@ -67,16 +78,31 @@ export function LegalDocument({
           </ol>
         </nav>
 
-        <div className="mt-14 space-y-12 text-body [&_a]:font-medium [&_a]:text-navy [&_a]:underline [&_a]:underline-offset-4 [&_li]:pl-1 [&_ol]:list-decimal [&_ol]:space-y-2 [&_ol]:pl-5 [&_p+p]:mt-3 [&_p+ul]:mt-3 [&_ul+p]:mt-3 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-5">
-          {sections.map((s, i) => (
-            <section key={s.id} id={s.id} aria-labelledby={`${s.id}-title`} className="scroll-mt-24 border-t border-line pt-8">
-              <h2 id={`${s.id}-title`} className="t-h3 text-navy">
-                <span className="mr-3 tabular-nums text-action">{i + 1}.</span>
-                {s.title}
-              </h2>
-              <div className="mt-4">{s.body}</div>
-            </section>
-          ))}
+        <div className="max-w-3xl xl:col-span-8 xl:col-start-1 xl:row-start-2">
+          <div className="mt-14 space-y-12 text-body [&_a]:font-medium [&_a]:text-navy [&_a]:underline [&_a]:underline-offset-4 [&_li]:pl-1 [&_ol]:list-decimal [&_ol]:space-y-2 [&_ol]:pl-5 [&_p+p]:mt-3 [&_p+ul]:mt-3 [&_ul+p]:mt-3 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-5">
+            {sections.map((s, i) => (
+              <section key={s.id} id={s.id} aria-labelledby={`${s.id}-title`} className="scroll-mt-24 border-t border-line pt-8">
+                <h2 id={`${s.id}-title`} className="t-h3 text-navy">
+                  <span className="mr-3 tabular-nums text-action">{i + 1}.</span>
+                  {s.title}
+                </h2>
+                <div className="mt-4">{s.body}</div>
+              </section>
+            ))}
+          </div>
+          {/* Phone and tablet: a way back to the contents from anywhere in a long page (CSS only: it rides the
+              bottom of the screen while the sections are in view). Desktop has the contents beside the text. */}
+          <div className="pointer-events-none sticky bottom-[calc(16px+env(safe-area-inset-bottom))] mt-10 flex justify-end xl:hidden">
+            <a
+              href="#contents"
+              aria-label="Back to contents"
+              className="pointer-events-auto inline-flex size-12 items-center justify-center rounded-full border border-line-strong bg-white text-navy hover:border-navy"
+            >
+              <svg aria-hidden="true" viewBox="0 0 20 20" className="size-5">
+                <path d="M10 16V4M5 9l5-5 5 5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </a>
+          </div>
         </div>
       </div>
     </article>

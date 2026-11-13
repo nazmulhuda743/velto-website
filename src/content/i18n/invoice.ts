@@ -38,6 +38,16 @@ const en = {
   express: "Express service",
   discount: "Discount",
   otherCharges: "Other charges",
+  /** The garment condition report: the stains staff recorded at drop-off (website_invoice_condition.sql). */
+  condition: {
+    title: "Garment condition",
+    intro: "Before we started, our team checked every piece. These marks were found and photographed at drop-off.",
+    noPhoto: "Noted at the counter, no photo",
+    photoMissing: "Photo can't be shown right now",
+    more: "+{n} more",
+    stainType: "Stain: {type}",
+    promise: "We treat each mark with the safest method for the fabric. Some old stains may fade rather than disappear; where we must choose, we protect the garment.",
+  },
   paymentsTitle: "Payments",
   paidOn: "{amount} · {method} · {day}",
   /** Ops payment methods (payments_method_check); anything else is shown as it comes. */
@@ -95,6 +105,15 @@ const bn: InvoiceText = {
   express: "এক্সপ্রেস সার্ভিস",
   discount: "ছাড়",
   otherCharges: "অন্যান্য চার্জ",
+  condition: {
+    title: "কাপড়ের অবস্থা",
+    intro: "কাজ শুরুর আগে আমাদের টিম প্রতিটি কাপড় দেখে নিয়েছে। জমা দেওয়ার সময় এই দাগগুলো পাওয়া গেছে এবং ছবি তোলা হয়েছে।",
+    noPhoto: "কাউন্টারে লিখে রাখা, ছবি নেই",
+    photoMissing: "ছবিটি এখন দেখানো যাচ্ছে না",
+    more: "আরও {n}টি",
+    stainType: "দাগ: {type}",
+    promise: "প্রতিটি দাগে কাপড়ের জন্য সবচেয়ে নিরাপদ পদ্ধতি ব্যবহার করি। কিছু পুরনো দাগ পুরোপুরি না উঠে হালকা হতে পারে; বেছে নিতে হলে আমরা কাপড়টিকেই রক্ষা করি।",
+  },
   paymentsTitle: "পেমেন্ট",
   paidOn: "{amount} · {method} · {day}",
   methods: { Cash: "ক্যাশ", Bkash: "বিকাশ", Nagad: "নগদ", Card: "কার্ড", "Bank Transfer": "ব্যাংক ট্রান্সফার", COD: "ডেলিভারিতে ক্যাশ" },

@@ -299,7 +299,7 @@ export function BookingItems({
               onKeyDown={onKeyDown}
               aria-controls={`${id}-list`}
               aria-describedby={`${id}-status`}
-              className={`${control} h-[58px] w-full pl-12 pr-4 placeholder:text-secondary/80 md:h-14`}
+              className={`${control} h-[58px] w-full pl-12 pr-4 placeholder:text-muted md:h-14`}
             />
           </div>
           <p id={`${id}-status`} aria-live="polite" className="mt-1.5 min-h-5 t-small text-secondary">

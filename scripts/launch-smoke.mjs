@@ -86,6 +86,11 @@ assert.match(homeResponse.headers.get("permissions-policy") ?? "", /microphone=\
 
 const missing = await request("/__launch-audit-missing-page__");
 assert.equal(missing.status, 404, `missing route should be 404, got ${missing.status}`);
+// A missing top-level file skips the proxy; it must still be a 404, never a 500 (next.config rewrites).
+for (const file of ["/__launch-audit-missing__.html", "/__launch-audit-missing__.txt", "/__launch-audit-missing__.png"]) {
+  const response = await request(file);
+  assert.equal(response.status, 404, `missing file ${file} should be 404, got ${response.status}`);
+}
 
 const robotsResponse = await request("/robots.txt");
 assert.equal(robotsResponse.status, 200);

@@ -324,7 +324,7 @@ export function QuoteForm({
             type="button"
             onClick={() => fileRef.current?.click()}
             disabled={data.photos.length >= MAX_PHOTOS}
-            className="inline-flex h-12 items-center rounded-md border border-dashed border-line-strong bg-white px-5 font-semibold text-navy hover:border-navy disabled:text-disabled-text"
+            className="inline-flex h-12 items-center rounded-md border border-line-strong bg-white px-5 font-semibold text-navy hover:border-navy disabled:text-disabled-text"
           >
             {data.photos.length ? t.addMorePhotos : t.choosePhotos}
           </button>
