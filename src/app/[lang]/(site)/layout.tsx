@@ -6,6 +6,7 @@ import { Header } from "@/components/layout/Header";
 import { StickyTop } from "@/components/layout/StickyTop";
 import { TrackingScripts } from "@/components/layout/TrackingScripts";
 import { CampaignPopup } from "@/components/promo/CampaignPopup";
+import { ChatWidget } from "@/components/chat/ChatWidget";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Logo } from "@/components/ui/Logo";
 import { AppMode } from "@/components/pwa/AppMode";
@@ -38,6 +39,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       <Analytics />
       <ConsentManager />
       <CampaignPopup />
+      <ChatWidget />
       {/* The installed app only: its own tab bar, and website pages sent to the account. */}
       <AppMode />
     </>
