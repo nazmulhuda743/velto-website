@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "@/components/i18n/Link";
 import { OrderProgress } from "@/components/account/OrderProgress";
 import { StatusPill } from "@/components/account/OrderRow";
+import { ConditionReport } from "@/components/invoice/ConditionReport";
 import { DeliveredMoment } from "@/components/invoice/DeliveredMoment";
 import { PrintButton } from "@/components/invoice/PrintButton";
 import { WhatsAppButton } from "@/components/ui/Button";
@@ -12,8 +13,8 @@ import { LOCATIONS, WHATSAPP_URL } from "@/content/site";
 import { getCustomerSession, getPortalOrder } from "@/lib/customer/portal";
 import { fill, localDigits } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
-import { invoiceSums } from "@/lib/invoice";
-import { getInvoice, invoicesReady, type InvoiceView } from "@/lib/invoice-server";
+import { conditionMarks, invoiceSums } from "@/lib/invoice";
+import { getInvoice, invoicesReady, signConditionPhotos, type InvoiceView } from "@/lib/invoice-server";
 import { INVITE_ITEMS, inviteKind, nextService } from "@/lib/second-service";
 import { getServicePrices } from "@/lib/service-prices";
 
@@ -27,6 +28,9 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata(): Promise<Metadata> {
   return { title: invoiceText(await getLocale()).metaTitle, robots: { index: false, follow: false } };
 }
+
+/** The preview's one example photo (a site image, not a customer's). */
+const PREVIEW_PHOTO = "stains/preview/1.jpg";
 
 const PREVIEW: InvoiceView = {
   ok: true,
@@ -52,6 +56,10 @@ const PREVIEW: InvoiceView = {
     { item: "Blazer", service: "Dry Cleaning", quantity: 1, price: 250 },
   ],
   payments: [{ amount: 200, method: "Bkash", on: "2026-09-29" }],
+  condition: [
+    { item: "Blazer", type: "Oil", photos: [PREVIEW_PHOTO], more: 0 },
+    { item: "White shirt", type: "Ink", photos: [], more: 0 },
+  ],
 };
 
 /** `/i/preview0?state=first-dc` and `?state=iron-regular`: the delivered moment with example data. */
@@ -150,6 +158,8 @@ export default async function InvoicePage({ params, searchParams }: { params: Pr
   }
 
   const sums = invoiceSums(view.lines, view.total, view.express ? view.expressFee : 0);
+  const marks = conditionMarks(view.condition);
+  const photos = preview ? { [PREVIEW_PHOTO]: "/images/home/process-04-checked.jpg" } : await signConditionPhotos(marks);
   const cancelled = view.status === "Cancelled";
   // Already this customer's order in their account: offer to open it there. Signed out: offer the sign-in.
   const session = preview ? null : await getCustomerSession();
@@ -289,6 +299,8 @@ export default async function InvoicePage({ params, searchParams }: { params: Pr
           />
         </dl>
       </section>
+
+      <ConditionReport marks={marks} photos={photos} t={t.condition} locale={locale} />
 
       {view.payments.length ? (
         <section aria-labelledby="payments-title">
