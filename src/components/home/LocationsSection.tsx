@@ -8,36 +8,6 @@ import { getLocale, localLocation } from "@/lib/i18n/server";
 import { OutletMap } from "./OutletMap";
 import { SectionIntro } from "./SectionIntro";
 
-/**
- * Typographic stand-in for an outlet photo: the sector number set large.
- * `hero` fills an internal-page hero column; the default is a short block header.
- */
-export async function LocationPlate({ loc, size = "block" }: { loc: Location; size?: "block" | "hero" }) {
-  const plate = dictionary(await getLocale()).locationBlock.plate;
-  const hero = size === "hero";
-  return (
-    <div
-      aria-hidden="true"
-      className={`flex flex-col justify-between rounded-md border-t-2 border-navy bg-soft ${
-        hero
-          ? "aspect-[16/10] px-6 py-5 md:aspect-[4/5] md:px-8 md:py-7 xl:aspect-[4/3]"
-          : "h-[124px] px-5 py-4 md:aspect-[3/2] md:h-auto md:px-6 md:py-5"
-      }`}
-    >
-      <span className="t-label uppercase text-secondary">{plate}</span>
-      <span
-        className={`font-semibold leading-[0.85] tracking-[-0.03em] text-navy ${
-          hero ? "text-[120px] md:text-[160px] xl:text-[200px]" : "text-[56px] md:text-[88px] xl:text-[120px]"
-        }`}
-      >
-        {/* Western or Bangla digits, whichever the (localized) name uses. */}
-        {loc.name.replace(/[^0-9০-৯]/g, "")}
-      </span>
-      {hero ? <span className="t-small text-secondary">{loc.hours}</span> : null}
-    </div>
-  );
-}
-
 export async function LocationBlock({ loc: source }: { loc: Location }) {
   const locale = await getLocale();
   const t = dictionary(locale).locationBlock;
@@ -147,7 +117,7 @@ export async function LocationsSection() {
   const locations = await getLocations();
   const t = dictionary(await getLocale()).home.locations;
   return (
-    <section id="locations" aria-labelledby="locations-title" className="py-(--space-section)">
+    <section id="locations" aria-labelledby="locations-title" className="bg-soft py-(--space-section)">
       <div className="container-page">
         <SectionIntro id="locations-title" title={t.title}>
           <p className="[text-wrap:pretty]">{t.intro2}</p>

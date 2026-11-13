@@ -133,7 +133,7 @@ function CookieTable({ rows, caption }: { rows: Row[]; caption: string }) {
       <caption className="sr-only">{caption}</caption>
       <thead className="hidden md:table-header-group">
         <tr className="border-b border-navy">
-          <th scope="col" className="w-[220px] pb-3 pr-6 t-label uppercase text-navy">
+          <th scope="col" className="w-[260px] pb-3 pr-6 t-label uppercase text-navy">
             Name
           </th>
           <th scope="col" className="pb-3 t-label uppercase text-navy">
@@ -144,8 +144,14 @@ function CookieTable({ rows, caption }: { rows: Row[]; caption: string }) {
       <tbody className="border-t border-line md:border-t-0">
         {rows.map((r) => (
           <tr key={r.name} className="block border-b border-line py-4 md:table-row md:py-0">
-            <th scope="row" className="block pb-1 text-left font-semibold text-navy [overflow-wrap:anywhere] md:table-cell md:py-4 md:pr-6 md:align-top">
-              {r.name}
+            {/* One name per line, broken only when a single name can't fit (never mid-word otherwise). */}
+            <th scope="row" className="block pb-1 text-left font-semibold text-navy [overflow-wrap:break-word] md:table-cell md:py-4 md:pr-6 md:align-top">
+              {r.name.split(", ").map((n, i, all) => (
+                <span key={n} className="block">
+                  {n}
+                  {i < all.length - 1 ? "," : null}
+                </span>
+              ))}
             </th>
             <td className="block md:table-cell md:py-4 md:align-top">
               <p>{r.purpose}</p>

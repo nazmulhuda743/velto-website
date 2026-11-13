@@ -60,8 +60,9 @@ the newer record. Older docs keep their history and carry a note pointing here.
   - Terms decisions and retention periods.
   - Review counts, turnaround times, the Express fee, the weekly-pickup rules, the ৳60 charge and payment methods.
 - **Legal:**
-  - the Privacy and Cookie Policy drafts (photo upload, account sign-in, GreenWeb SMS, sign-in cookies);
-  - how long booking photos are kept. See `docs/legal/LEGAL-REVIEW.md` §3.
+  - the Privacy and Cookie Policy drafts (account sign-in, GreenWeb SMS, sign-in cookies); booking photos went
+    live in Privacy with #141 (13 Nov 2026);
+  - a clean-up period for booking photos that were never sent. See `docs/legal/LEGAL-REVIEW.md` §3.
 - **Photos:**
   - the licence and source of the 5 owner-supplied images;
   - a Sector 18 outlet photo;

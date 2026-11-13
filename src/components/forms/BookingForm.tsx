@@ -1,5 +1,6 @@
 "use client";
 
+import { keepTogether } from "@/lib/text/keep-together";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode } from "react";
 import { track } from "@/components/layout/Analytics";
 import type { NotifyText } from "@/content/i18n/notify";
@@ -120,7 +121,7 @@ type Status =
 /* ---------- presentational pieces (booking page only) ---------- */
 
 const inputBase =
-  "block w-full rounded-md border border-line-strong bg-white px-4 text-base text-navy placeholder:text-secondary/80 hover:border-navy/50 focus:border-blue focus:outline-1 focus:outline-offset-0 focus:outline-blue aria-[invalid=true]:border-error";
+  "block w-full rounded-md border border-line-strong bg-white px-4 text-base text-navy placeholder:text-muted hover:border-navy/50 focus:border-blue focus:outline-1 focus:outline-offset-0 focus:outline-blue aria-[invalid=true]:border-error";
 const inputHeight = "h-[54px] md:h-[52px]";
 
 function Group({
@@ -835,7 +836,7 @@ export function BookingForm({
               errorSlot={errors.slot}
             />
 
-            <Fold id="booking-extras-fold" label={t.extrasOpen} open={extrasOpen} onOpen={() => setExtrasOpen(true)}>
+            <Fold id="booking-extras-fold" label={keepTogether(t.extrasOpen)} open={extrasOpen} onOpen={() => setExtrasOpen(true)}>
               <div className="space-y-4">
                 <div>
                   <FieldLabel htmlFor="booking-backBy">

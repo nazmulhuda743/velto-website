@@ -42,3 +42,39 @@ test("message: one link only, the total and what's due, in both languages", () =
   const cancelled = inv.invoiceMessage({ name: "Rina", orderNumber: "VEL-01235", status: "Cancelled", total: 300, due: 300, link }, "en");
   assert.ok(!cancelled.includes("due"));
 });
+
+test("condition: marks are bounded, cleaned, and only stain photo paths survive", () => {
+  const marks = inv.conditionMarks([
+    { item: " White shirt ", type: "Oil", photos: ["stains/ab/1.jpg", "../x.jpg", "stains/ab/2.jpg", "stains/ab/3.jpg"], more: 2 },
+    { item: "Blazer", type: "", photos: ["receipts/r.jpg", "https://evil.example/x.jpg", "stains/../../secret"], more: 0 },
+    { item: "", type: "", photos: [], more: 0 },
+    null,
+    "nope",
+    { item: "Sari", type: "Ink", photos: "stains/a.jpg", more: -4 },
+  ]);
+  assert.deepEqual(marks, [
+    { item: "White shirt", type: "Oil", photos: ["stains/ab/1.jpg", "stains/ab/2.jpg"], more: 2 },
+    { item: "Blazer", type: "", photos: [], more: 0 },
+    { item: "Sari", type: "Ink", photos: [], more: 0 },
+  ]);
+  assert.deepEqual(inv.conditionMarks(undefined), []);
+  assert.deepEqual(inv.conditionMarks({}), []);
+  assert.equal(inv.conditionMarks(Array.from({ length: 40 }, () => ({ item: "Shirt", type: "Oil", photos: [], more: 0 }))).length, 30);
+});
+
+test("condition: each photo is signed once, and only order-photos stain links become URLs", () => {
+  const marks = [
+    { item: "A", type: "Oil", photos: ["stains/a.jpg", "stains/b.jpg"], more: 0 },
+    { item: "B", type: "Ink", photos: ["stains/a.jpg"], more: 0 },
+  ];
+  assert.deepEqual(inv.conditionPhotoPaths(marks), ["stains/a.jpg", "stains/b.jpg"]);
+  const origin = "https://abc.supabase.co";
+  assert.equal(
+    inv.signedPhotoUrl(origin + "/", "/object/sign/order-photos/stains/a.jpg?token=t"),
+    "https://abc.supabase.co/storage/v1/object/sign/order-photos/stains/a.jpg?token=t",
+  );
+  assert.equal(inv.signedPhotoUrl(origin, "/object/sign/website-media/a.jpg?token=t"), null);
+  assert.equal(inv.signedPhotoUrl(origin, "https://evil.example/object/sign/order-photos/stains/a.jpg"), null);
+  assert.equal(inv.signedPhotoUrl(origin, "/object/sign/order-photos/stains/../x?token=t"), null);
+  assert.equal(inv.signedPhotoUrl(origin, null), null);
+});

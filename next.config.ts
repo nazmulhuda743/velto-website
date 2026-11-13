@@ -103,6 +103,19 @@ const nextConfig: NextConfig = {
       moved("/bn/reset-password", "/bn/login"),
     ];
   },
+  /**
+   * A missing top-level file ("/nope.txt", "/old-page.html") skips the proxy (its matcher leaves
+   * file paths alone), so it would reach app/[lang] as if "nope.txt" were a language and fail
+   * with a 500. After real files and static routes are checked (robots.txt, sitemap.xml,
+   * llms.txt, public/), send it to the English site, where it gets the normal 404 page.
+   */
+  async rewrites() {
+    return {
+      beforeFiles: [],
+      afterFiles: [{ source: "/:file([^/]+\\.[a-zA-Z0-9]{2,5})", destination: "/en/:file" }],
+      fallback: [],
+    };
+  },
   async headers() {
     return [
       {

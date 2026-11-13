@@ -15,7 +15,6 @@ import { IMAGES } from "@/content/mock";
 import { FREE_DELIVERY_THRESHOLD, LOCATIONS, WHATSAPP_URL, bookHref } from "@/content/site";
 import { pageMetadata } from "@/lib/seo/page-metadata";
 import { getLocations, resolveImage } from "@/lib/site-content";
-import { LocationPlate } from "@/components/home/LocationsSection";
 import { dictionary } from "@/content/i18n";
 import { pageText } from "@/content/i18n/pages";
 import { fill, localDigits } from "@/lib/i18n/config";
@@ -60,9 +59,9 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
         // Search intent is "laundry / dry cleaning in Uttara Sector N"; the outlet name stays in the label.
         title={f(t.title, { name: loc.name })}
         highlight={f(t.highlight, { name: loc.name })}
-        // Real outlet: never stock. Show the photo only once a verified Velto one is uploaded.
+        // Real outlet: never stock. Show the photo only once a verified Velto one is uploaded; until
+        // then the hero is text only (owner, 24 Oct 2026: no large image area without a real photo).
         image={outletPhoto.src ? outletPhoto : undefined}
-        visual={<LocationPlate loc={loc} size="hero" />}
         eyebrow={f(t.eyebrow, { name: loc.name })}
         aside={
           <>

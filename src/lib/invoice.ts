@@ -33,6 +33,40 @@ export function invoiceSums(lines: InvoiceLineIn[], total: number, expressFee: n
   return { lines: out, subtotal, express, adjustment };
 }
 
+/** One stain staff recorded at drop-off (website_invoice_condition.sql): up to 2 photo paths, `more` not listed. */
+export type ConditionMarkIn = { item: string; type: string; photos: string[]; more: number };
+
+/** The only photo paths the page signs: stain photos in the order-photos bucket, nothing that climbs out of it. */
+export const CONDITION_PHOTO = /^stains\/[A-Za-z0-9_.-]+(\/[A-Za-z0-9_.-]+)*$/;
+const safePhoto = (p: unknown): p is string => typeof p === "string" && p.length <= 200 && CONDITION_PHOTO.test(p) && !p.includes("..");
+
+/** The marks as the page shows them: bounded, cleaned, every photo path safe to sign. Anything malformed is dropped. */
+export function conditionMarks(raw: unknown): ConditionMarkIn[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.slice(0, 30).flatMap((m): ConditionMarkIn[] => {
+    if (!m || typeof m !== "object") return [];
+    const r = m as Record<string, unknown>;
+    const item = typeof r.item === "string" ? r.item.trim().slice(0, 80) : "";
+    const type = typeof r.type === "string" ? r.type.trim().slice(0, 60) : "";
+    if (!item && !type) return [];
+    const photos = Array.isArray(r.photos) ? r.photos.filter(safePhoto).slice(0, 2) : [];
+    const more = typeof r.more === "number" && Number.isFinite(r.more) ? Math.max(0, Math.min(99, Math.floor(r.more))) : 0;
+    return [{ item, type, photos, more }];
+  });
+}
+
+/** Every photo path to sign, once each. */
+export const conditionPhotoPaths = (marks: ConditionMarkIn[]) => [...new Set(marks.flatMap((m) => m.photos))];
+
+/**
+ * Storage's answer for one signed path (`/object/sign/order-photos/...?token=...`) as a full URL on the project,
+ * or null for anything else (an error row, another bucket, an absolute URL).
+ */
+export function signedPhotoUrl(origin: string, signed: unknown): string | null {
+  if (typeof signed !== "string" || !signed.startsWith("/object/sign/order-photos/stains/") || signed.includes("..")) return null;
+  return `${origin.replace(/\/+$/, "")}/storage/v1${signed}`;
+}
+
 /** Invoice codes, as the database makes them (website_invoice_code). */
 export const INVOICE_CODE = /^[A-Za-z0-9_-]{8}$/;
 
