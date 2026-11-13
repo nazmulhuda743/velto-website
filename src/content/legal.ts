@@ -18,6 +18,6 @@ export const LEGAL = {
   whatsappDisplay: "+880 1605-162788",
   /** Date shown as "Last updated" on Terms and Cookies (and Privacy unless it has its own). */
   updated: "1 October 2026",
-  /** Privacy's own "Last updated": booking photos and invoice condition photos added. */
+  /** Privacy's own "Last updated": booking photos, invoice condition photos and the website chat added. */
   privacyUpdated: "13 November 2026",
 };
