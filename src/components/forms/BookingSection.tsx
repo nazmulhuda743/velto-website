@@ -12,6 +12,7 @@ import { getServicePrices } from "@/lib/service-prices";
 import { getSiteContent } from "@/lib/site-content";
 import { getGoal } from "@/lib/customer/portal";
 import { usableCoupon } from "@/lib/customer/goal";
+import { bookingCatalogueNames } from "@/lib/booking-items";
 import { keepBanglaSuffixes } from "@/lib/i18n/config";
 import { repeatItemsFor } from "@/lib/booking-repeat";
 import { firstWebsiteBooking } from "@/lib/first-order-lookup";
@@ -19,8 +20,6 @@ import { getItemPairs, getUsualItems } from "@/lib/upsell-data";
 import { notifyText } from "@/content/i18n/notify";
 import type { AppBase } from "@/lib/app-routes";
 
-/** Quick picks on /book: the everyday items customers send most, exactly as the Ops price list names them. */
-const POPULAR_ITEMS = ["Shirt", "Pant", "T-Shirt", "Panjabi", "Kamiz", "Salwar", "Sari (Cotton)", "Jeans", "Blazer", "Bed Sheet (Medium)"];
 
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
@@ -44,8 +43,14 @@ export async function BookingSection({ params, base = "/account" }: { params: Re
   // Smart add-ons: this customer's regular items and what customers send together, priced from the list.
   const usual = account?.link.status === "linked" ? await getUsualItems() : [];
   const hintNames = [...usual.map((u) => u.item), ...pairs.map((p) => p.alsoItem)].filter((n) => /^[A-Za-z0-9 ().,/&+'-]{1,64}$/.test(n));
-  // The price lookup takes at most 40 names (more would fail the whole lookup).
-  const popular = await getServicePrices([...new Set([...POPULAR_ITEMS, ...hintNames])].slice(0, 40));
+  // Each service's items on /book (BOOKING_ITEMS_BY_SERVICE) and the add-on hints, priced from the
+  // Ops list. One lookup takes at most 40 names (more would fail the whole lookup), so two.
+  const catalogue = bookingCatalogueNames();
+  const hintsOnly = [...new Set(hintNames)].filter((n) => !catalogue.includes(n)).slice(0, 40);
+  const [listed, hinted] = await Promise.all([getServicePrices(catalogue.slice(0, 40)), hintsOnly.length ? getServicePrices(hintsOnly) : Promise.resolve(null)]);
+  const popularItems = [...(listed.state === "live" ? listed.items : []), ...(hinted?.state === "live" ? hinted.items : [])].filter(
+    (p, i, all) => all.findIndex((x) => x.slug === p.slug) === i,
+  );
   // A monthly-goal reward the customer holds today: shown in the summary, applied by Velto at confirmation.
   const goal = account && settings ? await (async () => {
     const { loyalty } = await getSiteContent();
@@ -119,7 +124,7 @@ export async function BookingSection({ params, base = "/account" }: { params: Re
         </>
       }
       initialService={service}
-      popularItems={popular.state === "live" ? popular.items : []}
+      popularItems={popularItems}
       upsellHints={{ usual, pairs }}
       repeatItems={repeatItems}
       pickupChargeMinor={pickupChargeMinor}

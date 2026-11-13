@@ -7,9 +7,12 @@ import type { NotifyText } from "@/content/i18n/notify";
 import { FREE_DELIVERY_THRESHOLD } from "@/content/site";
 import {
   composeBookingNotes,
+  fromPrice,
   GARMENT_SERVICES,
   isGarmentService,
+  MAX_BOOKING_ITEMS,
   MAX_BOOKING_NOTES,
+  MIXED_ITEM,
   NOTE_EXTRAS_RESERVE,
   NOTE_PHOTO_RESERVE,
   type GarmentService,
@@ -18,7 +21,8 @@ import {
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import { fill, format, localDigits, type Locale } from "@/lib/i18n/config";
 import type { UpsellHints } from "@/lib/booking-upsell";
-import { BookingItems, repeatLine, type ItemLine, type PriceItem } from "./BookingItems";
+import { money, repeatLine, type ItemLine, type PriceItem } from "./BookingItems";
+import { ServiceItems } from "./ServiceItems";
 
 /** One line of an earlier order, as the book page reads it on the server. */
 export type RepeatItem = { item: string; service: ItemService | ""; quantity: number; listed?: PriceItem };
@@ -60,10 +64,11 @@ import { MobileTotalBar, OrderSummary } from "./OrderSummary";
 import { BookingSuccess, WhatsAppFallback } from "./BookingSuccess";
 
 /**
- * Book a Pickup, quick first: what we're picking up (a line of text and/or service chips), your
- * details (with sector and address), then the pickup window, and Book. Everything else stays
- * folded until the customer wants it: items with prices (and the order summary with the ৳499
- * free-delivery nudge), a return date, instructions and photos.
+ * Book a Pickup, in the order a customer thinks: which service, then what we're picking up for it
+ * (each service's items with prices and a + / − count, optional: Velto counts at pickup, plus a
+ * line in their own words), your details (with sector and address), then the pickup window, and
+ * Book. The order summary carries the ৳499 free-delivery nudge; a return date, instructions and
+ * photos stay folded until wanted.
  *
  * Pickup windows come from the Velto Scheduling Engine for the customer's sector: only windows
  * with room can be chosen, and Book reserves the window in the same transaction that creates the
@@ -180,15 +185,19 @@ function ErrorText({ id, children }: { id: string; children?: string }) {
 }
 
 /**
- * Service chips, the first thing under "What are we picking up?": the three garment services (any
- * mix) and one household service (curtains, carpets or bedding). A service page preselects its own.
+ * Step 1: the service cards. The three garment services (any mix) and one household service
+ * (curtains, carpets or bedding), each with a line about it and its lowest price from the Ops list
+ * ("From ৳15"), so the price question is answered before the form starts. A service page
+ * preselects its own.
  */
-function ServiceChips({
+function ServiceCards({
   t,
   services,
   household,
   onServices,
   onHousehold,
+  popular,
+  locale,
   describedBy,
 }: {
   t: Text;
@@ -196,40 +205,49 @@ function ServiceChips({
   household: string | null;
   onServices: (v: GarmentService[]) => void;
   onHousehold: (v: string | null) => void;
+  popular: PriceItem[];
+  locale: Locale;
   describedBy?: string;
 }) {
-  // `relative` keeps each visually hidden checkbox inside its chip, so an error-summary link lands on it.
-  const chip = (checked: boolean) =>
-    `relative inline-flex min-h-11 cursor-pointer items-center rounded-full border px-4 text-[15px] transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-blue ${
-      checked ? "border-blue bg-[#f0f7fc] font-semibold text-navy" : "border-line-strong bg-white text-navy hover:border-navy/50"
-    }`;
+  const card = (slug: ItemService, checked: boolean, onToggle: () => void) => {
+    const from = fromPrice(slug, popular);
+    return (
+      <label
+        key={slug}
+        className={`relative flex min-h-[76px] cursor-pointer items-start gap-3 rounded-lg border p-3.5 transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-blue ${
+          checked ? "border-blue bg-[#f0f7fc]" : "border-line-strong bg-white hover:border-navy/50"
+        }`}
+        data-service-card={slug}
+      >
+        <input id={`booking-service-${slug}`} type="checkbox" className="sr-only" checked={checked} onChange={onToggle} />
+        <span
+          aria-hidden="true"
+          className={`mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded border text-[13px] font-bold ${checked ? "border-blue bg-blue text-white" : "border-line-strong bg-white"}`}
+        >
+          {checked ? "✓" : ""}
+        </span>
+        <span className="min-w-0">
+          <span className="block font-semibold text-navy">{t.services[slug]}</span>
+          {t.serviceBlurbs[slug] ? <span className="mt-0.5 block t-small text-secondary">{t.serviceBlurbs[slug]}</span> : null}
+          {from ? (
+            <span className="mt-1 block t-small font-semibold tabular-nums text-action">
+              {fill(t.fromPrice, { amount: money(from.amountMinor, locale) }, locale)}
+              {from.unitLabel ? ` ${from.unitLabel}` : ""}
+            </span>
+          ) : null}
+        </span>
+      </label>
+    );
+  };
   return (
-    <div role="group" aria-labelledby="booking-services-label" aria-describedby={describedBy} className="flex flex-wrap gap-2" data-service-chips>
+    <div role="group" aria-labelledby="booking-services-label" aria-describedby={describedBy} className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3" data-service-cards>
       {GARMENT_SERVICES.map((slug) => {
         const checked = services.includes(slug);
-        return (
-          <label key={slug} className={chip(checked)}>
-            <input
-              id={`booking-service-${slug}`}
-              type="checkbox"
-              className="sr-only"
-              checked={checked}
-              onChange={() => onServices(checked ? services.filter((x) => x !== slug) : GARMENT_SERVICES.filter((x) => x === slug || services.includes(x)))}
-            />
-            {checked ? <span aria-hidden="true" className="mr-1.5 text-action">✓</span> : null}
-            {t.services[slug]}
-          </label>
-        );
+        return card(slug, checked, () => onServices(checked ? services.filter((x) => x !== slug) : GARMENT_SERVICES.filter((x) => x === slug || services.includes(x))));
       })}
       {HOUSEHOLD_SERVICES.map((slug) => {
         const checked = household === slug;
-        return (
-          <label key={slug} className={chip(checked)}>
-            <input id={`booking-service-${slug}`} type="checkbox" className="sr-only" checked={checked} onChange={() => onHousehold(checked ? null : slug)} />
-            {checked ? <span aria-hidden="true" className="mr-1.5 text-action">✓</span> : null}
-            {t.services[slug]}
-          </label>
-        );
+        return card(slug as ItemService, checked, () => onHousehold(checked ? null : slug));
       })}
     </div>
   );
@@ -436,11 +454,21 @@ export function BookingForm({
     photos: [],
   });
   const [errors, setErrors] = useState<Errors>({});
+  // Step 2 shows one items panel per chosen service; lines on no chosen service (an older draft's
+  // "not sure") are listed under them.
+  const chosen: ItemService[] = [...s.services, ...(isHousehold(s) && s.service ? [s.service as ItemService] : [])];
+  const unsure = s.items.filter((l) => !l.service || !chosen.includes(l.service));
+  const itemsShown = useRef(false);
+  /** The customer's first service choice opens step 2's items: measured once per visit. */
+  const itemsOpened = () => {
+    if (itemsShown.current || chosen.length) return;
+    itemsShown.current = true;
+    track("booking_items_open", { section: "booking-form" });
+  };
   /** Bumped when a window was taken just before Confirm: the picker reloads live availability. */
   const [refreshWindows, setRefreshWindows] = useState(0);
   const setPickup = useCallback((v: PickedWindow | null) => setS((prev) => (prev.pickup === v ? prev : { ...prev, pickup: v })), []);
-  // Items (with prices) and the extras stay folded until wanted; a repeat order opens its items.
-  const [itemsOpen, setItemsOpen] = useState(initialItems.length > 0);
+  // The extras stay folded until wanted.
   const [extrasOpen, setExtrasOpen] = useState(Boolean(presetNote));
   const [status, setStatus] = useState<Status>({ state: "idle" });
   const started = useRef(false);
@@ -478,7 +506,6 @@ export function BookingForm({
       phone: d.phone || prev.phone,
       notes: d.notes || prev.notes,
     }));
-    if (d.items.length) setItemsOpen(true);
     if (d.backBy || d.notes) setExtrasOpen(true);
   };
   const startOver = () => {
@@ -667,28 +694,80 @@ export function BookingForm({
               </div>
             </div>
           ) : null}
-          <Group step={1} title={t.whatTitle} stepOf={t.stepOf} locale={locale}>
-            {/* Services first; the customer's own words follow as an "anything else?" line. */}
-            <div>
-              <p id="booking-services-label" className="text-[15px] font-semibold text-navy">
-                {t.servicesTitle}
-              </p>
-              <div className="mt-2">
-                <ServiceChips
-                  t={t}
-                  services={s.services}
-                  household={isHousehold(s) ? s.service : null}
-                  onServices={(v) => update("services", v)}
-                  onHousehold={(v) => update("service", v)}
-                  describedBy={errors.what ? "booking-what-error" : undefined}
+          <Group step={1} title={t.servicesTitle} hint={t.servicesHint} stepOf={t.stepOf} locale={locale}>
+            <p id="booking-services-label" className="sr-only">
+              {t.servicesTitle}
+            </p>
+            <ServiceCards
+              t={t}
+              services={s.services}
+              household={isHousehold(s) ? s.service : null}
+              onServices={(v) => {
+                itemsOpened();
+                update("services", v);
+              }}
+              onHousehold={(v) => {
+                itemsOpened();
+                update("service", v);
+              }}
+              popular={popularItems}
+              locale={locale}
+              describedBy={errors.what ? "booking-what-error" : undefined}
+            />
+          </Group>
+
+          <Group step={2} id="booking-items" title={t.whatTitle} hint={chosen.length ? t.itemsHint : undefined} stepOf={t.stepOf} locale={locale}>
+            {chosen.length ? (
+              chosen.map((slug) => (
+                <ServiceItems
+                  key={slug}
+                  service={slug}
+                  label={t.services[slug]}
+                  t={t.items}
+                  fromText={t.fromPrice}
+                  searchText={t.searchIn}
+                  lines={s.items}
+                  onChange={(items) => update("items", items)}
+                  popular={popularItems}
+                  mixedLabel={t.mixedItem}
+                  locale={locale}
                 />
+              ))
+            ) : (
+              <p className="rounded-md border border-dashed border-line-strong px-4 py-3.5 t-small text-secondary" data-items-no-service>
+                {t.itemsNoService}
+              </p>
+            )}
+            {unsure.length ? (
+              <div data-items-unsure>
+                <p className="text-[15px] font-semibold text-navy">{t.notSureService}</p>
+                <ul className="mt-2 divide-y divide-line rounded-md border border-line bg-white">
+                  {unsure.map((l) => (
+                    <li key={l.id} className="flex items-center justify-between gap-3 px-3.5 py-2">
+                      <span className="min-w-0 break-words text-navy">
+                        {l.item === MIXED_ITEM ? t.mixedItem : l.item} <span className="tabular-nums text-secondary">× {localDigits(l.quantity, locale)}</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => update("items", s.items.filter((x) => x !== l))}
+                        className="-mr-2 inline-flex size-11 items-center justify-center rounded-md text-secondary hover:bg-soft hover:text-navy"
+                      >
+                        <svg viewBox="0 0 20 20" aria-hidden="true" className="size-4">
+                          <path d="M5 5l10 10M15 5L5 15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                        </svg>
+                        <span className="sr-only">{format(t.items.remove, { item: l.item === MIXED_ITEM ? t.mixedItem : l.item })}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            </div>
+            ) : null}
+            {s.items.length >= MAX_BOOKING_ITEMS ? <p className="t-small text-secondary">{t.items.full}</p> : null}
             <TextField
               id="booking-what"
               name="what"
               label={t.whatLabel}
-              optional={Boolean(isHousehold(s) || s.services.length || s.items.length)}
+              optional={Boolean(chosen.length || s.items.length)}
               optionalText={c.optional}
               helper={t.whatHelp}
               error={errors.what}
@@ -699,33 +778,9 @@ export function BookingForm({
               value={s.what}
               onChange={(e) => update("what", e.target.value)}
             />
-            <Fold
-              id="booking-items-fold"
-              label={t.itemsOpen}
-              open={itemsOpen}
-              onOpen={() => {
-                setItemsOpen(true);
-                track("booking_items_open", { section: "booking-form" });
-              }}
-            >
-              <p className="font-semibold text-navy">{t.itemsTitle}</p>
-              <p className="mt-1 t-small text-secondary">{t.itemsHint}</p>
-              <div className="mt-3">
-                <BookingItems
-                  t={t.items}
-                  services={t.services}
-                  mixedLabel={t.mixedItem}
-                  lines={s.items}
-                  onChange={(items) => update("items", items)}
-                  chosen={s.services}
-                  popular={popularItems}
-                  locale={locale}
-                />
-              </div>
-            </Fold>
           </Group>
 
-          <Group step={2} title={t.youTitle} stepOf={t.stepOf} locale={locale}>
+          <Group step={3} title={t.youTitle} stepOf={t.stepOf} locale={locale}>
             <TextField
               id="booking-name"
               name="name"
@@ -822,7 +877,7 @@ export function BookingForm({
             />
           </Group>
 
-          <Group step={3} id="booking-pickup" title={t.pickupTitle} stepOf={t.stepOf} locale={locale}>
+          <Group step={4} id="booking-pickup" title={t.pickupTitle} stepOf={t.stepOf} locale={locale}>
             <PickupWindows
               sector={s.sector === OUTSIDE ? "" : s.sector}
               outside={s.sector === OUTSIDE}
@@ -903,6 +958,8 @@ export function BookingForm({
               popular={popularItems}
               hints={upsellHints}
               onAdd={(item, service, reason) => {
+                // An add-on for a service not chosen yet chooses it, so its panel shows the line.
+                if (isGarmentService(service) && !s.services.includes(service)) update("services", GARMENT_SERVICES.filter((g) => g === service || s.services.includes(g)));
                 const at = s.items.findIndex((l) => l.item === item.name && l.service === service);
                 update(
                   "items",
