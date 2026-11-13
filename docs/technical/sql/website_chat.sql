@@ -92,3 +92,31 @@ end;
 $$;
 revoke all on function public.website_chat_log_add(uuid, text, text, text, text, text) from public, anon, authenticated;
 grant execute on function public.website_chat_log_add(uuid, text, text, text, text, text) to service_role;
+
+-- Admin → Chat questions: the questions and answers of the last days, newest first.
+-- Service role only (the admin server); the browser never reads the log.
+create or replace function public.website_chat_admin_list(p_days integer, p_limit integer)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'conversation', x.conversation_id,
+    'lang', x.lang,
+    'page', x.page,
+    'question', x.question,
+    'answer', x.answer,
+    'outcome', x.outcome,
+    'at', x.created_at
+  ) order by x.created_at desc), '[]'::jsonb)
+  from (
+    select * from public.website_chat_log
+    where created_at > now() - make_interval(days => least(greatest(coalesce(p_days, 7), 1), 90))
+    order by created_at desc
+    limit least(greatest(coalesce(p_limit, 500), 1), 2000)
+  ) x;
+$$;
+revoke all on function public.website_chat_admin_list(integer, integer) from public, anon, authenticated;
+grant execute on function public.website_chat_admin_list(integer, integer) to service_role;
