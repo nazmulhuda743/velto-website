@@ -117,7 +117,7 @@ export const pagesEn = {
     chooseEyebrow: "All services",
     chooseTitle: "Start with what you're sending.",
     groups: ["Clothes", "Curtains, carpets and bedding", "Timing"],
-    compareTitle: "Wash & Iron, Ironing or Dry Cleaning?",
+    compareTitle: "Wash & Iron, Dry Cleaning or Ironing?",
     compareIntro: "The three clothing services, side by side.",
     pricingEyebrow: "Pricing",
     pricingTitle: "How each service is priced",
@@ -159,7 +159,7 @@ export const pagesEn = {
     mayTakeLonger: "Some garments and household items may take longer.",
     knowTitle: "Know what you're sending?",
     knowBody: "Book the pickup now. We call or WhatsApp to confirm the time, and can go through prices then.",
-    compareTitle: "Dry Cleaning, Wash & Iron or Ironing?",
+    compareTitle: "Wash & Iron, Dry Cleaning or Ironing?",
     compareIntro:
       "Many items have a price for more than one service. This is what each one covers, so you can pick the right one.",
     householdEyebrow: "Household care",

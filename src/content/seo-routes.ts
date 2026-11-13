@@ -44,7 +44,7 @@ export const SEO_ROUTES: SeoRoute[] = [
     group: "Main",
     title: "Laundry & Dry Cleaning Prices in Uttara | Velto",
     description:
-      "Search Velto's current price list for dry cleaning, Wash & Iron and ironing in Uttara: shirts, blazers, saris and more. Free pickup and delivery on ৳499+.",
+      "Search Velto's current price list for Wash & Iron, dry cleaning and ironing in Uttara: shirts, blazers, saris and more. Free pickup and delivery on ৳499+.",
   },
   {
     path: "/how-it-works",
