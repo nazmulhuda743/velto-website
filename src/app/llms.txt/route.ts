@@ -28,6 +28,7 @@ export function GET() {
     `- [Request a quote](${absoluteUrl("/quote")}): for curtains, carpets, blankets and comforters.`,
     `- [WhatsApp Velto](${absoluteUrl("/go/whatsapp")})`,
     `- [Price list](${absoluteUrl("/pricing")})`,
+    `- [Blanket cleaning, 3 regular blankets ৳999](${absoluteUrl("/blanket-cleaning-uttara")}): pickup and delivery in Uttara Sectors 1 to 18, pay at delivery.`,
     `- [Track an order](${absoluteUrl("/track")})`,
     "",
     "## Services",

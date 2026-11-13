@@ -108,11 +108,21 @@ const nextConfig: NextConfig = {
    * file paths alone), so it would reach app/[lang] as if "nope.txt" were a language and fail
    * with a 500. After real files and static routes are checked (robots.txt, sitemap.xml,
    * llms.txt, public/), send it to the English site, where it gets the normal 404 page.
+   *
+   * Never for in-site navigation: on Vercel the homepage's navigation data is requested as
+   * "/index.rsc", which looks like a file. Rewriting it sent every link to "/" (the logo, the
+   * footer) to the 404 page. Those requests carry the `rsc` header; a visit to a file never does.
    */
   async rewrites() {
     return {
       beforeFiles: [],
-      afterFiles: [{ source: "/:file([^/]+\\.[a-zA-Z0-9]{2,5})", destination: "/en/:file" }],
+      afterFiles: [
+        {
+          source: "/:file([^/]+\\.[a-zA-Z0-9]{2,5})",
+          missing: [{ type: "header", key: "rsc" }],
+          destination: "/en/:file",
+        },
+      ],
       fallback: [],
     };
   },

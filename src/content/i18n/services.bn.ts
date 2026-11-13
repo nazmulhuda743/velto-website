@@ -293,7 +293,7 @@ export const SERVICE_PAGES_BN: ServiceContent[] = [
     ],
     image: IMAGES.household,
     primary: "quote",
-    secondary: "book",
+    secondary: "whatsapp",
     glance: {
       pricing: "প্রতি বর্গফুট, সাধারণ বা ভারী রেটে। পিকআপের আগে দাম নিশ্চিত করা হয়",
       turnaround: "প্রতিদিনের লন্ড্রির চেয়ে বেশি সময় লাগতে পারে। কোটেশনের সাথে জানানো হয়",
@@ -378,7 +378,7 @@ export const SERVICE_PAGES_BN: ServiceContent[] = [
     ],
     image: IMAGES.carpet,
     primary: "quote",
-    secondary: "book",
+    secondary: "whatsapp",
     glance: {
       pricing: "প্রতি বর্গফুট। পিকআপের আগে দাম নিশ্চিত করা হয়",
       turnaround: "প্রতিদিনের লন্ড্রির চেয়ে বেশি সময় লাগে। কোটেশনের সাথে জানানো হয়",
@@ -455,8 +455,8 @@ export const SERVICE_PAGES_BN: ServiceContent[] = [
       "প্রতিটি কম্বল, কমফোর্টার বা লেপের প্রতি পিসের দাম আছে, যা ঠিক হয় ধরন ও মাপ অনুযায়ী, তাই বুক করার আগেই খরচ দেখে নিতে পারেন। বিছানাপত্রে প্রতিদিনের লন্ড্রির চেয়ে বেশি সময় লাগে।",
     ],
     image: IMAGES.blankets,
-    primary: "book",
-    secondary: "quote",
+    primary: "quote",
+    secondary: "whatsapp",
     // TODO_VERIFY: planning range from spec §7, confirm against current operations.
     glance: { pricing: "প্রতি পিস, ধরন ও মাপ অনুযায়ী", turnaround: "মোটামুটি ৩–৪ দিন ধরে রাখুন", bestFor: "কম্বল, কমফোর্টার, লেপ বা কাঁথা।" },
     blocks: [

@@ -43,12 +43,14 @@ the newer record. Older docs keep their history and carry a note pointing here.
 
 - 3 leftover race-test bookings (`zzrace-*`) from the ৳999 tests. Delete them with the owner's OK.
 
-## Open pull requests (31 Oct 2026)
+## Pull requests (updated 13 Nov 2026)
+
+Merged since 31 Oct: #136 homepage premium pass, #128 ৳999 blanket page (live at `/blanket-cleaning-uttara`),
+#142 design polish, #147 booking step 1 (three services; curtains, carpets and bedding go to Request a Quote),
+#137 this status page, the 404 fix and the Privacy/Cookies additions, plus the website chat and self-hosted fonts.
 
 | PR | State |
 |---|---|
-| #136 Homepage premium pass | CI green, mergeable. Waiting for the owner's review. |
-| #128 ৳999 blanket page | Needs `main` merged in. Its SQL is already on production. |
 | #132 App step 7 | Superseded by #133. To be rebuilt as a small follow-up ("Part 2"). |
 | #125 Manager scheduler (Codex draft) | Conflicts. Blocked on a signed-in staging test. The owner decides. |
 | #25, #21 | Superseded by later work. Close. |
@@ -60,8 +62,8 @@ the newer record. Older docs keep their history and carry a note pointing here.
   - Terms decisions and retention periods.
   - Review counts, turnaround times, the Express fee, the weekly-pickup rules, the ৳60 charge and payment methods.
 - **Legal:**
-  - the Privacy and Cookie Policy drafts (account sign-in, GreenWeb SMS, sign-in cookies); booking photos went
-    live in Privacy with #141 (13 Nov 2026);
+  - Privacy: the website chat sends questions to an AI provider (Anthropic) that the "Who we share it with" list
+    doesn't name yet; booking photos (#141), the chat (#150) and account sign-in (#137) are described;
   - a clean-up period for booking photos that were never sent. See `docs/legal/LEGAL-REVIEW.md` §3.
 - **Photos:**
   - the licence and source of the 5 owner-supplied images;

@@ -16,9 +16,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /*
- * DRAFT (31 Oct 2026): account sign-in (SMS code, Google) and the GreenWeb and Google sign-in
- * providers, added from the code. Owner or lawyer approval needed before this goes live. Booking
- * photos were described separately in #141 (13 Nov 2026). See docs/legal/LEGAL-REVIEW.md.
+ * Account sign-in (SMS code, Google) and the GreenWeb and Google sign-in providers: drafted from the
+ * code on 31 Oct 2026, approved by the owner on 13 Nov 2026 (#137). A lawyer review before the
+ * public launch is still recommended (docs/legal/LEGAL-REVIEW.md).
  *
  * Describes the website's real data flows (src/components/forms, src/app/api,
  * src/lib/analytics, docs/technical/COMMAND-CENTER.md). If a flow changes,
@@ -77,6 +77,13 @@ const SECTIONS: LegalSection[] = [
           <strong>When you track an order:</strong> the order number and phone number you enter, which are checked against
           our order records to show you the status. The website does not store them. To prevent misuse, it keeps only
           one-way scrambled (hashed) versions for a short time, to limit repeated attempts.
+        </p>
+        <p>
+          <strong>When you use the chat:</strong> the questions you type and the answers shown, the page you were on and
+          a random chat code. The chat doesn&apos;t ask for your name or phone number, so please don&apos;t type personal
+          details there; for anything about your own order, message us on WhatsApp. To prevent misuse, the website keeps a
+          one-way scrambled (hashed) version of your connection&apos;s address for up to two days, to limit repeated
+          messages. Our team reads the questions to improve the answers.
         </p>
         <p>
           <strong>When we provide the service:</strong> your order details, such as the items received, their condition,
@@ -240,6 +247,10 @@ const SECTIONS: LegalSection[] = [
             <strong>Bookings, quotes, orders, photos added to them and related messages</strong>: for as long as we need them to provide the
             service, deal with questions or claims about an order, and meet our accounting and legal obligations. After
             that they are deleted or anonymised.
+          </li>
+          <li>
+            <strong>Chat questions and answers</strong> (a random chat code, no name or phone number unless you type one):
+            90 days.
           </li>
           <li>
             <strong>Website analytics events</strong> (random identifiers, no names or phone numbers): 90 days, after

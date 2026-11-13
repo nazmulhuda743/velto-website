@@ -2,19 +2,32 @@ import { pageMetadata } from "@/lib/seo/page-metadata";
 import { BookingSection } from "@/components/forms/BookingSection";
 import { Breadcrumbs } from "@/components/pages/Breadcrumbs";
 import { WhatsAppButton } from "@/components/ui/Button";
-import { WHATSAPP_URL } from "@/content/site";
+import { redirect } from "next/navigation";
+import { WHATSAPP_URL, quoteHref } from "@/content/site";
 import { dictionary } from "@/content/i18n";
 import { formText } from "@/content/i18n/forms";
 import { localDigits } from "@/lib/i18n/config";
-import { getLocale } from "@/lib/i18n/server";
+import { getLocale, localHref } from "@/lib/i18n/server";
 
 export const generateMetadata = () => pageMetadata("/book");
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
+/** Curtains, carpets and bedding are quoted, not booked here (owner, 13 Nov 2026): old links go to the quote form. */
+const QUOTED_SERVICES = ["curtain-cleaning", "carpet-cleaning", "blanket-comforter-cleaning"];
+const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
+
 /** Primary booking route (spec §22). The mobile conversion bar is intentionally absent here. */
 export default async function BookPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
+  const service = one(params.service);
+  if (service && QUOTED_SERVICES.includes(service)) {
+    // Keep every other parameter (campaign tags such as utm_* and fbclid) so attribution survives the hop.
+    const rest = new URLSearchParams();
+    for (const [k, v] of Object.entries(params)) if (k !== "service" && k !== "source" && v !== undefined) for (const x of [v].flat()) rest.append(k, x);
+    const extra = rest.toString();
+    redirect(await localHref(`${quoteHref(service, one(params.source) ?? "book-redirect")}${extra ? `&${extra}` : ""}`));
+  }
   const locale = await getLocale();
   const f = formText(locale);
   const t = f.bookPage;

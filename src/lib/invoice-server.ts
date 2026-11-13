@@ -6,8 +6,8 @@ import { isSupabaseConfigured, supabaseFetch, supabaseOrigin, supabaseRpc } from
 
 /**
  * Service-role calls for invoice links (docs/technical/sql/website_invoices.sql). The invoice
- * never carries the phone, the address or the full name; the admin list does, and stays in the
- * admin (it is read after requireSection).
+ * never carries the full phone or the house address (website_invoice_customer.sql: name, masked phone, area);
+ * the admin list does, and stays in the admin (it is read after requireSection).
  */
 
 export type InvoiceView =
@@ -37,6 +37,8 @@ export type InvoiceView =
       servicesEver?: ServiceMix | null;
       rating?: number | null;
       asked?: { kind: "routine" | "addon"; service: string; weekday: number | null; window: string | null }[];
+      /** website_invoice_customer.sql: full name, masked phone, area. Absent before that SQL runs. */
+      customer?: unknown;
       /** website_invoice_condition.sql: the stains recorded at drop-off. Absent before that SQL runs. */
       condition?: unknown;
     };

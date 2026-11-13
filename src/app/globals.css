@@ -822,3 +822,44 @@ html:has(dialog[data-today-sheet][open]) {
     display: none !important;
   }
 }
+
+/* ---------- Website chat (components/chat/ChatWidget.tsx) ---------- */
+/* New messages rise in; the typing dots bounce; the panel opens from the corner; the greeting
+   pops beside the button with two soft rings and a small wave of the icon. Off for reduced motion. */
+@keyframes chat-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes chat-dot {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.45; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+@keyframes chat-panel {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes chat-greet {
+  0% { opacity: 0; transform: translateY(10px) scale(0.92); }
+  70% { opacity: 1; transform: translateY(-2px) scale(1.01); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes chat-ring {
+  0% { box-shadow: 0 10px 28px -8px rgba(0, 49, 83, 0.55), 0 0 0 0 rgba(0, 120, 188, 0.45); }
+  100% { box-shadow: 0 10px 28px -8px rgba(0, 49, 83, 0.55), 0 0 0 16px rgba(0, 120, 188, 0); }
+}
+@keyframes chat-wave {
+  0%, 100% { transform: rotate(0); }
+  20% { transform: rotate(-14deg); }
+  40% { transform: rotate(10deg); }
+  60% { transform: rotate(-6deg); }
+  80% { transform: rotate(3deg); }
+}
+.chat-in { animation: chat-in 260ms cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.chat-dot { animation: chat-dot 1.1s ease-in-out infinite; }
+.chat-panel:not([hidden]) { animation: chat-panel 240ms cubic-bezier(0.2, 0.7, 0.2, 1) both; transform-origin: bottom right; }
+.chat-greet { animation: chat-greet 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both; transform-origin: bottom right; }
+.chat-ring { animation: chat-ring 1.4s ease-out 2; }
+.chat-ring .chat-wave { animation: chat-wave 1s ease-in-out 300ms 2; transform-origin: 50% 60%; }
+@media (prefers-reduced-motion: reduce) {
+  .chat-in, .chat-dot, .chat-panel:not([hidden]), .chat-greet, .chat-ring, .chat-ring .chat-wave { animation: none; }
+}

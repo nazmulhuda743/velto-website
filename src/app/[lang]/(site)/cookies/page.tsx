@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "@/components/i18n/Link";
 import { CookieSettingsButton } from "@/components/consent/CookieSettingsButton";
 import { LegalContact, LegalDocument, type LegalSection } from "@/components/legal/LegalDocument";
+import { LEGAL } from "@/content/legal";
 import { alternatesFor, shareCardMetadata } from "@/lib/seo/page-metadata";
 
 const baseMetadata: Metadata = {
@@ -16,7 +17,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 type Row = { name: string; purpose: string; duration: string; setBy: string };
 
-/* DRAFT (31 Oct 2026): the account and language rows need owner or lawyer approval with the Privacy draft.
+/* The account and language rows were approved by the owner on 13 Nov 2026 (#137).
  * Keep in step with src/lib/consent.ts, src/lib/analytics/client.ts, src/lib/attribution-client.ts, src/lib/booking-recovery.ts and src/lib/admin. */
 const ESSENTIAL: Row[] = [
   {
@@ -325,6 +326,7 @@ const SECTIONS: LegalSection[] = [
 export default function CookiesPage() {
   return (
     <LegalDocument
+      updated={LEGAL.cookiesUpdated}
       label="Legal"
       title="Cookie Policy"
       intro={

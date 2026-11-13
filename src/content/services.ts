@@ -379,7 +379,7 @@ export const SERVICE_PAGES: ServiceContent[] = [
     ],
     image: IMAGES.household,
     primary: "quote",
-    secondary: "book",
+    secondary: "whatsapp",
     glance: { pricing: "Per sq ft, normal or heavy rate. Amount confirmed before pickup", turnaround: "Can take longer than everyday laundry. Confirmed with your quote", bestFor: "Curtains from any room, normal or heavy." },
     blocks: [
       {
@@ -460,7 +460,7 @@ export const SERVICE_PAGES: ServiceContent[] = [
     ],
     image: IMAGES.carpet,
     primary: "quote",
-    secondary: "book",
+    secondary: "whatsapp",
     glance: { pricing: "Per sq ft. Amount confirmed before pickup", turnaround: "Takes longer than everyday laundry. Confirmed with your quote", bestFor: "A carpet, a doormat or a prayer mat." },
     blocks: [
       {
@@ -533,8 +533,8 @@ export const SERVICE_PAGES: ServiceContent[] = [
       "Each blanket, comforter or quilt has a price per piece, set by its type and size, so you can see the cost before you book. Bedding takes longer than everyday laundry.",
     ],
     image: IMAGES.blankets,
-    primary: "book",
-    secondary: "quote",
+    primary: "quote",
+    secondary: "whatsapp",
     // TODO_VERIFY: planning range from spec §7, confirm against current operations.
     glance: { pricing: "Per piece, by type and size", turnaround: "Plan for roughly 3–4 days", bestFor: "Blankets, comforters, quilts or katha." },
     blocks: [

@@ -67,6 +67,20 @@ export function signedPhotoUrl(origin: string, signed: unknown): string | null {
   return `${origin.replace(/\/+$/, "")}/storage/v1${signed}`;
 }
 
+/** Who the invoice is for (website_invoice_customer.sql): full name, masked phone, area. Never the full phone. */
+export type InvoiceCustomer = { name: string | null; phone: string | null; area: string | null };
+
+const MASKED_PHONE = /^01[3-9]\u2022{5}[0-9]{3}$/;
+const text = (v: unknown, max: number) => (typeof v === "string" && v.trim() ? v.trim().replace(/\s+/g, " ").slice(0, max) : null);
+
+/** The customer block as the page shows it, or null when there is nothing to show. A phone that is not masked is dropped. */
+export function invoiceCustomer(raw: unknown): InvoiceCustomer | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>;
+  const out = { name: text(r.name, 60), phone: typeof r.phone === "string" && MASKED_PHONE.test(r.phone) ? r.phone : null, area: text(r.area, 60) };
+  return out.name || out.phone || out.area ? out : null;
+}
+
 /** Invoice codes, as the database makes them (website_invoice_code). */
 export const INVOICE_CODE = /^[A-Za-z0-9_-]{8}$/;
 

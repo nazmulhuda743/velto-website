@@ -13,14 +13,14 @@ import { LOCATIONS, WHATSAPP_URL } from "@/content/site";
 import { getCustomerSession, getPortalOrder } from "@/lib/customer/portal";
 import { fill, localDigits } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
-import { conditionMarks, invoiceSums } from "@/lib/invoice";
+import { conditionMarks, invoiceCustomer, invoiceSums } from "@/lib/invoice";
 import { getInvoice, invoicesReady, signConditionPhotos, type InvoiceView } from "@/lib/invoice-server";
 import { INVITE_ITEMS, inviteKind, nextService } from "@/lib/second-service";
 import { getServicePrices } from "@/lib/service-prices";
 
 /**
- * The invoice link staff send on WhatsApp (docs/technical/INVOICES.md). Opens without sign-in, so
- * it shows the first name only: never the phone or the address. Signing in with the same number
+ * The invoice link staff send on WhatsApp and SMS (docs/technical/INVOICES.md). Opens without sign-in, so it
+ * shows the full name, the phone with its middle hidden and the area: never the full phone or the house address. Signing in with the same number
  * puts this and every other order in the customer's account. `/i/preview0` shows example data.
  */
 export const dynamic = "force-dynamic";
@@ -50,6 +50,7 @@ const PREVIEW: InvoiceView = {
   paymentStatus: "Partial",
   outlet: { code: "S11", name: "Velto Sector 11" },
   firstName: "Nazmul",
+  customer: { name: "Md. Nazmul Hasan", phone: "017\u2022\u2022\u2022\u2022\u2022123", area: "Uttara Sector 11" },
   lines: [
     { item: "Shirt", service: "Ironing", quantity: 8, price: 15 },
     { item: "Pant", service: "Ironing", quantity: 4, price: 15 },
@@ -158,6 +159,7 @@ export default async function InvoicePage({ params, searchParams }: { params: Pr
   }
 
   const sums = invoiceSums(view.lines, view.total, view.express ? view.expressFee : 0);
+  const customer = invoiceCustomer(view.customer);
   const marks = conditionMarks(view.condition);
   const photos = preview ? { [PREVIEW_PHOTO]: "/images/home/process-04-checked.jpg" } : await signConditionPhotos(marks);
   const cancelled = view.status === "Cancelled";
@@ -224,7 +226,7 @@ export default async function InvoicePage({ params, searchParams }: { params: Pr
             {/* Delivered: the thank-you above is the headline, so this one names the document. */}
             {cancelled ? o.cancelledTitle : delivered ? t.label : statusTitle(view.status)}
           </h1>
-          {view.firstName ? <p className="mt-2 t-small text-secondary">{fill(t.hi, { name: view.firstName }, locale)}</p> : null}
+          {view.firstName && !customer?.name ? <p className="mt-2 t-small text-secondary">{fill(t.hi, { name: view.firstName }, locale)}</p> : null}
         </div>
         <StatusPill status={view.status} />
       </header>
@@ -232,6 +234,18 @@ export default async function InvoicePage({ params, searchParams }: { params: Pr
       {!cancelled ? (
         <div className="print:hidden">
           <OrderProgress status={view.status} compact />
+        </div>
+      ) : null}
+
+      {customer ? (
+        <div data-invoice-customer>
+          <p className="t-caption uppercase tracking-[0.04em] text-secondary">{t.billedTo}</p>
+          {customer.name ? <p className="mt-0.5 font-semibold text-navy">{customer.name}</p> : null}
+          {customer.phone || customer.area ? (
+            <p className="t-small text-body">
+              {[customer.phone ? localDigits(customer.phone, locale) : null, customer.area].filter(Boolean).join(" · ")}
+            </p>
+          ) : null}
         </div>
       ) : null}
 
