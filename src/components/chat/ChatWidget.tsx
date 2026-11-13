@@ -200,6 +200,8 @@ export function ChatWidget() {
   const [hideLauncher, setHideLauncher] = useState(false);
   const [shown, setShown] = useState(false);
   const [greet, setGreet] = useState(false);
+  const [greetDue, setGreetDue] = useState(false);
+  const [modal, setModal] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -228,16 +230,26 @@ export function ChatWidget() {
   useEffect(() => {
     const a = setTimeout(() => setShown(true), 900);
     const b = setTimeout(() => {
-      if (!flag(GREETED)) {
-        flag(GREETED, true);
-        setGreet(true);
-      }
+      if (!flag(GREETED)) setGreetDue(true);
     }, GREET_AFTER_MS);
     return () => {
       clearTimeout(a);
       clearTimeout(b);
     };
   }, []);
+
+  // The greeting never competes with another popup (the offer, cookie settings): it waits until
+  // that is closed, then comes a moment later.
+  useEffect(() => {
+    if (!greetDue || modal || open) return;
+    const c = setTimeout(() => {
+      if (flag(GREETED)) return setGreetDue(false);
+      flag(GREETED, true);
+      setGreetDue(false);
+      setGreet(true);
+    }, 2500);
+    return () => clearTimeout(c);
+  }, [greetDue, modal, open]);
 
   useEffect(() => {
     if (conversation && !busy) save({ conversation, messages });
@@ -259,11 +271,12 @@ export function ChatWidget() {
         const active = document.activeElement;
         const typingInPage = !!active?.matches?.(TEXT_ENTRY) && !active.closest("[data-chat-panel]") && window.innerWidth < 768;
         setHideLauncher(!!document.querySelector("[data-consent-banner]") || typingInPage);
+        setModal(!!document.querySelector("dialog[open]"));
       });
     };
     measure();
     const mo = new MutationObserver(measure);
-    mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "style"] });
+    mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "style", "open"] });
     window.addEventListener("resize", measure);
     window.addEventListener("scroll", measure, { passive: true });
     document.addEventListener("focusin", measure);
@@ -417,7 +430,7 @@ export function ChatWidget() {
           launcherOff ? "pointer-events-none translate-y-4 opacity-0" : "translate-y-0 opacity-100"
         }`}
       >
-        {greet && !launcherOff ? (
+        {greet && !launcherOff && !modal ? (
           <div className="chat-greet relative max-w-[270px] rounded-2xl rounded-br-md bg-white py-3 pl-4 pr-9 text-[14.5px] leading-snug text-navy shadow-[0_12px_32px_-10px_rgba(0,49,83,0.35)] ring-1 ring-line" role="status">
             <button type="button" onClick={openChat} className="text-left" data-analytics="chat_open" data-placement="greeting">
               <span className="block font-semibold">{t.greetTitle}</span>
