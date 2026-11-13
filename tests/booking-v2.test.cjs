@@ -124,12 +124,13 @@ test("/book prices: garment services read their own column; household shows a 'f
   const row = (slug, amountMinor, unitLabel = null) => ({ slug, amountMinor, unitLabel });
   const shirt = { name: "Shirt", services: [row("wash-and-iron", 4000), row("ironing", 1500)] };
   const blanket = { name: "Blanket (Small)", services: [row("dry-cleaning", 30000), row("wash-and-iron", 25000)] };
-  const curtain = { name: "Curtain Normal (per sqft)", services: [row("dry-cleaning", 1200, "per sqft"), row("wash-and-iron", 1000, "per sqft")] };
+  const curtain = { name: "Curtain Normal (per sqft)", services: [row("dry-cleaning", 1200, "per sqft"), row("ironing", 500, "per sqft"), row("wash-and-iron", 1000, "per sqft")] };
   assert.deepEqual(itemPrice(shirt, "ironing"), { amountMinor: 1500, unitLabel: null, exact: true });
   assert.equal(itemPrice(shirt, "dry-cleaning"), null);
   assert.equal(offeredFor(shirt, "dry-cleaning"), false);
   assert.equal(offeredFor(blanket, "blanket-comforter-cleaning"), true);
   assert.deepEqual(itemPrice(blanket, "blanket-comforter-cleaning"), { amountMinor: 25000, unitLabel: null, exact: false });
+  // Curtain cleaning shows a cleaning rate, never the ironing-only one.
   assert.deepEqual(itemPrice(curtain, "curtain-cleaning"), { amountMinor: 1000, unitLabel: "per sqft", exact: false });
   assert.deepEqual(fromPrice("ironing", [shirt, blanket]), { amountMinor: 1500, unitLabel: null });
   assert.deepEqual(fromPrice("curtain-cleaning", [curtain]), { amountMinor: 1000, unitLabel: "per sqft" });

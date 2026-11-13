@@ -37,7 +37,7 @@ export const BOOKING_ITEMS_BY_SERVICE: Record<ItemService, readonly string[]> = 
   ironing: ["Shirt", "Pant", "T-Shirt", "Trouser", "Kamiz", "Salwar", "Panjabi", "Kurta", "Sari (Cotton)", "Blouse", "Dupatta", "Bed Sheet (Large)"],
   "curtain-cleaning": ["Curtain Normal (per sqft)", "Curtain Heavy (per sqft)"],
   "carpet-cleaning": ["Carpet (per sqft)", "Paposh (Medium)", "Mat (Medium)", "Prayer Mat"],
-  "blanket-comforter-cleaning": ["Blanket (Small)", "Blanket (Regular/Medium)", "Blanket (Large/Heavy)", "Comforter (Regular)", "Comforter (Heavy)", "Quilt (Normal)", "Katha (Medium)"],
+  "blanket-comforter-cleaning": ["Blanket (Small)", "Blanket (Regular/Medium)", "Blanket (Large/Heavy)", "Blanket (Baby)", "Quilt (Normal)", "Quilt (Synthetic)", "Katha (Medium)"],
 };
 
 /** Every item name the service panels offer, once each (one price lookup takes at most 40). */
@@ -58,15 +58,18 @@ export type ItemPrice = {
 /**
  * The price to show for an item under a service. Garment services read their own column. The
  * household services have no column of their own in Ops (bedding, mats and curtains are priced
- * under dry cleaning or wash & iron), so they show the lowest per-piece price as a "from" price,
- * else the lowest rate (per sq ft); their lines stay priced at pickup in the estimate.
+ * under dry cleaning or wash & iron), so they show the lowest cleaning price (never the ironing-only
+ * rate) as a "from" price, per piece first, else the lowest rate (per sq ft); their lines stay
+ * priced at pickup in the estimate.
  */
 export function itemPrice(item: ListedItem, service: ItemService): ItemPrice | null {
   if (isGarmentService(service)) {
     const s = item.services.find((x) => x.slug === service);
     return s && s.amountMinor !== null ? { amountMinor: s.amountMinor, unitLabel: s.unitLabel, exact: !s.unitLabel } : null;
   }
-  const known = item.services.filter((s): s is ListedItem["services"][number] & { amountMinor: number } => s.amountMinor !== null);
+  const known = item.services.filter(
+    (s): s is ListedItem["services"][number] & { amountMinor: number } => s.amountMinor !== null && (s.slug === "dry-cleaning" || s.slug === "wash-and-iron"),
+  );
   const pieces = known.filter((s) => !s.unitLabel);
   const pick = (list: typeof known) => list.reduce<(typeof known)[number] | null>((low, s) => (!low || s.amountMinor < low.amountMinor ? s : low), null);
   const low = pick(pieces) ?? pick(known);
