@@ -3,7 +3,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { after, NextResponse, type NextRequest } from "next/server";
 import { chatSystemPrompt, chatTurnNote } from "@/lib/chat/prompt";
 import { CHAT_LIMITS, cleanHistory, type ChatTurn } from "@/lib/chat/shared";
-import { LOOKUP_PRICES, lookupPrices, parsePriceInput } from "@/lib/chat/tools";
+import { planAnswer, priceReply, replyLang, type ChatLang } from "@/lib/chat/answers";
+import { findPrices, LOOKUP_PRICES, lookupPrices, parsePriceInput } from "@/lib/chat/tools";
 import { readBoundedJson } from "@/lib/security/json-request";
 import { isSupabaseConfigured, supabaseRpc } from "@/lib/supabase-server";
 
@@ -58,6 +59,22 @@ function log(conversation: string, lang: string, page: string, question: string,
   });
 }
 
+/** A question answered without AI: a price from the live list, or one of the fixed answers. */
+async function localAnswer(question: string, page: ChatLang): Promise<{ text: string; matched: boolean }> {
+  const lang = replyLang(question, page);
+  const plan = planAnswer(question, lang);
+  if (plan.kind !== "price") return { text: plan.text, matched: plan.kind !== "none" };
+  const rows = await findPrices(plan.items);
+  if (rows) return { text: priceReply(rows, plan.items, lang), matched: rows.length > 0 };
+  return {
+    text:
+      lang === "bn"
+        ? "এই মুহূর্তে প্রাইস লিস্ট দেখা যাচ্ছে না। [প্রাইস পেজে](/pricing) দেখুন, অথবা [WhatsApp-এ জিজ্ঞেস করুন](/go/whatsapp)।"
+        : "The price list can't be read right now. Try the [pricing page](/pricing), or [ask on WhatsApp](/go/whatsapp).",
+    matched: false,
+  };
+}
+
 const toMessages = (turns: ChatTurn[]): Anthropic.Beta.BetaMessageParam[] => turns.map((t) => ({ role: t.role, content: t.text }));
 
 /**
@@ -78,13 +95,18 @@ export async function POST(request: NextRequest) {
   }
   const question = turns[turns.length - 1].text;
 
-  if (!chatConfigured()) return NextResponse.json({ error: "unavailable" }, { status: 503, headers: NO_STORE });
-
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   const limit = await allowed(ip);
   if (!limit.allowed) {
     log(conversation, lang, page, question, "", "limited");
     return NextResponse.json({ error: "rate_limited" }, { status: 429, headers: { ...NO_STORE, "Retry-After": String(limit.retryAfter) } });
+  }
+
+  // No API key: the chat's own answers (fixed answers and the live price list), no AI.
+  if (!chatConfigured()) {
+    const local = await localAnswer(question, lang);
+    log(conversation, lang, page, question, local.text, local.matched ? "answered" : "failed");
+    return new Response(local.text, { headers: { ...NO_STORE, "Content-Type": "text/plain; charset=utf-8", "X-Content-Type-Options": "nosniff" } });
   }
 
   const system = chatSystemPrompt();
@@ -148,7 +170,7 @@ export async function POST(request: NextRequest) {
       }
       if (!answer.trim()) {
         outcome = "failed";
-        write(lang === "bn" ? "দুঃখিত, এই মুহূর্তে উত্তর দিতে পারছি না। [WhatsApp-এ জিজ্ঞেস করুন](/go/whatsapp), টিম উত্তর দেবে।" : "Sorry, I can't answer that right now. [Ask us on WhatsApp](/go/whatsapp) and the team will help.");
+        write((await localAnswer(question, lang)).text);
       }
       log(conversation, lang, page, question, answer, outcome);
       controller.close();

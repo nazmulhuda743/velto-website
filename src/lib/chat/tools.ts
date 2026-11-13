@@ -3,6 +3,7 @@ import "server-only";
 import { formatAmount } from "@/lib/format-price";
 import { getPricingSource, isPricingConfigured } from "@/lib/integrations/pricing/server";
 import type { PublicPriceItem } from "@/lib/integrations/pricing/types";
+import type { PriceRow } from "./answers";
 
 /** The one tool the chat has: the live public price list (the same view as /pricing). */
 export const LOOKUP_PRICES = {
@@ -55,5 +56,27 @@ export async function lookupPrices(names: string[]): Promise<{ text: string; isE
     return { text: out.join("\n"), isError: false };
   } catch {
     return { text: "The price list could not be read right now.", isError: true };
+  }
+}
+
+/** Price-list rows for the no-AI answers; null when the price list can't be read. */
+export async function findPrices(names: string[]): Promise<PriceRow[] | null> {
+  if (!isPricingConfigured()) return null;
+  try {
+    const source = getPricingSource();
+    const results = await Promise.all(names.map((query) => source.search({ query, limit: 3 })));
+    const seen = new Set<string>();
+    const rows: PriceRow[] = [];
+    for (const it of results.flat()) {
+      if (seen.has(it.slug)) continue;
+      seen.add(it.slug);
+      rows.push({
+        name: it.name,
+        services: it.services.map((s) => ({ slug: s.slug, name: s.name, price: s.amountMinor == null ? null : `${formatAmount(s.amountMinor)}${s.unitLabel ? ` ${s.unitLabel}` : ""}` })),
+      });
+    }
+    return rows;
+  } catch {
+    return null;
   }
 }
