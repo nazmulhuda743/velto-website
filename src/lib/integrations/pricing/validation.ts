@@ -1,5 +1,6 @@
 import { PricingUpstreamError } from "./errors";
 import type { PublicPriceItem, PublicPriceService } from "./types";
+import { inPriceOrder } from "../../price-order";
 
 const PUBLIC_ROW_KEYS = [
   "item_slug",
@@ -71,7 +72,8 @@ export function parsePublicPricingRows(payload: unknown): PublicPriceItem[] {
     item.services.push(service);
   }
 
-  return [...items.values()];
+  // Services in the price order (Wash & Iron, Dry Cleaning, Ironing), whatever order the rows came in.
+  return [...items.values()].map((item) => ({ ...item, services: inPriceOrder(item.services) }));
 }
 
 /** The words of a search, lower-case (at most 4, so the upstream filter stays small). */

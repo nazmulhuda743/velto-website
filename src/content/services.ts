@@ -386,7 +386,7 @@ export const SERVICE_PAGES: ServiceContent[] = [
         type: "prices",
         title: "Curtain rates",
         intro: "Rates per square foot of curtain, by service.",
-        columns: ["dry-cleaning", "wash-and-iron", "ironing"],
+        columns: ["wash-and-iron", "dry-cleaning", "ironing"],
         groups: [{ label: "Curtains", names: ["Curtain Normal (per sqft)", "Curtain Heavy (per sqft)"] }],
         note: "Not sure if yours count as normal or heavy? Send a photo on WhatsApp and Velto will tell you.",
       },
@@ -467,7 +467,7 @@ export const SERVICE_PAGES: ServiceContent[] = [
         type: "prices",
         title: "Carpet and mat prices",
         intro: "Carpets are priced per square foot. Doormats and mats are priced per piece.",
-        columns: ["dry-cleaning", "wash-and-iron"],
+        columns: ["wash-and-iron", "dry-cleaning"],
         groups: [
           { label: "Carpets", names: ["Carpet (per sqft)"] },
           { label: "Doormats and mats, per piece", names: ["Paposh (Small)", "Paposh (Medium)", "Paposh (Large)", "Mat (Medium)", "Prayer Mat", "Prayer Mat (Heavy)"] },
@@ -542,7 +542,7 @@ export const SERVICE_PAGES: ServiceContent[] = [
         type: "prices",
         title: "Bedding prices",
         intro: "Per piece, by type and size.",
-        columns: ["dry-cleaning", "wash-and-iron"],
+        columns: ["wash-and-iron", "dry-cleaning"],
         groups: [
           { label: "Blankets", names: ["Blanket (Small)", "Blanket (Regular/Medium)", "Blanket (Large/Heavy)", "Blanket (Baby)"] },
           { label: "Comforters", names: ["Comforter (Regular)", "Comforter (Heavy)"] },

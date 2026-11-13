@@ -6,11 +6,12 @@ import { localDigits } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
 import { formatAmount } from "@/lib/format-price";
 import { getServicePrices } from "@/lib/service-prices";
+import { PRICE_SERVICE_ORDER } from "@/lib/price-order";
 
 type CompareSlug = "wash-and-iron" | "ironing" | "dry-cleaning";
 
 /** Facts from spec §4 (turnaround) and §5 (workflows). */
-const SLUGS: CompareSlug[] = ["wash-and-iron", "ironing", "dry-cleaning"];
+const SLUGS: readonly CompareSlug[] = PRICE_SERVICE_ORDER;
 
 /** The same shirt across the three services, from the live price list. */
 async function shirtPrices(): Promise<Partial<Record<CompareSlug, string>>> {

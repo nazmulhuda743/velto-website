@@ -5,6 +5,7 @@ import { Segmented } from "@/components/app/controls";
 import type { PriceRow } from "@/components/app/book/AppBookingFlow";
 import { GARMENT_SERVICES, type GarmentService } from "@/lib/booking-items";
 import { localDigits, type Locale } from "@/lib/i18n/config";
+import { PRICE_SERVICE_ORDER } from "@/lib/price-order";
 
 export type PricesText = { pricesSub: string; pricesFoot: string; searchPlaceholder: string; serviceNames: Record<GarmentService, string> };
 
@@ -14,7 +15,7 @@ export type PricesText = { pricesSub: string; pricesFoot: string; searchPlacehol
  * the website). Used in the bottom sheet from Home and Book, and by /app/prices for deep links.
  */
 export function PricesPanel({ popular, t, locale }: { popular: PriceRow[]; t: PricesText; locale: Locale }) {
-  const [tab, setTab] = useState<GarmentService>("dry-cleaning");
+  const [tab, setTab] = useState<GarmentService>(PRICE_SERVICE_ORDER[0]);
   const [query, setQuery] = useState("");
   const [found, setFound] = useState<PriceRow[] | null>(null);
 
@@ -47,7 +48,7 @@ export function PricesPanel({ popular, t, locale }: { popular: PriceRow[]; t: Pr
   return (
     <div className="space-y-3" data-app-prices>
       <p className="a-sec text-muted">{t.pricesSub}</p>
-      <Segmented legend={<span className="sr-only">{t.searchPlaceholder}</span>} name="prices-tab" value={tab} onChange={(v) => setTab(v as GarmentService)} options={GARMENT_SERVICES.map((s) => ({ value: s, label: t.serviceNames[s] }))} />
+      <Segmented legend={<span className="sr-only">{t.searchPlaceholder}</span>} name="prices-tab" value={tab} onChange={(v) => setTab(v as GarmentService)} options={PRICE_SERVICE_ORDER.map((s) => ({ value: s, label: t.serviceNames[s] }))} />
       <label className="flex h-12 items-center gap-2.5 rounded-xl border-[1.5px] border-line-strong bg-app-card px-3.5">
         <svg viewBox="0 0 24 24" aria-hidden="true" className="size-5 text-muted" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           <path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16zM21 21l-4.3-4.3" />

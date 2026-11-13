@@ -4,9 +4,10 @@ import { getLocale } from "@/lib/i18n/server";
 import { formatAmount } from "@/lib/format-price";
 import { getServicePrices } from "@/lib/service-prices";
 import { POPULAR_PRICE_ITEMS, pickPopularItems } from "@/lib/popular-prices";
+import { PRICE_SERVICE_ORDER } from "@/lib/price-order";
 
-/** Column order: the services most items have, cheapest finish first. */
-const COLUMNS = ["wash-and-iron", "ironing", "dry-cleaning"];
+/** Column order: the price order (Wash & Iron, Dry Cleaning, Ironing). */
+const COLUMNS = PRICE_SERVICE_ORDER;
 
 /**
  * Popular everyday prices, shown by the price finder while its search is empty (home and

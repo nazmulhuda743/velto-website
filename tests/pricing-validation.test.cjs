@@ -51,3 +51,17 @@ test("search: best match first, every word must match", () => {
   assert.deepEqual(rankPriceItems([item("Blazer")], "blaz").map((i) => i.name), ["Blazer"]);
   assert.deepEqual(searchWords("  Suit   1PC "), ["suit", "1pc"]);
 });
+
+test("lists each item's services in the price order: Wash & Iron, Dry Cleaning, Ironing", () => {
+  const row = (service_slug, service_name) => ({ ...safeRow, service_slug, service_name });
+  const [item] = parsePublicPricingRows([
+    row("ironing", "Ironing"),
+    row("dry-cleaning", "Dry Cleaning"),
+    row("express", "Express"),
+    row("wash-and-iron", "Wash & Iron"),
+  ]);
+  assert.deepEqual(
+    item.services.map((s) => s.slug),
+    ["wash-and-iron", "dry-cleaning", "ironing", "express"],
+  );
+});

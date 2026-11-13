@@ -33,3 +33,4 @@ src/lib/admin/today.ts
 src/lib/popular-prices.ts
 src/lib/meta-pixel/events.ts
 src/lib/careers.ts
+src/lib/price-order.ts

@@ -304,7 +304,7 @@ export const SERVICE_PAGES_BN: ServiceContent[] = [
         type: "prices",
         title: "পর্দার রেট",
         intro: "সার্ভিস অনুযায়ী পর্দার প্রতি বর্গফুটের রেট।",
-        columns: ["dry-cleaning", "wash-and-iron", "ironing"],
+        columns: ["wash-and-iron", "dry-cleaning", "ironing"],
         groups: [{ label: "পর্দা", names: ["Curtain Normal (per sqft)", "Curtain Heavy (per sqft)"] }],
         note: "আপনার পর্দা সাধারণ না ভারী, বুঝতে পারছেন না? WhatsApp-এ একটি ছবি পাঠান, Velto জানিয়ে দেবে।",
       },
@@ -389,7 +389,7 @@ export const SERVICE_PAGES_BN: ServiceContent[] = [
         type: "prices",
         title: "কার্পেট ও ম্যাটের দাম",
         intro: "কার্পেটের দাম প্রতি বর্গফুট। পাপোশ ও ম্যাটের দাম প্রতি পিস।",
-        columns: ["dry-cleaning", "wash-and-iron"],
+        columns: ["wash-and-iron", "dry-cleaning"],
         groups: [
           { label: "কার্পেট", names: ["Carpet (per sqft)"] },
           { label: "পাপোশ ও ম্যাট, প্রতি পিস", names: ["Paposh (Small)", "Paposh (Medium)", "Paposh (Large)", "Mat (Medium)", "Prayer Mat", "Prayer Mat (Heavy)"] },
@@ -464,7 +464,7 @@ export const SERVICE_PAGES_BN: ServiceContent[] = [
         type: "prices",
         title: "বিছানাপত্রের দাম",
         intro: "প্রতি পিস, ধরন ও মাপ অনুযায়ী।",
-        columns: ["dry-cleaning", "wash-and-iron"],
+        columns: ["wash-and-iron", "dry-cleaning"],
         groups: [
           { label: "কম্বল", names: ["Blanket (Small)", "Blanket (Regular/Medium)", "Blanket (Large/Heavy)", "Blanket (Baby)"] },
           { label: "কমফোর্টার", names: ["Comforter (Regular)", "Comforter (Heavy)"] },

@@ -39,9 +39,9 @@ const IRON = () => svc("ironing", "Ironing");
  * and are never invented here. Item/service availability is TODO_VERIFY.
  */
 const MOCK_ITEMS: PublicPriceItem[] = [
-  { slug: "shirt", name: "Shirt", services: [IRON(), WASH(), DRY()] },
+  { slug: "shirt", name: "Shirt", services: [WASH(), DRY(), IRON()] },
   { slug: "blazer", name: "Blazer", services: [DRY()] },
-  { slug: "saree", name: "Saree", services: [IRON(), DRY()] },
+  { slug: "saree", name: "Saree", services: [DRY(), IRON()] },
   { slug: "suit", name: "Suit", services: [DRY()] },
   { slug: "sherwani", name: "Sherwani", services: [DRY()] },
 ];
