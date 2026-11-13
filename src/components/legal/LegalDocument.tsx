@@ -17,10 +17,13 @@ export function LegalDocument({
   intro,
   summary,
   sections,
+  updated = LEGAL.updated,
   children,
 }: {
   label: string;
   title: string;
+  /** "Last updated" date; defaults to the shared LEGAL.updated. */
+  updated?: string;
   intro: ReactNode;
   /** "The short version": the handful of points most people need. */
   summary: ReactNode[];
@@ -35,7 +38,7 @@ export function LegalDocument({
         <div className="max-w-3xl xl:col-span-8 xl:col-start-1 xl:row-start-1">
           <p className="t-label uppercase text-action">{label}</p>
           <h1 className="mt-3 t-h1 text-navy">{title}</h1>
-          <p className="mt-4 t-small text-secondary">Last updated: {LEGAL.updated}</p>
+          <p className="mt-4 t-small text-secondary">Last updated: {updated}</p>
           <div className="mt-6 space-y-4 t-body-lg text-body">{intro}</div>
 
           <section aria-labelledby="summary-title" className="mt-10 rounded-md border border-line bg-soft p-5 md:p-7">
