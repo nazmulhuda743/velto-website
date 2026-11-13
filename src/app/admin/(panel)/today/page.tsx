@@ -142,6 +142,7 @@ export default async function TodayPage({ searchParams }: { searchParams: Search
   const callbackPhones = new Set((data?.callbacks ?? []).map((c) => phoneKey(c.phone)).filter(Boolean));
   const jobBadges = (j: DispatchJob) => ({
     first: Boolean(insightOf(j)?.firstOrder),
+    b999: Boolean(insightOf(j)?.b999),
     callback: Boolean(j.phone && callbackPhones.has(phoneKey(j.phone))),
     weekly: j.source === "weekly",
     changed: changedTime(j),

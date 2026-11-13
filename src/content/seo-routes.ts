@@ -39,6 +39,13 @@ export const SEO_ROUTES: SeoRoute[] = [
     description: s.meta.description,
   })),
   {
+    path: "/blanket-cleaning-uttara",
+    label: "Blanket cleaning ৳999",
+    group: "Main",
+    title: "Blanket Cleaning in Uttara | 3 Blankets ৳999 | Velto",
+    description: "Book doorstep blanket cleaning in Uttara with Velto. 3 regular blankets for ৳999 with pickup and delivery.",
+  },
+  {
     path: "/pricing",
     label: "Pricing",
     group: "Main",

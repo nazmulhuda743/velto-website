@@ -169,6 +169,25 @@ export const IMAGES = {
     "A row of pressed linen shirts on wooden hangers along a rail.",
     1600, 2400, 17293343, "nguyendesigner", "center 35%",
   ),
+  /**
+   * /blanket-cleaning-uttara (B999): licensed stock of people at home (illustrative, never presented
+   * as Velto customers). The two category slots stay empty (the page draws a diagram) until real
+   * Velto blanket photos arrive.
+   */
+  b999: {
+    hero: pageStock(
+      "b999-couple-bed",
+      "A smiling woman using a laptop on a bed made with fresh white bedding, while a man relaxes beside her with his phone.",
+      2000, 1333, 4307820, "Ketut Subiyanto", "center 42%",
+    ),
+    home: pageStock(
+      "b999-couple-sofa",
+      "A laughing couple sitting close together on a sofa in a bright living room.",
+      2000, 1333, 4307927, "Ketut Subiyanto", "center 40%",
+    ),
+    regular: slot("A regular single or double-bed blanket of normal thickness, folded, with a Velto tag.", 1600, 1000),
+    heavy: slot("A heavy or oversized blanket, such as a thick mink blanket, folded beside a regular one for size.", 1600, 1000),
+  },
   curtainsMeasured: slot("Curtain panels being measured for a quote.", 1600, 1200),
   carpetMeasured: slot("A carpet being measured for a quote.", 1600, 1200),
   /** Real Velto outlets: never substituted with stock storefronts. MOCK until supplied. */

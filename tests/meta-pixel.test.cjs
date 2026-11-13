@@ -137,3 +137,13 @@ test("service and Pixel ID normalisation", () => {
   assert.equal(validMetaPixelId(""), null);
   assert.equal(validMetaPixelId(undefined), null);
 });
+
+test("the B999 blanket page is a blanket service page for Meta: ViewContent on load, Lead and InitiateCheckout as usual, never Purchase", () => {
+  assert.deepEqual(names(pageViewCalls("/blanket-cleaning-uttara")), ["standard:PageView", "standard:ViewContent"]);
+  assert.equal(pageViewCalls("/bn/blanket-cleaning-uttara")[1].params.content_name, "blanket_cleaning");
+  const all = ["booking_start", "booking_success", "whatsapp_click", "service_view", "book_pickup_click"].flatMap((e) =>
+    metaCallsFor(e, { service: "blanket-comforter-cleaning", placement: "b999" }, "/blanket-cleaning-uttara"),
+  );
+  assert.ok(all.some((c) => c.name === "InitiateCheckout") && all.some((c) => c.name === "Lead") && all.some((c) => c.name === "Contact"));
+  assert.ok(!all.some((c) => c.name === "Purchase"));
+});
