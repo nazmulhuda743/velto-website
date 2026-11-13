@@ -33,7 +33,8 @@ Confirm or edit each one. None of them contain an invented amount, period or cap
 Keep these true when settings change:
 
 - Analytics retention (90 days raw, 25 months daily totals, 13 months consent counts) depends on `website_analytics_purge()` being scheduled daily (docs/technical/COMMAND-CENTER.md).
-- "Photos are not uploaded through the website" stays true until the controlled upload flow is built. Update Privacy §2 when it is.
+- Photos (Privacy §2, updated 13 November 2026): Book Pickup uploads up to three photos to the private `booking-photos` bucket as soon as they're added (`/api/bookings/photos`); staff open them through `/go/photo/<id>`, which signs a ten-minute link. Quote-form photos stay on the device and go by WhatsApp. Invoice links can show staff stain photos from the private `order-photos` bucket through one-hour links. Keep that wording true if any of these change.
+- Photos uploaded but never sent with a booking (or removed in the form) stay in storage with no name or number attached; nothing deletes them yet. Decide a clean-up period (and add a scheduled delete) or keep the current wording.
 - Service providers named: Vercel, Cloudflare, Supabase, Meta (WhatsApp), and Google/Meta ad tools only with consent. Update the list if a provider is added, for example SMS or email sending.
 - Booking and quote retention is written as "as long as needed … then deleted or anonymised". Decide on an actual period (for example 3 years after the last order, subject to tax rules) and state it.
 - When customer accounts launch (Customer Portal), add the account data, login cookies and account deletion to Privacy and Cookies.
