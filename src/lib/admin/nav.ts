@@ -63,6 +63,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/admin/b999", label: "Blanket ৳999", icon: "dispatch" },
       { href: "/admin/capacity", label: "Capacity", icon: "capacity" },
       { href: "/admin/feedback", label: "Customer feedback", icon: "feedback" },
+      { href: "/admin/chat", label: "Chat questions", icon: "feedback" },
       { href: "/admin/retention", label: "Bring customers back", icon: "retention" },
       { href: "/admin/retention/reminders", label: "Reminders", icon: "retention" },
       { href: "/admin/accounts", label: "Customer accounts", icon: "accounts" },
