@@ -103,3 +103,25 @@ test("fixed answers are short and free of AI-looking marks", () => {
     }
   }
 });
+
+test("admin chat summary: topics, not understood, conversations in order", () => {
+  const ins = require("../../.command-center-test-build/lib/admin/chat-insights.js");
+  const at = (m) => new Date(Date.UTC(2026, 10, 13, 10, m)).toISOString();
+  const rows = [
+    { conversation: "b", lang: "en", page: "/", question: "asdfgh", answer: "Sorry, I didn't get that. [Message Velto](/go/whatsapp)", outcome: "failed", at: at(30) },
+    { conversation: "a", lang: "bn", page: "/", question: "koto din lage?", answer: "সাধারণত প্রায় ৪৮ ঘণ্টা।", outcome: "answered", at: at(11) },
+    { conversation: "a", lang: "bn", page: "/", question: "shirt er dam koto?", answer: "[[price]]Shirt|আয়রন=৳20\nফ্রি। [পিকআপ বুক করুন](/book)", outcome: "answered", at: at(10) },
+    { conversation: "c", lang: "en", page: "/", question: "hi", answer: "", outcome: "limited", at: at(5) },
+  ];
+  const s = ins.summarize(rows);
+  assert.equal(s.questions, 3);
+  assert.equal(s.limited, 1);
+  assert.equal(s.conversations, 2);
+  assert.equal(s.notUnderstood, 1);
+  assert.equal(s.answeredPct, 67);
+  assert.deepEqual(s.topics.map((t) => t.id).sort(), ["none", "price", "turnaround"]);
+  assert.equal(s.list[0].id, "b", "newest conversation first");
+  assert.deepEqual(s.list[1].turns.map((t) => t.topic), ["price", "turnaround"], "turns in the order asked");
+  assert.equal(s.list[1].turns[0].answer, "Shirt: আয়রন ৳20\nফ্রি। [পিকআপ বুক করুন]");
+  assert.equal(ins.summarize([]).answeredPct, null);
+});
