@@ -438,8 +438,7 @@ export function BookingForm({
   /** Bumped when a window was taken just before Confirm: the picker reloads live availability. */
   const [refreshWindows, setRefreshWindows] = useState(0);
   const setPickup = useCallback((v: PickedWindow | null) => setS((prev) => (prev.pickup === v ? prev : { ...prev, pickup: v })), []);
-  // Items (with prices) and the extras stay folded until wanted; a repeat order opens its items.
-  const [itemsOpen, setItemsOpen] = useState(initialItems.length > 0);
+  // The extras stay folded until wanted; items (with prices) are always open.
   const [extrasOpen, setExtrasOpen] = useState(Boolean(presetNote));
   const [status, setStatus] = useState<Status>({ state: "idle" });
   const started = useRef(false);
@@ -477,7 +476,6 @@ export function BookingForm({
       phone: d.phone || prev.phone,
       notes: d.notes || prev.notes,
     }));
-    if (d.items.length) setItemsOpen(true);
     if (d.backBy || d.notes) setExtrasOpen(true);
   };
   const startOver = () => {
@@ -698,15 +696,8 @@ export function BookingForm({
               value={s.what}
               onChange={(e) => update("what", e.target.value)}
             />
-            <Fold
-              id="booking-items-fold"
-              label={t.itemsOpen}
-              open={itemsOpen}
-              onOpen={() => {
-                setItemsOpen(true);
-                track("booking_items_open", { section: "booking-form" });
-              }}
-            >
+            {/* Items with prices are always shown in step 1 (owner decision, 13 Nov 2026), not folded. */}
+            <div id="booking-items-fold">
               <p className="font-semibold text-navy">{t.itemsTitle}</p>
               <p className="mt-1 t-small text-secondary">{t.itemsHint}</p>
               <div className="mt-3">
@@ -721,7 +712,7 @@ export function BookingForm({
                   locale={locale}
                 />
               </div>
-            </Fold>
+            </div>
           </Group>
 
           <Group step={2} title={t.youTitle} stepOf={t.stepOf} locale={locale}>
