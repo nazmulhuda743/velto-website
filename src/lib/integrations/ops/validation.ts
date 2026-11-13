@@ -117,7 +117,7 @@ export function readBackBy(value: unknown, now = new Date()): string | null | un
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-/** The services chosen at the top of /book: Dry Cleaning, Wash & Iron and/or Ironing. */
+/** The services chosen at the top of /book: Wash & Iron, Dry Cleaning and/or Ironing. */
 function readServices(value: unknown): GarmentService[] | null {
   if (value === undefined) return [];
   if (!Array.isArray(value) || value.length > 3 || !value.every(isGarmentService)) return null;

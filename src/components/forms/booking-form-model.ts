@@ -6,6 +6,7 @@
 import { WHATSAPP_URL } from "@/content/site";
 import {
   estimateBooking,
+  GARMENT_SERVICES,
   isGarmentService,
   MIXED_ITEM,
   sharedItemService,
@@ -38,7 +39,7 @@ const BACK_BY_DAYS = 3;
 export type FormState = {
   /** From a service page (?service=). A household service (curtains, carpets, blankets) stays as the booking's service. */
   service: string | null;
-  /** Dry Cleaning, Wash & Iron and/or Ironing (chips, optional in the quick form). */
+  /** Wash & Iron, Dry Cleaning and/or Ironing (chips, optional in the quick form). */
   services: GarmentService[];
   /** "4 curtains, some shirts": what to pick up, in the customer's words. */
   what: string;
@@ -241,7 +242,7 @@ export const FIELD_ORDER: ErrorKey[] = ["what", "name", "phone", "sector", "addr
 
 /** Where each error-summary link goes: the field itself (for "what", the first service chip). */
 export const ERROR_TARGET: Record<ErrorKey, string> = {
-  what: "booking-service-dry-cleaning",
+  what: `booking-service-${GARMENT_SERVICES[0]}`,
   name: "booking-name",
   phone: "booking-phone",
   sector: "booking-sector",

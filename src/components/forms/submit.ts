@@ -18,7 +18,7 @@ export type BookingFormData = {
   service?: string;
   /** Optional item lines; the server validates them and writes them into the Ops notes. */
   items?: { item: string; service?: string; quantity: number }[];
-  /** Services chosen at the top of the form (Dry Cleaning, Wash & Iron, Ironing). */
+  /** Services chosen at the top of the form (Wash & Iron, Dry Cleaning, Ironing). */
   services?: string[];
   /** When the customer wants the order back (YYYY-MM-DD); the server words it for Ops. */
   deliveryBy?: string;

@@ -21,8 +21,11 @@ export const ITEM_SERVICES = {
 
 export type ItemService = keyof typeof ITEM_SERVICES;
 
-/** The per-garment services a customer chooses first on /book (one or more). */
-export const GARMENT_SERVICES = ["dry-cleaning", "wash-and-iron", "ironing"] as const satisfies readonly ItemService[];
+/**
+ * The per-garment services a customer chooses first on /book (one or more), in the price order
+ * (src/lib/price-order.ts): Wash & Iron, Dry Cleaning, Ironing.
+ */
+export const GARMENT_SERVICES = ["wash-and-iron", "dry-cleaning", "ironing"] as const satisfies readonly ItemService[];
 export type GarmentService = (typeof GARMENT_SERVICES)[number];
 export const isGarmentService = (value: unknown): value is GarmentService =>
   typeof value === "string" && (GARMENT_SERVICES as readonly string[]).includes(value);

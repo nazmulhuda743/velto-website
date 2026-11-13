@@ -75,7 +75,7 @@ import { BookingSuccess, WhatsAppFallback } from "./BookingSuccess";
  */
 
 /** Service values from a service page (?service=): the three garment services, or a household one. */
-const BOOKING_SERVICES = ["dry-cleaning", "wash-and-iron", "ironing", "curtain-cleaning", "carpet-cleaning", "blanket-comforter-cleaning"];
+const BOOKING_SERVICES = ["wash-and-iron", "dry-cleaning", "ironing", "curtain-cleaning", "carpet-cleaning", "blanket-comforter-cleaning"];
 const HOUSEHOLD_SERVICES = ["curtain-cleaning", "carpet-cleaning", "blanket-comforter-cleaning"];
 
 /** "What are we picking up?" in the customer's own words. */
