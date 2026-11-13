@@ -57,21 +57,55 @@ export function parseLine(line: string): ReplyPart[] {
   return parts;
 }
 
-/** A reply as blocks: paragraphs and bullet lists ("- " or "• " lines). */
-export function parseReply(text: string): ({ kind: "p"; parts: ReplyPart[] } | { kind: "ul"; items: ReplyPart[][] })[] {
-  const blocks: ({ kind: "p"; parts: ReplyPart[] } | { kind: "ul"; items: ReplyPart[][] })[] = [];
+export type ReplyLink = Extract<ReplyPart, { kind: "link" }>;
+export type ReplyBlock =
+  | { kind: "p"; parts: ReplyPart[] }
+  | { kind: "ul"; items: ReplyPart[][] }
+  | { kind: "price"; item: string; rows: { label: string; value: string }[] };
+
+/**
+ * A reply as blocks (paragraphs, lists, price cards) and actions: links at the end of a line
+ * become buttons under the message instead of underlined words.
+ */
+export function parseReply(text: string): { blocks: ReplyBlock[]; actions: ReplyLink[] } {
+  const blocks: ReplyBlock[] = [];
+  const actions: ReplyLink[] = [];
   for (const raw of text.replace(/\r/g, "").split("\n")) {
     const line = raw.trim();
     if (!line) continue;
+    if (line.startsWith("[[price]]")) {
+      const [item, ...rows] = line.slice(9).split("|");
+      blocks.push({
+        kind: "price",
+        item: item.trim(),
+        rows: rows.map((r) => {
+          const [label, value = ""] = r.split("=");
+          return { label: label.trim(), value: value.trim() };
+        }),
+      });
+      continue;
+    }
     const bullet = /^([-•*]|\d+[.)])\s+(.*)$/.exec(line);
+    const parts = parseLine(bullet ? bullet[2] : line.replace(/^#+\s*/, ""));
+    // Trailing links (with only spaces or punctuation between them) become actions.
+    const trailing: ReplyLink[] = [];
+    while (parts.length) {
+      const last = parts[parts.length - 1];
+      if (last.kind === "link") trailing.unshift(parts.pop() as ReplyLink);
+      else if (!last.bold && /^[\s.,:;·|।-]*$/.test(last.text) && parts.length > 1 && parts[parts.length - 2].kind === "link") parts.pop();
+      else break;
+    }
+    actions.push(...trailing);
+    const last = parts[parts.length - 1];
+    if (last?.kind === "text") last.text = last.text.replace(/[\s:]+$/, "");
+    if (!parts.length || (parts.length === 1 && parts[0].kind === "text" && !parts[0].text)) continue;
     if (bullet) {
       const prev = blocks[blocks.length - 1];
-      const item = parseLine(bullet[2]);
-      if (prev?.kind === "ul") prev.items.push(item);
-      else blocks.push({ kind: "ul", items: [item] });
+      if (prev?.kind === "ul") prev.items.push(parts);
+      else blocks.push({ kind: "ul", items: [parts] });
     } else {
-      blocks.push({ kind: "p", parts: parseLine(line.replace(/^#+\s*/, "")) });
+      blocks.push({ kind: "p", parts });
     }
   }
-  return blocks;
+  return { blocks, actions };
 }

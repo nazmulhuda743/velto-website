@@ -25,10 +25,16 @@ test("replies only link to Velto's own pages, WhatsApp, call and outlet directio
   assert.ok(parts.some((p) => p.bold && p.text === "bold"));
 });
 
-test("a reply becomes paragraphs and lists", () => {
-  const b = c.parseReply("Hello.\n- one\n- two\n\nAfter.");
-  assert.deepEqual(b.map((x) => x.kind), ["p", "ul", "p"]);
-  assert.equal(b[1].items.length, 2);
+test("a reply becomes paragraphs, lists, price cards and closing buttons", () => {
+  const { blocks, actions } = c.parseReply("Hello.\n- one\n- two\n\nAfter. [Book a pickup](/book) [WhatsApp](/go/whatsapp)");
+  assert.deepEqual(blocks.map((x) => x.kind), ["p", "ul", "p"]);
+  assert.equal(blocks[1].items.length, 2);
+  assert.deepEqual(actions.map((a) => a.href), ["/book", "/go/whatsapp"]);
+  assert.equal(blocks[2].parts.map((p) => p.text).join(""), "After.");
+  const card = c.parseReply("[[price]]Shirt|Wash & Iron=৳80|Ironing=৳20|Dry Cleaning=৳100").blocks[0];
+  assert.deepEqual(card, { kind: "price", item: "Shirt", rows: [{ label: "Wash & Iron", value: "৳80" }, { label: "Ironing", value: "৳20" }, { label: "Dry Cleaning", value: "৳100" }] });
+  const inline = c.parseReply("See [our prices](/pricing) before booking.");
+  assert.equal(inline.actions.length, 0, "a link inside a sentence stays in the sentence");
 });
 
 const a = require("../../.command-center-test-build/lib/chat/answers.js");
@@ -67,8 +73,8 @@ test("no-AI answers: prices come from the price list, never from the text", () =
   assert.equal(a.planAnswer("price list", "en").kind, "ask-item");
   assert.equal(a.planAnswer("asdfgh", "en").kind, "none");
   const reply = a.priceReply([{ name: "Shirt", services: [{ slug: "ironing", name: "Ironing", price: "৳20" }, { slug: "dry-cleaning", name: "Dry Cleaning", price: null }] }], ["shirt"], "en");
-  assert.match(reply, /\*\*Shirt\*\*: Ironing ৳20 · Dry Cleaning after assessment/);
-  assert.match(a.priceReply([], ["x"], "bn"), /খুঁজে পাইনি/);
+  assert.match(reply, /^\[\[price\]\]Shirt\|Ironing=৳20\|Dry Cleaning=After assessment$/m);
+  assert.match(a.priceReply([], ["x"], "bn"), /পাইনি/);
 });
 
 test("reply language follows the question", () => {
@@ -84,6 +90,16 @@ test("every fixed answer links only where replies may link", () => {
     for (const lang of ["en", "bn"]) {
       const links = [...e[lang].matchAll(/\]\(([^)]+)\)/g)].map((m) => m[1]);
       for (const href of links) assert.ok(shared.parseLine(`[x](${href})`)[0].kind === "link", `${e.id} ${lang}: ${href}`);
+    }
+  }
+});
+
+test("fixed answers are short and free of AI-looking marks", () => {
+  for (const e of a.ANSWERS) {
+    for (const lang of ["en", "bn"]) {
+      const text = e[lang].replace(/\[[^\]]*\]\([^)]*\)/g, "");
+      assert.ok(!/\*\*|[—–·•;]|^\s*-\s/m.test(text), `${e.id} ${lang} has marks: ${text}`);
+      assert.ok(text.length <= 230, `${e.id} ${lang} is long (${text.length})`);
     }
   }
 });

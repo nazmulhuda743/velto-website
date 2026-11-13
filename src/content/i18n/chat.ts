@@ -12,7 +12,7 @@ const en = {
   subtitle: "Usually answers in seconds",
   close: "Close chat",
   restart: "Start again",
-  welcome: "Hi! Ask us anything about Velto: prices, pickup and delivery, how long it takes, or which service suits a garment.",
+  welcome: "Hi! Ask us about prices, pickup, delivery or any of our services.",
   quickTitle: "Popular questions",
   quick: {
     price: "Check a price",
@@ -22,8 +22,8 @@ const en = {
     stains: "Can every stain come out?",
     person: "Talk to a person",
   },
-  priceAsk: "Sure. Which item is it? For example a shirt, saree, blazer or comforter.",
-  personReply: "Of course. A person from the Velto team is on WhatsApp.",
+  priceAsk: "Sure. Which item? For example a shirt, saree, blazer or panjabi.",
+  personReply: "Of course. Someone from our team will reply on WhatsApp.",
   personButton: "Open WhatsApp",
   placeholder: "Type your question…",
   send: "Send",
@@ -34,6 +34,10 @@ const en = {
   limited: "You're sending messages quickly. Give it a minute, or ask us on WhatsApp.",
   offline: "Typed questions aren't available right now. The quick questions above still work, and the team is on WhatsApp.",
   tooLong: "Please keep it under {n} characters.",
+  more: "More questions",
+  greetTitle: "Have a question?",
+  greetBody: "Prices, pickup or delivery. Ask here.",
+  greetClose: "Hide this message",
 };
 
 export type ChatText = typeof en;
@@ -45,7 +49,7 @@ const bn: ChatText = {
   subtitle: "সাধারণত সেকেন্ডেই উত্তর দেয়",
   close: "চ্যাট বন্ধ করুন",
   restart: "নতুন করে শুরু",
-  welcome: "হ্যালো! Velto নিয়ে যা জানতে চান জিজ্ঞেস করুন: দাম, পিকআপ ও ডেলিভারি, কত সময় লাগে, বা কোন পোশাকে কোন সার্ভিস।",
+  welcome: "হ্যালো! দাম, পিকআপ, ডেলিভারি বা যেকোনো সার্ভিস নিয়ে জিজ্ঞেস করুন।",
   quickTitle: "জনপ্রিয় প্রশ্ন",
   quick: {
     price: "দাম দেখুন",
@@ -55,8 +59,8 @@ const bn: ChatText = {
     stains: "সব দাগ কি ওঠে?",
     person: "মানুষের সাথে কথা বলুন",
   },
-  priceAsk: "অবশ্যই। কোন আইটেম? যেমন শার্ট, শাড়ি, ব্লেজার বা কমফোর্টার।",
-  personReply: "অবশ্যই। Velto টিমের একজন WhatsApp-এ আছেন।",
+  priceAsk: "অবশ্যই। কোন আইটেম? যেমন শার্ট, শাড়ি, ব্লেজার বা পাঞ্জাবি।",
+  personReply: "অবশ্যই। আমাদের টিমের একজন WhatsApp-এ উত্তর দেবেন।",
   personButton: "WhatsApp খুলুন",
   placeholder: "আপনার প্রশ্ন লিখুন…",
   send: "পাঠান",
@@ -67,6 +71,10 @@ const bn: ChatText = {
   limited: "খুব দ্রুত মেসেজ যাচ্ছে। এক মিনিট পর চেষ্টা করুন, বা WhatsApp-এ জিজ্ঞেস করুন।",
   offline: "লিখে প্রশ্ন করা এই মুহূর্তে বন্ধ। ওপরের জনপ্রিয় প্রশ্নগুলো কাজ করছে, আর টিম WhatsApp-এ আছে।",
   tooLong: "অনুগ্রহ করে {n} অক্ষরের মধ্যে লিখুন।",
+  more: "আরও প্রশ্ন",
+  greetTitle: "কোনো প্রশ্ন আছে?",
+  greetBody: "দাম, পিকআপ বা ডেলিভারি। এখানে জিজ্ঞেস করুন।",
+  greetClose: "এই মেসেজটি লুকান",
 };
 
 export const chatText = (locale: Locale): ChatText => (locale === "bn" ? bn : en);
