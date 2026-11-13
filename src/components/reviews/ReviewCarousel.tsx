@@ -4,6 +4,7 @@ import { LOCATIONS } from "@/content/site";
 import { dictionary } from "@/content/i18n";
 import { fill } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
+import { ReviewBlock } from "@/components/home/ReviewsSection";
 import { MarqueeControl } from "./MarqueeControl";
 
 /** Long reviews are clamped on the card and read in full on Google; the words are never cut mid-edit. */
@@ -72,24 +73,21 @@ const MARQUEE_MIN = 2;
 /**
  * Moving review strip. Two identical groups scroll continuously; the second is
  * hidden from assistive tech and not focusable. Stops on hover or focus, and
- * has a pause button. Reduced motion shows one static, swipeable row, and so
- * does a single review.
+ * has a pause button. Reduced motion shows one static, swipeable row; a single
+ * review is shown still, as on the homepage.
  */
 export async function ReviewCarousel({ reviews, label }: { reviews: Review[]; label?: string }) {
   label ??= dictionary(await getLocale()).home.reviews.carouselLabel;
   const shown = reviews.filter((r) => r.text && r.name);
   if (!shown.length) return null;
   if (shown.length < MARQUEE_MIN) {
+    // One review: the editorial layout the homepage uses, across the row at a readable measure,
+    // not a lone card beside an empty strip.
     return (
       <div role="region" aria-label={label} className="container-page">
-        {/* relative: the cards' sr-only text is absolutely positioned and must be clipped by this scroller, not widen the page. */}
-        <ul className="relative -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-2 min-[360px]:-mx-5 min-[360px]:scroll-px-5 min-[360px]:px-5 md:mx-0 md:scroll-px-0 md:gap-6 md:px-0">
-          {shown.map((r, i) => (
-            <li key={i} className="flex">
-              <ReviewCard review={r} />
-            </li>
-          ))}
-        </ul>
+        <div className="max-w-[62ch]">
+          <ReviewBlock review={shown[0]} />
+        </div>
       </div>
     );
   }

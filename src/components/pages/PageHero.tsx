@@ -78,7 +78,7 @@ export async function PageHero({
               <div className="mt-5 max-w-[560px] space-y-4 t-body text-body md:mt-6 md:t-body-lg">{children}</div>
             ) : null}
             {actions ? (
-              <div className={`mt-7 flex gap-2.5 md:mt-8 md:flex-wrap md:gap-3 ${stackActionsOnMobile ? "max-md:flex-col" : ""}`}>
+              <div className={`mt-7 flex flex-wrap gap-2.5 md:mt-8 md:gap-3 ${stackActionsOnMobile ? "max-md:flex-col" : ""}`}>
                 {actions}
               </div>
             ) : null}
