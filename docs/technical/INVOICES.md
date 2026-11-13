@@ -58,3 +58,16 @@ two photos, like page 2 of the app's PDF invoice, plus a short care promise. No 
   rehearsed: it restores the old md5). Production: run `website_invoice_condition.sql` with the owner's approval;
   undo `website_invoice_condition.down.sql`. The page works before and after (no `condition` → no section).
 - `/i/preview0` shows the section with example data (one site photo, not a customer's).
+
+## Who the invoice is for (`website_invoice_customer.sql`, owner 2026-11-13)
+
+The owner: the invoice showed no customer details (only "For Afiq"). Owner's choice: the **full name, the phone with
+its middle hidden and the area** — a "Billed to" block under the heading. Never the full phone or the house address:
+the link opens without sign-in, and an SMS or WhatsApp can be forwarded.
+
+- `website_invoice_get()` gains `customer: { name, phone, area }`: name = `customers.name` (else the order's name),
+  ≤60 characters; phone = the order's phone as `017•••••123`, only for a valid mobile (the full number never leaves
+  the database); area = the order's zone + "Sector N" when the address names a sector.
+- The page drops anything that is not a masked phone (`invoiceCustomer`).
+- Status: rehearsed (`tests/website_invoice_customer_test.sql`), applied to staging, undo rehearsed (restores the
+  condition body, md5 `2024b9a5…`). Production: `website_invoice_customer.sql` with the owner's approval.
