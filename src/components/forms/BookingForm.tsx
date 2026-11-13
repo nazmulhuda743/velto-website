@@ -7,7 +7,6 @@ import type { NotifyText } from "@/content/i18n/notify";
 import { FREE_DELIVERY_THRESHOLD } from "@/content/site";
 import {
   composeBookingNotes,
-  fromPrice,
   GARMENT_SERVICES,
   isGarmentService,
   MAX_BOOKING_ITEMS,
@@ -21,7 +20,7 @@ import {
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import { fill, format, localDigits, type Locale } from "@/lib/i18n/config";
 import type { UpsellHints } from "@/lib/booking-upsell";
-import { money, repeatLine, type ItemLine, type PriceItem } from "./BookingItems";
+import { repeatLine, type ItemLine, type PriceItem } from "./BookingItems";
 import { ServiceItems } from "./ServiceItems";
 
 /** One line of an earlier order, as the book page reads it on the server. */
@@ -81,8 +80,11 @@ import { BookingSuccess, WhatsAppFallback } from "./BookingSuccess";
  */
 
 /** Service values from a service page (?service=): the three garment services, or a household one. */
-const BOOKING_SERVICES = ["dry-cleaning", "wash-and-iron", "ironing", "curtain-cleaning", "carpet-cleaning", "blanket-comforter-cleaning"];
-const HOUSEHOLD_SERVICES = ["curtain-cleaning", "carpet-cleaning", "blanket-comforter-cleaning"];
+/**
+ * Services a link (?service=) or a saved draft may preselect. Only the three garment services: curtains,
+ * carpets and bedding go through Request a Quote (owner, 13 Nov 2026), and /book sends those links there.
+ */
+const BOOKING_SERVICES: readonly string[] = GARMENT_SERVICES;
 
 /** "What are we picking up?" in the customer's own words. */
 const WHAT_MAX = 160;
@@ -185,69 +187,43 @@ function ErrorText({ id, children }: { id: string; children?: string }) {
 }
 
 /**
- * Step 1: the service cards. The three garment services (any mix) and one household service
- * (curtains, carpets or bedding), each with a line about it and its lowest price from the Ops list
- * ("From ৳15"), so the price question is answered before the form starts. A service page
- * preselects its own.
+ * Step 1: the three garment services (any mix), name only (owner, 13 Nov 2026). Prices and details
+ * come in step 2's items. A service page preselects its own.
  */
 function ServiceCards({
   t,
   services,
-  household,
   onServices,
-  onHousehold,
-  popular,
-  locale,
   describedBy,
 }: {
   t: Text;
   services: GarmentService[];
-  household: string | null;
   onServices: (v: GarmentService[]) => void;
-  onHousehold: (v: string | null) => void;
-  popular: PriceItem[];
-  locale: Locale;
   describedBy?: string;
 }) {
-  const card = (slug: ItemService, checked: boolean, onToggle: () => void) => {
-    const from = fromPrice(slug, popular);
-    return (
-      <label
-        key={slug}
-        className={`relative flex min-h-[76px] cursor-pointer items-start gap-3 rounded-lg border p-3.5 transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-blue ${
-          checked ? "border-blue bg-[#f0f7fc]" : "border-line-strong bg-white hover:border-navy/50"
-        }`}
-        data-service-card={slug}
-      >
-        <input id={`booking-service-${slug}`} type="checkbox" className="sr-only" checked={checked} onChange={onToggle} />
-        <span
-          aria-hidden="true"
-          className={`mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded border text-[13px] font-bold ${checked ? "border-blue bg-blue text-white" : "border-line-strong bg-white"}`}
-        >
-          {checked ? "✓" : ""}
-        </span>
-        <span className="min-w-0">
-          <span className="block font-semibold text-navy">{t.services[slug]}</span>
-          {t.serviceBlurbs[slug] ? <span className="mt-0.5 block t-small text-secondary">{t.serviceBlurbs[slug]}</span> : null}
-          {from ? (
-            <span className="mt-1 block t-small font-semibold tabular-nums text-action">
-              {fill(t.fromPrice, { amount: money(from.amountMinor, locale) }, locale)}
-              {from.unitLabel ? ` ${from.unitLabel}` : ""}
-            </span>
-          ) : null}
-        </span>
-      </label>
-    );
-  };
   return (
-    <div role="group" aria-labelledby="booking-services-label" aria-describedby={describedBy} className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3" data-service-cards>
+    <div role="group" aria-labelledby="booking-services-label" aria-describedby={describedBy} className="grid gap-2.5 sm:grid-cols-3" data-service-cards>
       {GARMENT_SERVICES.map((slug) => {
         const checked = services.includes(slug);
-        return card(slug, checked, () => onServices(checked ? services.filter((x) => x !== slug) : GARMENT_SERVICES.filter((x) => x === slug || services.includes(x))));
-      })}
-      {HOUSEHOLD_SERVICES.map((slug) => {
-        const checked = household === slug;
-        return card(slug as ItemService, checked, () => onHousehold(checked ? null : slug));
+        const toggle = () => onServices(checked ? services.filter((x) => x !== slug) : GARMENT_SERVICES.filter((x) => x === slug || services.includes(x)));
+        return (
+          <label
+            key={slug}
+            className={`relative flex min-h-14 cursor-pointer items-center gap-3 rounded-lg border px-3.5 py-3 transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-blue ${
+              checked ? "border-blue bg-[#f0f7fc]" : "border-line-strong bg-white hover:border-navy/50"
+            }`}
+            data-service-card={slug}
+          >
+            <input id={`booking-service-${slug}`} type="checkbox" className="sr-only" checked={checked} onChange={toggle} />
+            <span
+              aria-hidden="true"
+              className={`inline-flex size-5 shrink-0 items-center justify-center rounded border text-[13px] font-bold ${checked ? "border-blue bg-blue text-white" : "border-line-strong bg-white"}`}
+            >
+              {checked ? "✓" : ""}
+            </span>
+            <span className="font-semibold text-navy">{t.services[slug]}</span>
+          </label>
+        );
       })}
     </div>
   );
@@ -694,24 +670,17 @@ export function BookingForm({
               </div>
             </div>
           ) : null}
-          <Group step={1} title={t.servicesTitle} hint={t.servicesHint} stepOf={t.stepOf} locale={locale}>
+          <Group step={1} title={t.servicesTitle} stepOf={t.stepOf} locale={locale}>
             <p id="booking-services-label" className="sr-only">
               {t.servicesTitle}
             </p>
             <ServiceCards
               t={t}
               services={s.services}
-              household={isHousehold(s) ? s.service : null}
               onServices={(v) => {
                 itemsOpened();
                 update("services", v);
               }}
-              onHousehold={(v) => {
-                itemsOpened();
-                update("service", v);
-              }}
-              popular={popularItems}
-              locale={locale}
               describedBy={errors.what ? "booking-what-error" : undefined}
             />
           </Group>

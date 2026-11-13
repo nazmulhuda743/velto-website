@@ -278,14 +278,6 @@ export const formsEn = {
       "": "A mix, or not sure",
     } as Record<string, string>,
     /** One line under each service choice. */
-    serviceBlurbs: {
-      "dry-cleaning": "Suits, blazers, sarees, sherwanis and delicate garments.",
-      "wash-and-iron": "Washed, finished and returned ready to wear.",
-      ironing: "Already washed? We iron and finish it.",
-      "curtain-cleaning": "Measured and priced per square foot at pickup.",
-      "carpet-cleaning": "Carpets per square foot, doormats and mats per piece.",
-      "blanket-comforter-cleaning": "Blankets, comforters, quilts and kathas, per piece.",
-    } as Record<string, string>,
     /** Pickup day and part of the day: required; the Velto team calls to confirm the exact time. */
     days: { today: "Today", tomorrow: "Tomorrow", other: "Pick a date" } as Record<string, string>,
     slots: { morning: "Morning", afternoon: "Afternoon", evening: "Evening", night: "Night" } as Record<string, string>,
@@ -306,11 +298,10 @@ export const formsEn = {
     whatHelp: "No need to count. We count and price everything at pickup.",
     extrasOpen: "Add a return date, instructions or photos (optional)",
     servicesTitle: "Which service do you need?",
-    servicesHint: "Pick one or more. You can mix them in one pickup.",
     itemsHint: "Tap Add on what you're sending to see your total. Not sure, or a full bag? Skip this: we count and price everything at pickup.",
     itemsNoService: "Choose a service above to see its items and prices.",
     notSureService: "Service not chosen yet",
-    /** "From ৳15" on a service card and on items priced from several services. */
+    /** "From ৳15" on items priced from several services. */
     fromPrice: "From {amount}",
     /** The search under each service's items. */
     searchIn: "Find another {service} item",
