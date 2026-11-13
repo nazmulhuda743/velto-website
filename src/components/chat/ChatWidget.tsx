@@ -432,13 +432,14 @@ export function ChatWidget() {
         </div>
 
         <form
-          className="border-t border-line bg-white px-3 pb-[calc(8px+env(safe-area-inset-bottom))] pt-3 md:pb-2"
+          className="border-t border-line bg-white px-3 pb-[calc(8px+env(safe-area-inset-bottom))] pt-3 md:pb-2.5"
           onSubmit={(e) => {
             e.preventDefault();
             void ask(draft);
           }}
         >
-          <div className="flex items-end gap-2">
+          {/* One rounded field: the field itself takes no outline; the frame tints softly while typing. */}
+          <div className="flex items-end gap-1.5 rounded-[26px] border border-line bg-soft py-1.5 pl-4 pr-1.5 transition-[border-color,box-shadow,background-color] duration-150 focus-within:border-action/60 focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(0,120,188,0.10)] motion-reduce:transition-none">
             <label htmlFor="velto-chat-input" className="sr-only">
               {t.placeholder}
             </label>
@@ -457,17 +458,17 @@ export function ChatWidget() {
                 }
               }}
               placeholder={t.placeholder}
-              className="max-h-32 min-h-11 flex-1 resize-none rounded-lg border border-line-strong bg-white px-3.5 py-2.5 text-[16px] leading-snug text-navy placeholder:text-muted focus:border-action focus:outline-none disabled:bg-disabled-bg md:text-[15px]"
-              style={{ fieldSizing: "content" } as React.CSSProperties}
+              className="max-h-32 min-h-9 flex-1 resize-none self-center border-0 bg-transparent py-1.5 text-[16px] leading-snug text-navy outline-none placeholder:text-muted focus:outline-none focus-visible:outline-none md:text-[15px]"
+              style={{ fieldSizing: "content", outline: "none" } as React.CSSProperties}
             />
             <button
               type="submit"
               disabled={busy || offline || !draft.trim()}
               aria-label={t.send}
-              className="inline-grid size-11 shrink-0 place-items-center rounded-lg bg-action text-white hover:bg-action-hover disabled:bg-disabled-bg disabled:text-disabled-text"
+              className="inline-grid size-10 shrink-0 place-items-center rounded-full bg-action text-white transition-colors hover:bg-action-hover focus-visible:outline-offset-2 disabled:bg-line disabled:text-white"
             >
-              <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M5 12h14M13 6l6 6-6 6" />
+              <svg viewBox="0 0 24 24" className="size-[18px]" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 19V5M6 11l6-6 6 6" />
               </svg>
             </button>
           </div>
