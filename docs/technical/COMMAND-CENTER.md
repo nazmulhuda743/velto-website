@@ -1,5 +1,7 @@
 # Velto Website Command Center
 
+> **Out of date. Checked 31 Oct 2026:** the Command Center is merged and deployed, and its SQL is on production. For the current state see [`STATUS.md`](STATUS.md). The rest of this page is kept as history.
+
 Status: **BUILT · TESTED** on `claude/velto-dashboard-command-center`. Not approved, not deployed.
 Nothing here is active in production: every write path is behind switches that default to off.
 

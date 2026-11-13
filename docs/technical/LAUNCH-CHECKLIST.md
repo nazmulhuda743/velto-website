@@ -1,5 +1,7 @@
 # Velto Website — Production Launch Checklist
 
+> **Out of date. Checked 31 Oct 2026:** the site launched. The unticked boxes below were not maintained after launch. For the current state see [`STATUS.md`](STATUS.md). The rest of this page is kept as history.
+
 This checklist is the release gate for the Velto V1 website. A page being built is not the same as the website being launch-ready.
 
 ## 1. Code integration

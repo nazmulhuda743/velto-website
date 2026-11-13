@@ -16,6 +16,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /*
+ * Account sign-in (SMS code, Google) and the GreenWeb and Google sign-in providers: drafted from the
+ * code on 31 Oct 2026, approved by the owner on 13 Nov 2026 (#137). A lawyer review before the
+ * public launch is still recommended (docs/legal/LEGAL-REVIEW.md).
+ *
  * Describes the website's real data flows (src/components/forms, src/app/api,
  * src/lib/analytics, docs/technical/COMMAND-CENTER.md). If a flow changes,
  * update this page in the same change. Open items: docs/legal/LEGAL-REVIEW.md.
@@ -62,6 +66,12 @@ const SECTIONS: LegalSection[] = [
           quantities or dimensions, and any notes about condition. Photos you pick in the quote form are{" "}
           <strong>not uploaded</strong>: they stay on your device. If you choose to send them, you send them to us on
           WhatsApp.
+        </p>
+        <p>
+          <strong>Your account:</strong> you can sign in with your phone number, and we text you a one-time code by
+          SMS. If you choose &ldquo;Sign in with Google&rdquo; instead, Google tells us your name and email address. We
+          keep your name, phone number, address and preferences with your account so you can see your orders and book
+          again.
         </p>
         <p>
           <strong>When you track an order:</strong> the order number and phone number you enter, which are checked against
@@ -196,6 +206,13 @@ const SECTIONS: LegalSection[] = [
           <li>
             <strong>Supabase</strong>: the database and private file storage that hold our operating records, including
             bookings, quotes, orders, photos added to bookings and website measurement.
+          </li>
+          <li>
+            <strong>GreenWeb (bdbulksms.net)</strong>: sends our SMS messages, such as sign-in codes and reminders. It
+            receives your phone number and the message.
+          </li>
+          <li>
+            <strong>Google sign-in</strong>: only if you choose to sign in with Google.
           </li>
           <li>
             <strong>Meta (WhatsApp)</strong>: when you message us on WhatsApp, your messages are handled under

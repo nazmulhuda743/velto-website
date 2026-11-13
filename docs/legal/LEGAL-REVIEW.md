@@ -35,9 +35,9 @@ Keep these true when settings change:
 - Analytics retention (90 days raw, 25 months daily totals, 13 months consent counts) depends on `website_analytics_purge()` being scheduled daily (docs/technical/COMMAND-CENTER.md).
 - Photos (Privacy §2, updated 13 November 2026): Book Pickup uploads up to three photos to the private `booking-photos` bucket as soon as they're added (`/api/bookings/photos`); staff open them through `/go/photo/<id>`, which signs a ten-minute link. Quote-form photos stay on the device and go by WhatsApp. Invoice links can show staff stain photos from the private `order-photos` bucket through one-hour links. Keep that wording true if any of these change.
 - Photos uploaded but never sent with a booking (or removed in the form) stay in storage with no name or number attached; nothing deletes them yet. Decide a clean-up period (and add a scheduled delete) or keep the current wording.
-- Service providers named: Vercel, Cloudflare, Supabase, Meta (WhatsApp), and Google/Meta ad tools only with consent. Update the list if a provider is added, for example SMS or email sending.
+- **Service providers (approved by the owner 13 Nov 2026):** Vercel, Cloudflare, Supabase, Meta (WhatsApp), GreenWeb / bdbulksms.net (SMS sign-in codes and reminders), Google sign-in (only if chosen), and Google/Meta ad tools only with consent. Update the list if another provider is added, for example email sending.
 - Booking and quote retention is written as "as long as needed … then deleted or anonymised". Decide on an actual period (for example 3 years after the last order, subject to tax rules) and state it.
-- When customer accounts launch (Customer Portal), add the account data, login cookies and account deletion to Privacy and Cookies.
+- **Customer accounts are live.** Approved by the owner 13 Nov 2026: the account data (phone sign-in by SMS code, or Google name and email) in Privacy, and the sign-in and language cookies (`sb-…-auth-token`, `velto_account`, `velto_link_code`, `velto_lang`) in Cookies. **Still open:** how a customer deletes their account. Today it is by request (Privacy §9), and there is no self-service button.
 
 ## 4. Cookie list
 

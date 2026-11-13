@@ -1,5 +1,7 @@
 # Velto Website Production Activation Readiness
 
+> **Out of date. Checked 31 Oct 2026:** the site is live on Vercel, and the website SQL is applied to production. For the current state see [`STATUS.md`](STATUS.md). The rest of this page is kept as history.
+
 Audit date: 25 September 2026
 
 Baseline: `4c51106a3e18623bde6b4db5bc1af85c2ece09c3`

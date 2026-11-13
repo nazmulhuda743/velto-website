@@ -1,5 +1,7 @@
 # DNS cutover: www.velto.com.bd from Webflow to Vercel
 
+> **Out of date. Checked 31 Oct 2026:** the cutover is done, and www.velto.com.bd is served by Vercel. For the current state see [`STATUS.md`](STATUS.md). The rest of this page is kept as history.
+
 Owner: Velto. Recorded 25 Sep 2026. Tick each box in order. Don't start step C until everything in A and B is ticked.
 
 ## What is true today (checked 25 Sep 2026)

@@ -1,5 +1,7 @@
 # Customer Portal V1
 
+> **Out of date. Checked 31 Oct 2026:** customer accounts are live (`/login`, `/account`). Where the status lines below disagree with each other, accounts being on is the current state. For the current state see [`STATUS.md`](STATUS.md). The rest of this page is kept as history.
+
 Customer sign-in, order history and booking prefill for the Velto website. Velto Ops stays the
 source of truth for customers, orders, items, payments and outlets. Supabase Auth (same Ops
 project) only provides customer identity.

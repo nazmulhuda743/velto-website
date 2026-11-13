@@ -1,5 +1,7 @@
 # Revenue attribution V1
 
+> **Out of date. Checked 31 Oct 2026:** revenue attribution is merged and deployed, and its SQL is on production (the `website-match-leads` job runs daily). For the current state see [`STATUS.md`](STATUS.md). The rest of this page is kept as history.
+
 Status: **BUILT · TESTED on staging.** Not approved, not deployed.
 Branch `claude/velto-revenue-attribution` is stacked on PR #19 (Command Center) plus the current `main`.
 The original proposal (with the full inspection notes) is on `claude/revenue-attribution-design`.

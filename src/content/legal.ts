@@ -20,4 +20,6 @@ export const LEGAL = {
   updated: "1 October 2026",
   /** Privacy's own "Last updated": booking photos, invoice condition photos and the website chat added. */
   privacyUpdated: "13 November 2026",
+  /** Cookies' own "Last updated": customer sign-in and language cookies added (owner-approved 13 Nov 2026). */
+  cookiesUpdated: "13 November 2026",
 };
