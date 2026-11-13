@@ -1,4 +1,5 @@
 import { pageMetadata } from "@/lib/seo/page-metadata";
+import { keepTogether } from "@/lib/text/keep-together";
 import { ProofFigures } from "@/components/pages/ProofFigures";
 import { pageFigures } from "@/components/pages/figures";
 import Link from "@/components/i18n/Link";
@@ -53,7 +54,7 @@ function DecisionRow({ service }: { service: ServiceContent }) {
             {service.name}
             <ArrowRight className="size-4 md:hidden" />
           </span>
-          <span className="mt-0.5 block t-caption text-secondary">{service.overviewFact}</span>
+          <span className="mt-0.5 block t-caption text-secondary">{keepTogether(service.overviewFact)}</span>
         </span>
         <ArrowRight className="hidden size-5 text-blue transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none md:block" />
       </Link>
@@ -120,7 +121,7 @@ export default async function ServicesPage() {
 
       <section aria-labelledby="compare-title" className="py-(--space-section)">
         <div className="container-page">
-          <SectionIntro id="compare-title" eyebrow={pageText(locale).service.blockEyebrows.compare} title={t.compareTitle}>
+          <SectionIntro id="compare-title" eyebrow={pageText(locale).service.blockEyebrows.compare} title={keepTogether(t.compareTitle)}>
             <p>{t.compareIntro}</p>
           </SectionIntro>
           <div className="mt-(--space-intro-content)">

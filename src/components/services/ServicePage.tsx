@@ -1,4 +1,5 @@
 import Link from "@/components/i18n/Link";
+import { keepTogether } from "@/lib/text/keep-together";
 import { FAQ, FAQS, FAQS_BN, FAQ_KEYS, type FAQItem } from "@/components/home/FAQ";
 import { FinalBookingCTA } from "@/components/home/FinalBookingCTA";
 import { GoogleProof } from "@/components/home/ProofLine";
@@ -66,7 +67,7 @@ function AtAGlance({ service, locale }: { service: ServiceContent; locale: Local
             >
               <dt className="t-label uppercase text-secondary">{r.label}</dt>
               <dd className="text-[16px] font-semibold leading-snug text-navy md:mt-2 md:text-[17px]">
-                {noStop(r.value)}
+                {keepTogether(noStop(r.value))}
                 {"dropOff" in r ? (
                   // Pickup stays the default; the outlets are an option, not a requirement.
                   <Link
@@ -216,6 +217,8 @@ export async function ServicePage({ service }: { service: ServiceContent }) {
           id={`${block.type}-${i}-title`}
           tone={TONES[i % 2]}
           serviceName={service.name}
+          // Two blocks of the same kind in a row share one section label, not the same label twice.
+          continued={i > 0 && service.blocks[i - 1].type === block.type}
         />
       ))}
 

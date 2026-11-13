@@ -1,4 +1,5 @@
 import { pageMetadata } from "@/lib/seo/page-metadata";
+import { keepTogether } from "@/lib/text/keep-together";
 import { FAQ, faqItems } from "@/components/home/FAQ";
 import { FinalBookingCTA } from "@/components/home/FinalBookingCTA";
 import { PopularPrices } from "@/components/home/PopularPrices";
@@ -93,7 +94,7 @@ export default async function PricingPage({ searchParams }: { searchParams: Sear
       <section aria-labelledby="compare-title" className="py-(--space-section)">
         <div className="container-page">
           <div className="max-w-[640px]">
-            <SectionIntro id="compare-title" eyebrow={pageText(locale).service.blockEyebrows.compare} title={t.compareTitle}>
+            <SectionIntro id="compare-title" eyebrow={pageText(locale).service.blockEyebrows.compare} title={keepTogether(t.compareTitle)}>
               <p>{t.compareIntro}</p>
             </SectionIntro>
           </div>
