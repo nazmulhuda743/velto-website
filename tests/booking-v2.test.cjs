@@ -110,3 +110,29 @@ test("photo ids become links in the notes; anything else is rejected", () => {
     assert.deepEqual(bad.issues, [{ field: "photos", code: "invalid" }]);
   }
 });
+
+test("/book service panels: each service's items, all in one price lookup", () => {
+  const { BOOKING_ITEMS_BY_SERVICE, bookingCatalogueNames, ITEM_SERVICES } = require("../.foundation-test-build/booking-items.js");
+  assert.deepEqual(Object.keys(BOOKING_ITEMS_BY_SERVICE).sort(), Object.keys(ITEM_SERVICES).sort());
+  for (const names of Object.values(BOOKING_ITEMS_BY_SERVICE)) assert.ok(names.length >= 2 && new Set(names).size === names.length);
+  // One price lookup takes at most 40 names.
+  assert.ok(bookingCatalogueNames().length <= 40, `${bookingCatalogueNames().length} names`);
+});
+
+test("/book prices: garment services read their own column; household shows a 'from' price", () => {
+  const { itemPrice, fromPrice, offeredFor } = require("../.foundation-test-build/booking-items.js");
+  const row = (slug, amountMinor, unitLabel = null) => ({ slug, amountMinor, unitLabel });
+  const shirt = { name: "Shirt", services: [row("wash-and-iron", 4000), row("ironing", 1500)] };
+  const blanket = { name: "Blanket (Small)", services: [row("dry-cleaning", 30000), row("wash-and-iron", 25000)] };
+  const curtain = { name: "Curtain Normal (per sqft)", services: [row("dry-cleaning", 1200, "per sqft"), row("wash-and-iron", 1000, "per sqft")] };
+  assert.deepEqual(itemPrice(shirt, "ironing"), { amountMinor: 1500, unitLabel: null, exact: true });
+  assert.equal(itemPrice(shirt, "dry-cleaning"), null);
+  assert.equal(offeredFor(shirt, "dry-cleaning"), false);
+  assert.equal(offeredFor(blanket, "blanket-comforter-cleaning"), true);
+  assert.deepEqual(itemPrice(blanket, "blanket-comforter-cleaning"), { amountMinor: 25000, unitLabel: null, exact: false });
+  assert.deepEqual(itemPrice(curtain, "curtain-cleaning"), { amountMinor: 1000, unitLabel: "per sqft", exact: false });
+  assert.deepEqual(fromPrice("ironing", [shirt, blanket]), { amountMinor: 1500, unitLabel: null });
+  assert.deepEqual(fromPrice("curtain-cleaning", [curtain]), { amountMinor: 1000, unitLabel: "per sqft" });
+  assert.equal(fromPrice("dry-cleaning", [shirt]), null);
+  assert.equal(fromPrice("ironing", []), null);
+});

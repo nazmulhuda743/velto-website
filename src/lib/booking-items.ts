@@ -27,6 +27,72 @@ export type GarmentService = (typeof GARMENT_SERVICES)[number];
 export const isGarmentService = (value: unknown): value is GarmentService =>
   typeof value === "string" && (GARMENT_SERVICES as readonly string[]).includes(value);
 
+/**
+ * What each service's items panel on /book offers first, named exactly as the Ops price list names
+ * them (the same groups the service pages show). The rest of the list is a search away.
+ */
+export const BOOKING_ITEMS_BY_SERVICE: Record<ItemService, readonly string[]> = {
+  "dry-cleaning": ["Blazer", "Suit (2pc)", "Sari (Silk)", "Sari (Cotton)", "Panjabi (Silk/Heavy)", "Sherwani", "Suit (3pc)", "Coat", "Waist Coat", "Kamiz Suit (3pc Heavy)", "Lahanga (Heavy 2pc)", "Gown"],
+  "wash-and-iron": ["Shirt", "T-Shirt", "Pant", "Jeans", "Kamiz", "Salwar", "Panjabi", "Kurta", "Bed Sheet (Medium)", "Bed Sheet (Large)", "Pillow Cover", "Towel (Bath)"],
+  ironing: ["Shirt", "Pant", "T-Shirt", "Trouser", "Kamiz", "Salwar", "Panjabi", "Kurta", "Sari (Cotton)", "Blouse", "Dupatta", "Bed Sheet (Large)"],
+  "curtain-cleaning": ["Curtain Normal (per sqft)", "Curtain Heavy (per sqft)"],
+  "carpet-cleaning": ["Carpet (per sqft)", "Paposh (Medium)", "Mat (Medium)", "Prayer Mat"],
+  "blanket-comforter-cleaning": ["Blanket (Small)", "Blanket (Regular/Medium)", "Blanket (Large/Heavy)", "Comforter (Regular)", "Comforter (Heavy)", "Quilt (Normal)", "Katha (Medium)"],
+};
+
+/** Every item name the service panels offer, once each (one price lookup takes at most 40). */
+export const bookingCatalogueNames = () => [...new Set(Object.values(BOOKING_ITEMS_BY_SERVICE).flat())];
+
+/** A price-list entry as /api/prices returns it (amounts in paisa from Velto Ops). */
+export type ListedItem = { name: string; services: { slug: string; amountMinor: number | null; unitLabel: string | null }[] };
+
+/** What an item costs for a service on /book, or null when Velto prices it at pickup. */
+export type ItemPrice = {
+  amountMinor: number;
+  /** "per sqft" and the like: a rate, measured at pickup. */
+  unitLabel: string | null;
+  /** True when this is the line's own price (a garment service, per piece); otherwise a "from" price. */
+  exact: boolean;
+};
+
+/**
+ * The price to show for an item under a service. Garment services read their own column. The
+ * household services have no column of their own in Ops (bedding, mats and curtains are priced
+ * under dry cleaning or wash & iron), so they show the lowest per-piece price as a "from" price,
+ * else the lowest rate (per sq ft); their lines stay priced at pickup in the estimate.
+ */
+export function itemPrice(item: ListedItem, service: ItemService): ItemPrice | null {
+  if (isGarmentService(service)) {
+    const s = item.services.find((x) => x.slug === service);
+    return s && s.amountMinor !== null ? { amountMinor: s.amountMinor, unitLabel: s.unitLabel, exact: !s.unitLabel } : null;
+  }
+  const known = item.services.filter((s): s is ListedItem["services"][number] & { amountMinor: number } => s.amountMinor !== null);
+  const pieces = known.filter((s) => !s.unitLabel);
+  const pick = (list: typeof known) => list.reduce<(typeof known)[number] | null>((low, s) => (!low || s.amountMinor < low.amountMinor ? s : low), null);
+  const low = pick(pieces) ?? pick(known);
+  return low ? { amountMinor: low.amountMinor, unitLabel: low.unitLabel, exact: false } : null;
+}
+
+/** Whether an item belongs in a service's panel: garment services only list items priced for them. */
+export const offeredFor = (item: ListedItem, service: ItemService) => !isGarmentService(service) || item.services.some((s) => s.slug === service);
+
+/**
+ * "From ৳X" on a service card: the lowest price among the service's own items on the list (per
+ * piece first; a rate such as per sq ft only when nothing is priced per piece). Null without prices.
+ */
+export function fromPrice(service: ItemService, listed: ListedItem[]): Pick<ItemPrice, "amountMinor" | "unitLabel"> | null {
+  const names = new Set(BOOKING_ITEMS_BY_SERVICE[service]);
+  const prices = listed.filter((p) => names.has(p.name)).flatMap((p) => {
+    const price = itemPrice(p, service);
+    return price ? [price] : [];
+  });
+  const pieces = prices.filter((p) => !p.unitLabel);
+  const pool = pieces.length ? pieces : prices;
+  if (!pool.length) return null;
+  const low = pool.reduce((a, b) => (b.amountMinor < a.amountMinor ? b : a));
+  return { amountMinor: low.amountMinor, unitLabel: low.unitLabel };
+}
+
 /** Orders of ৳499+ get free pickup & delivery (spec §4), in minor units (paisa). */
 export const FREE_DELIVERY_MIN_MINOR = 49_900;
 
