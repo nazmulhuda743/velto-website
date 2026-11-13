@@ -78,3 +78,18 @@ test("condition: each photo is signed once, and only order-photos stain links be
   assert.equal(inv.signedPhotoUrl(origin, "/object/sign/order-photos/stains/../x?token=t"), null);
   assert.equal(inv.signedPhotoUrl(origin, null), null);
 });
+
+test("customer: full name, masked phone and area; a phone that is not masked never shows", () => {
+  assert.deepEqual(inv.invoiceCustomer({ name: "  Md.  Nazmul   Hasan ", phone: "017•••••123", area: "Uttara Sector 11" }), {
+    name: "Md. Nazmul Hasan",
+    phone: "017•••••123",
+    area: "Uttara Sector 11",
+  });
+  assert.equal(inv.invoiceCustomer({ name: "Afiq", phone: "01712345123", area: null }).phone, null);
+  assert.equal(inv.invoiceCustomer({ name: "Afiq", phone: "010•••••123", area: "" }).phone, null);
+  assert.equal(inv.invoiceCustomer({ name: "Afiq", phone: null, area: "  " }).area, null);
+  assert.equal(inv.invoiceCustomer({ name: "x".repeat(80), phone: null, area: null }).name.length, 60);
+  assert.equal(inv.invoiceCustomer({ name: "", phone: "017123", area: null }), null);
+  assert.equal(inv.invoiceCustomer(null), null);
+  assert.equal(inv.invoiceCustomer("Afiq"), null);
+});
