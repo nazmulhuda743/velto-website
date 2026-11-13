@@ -91,7 +91,7 @@ export async function ServiceChooser() {
           <article className={`${ROW} mt-8 md:col-span-3 md:mt-0 md:border-0 md:pt-0 xl:col-span-5`}>
             <ResponsiveImage
               image={IMAGES.washAndIron}
-              aspect="aspect-[4/3] md:aspect-[3/4] xl:aspect-[7/5]"
+              aspect="aspect-[4/3] md:aspect-[7/8] xl:aspect-[7/5]"
               sizes="(min-width: 1200px) 500px, (min-width: 768px) 40vw, 88px"
             />
             <div className="md:mt-6">

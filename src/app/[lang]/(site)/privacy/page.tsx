@@ -50,10 +50,18 @@ const SECTIONS: LegalSection[] = [
           service you choose, your preferred pickup day and time, and any note you add.
         </p>
         <p>
+          <strong>Photos you add to a booking (optional):</strong> you can add up to three photos of your items, for
+          example of a stain or damage. The website usually makes each photo smaller first, then{" "}
+          <strong>uploads it as soon as you add it</strong>, into private storage that only our server can reach. When
+          you send the booking, it carries links to your photos, and our team opens them through those links, which give
+          access for ten minutes at a time. If you remove a photo, or don&apos;t send the booking, the photo stays
+          stored under a random code with no name or phone number, and it is not attached to any booking.
+        </p>
+        <p>
           <strong>When you request a quote:</strong> your name, phone or WhatsApp number, area, the service, approximate
-          quantities or dimensions, and any notes about condition. The quote form lets you pick photos, but{" "}
-          <strong>photos are not uploaded through the website</strong>: they stay on your device. If you choose to send
-          photos, you send them to us on WhatsApp.
+          quantities or dimensions, and any notes about condition. Photos you pick in the quote form are{" "}
+          <strong>not uploaded</strong>: they stay on your device. If you choose to send them, you send them to us on
+          WhatsApp.
         </p>
         <p>
           <strong>When you track an order:</strong> the order number and phone number you enter, which are checked against
@@ -88,7 +96,9 @@ const SECTIONS: LegalSection[] = [
         <p>
           <strong>Invoice links:</strong> after an order we may send you its invoice on WhatsApp as a private link. The
           page shows your first name, the order&apos;s items, prices and payments, never your phone number or address,
-          and the link works for 120 days. We record when it was sent and opened. Signing in with the same number keeps
+          and the link works for 120 days. If our team noted stains when we received your items, the page can also show
+          them, with photos our team took. Those photos are kept in private storage, and the page&apos;s links to them
+          stop working after an hour. We record when the invoice link was sent and opened. Signing in with the same number keeps
           all your orders and invoices in your account. If you rate the order there, or ask for a weekly pickup or a
           service on your next pickup, we keep that with your order, and our team may call you about it.
         </p>
@@ -177,8 +187,8 @@ const SECTIONS: LegalSection[] = [
             <strong>Cloudflare</strong>: domain, network and security services.
           </li>
           <li>
-            <strong>Supabase</strong>: the database that holds our operating records, including bookings, quotes, orders
-            and website measurement.
+            <strong>Supabase</strong>: the database and private file storage that hold our operating records, including
+            bookings, quotes, orders, photos added to bookings and website measurement.
           </li>
           <li>
             <strong>Meta (WhatsApp)</strong>: when you message us on WhatsApp, your messages are handled under
@@ -210,7 +220,7 @@ const SECTIONS: LegalSection[] = [
       <>
         <ul>
           <li>
-            <strong>Bookings, quotes, orders and related messages</strong>: for as long as we need them to provide the
+            <strong>Bookings, quotes, orders, photos added to them and related messages</strong>: for as long as we need them to provide the
             service, deal with questions or claims about an order, and meet our accounting and legal obligations. After
             that they are deleted or anonymised.
           </li>
@@ -321,10 +331,14 @@ export default function PrivacyPage() {
         <>We collect what we need to arrange and deliver your order: name, phone, address, items and preferences.</>,
         <>We never sell your information, and we never put your name or phone number into website analytics.</>,
         <>Analytics and advertising tools run only if you allow them in the cookie banner.</>,
-        <>Photos for quotes are not uploaded through the website. You choose whether to send them on WhatsApp.</>,
+        <>
+          Photos you add to a booking are stored privately for our team. Photos for quotes stay on your device unless you
+          send them on WhatsApp.
+        </>,
         <>You can ask to see, correct or delete your information at any time.</>,
       ]}
       sections={SECTIONS}
+      updated={LEGAL.privacyUpdated}
     />
   );
 }
