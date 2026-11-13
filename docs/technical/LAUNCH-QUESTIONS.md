@@ -26,10 +26,12 @@ pricing view, never stored in the site), the WhatsApp destination (owner-confirm
    email handles privacy requests?
 2. **Terms policies** listed in `docs/legal/LEGAL-REVIEW.md` §2: payment timing and methods, reporting
    window, any liability cap, uncollected-items period, governing-law wording.
-3. **Privacy page is behind the product** (`src/app/[lang]/(site)/privacy/page.tsx`, "Last updated
-   1 October 2026"). It says photos are never uploaded through the website, but Book Pickup now
-   uploads one optional photo to Velto's storage (`/api/bookings/photos`). The provider list doesn't
-   name the SMS provider used for sign-in codes or Google sign-in. Legal copy was not changed here.
+3. **Privacy page: providers still missing.** The photo mismatch is fixed (13 November 2026):
+   Privacy now says booking photos (up to three) are uploaded to private storage as soon as they're
+   added, quote photos stay on the device, and invoice links can show the stain photos staff took.
+   Still open: the provider list doesn't name the SMS provider used for sign-in codes or Google
+   sign-in, and photos uploaded but never sent with a booking are not deleted automatically (decide a
+   clean-up period; see `docs/legal/LEGAL-REVIEW.md` §3).
 
 ### Reviews and ratings
 

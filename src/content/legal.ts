@@ -16,6 +16,8 @@ export const LEGAL = {
   email: null as string | null,
   /** Owner-confirmed WhatsApp number (also set in the admin dashboard). */
   whatsappDisplay: "+880 1605-162788",
-  /** Date shown as "Last updated" on all three pages. */
+  /** Date shown as "Last updated" on Terms and Cookies (and Privacy unless it has its own). */
   updated: "1 October 2026",
+  /** Privacy's own "Last updated": booking photos and invoice condition photos added. */
+  privacyUpdated: "13 November 2026",
 };
