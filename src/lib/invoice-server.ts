@@ -1,8 +1,8 @@
 import "server-only";
 
-import { INVOICE_CODE, type InvoiceLineIn } from "./invoice";
+import { conditionPhotoPaths, INVOICE_CODE, signedPhotoUrl, type ConditionMarkIn, type InvoiceLineIn } from "./invoice";
 import type { ServiceMix } from "./second-service";
-import { isSupabaseConfigured, supabaseRpc } from "./supabase-server";
+import { isSupabaseConfigured, supabaseFetch, supabaseOrigin, supabaseRpc } from "./supabase-server";
 
 /**
  * Service-role calls for invoice links (docs/technical/sql/website_invoices.sql). The invoice
@@ -37,6 +37,8 @@ export type InvoiceView =
       servicesEver?: ServiceMix | null;
       rating?: number | null;
       asked?: { kind: "routine" | "addon"; service: string; weekday: number | null; window: string | null }[];
+      /** website_invoice_condition.sql: the stains recorded at drop-off. Absent before that SQL runs. */
+      condition?: unknown;
     };
 
 export type InvoiceRow = {
@@ -62,6 +64,42 @@ export const invoicesReady = () => isSupabaseConfigured();
 export async function getInvoice(code: string): Promise<InvoiceView> {
   if (!INVOICE_CODE.test(code)) return { ok: false, reason: "unknown" };
   return supabaseRpc<InvoiceView>("website_invoice_get", { p_code: code });
+}
+
+const PHOTO_TTL_SECONDS = 3600;
+
+/**
+ * Signed links (one hour) for the condition photos, keyed by path. The order-photos bucket stays private: the page
+ * only ever sees these short-lived links. A failure shows the cards without photos; it never breaks the invoice.
+ */
+export async function signConditionPhotos(marks: ConditionMarkIn[]): Promise<Record<string, string>> {
+  const paths = conditionPhotoPaths(marks);
+  if (!paths.length) return {};
+  try {
+    const res = await supabaseFetch("/storage/v1/object/sign/order-photos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ expiresIn: PHOTO_TTL_SECONDS, paths }),
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      console.warn(`invoice photos: signing failed with HTTP ${res.status}`);
+      return {};
+    }
+    const rows = (await res.json()) as unknown;
+    const origin = supabaseOrigin();
+    const out: Record<string, string> = {};
+    if (Array.isArray(rows)) {
+      for (const r of rows as { path?: unknown; signedURL?: unknown; error?: unknown }[]) {
+        const url = r && !r.error ? signedPhotoUrl(origin, r.signedURL) : null;
+        if (url && typeof r.path === "string" && paths.includes(r.path)) out[r.path] = url;
+      }
+    }
+    return out;
+  } catch (e) {
+    console.warn("invoice photos: signing failed", e instanceof Error ? e.name : "error");
+    return {};
+  }
 }
 
 export const listInvoices = (days: number, search: string | null) =>

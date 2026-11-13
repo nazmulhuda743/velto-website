@@ -42,3 +42,19 @@ shows example data.
   86% matched the total exactly (with the express fee). The rest show the difference as Discount or Other charges.
 
 Test: `docs/technical/sql/tests/website_invoices_test.sql` (staging only, rolls back).
+
+## Garment condition report (`website_invoice_condition.sql`, owner 2026-11-13)
+
+The owner: the invoice link showed no stain records. The page now has a **Garment condition** section (after the
+items) with every stain staff recorded at drop-off in Velto Ops (`order_stains`): the garment, the stain type and up to
+two photos, like page 2 of the app's PDF invoice, plus a short care promise. No stains → no section.
+
+- `website_invoice_get()` gains `condition: [{ item, type, photos, more }]` (at most 30 marks, 2 photo paths each,
+  only paths under `stains/`; everything else in the function is unchanged — the file pins the old body's md5).
+- The website signs the photo paths on the server for **one hour** (`signConditionPhotos`, Storage
+  `/object/sign/order-photos`); the bucket stays private and the browser only sees those short links. If signing
+  fails, the cards show "Photo can't be shown right now" and the invoice still loads.
+- Status: **applied and tested on staging 2026-11-13** (rehearsal + `tests/website_invoice_condition_test.sql`, undo
+  rehearsed: it restores the old md5). Production: run `website_invoice_condition.sql` with the owner's approval;
+  undo `website_invoice_condition.down.sql`. The page works before and after (no `condition` → no section).
+- `/i/preview0` shows the section with example data (one site photo, not a customer's).
