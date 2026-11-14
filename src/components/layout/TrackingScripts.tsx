@@ -1,5 +1,7 @@
 import { ConsentGatedTagManager } from "@/components/consent/ConsentGatedTagManager";
+import { GoogleAdsTag } from "@/components/consent/GoogleAdsTag";
 import { MetaPixel } from "@/components/consent/MetaPixel";
+import { configuredGoogleAds } from "@/lib/google-ads/config";
 import { configuredGtmId } from "@/lib/gtm";
 import { configuredMetaPixelId } from "@/lib/meta-pixel/config";
 
@@ -13,16 +15,22 @@ import { configuredMetaPixelId } from "@/lib/meta-pixel/config";
  *   consent. It is loaded here, not through GTM, so its event map is versioned with the site
  *   (src/lib/meta-pixel/events.ts). GTM must not contain a Meta Pixel tag as well.
  *
+ * - Google Ads tag (gtag.js), only when the visitor has granted Marketing consent. It sends the two
+ *   lead conversions (WhatsApp click, Booking submitted) mapped in src/lib/google-ads/events.ts and
+ *   stores the ad click id. GTM must not contain Google Ads conversion tags as well.
+ *
  * There is intentionally no <noscript> GTM iframe or Pixel image: both would load without any
  * consent decision.
  */
 export function TrackingScripts() {
   const gtmId = configuredGtmId();
   const pixelId = configuredMetaPixelId();
+  const googleAds = configuredGoogleAds();
   return (
     <>
       {gtmId ? <ConsentGatedTagManager gtmId={gtmId} /> : null}
       {pixelId ? <MetaPixel pixelId={pixelId} /> : null}
+      {googleAds ? <GoogleAdsTag config={googleAds} /> : null}
     </>
   );
 }

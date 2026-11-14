@@ -7,6 +7,7 @@ import { allowedOnPrivatePath, isAnalyticsEvent } from "@/lib/analytics/events";
 import { isPrivatePath } from "@/lib/analytics/private-paths";
 import { appendAttribution } from "@/lib/attribution";
 import { captureAttributionFromUrl, consentedAttribution, storedAttribution } from "@/lib/attribution-client";
+import { sendGoogleAdsConversion } from "@/lib/google-ads/client";
 import { sendMetaEvent } from "@/lib/meta-pixel/client";
 
 type Payload = Record<string, string | undefined>;
@@ -49,6 +50,9 @@ export function track(event: string, context: Payload = {}) {
   // Meta Pixel: a no-op unless Marketing consent started it; maps this event (or not) in
   // src/lib/meta-pixel/events.ts. This is the Pixel's only event source, so nothing double-fires.
   sendMetaEvent(event, context);
+  // Google Ads: a no-op unless Marketing consent started the tag; only whatsapp_click and
+  // booking_success count (src/lib/google-ads/events.ts).
+  sendGoogleAdsConversion(event);
 }
 
 /**
