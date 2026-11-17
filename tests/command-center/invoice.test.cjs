@@ -93,3 +93,14 @@ test("customer: full name, masked phone and area; a phone that is not masked nev
   assert.equal(inv.invoiceCustomer(null), null);
   assert.equal(inv.invoiceCustomer("Afiq"), null);
 });
+
+test("terms: the six Velto Ops invoice terms, word for word, in order", () => {
+  assert.deepEqual(inv.INVOICE_TERMS, [
+    "All items are accepted for washing, ironing and dry cleaning with every care taken.",
+    "While we follow care labels, we are not responsible for colour bleeding, fading or shrinkage inherent to the fabric, or for items without a care label.",
+    "Please empty all pockets. We are not responsible for money, jewellery or articles left inside garments.",
+    "Any claim must be reported on WhatsApp within 48 hours of delivery, quoting your order number.",
+    "Our liability for loss or damage will not exceed ten times the cleaning charge of the item.",
+    "Items undelivered after 30 days will incur a 10% monthly storage fee.",
+  ]);
+});
