@@ -50,6 +50,7 @@ const en = {
     promise: "We treat each mark with the safest method for the fabric. Some old stains may fade rather than disappear; where we must choose, we protect the garment.",
   },
   paymentsTitle: "Payments",
+  termsTitle: "Terms & conditions",
   paidOn: "{amount} · {method} · {day}",
   /** Ops payment methods (payments_method_check); anything else is shown as it comes. */
   methods: { Cash: "Cash", Bkash: "bKash", Nagad: "Nagad", Card: "Card", "Bank Transfer": "Bank transfer", COD: "Cash on delivery" } as Record<string, string>,
@@ -117,6 +118,7 @@ const bn: InvoiceText = {
     promise: "প্রতিটি দাগে কাপড়ের জন্য সবচেয়ে নিরাপদ পদ্ধতি ব্যবহার করি। কিছু পুরনো দাগ পুরোপুরি না উঠে হালকা হতে পারে; বেছে নিতে হলে আমরা কাপড়টিকেই রক্ষা করি।",
   },
   paymentsTitle: "পেমেন্ট",
+  termsTitle: "শর্তাবলি",
   paidOn: "{amount} · {method} · {day}",
   methods: { Cash: "ক্যাশ", Bkash: "বিকাশ", Nagad: "নগদ", Card: "কার্ড", "Bank Transfer": "ব্যাংক ট্রান্সফার", COD: "ডেলিভারিতে ক্যাশ" },
   print: "PDF হিসেবে সেভ / প্রিন্ট",

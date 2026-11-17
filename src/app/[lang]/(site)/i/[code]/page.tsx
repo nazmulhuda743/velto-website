@@ -13,7 +13,7 @@ import { LOCATIONS, WHATSAPP_URL } from "@/content/site";
 import { getCustomerSession, getPortalOrder } from "@/lib/customer/portal";
 import { fill, localDigits } from "@/lib/i18n/config";
 import { getLocale } from "@/lib/i18n/server";
-import { conditionMarks, invoiceCustomer, invoiceSums } from "@/lib/invoice";
+import { conditionMarks, INVOICE_TERMS, invoiceCustomer, invoiceSums } from "@/lib/invoice";
 import { getInvoice, invoicesReady, signConditionPhotos, type InvoiceView } from "@/lib/invoice-server";
 import { INVITE_ITEMS, inviteKind, nextService } from "@/lib/second-service";
 import { getServicePrices } from "@/lib/service-prices";
@@ -330,6 +330,17 @@ export default async function InvoicePage({ params, searchParams }: { params: Pr
           </ul>
         </section>
       ) : null}
+
+      <section aria-labelledby="terms-title" className="border-t border-line pt-5" data-invoice-terms>
+        <h2 id="terms-title" className="t-label uppercase text-navy">
+          {t.termsTitle}
+        </h2>
+        <ol className="mt-2 list-decimal space-y-1 pl-5 t-small text-body" lang="en">
+          {INVOICE_TERMS.map((term) => (
+            <li key={term}>{term}</li>
+          ))}
+        </ol>
+      </section>
 
       {theirs ? (
         <section className="flex flex-wrap items-center justify-between gap-4 rounded-lg bg-soft p-5 print:hidden" data-invoice-account="open">

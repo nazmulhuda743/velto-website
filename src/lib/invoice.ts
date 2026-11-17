@@ -34,6 +34,20 @@ export function invoiceSums(lines: InvoiceLineIn[], total: number, expressFee: n
 }
 
 /** One stain staff recorded at drop-off (website_invoice_condition.sql): up to 2 photo paths, `more` not listed. */
+/**
+ * The terms printed on every Velto invoice (owner 2026-11-17: "invoice e terms and conditions gula nai, add koro").
+ * Word for word the same six terms as the Velto Ops invoice and its PDF (velto-app src/logic/invoice.ts
+ * INVOICE_TERMS); shown in English on both language pages, as on the paper invoice.
+ */
+export const INVOICE_TERMS: readonly string[] = [
+  "All items are accepted for washing, ironing and dry cleaning with every care taken.",
+  "While we follow care labels, we are not responsible for colour bleeding, fading or shrinkage inherent to the fabric, or for items without a care label.",
+  "Please empty all pockets. We are not responsible for money, jewellery or articles left inside garments.",
+  "Any claim must be reported on WhatsApp within 48 hours of delivery, quoting your order number.",
+  "Our liability for loss or damage will not exceed ten times the cleaning charge of the item.",
+  "Items undelivered after 30 days will incur a 10% monthly storage fee.",
+];
+
 export type ConditionMarkIn = { item: string; type: string; photos: string[]; more: number };
 
 /** The only photo paths the page signs: stain photos in the order-photos bucket, nothing that climbs out of it. */
