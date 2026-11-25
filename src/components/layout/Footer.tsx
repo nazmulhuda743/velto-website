@@ -7,6 +7,7 @@ import { defaultFooterLinks } from "@/content/footer-defaults";
 import { GOOGLE_PROFILE_BRANCH, SOCIAL_PROFILES, WHATSAPP_URL, bookHref } from "@/content/site";
 import { FacebookIcon, GoogleIcon, InstagramIcon, LinkedInIcon } from "@/components/ui/icons";
 import { footerLabel, isExternalHref, visibleFooterLinks, type FooterLink } from "@/lib/footer-links";
+import { phoneDisplay, phoneHref } from "@/lib/contact-phone";
 import { getLocations, getSiteContent } from "@/lib/site-content";
 import { getLocale, localLocation } from "@/lib/i18n/server";
 
@@ -40,7 +41,7 @@ export async function Footer() {
   const locale = await getLocale();
   const t = dictionary(locale);
   const google = locations.find((l) => l.id === GOOGLE_PROFILE_BRANCH);
-  const { footer } = await getSiteContent();
+  const { footer, settings } = await getSiteContent();
   const builtIn = defaultFooterLinks();
   const services = visibleFooterLinks(footer.services ?? builtIn.services);
   const help = visibleFooterLinks(footer.help ?? builtIn.help);
@@ -70,6 +71,12 @@ export async function Footer() {
                 >
                   {t.common.whatsappVelto}
                   <span className="sr-only"> {t.common.opensNewTab}</span>
+                </a>
+              </li>
+              <li>
+                {/* The number itself, in the page for people and crawlers (calls and WhatsApp). */}
+                <a href={phoneHref(settings.whatsappNumber)} className={link} data-analytics="call_click" data-placement="footer" data-footer-phone>
+                  {t.common.callVelto} <span className="whitespace-nowrap">{phoneDisplay(settings.whatsappNumber)}</span>
                 </a>
               </li>
             </ul>

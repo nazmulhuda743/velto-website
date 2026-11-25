@@ -1,6 +1,7 @@
 import { IMAGES } from "@/content/mock";
 import type { Location } from "@/content/site";
 import { LOCATIONS, mapListingUrl, SOCIAL_PROFILES } from "@/content/site";
+import { phoneDisplay } from "@/lib/contact-phone";
 import { absoluteUrl, SITE_NAME, SITE_URL } from "@/lib/seo/site";
 
 /**
@@ -13,10 +14,11 @@ import { absoluteUrl, SITE_NAME, SITE_URL } from "@/lib/seo/site";
  *   BreadcrumbList per page
  *   FAQPage        wherever an FAQ is shown (the same questions and answers, word for word)
  *
- * Only verified facts: no telephone, opening hours, prices or ratings (see
+ * Only verified facts: no opening hours, prices or ratings (see
  * docs/seo/VELTO-SEO-MASTER-PLAN.md §Schema for what is deliberately left out
  * and why). Coordinates, postcode and map link come from each outlet's own
- * Google Business Profile, verified 2026-09-25.
+ * Google Business Profile, verified 2026-09-25. The telephone (calls and WhatsApp, the same number
+ * on both Business Profiles, owner-confirmed 2026-11-25) comes from Admin → Site settings.
  */
 
 export const ORGANIZATION_ID = `${SITE_URL}/#organization`;
@@ -40,7 +42,8 @@ export const WEBSITE_SCHEMA = {
   publisher: { "@id": ORGANIZATION_ID },
 };
 
-export const ORGANIZATION_SCHEMA = {
+/** The organization, with Velto's phone (digits, from Admin → Site settings). */
+export const organizationSchema = (phone: string) => ({
   "@context": "https://schema.org",
   "@type": "Organization",
   "@id": ORGANIZATION_ID,
@@ -51,12 +54,20 @@ export const ORGANIZATION_SCHEMA = {
   description:
     "Laundry, dry cleaning and ironing in Uttara, Dhaka, with pickup and delivery across Uttara Sectors 1–18 and outlets in Sector 11 and Sector 18.",
   areaServed: SERVICE_AREA_SCHEMA,
+  telephone: phoneDisplay(phone),
+  contactPoint: {
+    "@type": "ContactPoint",
+    telephone: phoneDisplay(phone),
+    contactType: "customer service",
+    areaServed: "BD",
+    availableLanguage: ["en", "bn"],
+  },
   location: LOCATIONS.map((l) => ({ "@id": locationId(l) })),
   sameAs: SOCIAL_PROFILES.map((p) => p.href),
-};
+});
 
 /** One outlet as a local business. Street address is split so it isn't repeated in the locality. */
-export function buildLaundryLocationSchema(location: Location) {
+export function buildLaundryLocationSchema(location: Location, phone?: string) {
   return {
     "@context": "https://schema.org",
     "@type": "DryCleaningOrLaundry",
@@ -66,6 +77,7 @@ export function buildLaundryLocationSchema(location: Location) {
     // The real storefront photo where one exists, otherwise the logo.
     image: absoluteUrl(IMAGES.locations[location.id].src ?? "/brand/velto-logo.png"),
     logo: absoluteUrl("/brand/velto-logo.png"),
+    ...(phone ? { telephone: phoneDisplay(phone) } : {}),
     parentOrganization: { "@id": ORGANIZATION_ID },
     address: {
       "@type": "PostalAddress",

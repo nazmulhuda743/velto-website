@@ -1,20 +1,25 @@
 import { dictionary } from "@/content/i18n";
 import { SERVICE_PAGES } from "@/content/services";
 import { FREE_DELIVERY_THRESHOLD, LOCATIONS, REGULAR_FREE_DELIVERY_THRESHOLD, SERVICE_AREA, SOCIAL_PROFILES } from "@/content/site";
+import { phoneDisplay } from "@/lib/contact-phone";
 import { absoluteUrl, SITE_NAME } from "@/lib/seo/site";
+import { getSiteContent } from "@/lib/site-content";
 
 /**
  * /llms.txt (llmstxt.org): a plain-text summary of Velto for AI assistants, so what they say about
  * Velto comes from the site. Built from the same content the pages show (services, outlets, the
- * approved FAQ), never a separate copy: nothing here that isn't already on the site. No phone number
- * (the confirmed line is WhatsApp), no opening days (not verified), no prices (they live in Ops).
+ * approved FAQ), never a separate copy: nothing here that isn't already on the site. The phone number
+ * (calls and WhatsApp, from Admin → Site settings) is the one in the footer and the schema. No opening
+ * days (not verified), no prices (they live in Ops). Rebuilt hourly so a changed number follows.
  */
 export const dynamic = "force-static";
+export const revalidate = 3600;
 
 const plain = (s: string) => s.replace(/⁠/g, "");
 
-export function GET() {
+export async function GET() {
   const faqs = dictionary("en").faqs;
+  const phone = phoneDisplay((await getSiteContent()).settings.whatsappNumber);
   const text = [
     `# ${SITE_NAME}`,
     "",
@@ -24,6 +29,7 @@ export function GET() {
     "",
     "## Book or ask",
     "",
+    `- Phone and WhatsApp: ${phone} (calls and WhatsApp, both outlets)`,
     `- [Book a pickup](${absoluteUrl("/book")}): choose a day and time window; nothing to pay online.`,
     `- [Request a quote](${absoluteUrl("/quote")}): for curtains, carpets, blankets and comforters.`,
     `- [WhatsApp Velto](${absoluteUrl("/go/whatsapp")})`,
@@ -38,7 +44,7 @@ export function GET() {
     "",
     "## Outlets (drop-off)",
     "",
-    ...LOCATIONS.map((l) => `- [Velto ${l.name}](${absoluteUrl(`/locations/${l.id}`)}): ${l.address}. Hours ${l.hours}.`),
+    ...LOCATIONS.map((l) => `- [Velto ${l.name}](${absoluteUrl(`/locations/${l.id}`)}): ${l.address}. Hours ${l.hours}. Phone ${phone}.`),
     "",
     "## Common questions",
     "",

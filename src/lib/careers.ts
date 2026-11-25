@@ -141,10 +141,7 @@ export function applyHref(number: string, message: string) {
 }
 
 /** "8801605162788" → "+880 1605-162788", the way Bangladeshi numbers are usually written. */
-export function displayNumber(number: string) {
-  const m = /^880(1\d{3})(\d{6})$/.exec(number);
-  return m ? `+880 ${m[1]}-${m[2]}` : `+${number}`;
-}
+export { phoneDisplay as displayNumber } from "./contact-phone";
 
 /** schema.org employmentType for Google's job listings. */
 export const SCHEMA_EMPLOYMENT: Record<JobType, string> = {
