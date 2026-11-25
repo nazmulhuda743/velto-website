@@ -36,7 +36,8 @@ export type NavIcon =
   | "prices"
   | "careers";
 
-export type NavItem = { href: string; label: string; icon: NavIcon };
+/** `hidden`: kept for page names and highlighting, but not shown in the menu (the page still opens by link). */
+export type NavItem = { href: string; label: string; icon: NavIcon; hidden?: true };
 export type NavGroup = { label: string; items: NavItem[] };
 
 export const NAV_GROUPS: NavGroup[] = [
@@ -54,22 +55,26 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: "Operations",
     items: [
-      // Today first (spec 2026-10-01 §3); Riders & windows is its settings page. Daily work before occasional.
-      { href: "/admin/today", label: "Today", icon: "today" },
-      { href: "/admin/riders", label: "Riders & windows", icon: "riders" },
+      // Owner decision (25 Nov 2026): the menu shows only Bookings & quotes and Customer accounts here
+      // (plus Chat questions, added afterwards).
+      // The other pages are hidden, not removed: they still open by link and their jobs keep running.
+      // Delete `hidden: true` to bring one back.
+      { href: "/admin/today", label: "Today", icon: "today", hidden: true },
+      { href: "/admin/riders", label: "Riders & windows", icon: "riders", hidden: true },
       { href: "/admin/requests", label: "Bookings & quotes", icon: "requests" },
-      { href: "/admin/dispatch", label: "Pickup & delivery", icon: "dispatch" },
-      { href: "/admin/invoices", label: "Invoices on WhatsApp", icon: "invoices" },
-      { href: "/admin/b999", label: "Blanket ৳999", icon: "dispatch" },
-      { href: "/admin/capacity", label: "Capacity", icon: "capacity" },
-      { href: "/admin/feedback", label: "Customer feedback", icon: "feedback" },
+      { href: "/admin/dispatch", label: "Pickup & delivery", icon: "dispatch", hidden: true },
+      { href: "/admin/invoices", label: "Invoices on WhatsApp", icon: "invoices", hidden: true },
+      { href: "/admin/b999", label: "Blanket ৳999", icon: "dispatch", hidden: true },
+      { href: "/admin/capacity", label: "Capacity", icon: "capacity", hidden: true },
+      { href: "/admin/feedback", label: "Customer feedback", icon: "feedback", hidden: true },
+      // New on main (#151, 25 Nov 2026), after the owner's menu decision: kept visible.
       { href: "/admin/chat", label: "Chat questions", icon: "feedback" },
-      { href: "/admin/retention", label: "Bring customers back", icon: "retention" },
-      { href: "/admin/retention/reminders", label: "Reminders", icon: "retention" },
+      { href: "/admin/retention", label: "Bring customers back", icon: "retention", hidden: true },
+      { href: "/admin/retention/reminders", label: "Reminders", icon: "retention", hidden: true },
       { href: "/admin/accounts", label: "Customer accounts", icon: "accounts" },
-      { href: "/admin/coupons", label: "Goal coupons", icon: "coupons" },
-      { href: "/admin/loyalty", label: "Loyalty", icon: "loyalty" },
-      { href: "/admin/health", label: "Website health", icon: "health" },
+      { href: "/admin/coupons", label: "Goal coupons", icon: "coupons", hidden: true },
+      { href: "/admin/loyalty", label: "Loyalty", icon: "loyalty", hidden: true },
+      { href: "/admin/health", label: "Website health", icon: "health", hidden: true },
     ],
   },
   {
@@ -103,7 +108,7 @@ export function navFor(allowed: readonly string[]): NavGroup[] {
     const section = sectionForPath(href);
     return section !== null && allowed.includes(section);
   };
-  return NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => may(i.href)) })).filter((g) => g.items.length);
+  return NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => !i.hidden && may(i.href)) })).filter((g) => g.items.length);
 }
 
 
