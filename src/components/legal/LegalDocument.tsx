@@ -121,7 +121,7 @@ export async function LegalContact() {
       </p>
       <ul>
         <li>
-          WhatsApp: <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">{LEGAL.whatsappDisplay}</a>
+          Phone and WhatsApp: <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">{LEGAL.whatsappDisplay}</a>
         </li>
         {LEGAL.email ? (
           <li>

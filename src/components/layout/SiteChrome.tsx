@@ -15,7 +15,8 @@ import { AppMode } from "@/components/pwa/AppMode";
 import { customerAccountsEnabled } from "@/lib/customer/config";
 import { LanguageSwitchToHome } from "@/components/i18n/LanguageSwitcher";
 import { LOCATIONS } from "@/content/site";
-import { ORGANIZATION_SCHEMA, WEBSITE_SCHEMA, buildLaundryLocationSchema } from "@/lib/seo/schema";
+import { WEBSITE_SCHEMA, buildLaundryLocationSchema, organizationSchema } from "@/lib/seo/schema";
+import { getSiteContent } from "@/lib/site-content";
 import { dictionary } from "@/content/i18n";
 import { getLocale } from "@/lib/i18n/server";
 import { PATH_HEADER } from "@/lib/app-routes";
@@ -30,10 +31,11 @@ export async function SiteChrome({ children, notFound = false }: { children: Rea
   const t = dictionary(locale).common;
   // A campaign landing page keeps the visitor on its one offer: slim header and footer, no menu.
   const campaign = campaignPage((await headers()).get(PATH_HEADER) ?? "");
+  const phone = (await getSiteContent()).settings.whatsappNumber;
   const chrome = (
     <>
       <TrackingScripts />
-      <JsonLd data={[WEBSITE_SCHEMA, ORGANIZATION_SCHEMA, ...LOCATIONS.map(buildLaundryLocationSchema)]} />
+      <JsonLd data={[WEBSITE_SCHEMA, organizationSchema(phone), ...LOCATIONS.map((l) => buildLaundryLocationSchema(l, phone))]} />
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-md focus:bg-navy focus:px-4 focus:py-3 focus:text-white"

@@ -258,6 +258,7 @@ export const pagesEn = {
     hours: "Hours",
     pickup: "Pickup",
     pickupValue: "From your door anywhere in {area}. Free on orders of {amount}+.",
+    phone: "Phone and WhatsApp",
     googleRating: "Google rating",
     reviewsCount: "· {count} Google reviews",
     ratingSpoken: "{rating} out of 5 from {count} Google reviews for {name}",

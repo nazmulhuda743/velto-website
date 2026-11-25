@@ -153,7 +153,7 @@ One primary intent per page. The full table is in [KEYWORD-MAP](KEYWORD-MAP.md).
 
 **Deliberately not added:**
 
-- **telephone**: the confirmed number is a WhatsApp line, and calls aren't verified.
+- ~~**telephone**: the confirmed number is a WhatsApp line, and calls aren't verified.~~ Added 2026-11-25: the owner confirmed +880 1605-162788 takes calls and WhatsApp and is the number on both Business Profiles. It is the `telephone` and a customer-service `contactPoint` on the Organization, the `telephone` on both outlets, a "Call" line in the footer, a "Phone and WhatsApp" row on each outlet page, and in `/llms.txt`. All read it from Admin → Site settings, so they change together.
 - **openingHoursSpecification**: the hours are verified, but the days are not.
 - ~~**geo**: no verified coordinates.~~ Added 2026-09-25: `geo`, `postalCode` and a `hasMap` link to each outlet's own Google Business Profile (by place id), read from the verified listings (Sector 11: 5.0/102, Sector 18: 4.9/8). Sector 11 also uses its real storefront photo as `image`.
 - **priceRange / Offer**: prices live in Ops and change.
@@ -190,7 +190,7 @@ Anchors are descriptive ("Check laundry and dry cleaning prices", the service na
 
 Meta descriptions were trimmed to under 155 characters on 2026-09-27 (English and Bangla), so Google shows them whole.
 
-- **Callable phone number.** If one exists, it would go into the schema, the Business Profiles and the citations.
+- ~~**Callable phone number.**~~ Done 2026-11-25: +880 1605-162788 (calls and WhatsApp, both outlets) is in the schema, footer, outlet pages and `/llms.txt`. Use the same number on directory citations.
 - **Opening days** for both outlets. The hours are verified but the days aren't. Once confirmed, add `openingHoursSpecification`.
 - ~~**Outlet coordinates**~~ Done 2026-09-25 (`geo` from each Business Profile).
 - ~~**Official social profiles**~~ Done: Facebook, Instagram and LinkedIn are in `sameAs` and the footer.
@@ -203,7 +203,7 @@ Meta descriptions were trimmed to under 155 characters on 2026-09-27 (English an
 More people now ask ChatGPT, Gemini, Perplexity or Google's AI Overview instead of scrolling results. These assistants answer from web pages, so the aim is that they read Velto's own facts and name Velto for Uttara. Everything below repeats what the pages already say and makes no new claim.
 
 - **FAQPage** on every page that shows an FAQ (homepage, services, each service page, pricing, how it works, regular laundry), in the page's language. It is built from the same items as the accordion (`buildFaqSchema`), and `test:seo` fails if a question in the schema isn't shown on the page.
-- **`/llms.txt`** ([llmstxt.org](https://llmstxt.org)): a plain-text summary for AI assistants covering the service area, the free-delivery rules, each service with its pricing basis and usual turnaround, both outlets with address and hours, the approved FAQ, and links to book, quote, WhatsApp and pricing. It is generated from the site's content, so it can't drift from the pages. It includes no phone number, opening days or prices, for the same reasons as §5. `test:seo` checks that it is served as text and links only production, non-private URLs.
+- **`/llms.txt`** ([llmstxt.org](https://llmstxt.org)): a plain-text summary for AI assistants covering the service area, the free-delivery rules, each service with its pricing basis and usual turnaround, both outlets with address and hours, the approved FAQ, and links to book, quote, WhatsApp and pricing. It is generated from the site's content, so it can't drift from the pages. It includes the phone number (since 2026-11-25) but no opening days or prices, for the same reasons as §5. `test:seo` checks that it is served as text and links only production, non-private URLs.
 - **AI crawlers** are already allowed: `robots.txt` allows all agents except on private routes.
 - **Measuring it**: Command Center has an **AI search** source (`classifyChannel` → `ai_search`). ChatGPT tags its links `utm_source=chatgpt.com`; Perplexity, Gemini, Copilot, Claude, DeepSeek and Meta AI are recognised by referrer. A tagged campaign keeps its own source. It appears everywhere sources do: Marketing, Funnel, Revenue and each request card.
 - **Off-site** (§7) matters most here too. When assistants recommend a local business they lean on Google reviews and consistent listings.

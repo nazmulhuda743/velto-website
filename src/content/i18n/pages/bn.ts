@@ -253,6 +253,7 @@ export const pagesBn: PageText = {
     hours: "খোলার সময়",
     pickup: "পিকআপ",
     pickupValue: "{area}-এর যেকোনো জায়গায় আপনার দরজা থেকে। {amount} বা তার বেশি অর্ডারে ফ্রি।",
+    phone: "ফোন ও WhatsApp",
     googleRating: "Google রেটিং",
     reviewsCount: "· {count}টি Google রিভিউ",
     ratingSpoken: "{name}-এর {count}টি Google রিভিউতে ৫-এর মধ্যে {rating}",

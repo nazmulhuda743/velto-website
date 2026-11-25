@@ -18,6 +18,8 @@ export const en = {
     bookPickup: "Book a Pickup",
     whatsapp: "WhatsApp",
     whatsappVelto: "WhatsApp Velto",
+    /** Before the phone number: the footer line and the outlet pages (calls and WhatsApp, one number). */
+    callVelto: "Call",
     opensNewTab: "(opens in a new tab)",
     getDirections: "Get Directions",
     breadcrumb: "Breadcrumb",
