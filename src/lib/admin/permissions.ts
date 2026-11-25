@@ -83,10 +83,11 @@ export function sectionForPath(path: string): Section | null {
 }
 
 /**
- * Where a role lands after signing in: their first allowed section, in this order. Everyone who
- * schedules pickups and deliveries (the dispatch section) starts on Today (spec 2026-10-01 §3).
+ * Where a role lands after signing in: their first allowed section, in this order. Bookings & quotes
+ * first: Today and the other hidden Operations pages are no longer in the menu (owner, 25 Nov 2026),
+ * so nobody lands on a page the menu doesn't show.
  */
-const MENU_ORDER: Section[] = ["dispatch", "overview", "requests", "images", "funnel", "retention", "seo"];
+const MENU_ORDER: Section[] = ["requests", "overview", "images", "funnel", "seo"];
 const HOME_PATH: Partial<Record<Section, string>> = { overview: "/admin", dispatch: "/admin/today" };
 export function homeFor(role: Role): string {
   const first = MENU_ORDER.find((s) => can(role, s)) ?? SECTIONS.find((s) => can(role, s));
