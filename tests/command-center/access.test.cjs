@@ -72,8 +72,8 @@ test("paths map to sections, and everyone lands on a page they may open", () => 
 const menuFor = (role) => nav.navFor(p.SECTIONS.filter((s) => p.can(role, s)));
 const operations = (role) => menuFor(role).find((g) => g.label === "Operations")?.items.map((i) => i.href) ?? [];
 
-test("Operations shows only Bookings & quotes and Customer accounts (owner, 25 Nov 2026)", () => {
-  for (const r of ["owner", "manager", "support"]) assert.deepEqual(operations(r), ["/admin/requests", "/admin/accounts"], r);
+test("Operations shows only Bookings & quotes and Customer accounts (owner, 25 Nov 2026), plus Chat questions", () => {
+  for (const r of ["owner", "manager", "support"]) assert.deepEqual(operations(r), ["/admin/requests", "/admin/chat", "/admin/accounts"], r);
   const hidden = nav.NAV_GROUPS.flatMap((g) => g.items.filter((i) => i.hidden).map((i) => i.href));
   assert.equal(hidden.length, 12, "the 12 hidden Operations pages stay listed (names, highlighting)");
   for (const r of p.ROLES) for (const g of menuFor(r)) for (const i of g.items) assert.ok(!hidden.includes(i.href), `${r} sees hidden ${i.href}`);
@@ -140,8 +140,8 @@ test("every dashboard page and every admin action checks its section on the serv
   for (const file of walk(pagesDir).filter((f) => f.endsWith("page.tsx"))) {
     const rel = path.relative(pagesDir, file);
     // Pages that belong to another section: Today is the dispatch section's screen (spec 2026-10-01 §3),
-    // and so is Invoices on WhatsApp (the same people send them).
-    const alias = { today: "dispatch", invoices: "dispatch", b999: "dispatch" };
+    // and so is Invoices on WhatsApp (the same people send them); Chat questions sit with customer feedback.
+    const alias = { today: "dispatch", invoices: "dispatch", b999: "dispatch", chat: "feedback" };
     const folder = rel.split(path.sep)[0];
     const section = rel === "page.tsx" ? "overview" : (alias[folder] ?? folder);
     assert.match(fs.readFileSync(file, "utf8"), new RegExp(`requireSection\\("${section}"\\)`), `${rel} must call requireSection("${section}")`);

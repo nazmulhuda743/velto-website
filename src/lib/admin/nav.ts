@@ -55,7 +55,8 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: "Operations",
     items: [
-      // Owner decision (25 Nov 2026): the menu shows only Bookings & quotes and Customer accounts here.
+      // Owner decision (25 Nov 2026): the menu shows only Bookings & quotes and Customer accounts here
+      // (plus Chat questions, added afterwards).
       // The other pages are hidden, not removed: they still open by link and their jobs keep running.
       // Delete `hidden: true` to bring one back.
       { href: "/admin/today", label: "Today", icon: "today", hidden: true },
@@ -66,6 +67,8 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/admin/b999", label: "Blanket ৳999", icon: "dispatch", hidden: true },
       { href: "/admin/capacity", label: "Capacity", icon: "capacity", hidden: true },
       { href: "/admin/feedback", label: "Customer feedback", icon: "feedback", hidden: true },
+      // New on main (#151, 25 Nov 2026), after the owner's menu decision: kept visible.
+      { href: "/admin/chat", label: "Chat questions", icon: "feedback" },
       { href: "/admin/retention", label: "Bring customers back", icon: "retention", hidden: true },
       { href: "/admin/retention/reminders", label: "Reminders", icon: "retention", hidden: true },
       { href: "/admin/accounts", label: "Customer accounts", icon: "accounts" },

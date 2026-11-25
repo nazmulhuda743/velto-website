@@ -20,6 +20,7 @@ export const bn: Dictionary = {
     bookPickup: "পিকআপ বুক করুন",
     whatsapp: "WhatsApp",
     whatsappVelto: "Velto-কে WhatsApp করুন",
+    callVelto: "কল করুন",
     opensNewTab: "(নতুন ট্যাবে খুলবে)",
     getDirections: "দিকনির্দেশনা দেখুন",
     breadcrumb: "পাতার অবস্থান",

@@ -14,7 +14,8 @@ import { TextLink } from "@/components/ui/TextLink";
 import { IMAGES } from "@/content/mock";
 import { FREE_DELIVERY_THRESHOLD, LOCATIONS, WHATSAPP_URL, bookHref } from "@/content/site";
 import { pageMetadata } from "@/lib/seo/page-metadata";
-import { getLocations, resolveImage } from "@/lib/site-content";
+import { phoneDisplay, phoneHref } from "@/lib/contact-phone";
+import { getLocations, getSiteContent, resolveImage } from "@/lib/site-content";
 import { dictionary } from "@/content/i18n";
 import { pageText } from "@/content/i18n/pages";
 import { fill, localDigits } from "@/lib/i18n/config";
@@ -51,6 +52,7 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
   const rating = localDigits(loc.rating, locale);
   const area = serviceArea(locale);
   const outletPhoto = await resolveImage(IMAGES.locations[loc.id]);
+  const phone = (await getSiteContent()).settings.whatsappNumber;
   return (
     <>
       <PageHero
@@ -124,6 +126,14 @@ export default async function LocationPage({ params }: { params: Promise<{ id: s
               rows={[
                 { label: t.address, value: <address className="not-italic">{loc.address}</address> },
                 { label: t.hours, value: loc.hours },
+                {
+                  label: t.phone,
+                  value: (
+                    <a href={phoneHref(phone)} className="font-semibold text-navy underline decoration-blue/50 underline-offset-4" data-analytics="call_click" data-placement="location">
+                      <span className="whitespace-nowrap">{phoneDisplay(phone)}</span>
+                    </a>
+                  ),
+                },
                 {
                   label: t.pickup,
                   value: f(t.pickupValue, { area, amount: FREE_DELIVERY_THRESHOLD }),
